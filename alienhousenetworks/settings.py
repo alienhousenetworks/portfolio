@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+from decouple import config
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,12 +22,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-5t0vq!=o5!b684+@&i^)e4)&eh-)7_qrq#d(sre-uh+w*jqit5'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Debug and secret key
+DEBUG = config('DEBUG', default=False, cast=bool)
+SECRET_KEY = config('SECRET_KEY')
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='').split(',')
+# SECRET_KEY = 'django-insecure-5t0vq!=o5!b684+@&i^)e4)&eh-)7_qrq#d(sre-uh+w*jqit5'
 
-ALLOWED_HOSTS = []
+# # SECURITY WARNING: don't run with debug turned on in production!
+# DEBUG = True
+
+# ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -79,12 +86,27 @@ WSGI_APPLICATION = 'alienhousenetworks.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
+from decouple import config
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': config('DB_NAME'),
+        'USER': config('DB_USER'),
+        'PASSWORD': config('DB_PASSWORD'),
+        'HOST': config('DB_HOST', default='localhost'),
+        'PORT': config('DB_PORT', default='5432'),
     }
 }
+
+
 
 
 # Password validation
@@ -131,9 +153,19 @@ import os
 
 # ... existing code ...
 
-# Static files (CSS, JavaScript, Images)
-STATIC_URL = 'static/'
+# # Static files (CSS, JavaScript, Images)
+# STATIC_URL = 'static/'
 
 # Media files (User uploaded content)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+import os
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+STATIC_URL = '/static/'
+
+# Add this:
+STATIC_ROOT = BASE_DIR / 'staticfiles'  # This is where collectstatic will gather all static files
