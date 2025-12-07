@@ -1,0 +1,241 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+    <header class="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
+        <div id="three-container" class="absolute inset-0 z-0 opacity-80"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-alien/5 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
+        
+        <div class="relative z-10 text-center px-4 max-w-6xl mx-auto pointer-events-none">
+            <div class="mb-4 flex justify-center pointer-events-auto">
+                <div class="px-4 py-1 border border-alien/50 rounded-full bg-alien/10 text-alien text-xs font-mono flex items-center gap-2">
+                    <span class="w-2 h-2 bg-alien rounded-full animate-ping"></span>
+                    {{ hero.status_text|default:"SYSTEM OPTIMAL" }}
+                </div>
+            </div>
+            
+            <h1 class="text-6xl md:text-8xl lg:text-9xl font-orbitron font-black text-white mb-8 leading-[0.9] tracking-tighter mix-blend-luminosity pointer-events-auto">
+                {{ hero.main_heading_line_1|default:"FUTURE" }}<br>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-alien via-emerald-400 to-cyan-500 decrypt-effect" data-value="{{ hero.main_heading_gradient_text|default:'ENGINEERED' }}">IMAGINATION</span>
+            </h1>
+            
+            <p class="text-xl md:text-2xl text-gray-400 max-w-3xl mx-auto font-light mb-10 pointer-events-auto">
+                {{ hero.sub_text|default:"Advanced AI & Software Consultancy" }}
+            </p>
+
+            <div class="flex flex-col sm:flex-row justify-center gap-6 pointer-events-auto">
+                <button class="px-8 py-4 border border-alien bg-alien/10 text-alien hover:bg-alien hover:text-black font-orbitron font-bold tracking-widest transition-all duration-300 transform hover:scale-105" style="clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);">
+                    INITIATE PROTOCOL
+                </button>
+                <button class="px-8 py-4 border border-gray-700 text-gray-300 hover:border-white hover:text-white font-orbitron tracking-widest transition-all">
+                    VIEW DOCUMENTATION
+                </button>
+            </div>
+        </div>
+    </header>
+    <!-- ========================= ABOUT US ======================== -->
+    <section class="relative py-40 bg-black overflow-hidden">
+
+        <!-- Futuristic background grid -->
+        <div class="absolute inset-0 opacity-[0.05] pointer-events-none"
+             style="background-image: linear-gradient(#00ff41 1px, transparent 1px),
+                          linear-gradient(90deg, #00ff41 1px, transparent 1px);
+                    background-size: 80px 80px;"></div>
+    
+        <!-- Floating Glow Orbs -->
+        <div class="absolute w-72 h-72 rounded-full bg-emerald-500/20 blur-[120px] top-20 left-20 animate-pulse"></div>
+        <div class="absolute w-96 h-96 rounded-full bg-cyan-500/10 blur-[140px] bottom-10 right-32 animate-pulse"></div>
+    
+        <div class="max-w-7xl mx-auto px-6 relative z-10">
+    
+            <!-- Main Title -->
+            <div class="text-center mb-24">
+                <span class="px-3 py-1 border border-alien/40 text-alien text-xs font-mono tracking-[0.25em]">
+                    // COMPANY MISSION BRIEF
+                </span>
+                <h2 class="text-5xl md:text-6xl font-orbitron font-bold text-white mt-4">
+                    Lets Get a Intro
+                </h2>
+            </div>
+    
+            <!-- About Cards Row -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+    
+                {% for about in about_us %}
+                <div class="relative p-8 bg-gray-900/50 border border-alien/30 backdrop-blur-xl rounded-xl hover:shadow-[0_0_50px_#00ff4180] transition-all duration-500">
+                    
+                    <!-- HUD Corners -->
+                    <div class="hud-corner hud-tl"></div><div class="hud-corner hud-tr"></div>
+                    <div class="hud-corner hud-bl"></div><div class="hud-corner hud-br"></div>
+    
+                    <!-- Index / Label -->
+                    <div class="text-alien font-mono text-xs mb-2 tracking-[0.2em]"></div>
+    
+                    <!-- Heading -->
+                    <h3 class="text-2xl md:text-3xl font-orbitron text-white mb-4">{{ about.heading }}</h3>
+    
+                    <!-- Subheading -->
+                    <p class="text-gray-300 text-sm md:text-base leading-relaxed">{{ about.subheading }}</p>
+    
+                    <!-- Optional Image -->
+                    {% if about.image %}
+                    <div class="mt-4 rounded-lg overflow-hidden">
+                        <img src="{{ about.image.url }}" class="w-full h-48 object-cover rounded-md shadow-lg hover:shadow-[0_0_50px_#00ff4180] transition duration-500">
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+    
+            </div>
+        </div>
+    </section>
+    
+
+    <section id="services" class="py-24 bg-alien-dark relative border-b border-alien/20">
+        <div class="absolute inset-0 grid grid-cols-6 gap-4 opacity-5 pointer-events-none">
+            <div class="border-r border-alien h-full"></div>
+            <div class="border-r border-alien h-full"></div>
+            <div class="border-r border-alien h-full"></div>
+            <div class="border-r border-alien h-full"></div>
+            <div class="border-r border-alien h-full"></div>
+        </div>
+
+        <div class="max-w-7xl mx-auto px-6 relative z-10">
+            <div class="text-center mb-20">
+                <div class="inline-block px-3 py-1 border border-alien/30 rounded text-alien text-xs font-mono mb-4 tracking-[0.2em]">CAPABILITY MATRIX_</div>
+                <h2 class="text-4xl md:text-6xl font-orbitron font-bold text-white mb-4">
+                    OPERATIONAL <span class="text-alien">MODULES</span>
+                </h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for service in services %}
+                <a href="{% url 'service_detail' service.slug %}" class="group relative p-1 bg-gray-900/40 border border-gray-800 hover:border-alien transition-all duration-500 overflow-hidden">
+                    <div class="absolute top-0 left-0 w-full h-[2px] bg-alien shadow-[0_0_20px_#00ff41] transform -translate-y-full group-hover:translate-y-[400px] transition-transform duration-1000 ease-linear opacity-50"></div>
+                    <div class="bg-black/80 p-8 h-full relative backdrop-blur-sm">
+                        <div class="flex justify-between items-start mb-6">
+                            <div class="p-3 bg-alien/10 border border-alien/30 rounded-sm">
+                                <i data-lucide="{{ service.icon_name|default:'cpu' }}" class="text-alien w-8 h-8"></i>
+                            </div>
+                            <span class="text-gray-600 font-mono text-xs">MOD_0{{ forloop.counter }}</span>
+                        </div>
+                        <h3 class="text-2xl font-orbitron text-white mb-2 group-hover:text-alien transition-colors">{{ service.title }}</h3>
+                        <p class="text-gray-400 text-sm mb-6 leading-relaxed">{{ service.description }}</p>
+                    </div>
+                </a>
+                {% empty %}
+                <div class="text-white">No services deployed yet.</div>
+                {% endfor %}
+            </div>
+            
+        </div>
+    </section>
+
+    <!-- ========================= CLIENT LOGOS (TICKER) ======================== -->
+    <section class="py-10 bg-black overflow-hidden relative">
+        <div class="w-full">
+            <div class="flex whitespace-nowrap animate-marquee gap-16">
+                {% for c in client_logos %}
+                <img src="{{ c.logo.url }}" class="h-20 inline-block opacity-70 hover:opacity-100 transition duration-300">
+                {% endfor %}
+                <!-- Duplicate logos for seamless looping -->
+                {% for c in client_logos %}
+                <img src="{{ c.logo.url }}" class="h-20 inline-block opacity-70 hover:opacity-100 transition duration-300">
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    
+    <style>
+    @keyframes marquee {
+        0%   { transform: translateX(0); }
+        100% { transform: translateX(-50%); } /* scroll half width since content is duplicated */
+    }
+    
+    .animate-marquee {
+        display: inline-flex;
+        animation: marquee 20s linear infinite;
+    }
+    </style>
+    
+
+    <section id="personnel" class="py-24 bg-black border-y border-alien/20 relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-64 h-64 bg-alien/10 blur-[80px]"></div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="mb-16 border-l-4 border-alien pl-6">
+                <h2 class="text-4xl md:text-6xl font-orbitron font-bold text-white mb-2">SENTIENT <span class="text-alien">ASSETS</span></h2>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                {% for member in team %}
+                <div class="group relative bg-gray-900/50 border border-gray-800 hover:border-alien transition-all duration-500 overflow-hidden hover:-translate-y-2">
+                    <div class="hud-corner hud-tl"></div><div class="hud-corner hud-tr"></div>
+                    <div class="hud-corner hud-bl"></div><div class="hud-corner hud-br"></div>
+                    
+                    <div class="h-72 bg-cover bg-center grayscale group-hover:grayscale-0 transition-all duration-700" 
+                         style="background-image: url('{{ member.image.url }}'); background-color: #111;">
+                         </div>
+                    <div class="p-6 relative z-10 -mt-16 bg-gradient-to-t from-black via-black to-transparent">
+                        <div class="inline-block px-2 py-0.5 bg-alien text-black text-[10px] font-bold font-orbitron mb-2">{{ member.role }}</div>
+                        <h3 class="text-2xl font-orbitron text-white transition-colors">{{ member.name }}</h3>
+                        <p class="text-xs text-gray-400 font-mono mb-4">{{ member.job_title }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <section id="rnd" class="py-24 bg-black relative overflow-hidden">
+        <div class="absolute inset-0" style="background-image: radial-gradient(#00ff41 1px, transparent 1px); background-size: 30px 30px; opacity: 0.1;"></div>
+        <div class="max-w-7xl mx-auto px-6 relative z-10">
+            <div class="flex justify-between items-end mb-12">
+                <h2 class="text-4xl font-orbitron font-bold text-white">ALIENHOUSE <span class="text-purple-500">LABS</span></h2>
+                <span class="text-xs font-mono text-purple-500 border border-purple-500 px-2 py-1 animate-pulse">CLASSIFIED</span>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                {% for exp in experiments %}
+                <div class="border border-purple-500/30 p-8 bg-purple-900/5 backdrop-blur-sm relative">
+                    <i data-lucide="{{ exp.icon_name|default:'flask-conical' }}" class="text-purple-500 w-10 h-10 mb-4"></i>
+                    <h3 class="text-2xl font-orbitron text-white mb-2">{{ exp.title }}</h3>
+                    <p class="text-gray-400 mb-6">{{ exp.description }}</p>
+                    <div class="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
+                        <div class="bg-purple-500 h-full w-[{{ exp.progress_percent }}%] relative overflow-hidden"></div>
+                    </div>
+                    <p class="text-right text-xs font-mono text-purple-400 mt-2">PROGRESS: {{ exp.progress_percent }}%</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <section id="contact" class="h-[500px] relative w-full border-y border-alien/20">
+        <div class="w-full h-full absolute inset-0">
+            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3671.936374639952!2d72.5714!3d23.0225!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjPCsDAxJzIxLjAiTiA3MsKwMzQnMTcuMCJF!5e0!3m2!1sen!2sin!4v1625555555555!5m2!1sen!2sin" width="100%" height="100%" style="border:0; filter: grayscale(100%) invert(92%) hue-rotate(100deg) contrast(120%) brightness(90%); pointer-events: none;" allowfullscreen="" loading="lazy"></iframe>
+        </div>
+        <div class="absolute top-10 left-10 bg-black/90 p-8 border border-alien max-w-md backdrop-blur-md">
+            <h3 class="text-2xl font-orbitron text-white mb-4">EARTH HQ</h3>
+            <p class="text-gray-400 mb-2"><i data-lucide="map-pin" class="inline w-4 h-4 text-alien mr-2"></i> {{ config.address }}</p>
+            <p class="text-gray-400 mb-2"><i data-lucide="mail" class="inline w-4 h-4 text-alien mr-2"></i> {{ config.email }}</p>
+            <p class="text-gray-400"><i data-lucide="phone" class="inline w-4 h-4 text-alien mr-2"></i> {{ config.phone }}</p>
+        </div>
+    </section>
+
+    <div id="cookie-banner" class="fixed bottom-0 left-0 w-full bg-black/95 backdrop-blur-lg border-t border-alien/30 p-6 z-[100] transform translate-y-full transition-transform duration-500">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="text-gray-400 text-sm max-w-2xl">
+                <h4 class="text-white font-bold mb-2">WE TRACK SIGNALS</h4>
+                <p>We use cookies and advanced tracking pixels to analyze intergalactic traffic.</p>
+            </div>
+            <div class="flex gap-4">
+                <button onclick="document.getElementById('cookie-banner').style.transform='translateY(100%)'" class="px-6 py-2 border border-gray-600 text-gray-300 hover:text-white text-xs font-bold tracking-widest cursor-none">REJECT</button>
+                <button onclick="document.getElementById('cookie-banner').style.transform='translateY(100%)'" class="px-6 py-2 bg-alien text-black hover:bg-white transition-colors text-xs font-bold tracking-widest cursor-none">ACCEPT ALL</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Trigger cookie banner
+        setTimeout(() => { document.getElementById('cookie-banner').style.transform = 'translateY(0)'; }, 2000);
+    </script>
+{% endblock %}

@@ -1,0 +1,115 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{{ service.name }} | AlienHouse Modules{% endblock %}
+
+{% block content %}
+<section class="relative h-[60vh] flex items-center justify-center overflow-hidden border-b border-[#00ff41]/20">
+    {% if service.hero_image %}
+        <div class="absolute inset-0 z-0">
+            <img src="{{ service.hero_image.url }}" class="w-full h-full object-cover opacity-30 grayscale">
+            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"></div>
+        </div>
+    {% endif %}
+    
+    <div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+    
+    <div class="relative z-10 text-center max-w-4xl px-6">
+        <div class="inline-flex items-center gap-2 px-3 py-1 border border-[#00ff41] rounded-full text-[#00ff41] bg-[#00ff41]/10 text-xs font-mono mb-6">
+            <i data-lucide="{{ service.icon }}" class="w-3 h-3"></i> MODULE ACTIVE
+        </div>
+        <h1 class="text-6xl md:text-8xl font-orbitron font-black text-white mb-6 uppercase">
+            {{ service.name }}
+        </h1>
+        <p class="text-xl text-gray-400 font-rajdhani max-w-2xl mx-auto">
+            {{ service.short_description }}
+        </p>
+    </div>
+</section>
+
+<div class="max-w-7xl mx-auto px-6 py-24 grid grid-cols-1 lg:grid-cols-3 gap-16">
+    
+    <div class="lg:col-span-2 space-y-12">
+        
+        <div>
+            <h3 class="text-2xl font-orbitron text-white mb-6 flex items-center gap-3">
+                <span class="text-[#00ff41]">>></span> SYSTEM OVERVIEW
+            </h3>
+            <div class="prose prose-invert prose-lg text-gray-400 font-rajdhani leading-relaxed">
+                {{ service.description|linebreaks }}
+            </div>
+        </div>
+
+        {% if service.technical_specs %}
+        <div class="bg-gray-900/50 border border-gray-800 p-8 rounded-sm">
+            <h3 class="text-xl font-orbitron text-white mb-4">TECHNICAL SPECIFICATIONS</h3>
+            <p class="font-mono text-sm text-[#00ff41]">{{ service.technical_specs }}</p>
+        </div>
+        {% endif %}
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {% if service.advantage_1 %}
+            <div class="p-4 border border-[#00ff41]/30 bg-[#00ff41]/5">
+                <i data-lucide="check-circle" class="text-[#00ff41] w-5 h-5 mb-2"></i>
+                <span class="text-white font-bold font-orbitron">{{ service.advantage_1 }}</span>
+            </div>
+            {% endif %}
+            {% if service.advantage_2 %}
+            <div class="p-4 border border-[#00ff41]/30 bg-[#00ff41]/5">
+                <i data-lucide="check-circle" class="text-[#00ff41] w-5 h-5 mb-2"></i>
+                <span class="text-white font-bold font-orbitron">{{ service.advantage_2 }}</span>
+            </div>
+            {% endif %}
+            {% if service.advantage_3 %}
+            <div class="p-4 border border-[#00ff41]/30 bg-[#00ff41]/5">
+                <i data-lucide="check-circle" class="text-[#00ff41] w-5 h-5 mb-2"></i>
+                <span class="text-white font-bold font-orbitron">{{ service.advantage_3 }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="space-y-8">
+        <h3 class="text-xl font-orbitron text-white border-b border-[#00ff41] pb-4">
+            AVAILABLE PROTOCOLS
+        </h3>
+
+        {% for sub in sub_services %}
+        <div class="relative group bg-gray-900 border border-gray-800 p-6 hover:border-[#00ff41] transition-all duration-300">
+            {% if sub.is_popular %}
+                <div class="absolute -top-3 right-4 bg-[#00ff41] text-black text-[10px] font-bold px-2 py-0.5">RECOMMENDED</div>
+            {% endif %}
+            {% if sub.image %}
+        <div class="h-40 w-full overflow-hidden relative border-b border-gray-800">
+            <img src="{{ sub.image.url }}" alt="{{ sub.name }}" class="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-110 transition-all duration-500">
+            
+            <div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+        </div>
+        {% endif %}
+            
+            <h4 class="text-xl font-bold text-white mb-2">{{ sub.name }}</h4>
+            <p class="text-gray-400 text-sm mb-4">{{ sub.description }}</p>
+            
+            <div class="flex justify-between items-center text-xs font-mono border-t border-gray-800 pt-4 mt-4">
+                <span class="text-[#00ff41]">{{ sub.price_range }}</span>
+                <span class="text-gray-500">ETA: {{ sub.delivery_time }}</span>
+            </div>
+            
+            <button class="w-full mt-6 bg-transparent border border-[#00ff41] text-[#00ff41] py-2 hover:bg-[#00ff41] hover:text-black font-orbitron text-sm transition-colors">
+                DEPLOY
+            </button>
+        </div>
+        {% empty %}
+        <div class="text-gray-600 font-mono text-sm">No sub-services configured.</div>
+        {% endfor %}
+
+        <div class="mt-12 p-8 bg-[#00ff41] text-black text-center">
+            <h4 class="font-orbitron font-bold text-xl mb-2">CUSTOM ORDER?</h4>
+            <p class="text-sm font-rajdhani font-semibold mb-4">Contact HQ for tailored solutions.</p>
+            <a href="#contact" class="inline-block border-2 border-black px-6 py-2 font-bold hover:bg-black hover:text-[#00ff41] transition-colors">
+                OPEN CHANNEL
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
