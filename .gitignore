@@ -1,3 +1,11 @@
 __pycache__/
 *.pyc
 staticfiles/
+# Ignore backup files
+backup.json
+
+# Ignore pycache inside migrations
+*/migrations/__pycache__/
+
+# Ignore staticfiles collected files
+staticfiles/
