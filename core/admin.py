@@ -302,3 +302,49 @@ class CompanyPageAdmin(admin.ModelAdmin):
     list_display = ('title', 'slug', 'url', 'is_active', 'order')
     list_editable = ('order', 'is_active')
     prepopulated_fields = {"slug": ("title",)}
+
+
+from django.contrib import admin
+from .models import AboutUsPage, AboutUsSection
+
+# -------------------------
+# About Us Section Admin
+# -------------------------
+@admin.register(AboutUsSection)
+class AboutUsSectionAdmin(admin.ModelAdmin):
+    list_display = ("heading", "title", "order", "image_preview")
+    list_editable = ("order",)
+    ordering = ("order",)
+    search_fields = ("heading", "content")
+    list_filter = ("title",)
+
+    def image_preview(self, obj):
+        if obj.image:
+            return f'<img src="{obj.image.url}" width="100" />'
+        return "-"
+    image_preview.allow_tags = True
+    image_preview.short_description = "Image Preview"
+
+
+# -------------------------
+# About Us Page Admin
+# -------------------------
+class AboutUsSectionInline(admin.TabularInline):
+    model = AboutUsPage.sections.through
+    extra = 1
+    verbose_name = "Section"
+    verbose_name_plural = "Sections"
+
+@admin.register(AboutUsPage)
+class AboutUsPageAdmin(admin.ModelAdmin):
+    list_display = ("page_title", "hero_heading")
+    inlines = [AboutUsSectionInline]
+    search_fields = ("page_title", "hero_heading")
+    readonly_fields = ("display_hero_preview",)
+
+    def display_hero_preview(self, obj):
+        if obj.hero_image:
+            return f'<img src="{obj.hero_image.url}" width="200" />'
+        return "-"
+    display_hero_preview.allow_tags = True
+    display_hero_preview.short_description = "Hero Image Preview"

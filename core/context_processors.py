@@ -1,4 +1,4 @@
-from .models import Service, SiteConfiguration,SiteSettings,FooterLink,ContactInfo
+from .models import Service, SiteConfiguration,SiteSettings,FooterLink,ContactInfo,CompanyPage
 
 def global_site_data(request):
     config = SiteConfiguration.objects.first()
@@ -11,6 +11,7 @@ def global_site_data(request):
     company_links = FooterLink.objects.filter(category='company')
     social_links = FooterLink.objects.filter(category='social')
     contacts = ContactInfo.objects.all()
+    company_pages = CompanyPage.objects.filter(is_active=True)
 
     return {
         'config': config,
@@ -20,5 +21,5 @@ def global_site_data(request):
         'company_links': company_links,
         'social_links': social_links,
         'contacts': contacts,
-        
+        'company_pages': company_pages,
     }

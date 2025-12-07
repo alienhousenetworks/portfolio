@@ -6,32 +6,7 @@ from .models import (
     Project, LabExperiment, AboutUs , ClientLogo
 )
 
-# def index(request):
-#     # Get Singletons (use .first() to get the one and only instance)
-#     site_config = SiteConfiguration.objects.first()
-#     hero = HeroSection.objects.first()
-    
-#     # Get Lists
-#     services = ServiceModule.objects.all()
-  
-#     team = BusinessTeamMember.objects.all()
-#     ticker_items = ClientTicker.objects.all()
-#     tactics = TacticalAdvantage.objects.all()
-#     projects = Project.objects.all()
-#     experiments = LabExperiment.objects.all()
 
-#     context = {
-#         'config': site_config,
-#         'hero': hero,
-#         'services': services,
-#         'team': team,
-#         'ticker_items': ticker_items,
-#         'tactics': tactics,
-#         'projects': projects,
-#         'experiments': experiments,
-#     }
-    
-#     return render(request, 'core/index.html', context)
 
 from django.shortcuts import render, get_object_or_404
 from .models import (
@@ -93,89 +68,51 @@ def service_detail(request, slug):
     }
     return render(request, 'core/service_detail.html', context)
 
-# from django.shortcuts import render
-# from .models import (
-#     SiteConfiguration, HeroSection, Service, SubService,
-#     BusinessTeamMember, Project, CompanyProfile
-# )
+# core/views.py
+from django.shortcuts import render, get_object_or_404
+from .models import AboutUsPage, SiteConfiguration
 
-# def index(request):
-#     # 1. Fetch Global Config
-#     site_config = SiteConfiguration.objects.first()
-#     hero = HeroSection.objects.first()
-#     company_profile = CompanyProfile.objects.first()
+def about_us(request):
+    """
+    Fetch About Us page and its dynamic sections.
+    """
+    about_page = AboutUsPage.objects.prefetch_related('sections').first()
+    sections = about_page.sections.all() if about_page else []
 
-#     # 2. CONSTRUCT 3D WORLD DATA (The "Planets")
-#     # We build a list of dictionaries that mirrors the JS 'ADMIN_DB' structure
-    
-#     universe_data = []
+    site_config = SiteConfiguration.objects.first()
 
-#     # --- PLANET 1: SERVICES & SUB-SERVICES ---
-#     services_queryset = Service.objects.prefetch_related('sub_services').filter(is_active=True)
-#     service_list = []
-    
-#     for service in services_queryset:
-#         # Format: "Web Dev: React, Django, AWS"
-#         subs = [sub.name for sub in service.sub_services.filter(is_active=True)]
-#         sub_str = ", ".join(subs) if subs else "Core Systems"
-#         service_list.append(f"[{service.name}] {sub_str}")
-
-#     universe_data.append({
-#         'id': 'ALPHA',
-#         'title': 'SERVICES',
-#         'type': 'CITY',
-#         'desc': 'Core computational offerings and sub-routines.',
-#         'data': service_list if service_list else ["No Active Services"]
-#     })
-
-#     # --- PLANET 2: PROJECTS ---
-#     projects = Project.objects.all()[:5] # Limit to 5 for UI clarity
-#     project_list = [f"{p.title} // {p.tech_stack}" for p in projects]
-    
-#     universe_data.append({
-#         'id': 'BETA',
-#         'title': 'PROJECTS',
-#         'type': 'GALLERY',
-#         'desc': 'Deployed hyper-structures and experiments.',
-#         'data': project_list if project_list else ["Classified"]
-#     })
-
-#     # --- PLANET 3: TEAM ---
-#     team = BusinessTeamMember.objects.order_by('order')
-#     team_list = [f"{t.name} :: {t.role}" for t in team]
-
-#     universe_data.append({
-#         'id': 'GAMMA',
-#         'title': 'OPERATIVES',
-#         'type': 'AVATAR',
-#         'desc': 'The architects of the simulation.',
-#         'data': team_list if team_list else ["AI Automated"]
-#     })
-
-#     # --- PLANET 4: CONNECTIONS (Company Profile) ---
-#     connections_list = []
-#     if company_profile:
-#         if company_profile.email: connections_list.append(f"EMAIL :: {company_profile.email}")
-#         if company_profile.phone: connections_list.append(f"COMMS :: {company_profile.phone}")
-#         if company_profile.linkedin: connections_list.append(f"LINKEDIN :: Active")
-#         if company_profile.instagram: connections_list.append(f"INSTAGRAM :: Active")
-#         if company_profile.whatsapp: connections_list.append(f"WHATSAPP :: Encrypted")
-    
-#     universe_data.append({
-#         'id': 'NEXUS',
-#         'title': 'CONNECTIONS',
-#         'type': 'TERMINAL',
-#         'desc': 'Establish secure communication protocols.',
-#         'data': connections_list if connections_list else ["Signal Lost"]
-#     })
-
-#     context = {
-#         'config': site_config,
-#         'hero': hero,
-#         # Serialize the universe data to JSON for the template
-#         'universe_data_json': json.dumps(universe_data),
-#     }
-    
-#     return render(request, 'core/index.html', context)
+    context = {
+        "about_page": about_page,
+        "sections": sections,
+        "config": site_config,
+    }
+    return render(request, "core/about_us.html", context)
 
 
+from django.shortcuts import render, get_object_or_404, redirect
+from .models import CompanyPage, AboutUsPage
+
+def company_page_detail(request, slug):
+    # Fetch the menu item
+    page = get_object_or_404(CompanyPage, slug=slug)
+
+    # If the page has an external URL, redirect
+    if page.url:
+        return redirect(page.url)
+
+    # Handle internal pages dynamically
+    # You can add more special cases if needed
+    template_name = f"company/{slug}.html"
+    context = {"page": page}
+
+    # Example: special handling for About Us page
+    if slug == "about-us":
+        about_page = AboutUsPage.objects.first()  # fetch AboutUs content
+        context["about_page"] = about_page
+
+    # Render the template if it exists, otherwise fallback to generic template
+    try:
+        return render(request, template_name, context)
+    except:
+        # Fallback to generic template with only title/content
+        return render(request, "company/generic_page.html", context)

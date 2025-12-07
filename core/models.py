@@ -46,7 +46,7 @@ class SiteConfiguration(models.Model):
     class Meta:
         verbose_name = "Site Configuration"
 # -------------------------
-# ABOUT US SECTION
+# ABOUT US SECTION inside home page indes.html
 # -------------------------
 class AboutUs(models.Model):
     heading = models.CharField(max_length=255)
@@ -514,3 +514,52 @@ class CompanyPage(models.Model):
         if self.url:
             return self.url
         return reverse('company_page_detail', kwargs={'slug': self.slug})
+
+
+
+
+
+
+# core/models.py
+from django.db import models
+from django.utils.text import slugify
+
+class AboutUsSection(models.Model):
+    """
+    Represents a section of the About Us page.
+    """
+    SECTION_CHOICES = [
+        ("overview", "Company Overview"),
+        ("mission_vision", "Mission & Vision"),
+        ("history", "Company Story / History"),
+        ("core_values", "Core Values / Principles"),
+        ("why_choose_us", "Why Choose Us"),
+        ("achievements", "Achievements / Recognition"),
+        ("call_to_connect", "Closing / Call to Connect"),
+    ]
+
+    title = models.CharField(max_length=100, choices=SECTION_CHOICES)
+    heading = models.CharField(max_length=200)
+    content = models.TextField(help_text="You can use HTML here for rich content")
+    image = models.ImageField(upload_to="about_us/", blank=True, null=True)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["order"]
+
+    def __str__(self):
+        return f"{self.get_title_display()} - {self.heading}"
+
+
+class AboutUsPage(models.Model):
+    """
+    Represents the full About Us page. Allows flexibility for future additions.
+    """
+    page_title = models.CharField(max_length=200, default="About Us")
+    sections = models.ManyToManyField(AboutUsSection, related_name="pages")
+    hero_image = models.ImageField(upload_to="about_us/hero/", blank=True, null=True)
+    hero_heading = models.CharField(max_length=200, blank=True, default="About AlienHouse")
+    hero_subtext = models.TextField(blank=True)
+
+    def __str__(self):
+        return self.page_title

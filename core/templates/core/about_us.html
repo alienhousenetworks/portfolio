@@ -1,0 +1,26 @@
+<!-- core/templates/about_us.html -->
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Hero Section -->
+{% if about_page.hero_image %}
+<div class="hero" style="background-image: url('{{ about_page.hero_image.url }}');">
+    <h1>{{ about_page.hero_heading }}</h1>
+    <p>{{ about_page.hero_subtext }}</p>
+</div>
+{% endif %}
+
+<!-- Dynamic Sections -->
+{% for section in sections %}
+<section id="{{ section.title }}">
+    <div class="container">
+        <h2>{{ section.heading }}</h2>
+        {% if section.image %}
+        <img src="{{ section.image.url }}" alt="{{ section.heading }}">
+        {% endif %}
+        <p>{{ section.content|safe }}</p>
+    </div>
+</section>
+{% endfor %}
+
+{% endblock %}
