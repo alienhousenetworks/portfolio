@@ -9,3 +9,4 @@ backup.json
 
 # Ignore staticfiles collected files
 staticfiles/
+.DS_Store
