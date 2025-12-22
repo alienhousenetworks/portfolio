@@ -263,6 +263,12 @@ If you add build tools (e.g. Webpack, Vite, or Tailwind), document the build com
 
 ## License
 
-This project is currently private to Alien House Networks. Add an explicit license here if you plan to open source it.
+This project is proprietary software owned by Alien House Networks and is licensed under the proprietary terms in the root `LICENSE` file.
 
+---
+
+## Legal Notice
+
+This repository contains proprietary software owned by Alien House Networks.  
+Unauthorized use, copying, modification, or distribution is strictly prohibited.
 
