@@ -1,11 +1,14 @@
 asgiref==3.11.0
 certifi==2025.11.12
 charset-normalizer==3.4.4
+dj-database-url==3.0.1
 Django==5.2.9
 geographiclib==2.1
 geopy==2.4.1
 idna==3.11
 pillow==12.0.0
+psycopg2-binary==2.9.11
+python-decouple==3.8
 requests==2.32.5
 sqlparse==0.5.4
 urllib3==2.5.0
