@@ -348,3 +348,63 @@ class AboutUsPageAdmin(admin.ModelAdmin):
         return "-"
     display_hero_preview.allow_tags = True
     display_hero_preview.short_description = "Hero Image Preview"
+
+
+from django.contrib import admin
+from .models import CompanyPage, PageSection, CTA
+
+# ===========================
+# INLINES FOR COMPANY PAGES
+# ===========================
+
+class PageSectionInline(admin.TabularInline):
+    model = PageSection
+    extra = 1
+    fields = ('heading', 'content', 'image', 'order')
+    ordering = ('order',)
+    readonly_fields = ()
+
+    def image_preview(self, obj):
+        if obj.image:
+            return format_html('<img src="{}" width="80" />', obj.image.url)
+        return "No Image"
+    image_preview.short_description = "Preview"
+
+class CTAInline(admin.TabularInline):
+    model = CTA
+    extra = 1
+    fields = ('label', 'url', 'primary', 'order')
+    ordering = ('order',)
+
+# ===========================
+# COMPANY PAGE ADMIN
+# ===========================
+
+# @admin.register(CompanyPage)
+# class CompanyPageAdmin(admin.ModelAdmin):
+#     list_display = ('title', 'slug', 'url', 'is_active', 'order')
+#     list_editable = ('order', 'is_active')
+#     prepopulated_fields = {"slug": ("title",)}
+#     inlines = [PageSectionInline, CTAInline]
+
+# Add inlines to the existing CompanyPageAdmin
+CompanyPageAdmin.inlines = [PageSectionInline, CTAInline]
+
+# ===========================
+# OPTIONAL STANDALONE ADMIN
+# ===========================
+
+@admin.register(PageSection)
+class PageSectionAdmin(admin.ModelAdmin):
+    list_display = ('page', 'heading', 'order')
+    list_editable = ('order',)
+    search_fields = ('heading', 'content')
+    ordering = ('page', 'order')
+
+@admin.register(CTA)
+class CTAAdmin(admin.ModelAdmin):
+    list_display = ('page', 'label', 'primary', 'order')
+    list_editable = ('order',)
+    list_filter = ('primary',)
+    search_fields = ('label',)
+    ordering = ('page', 'order')

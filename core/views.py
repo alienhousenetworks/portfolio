@@ -92,27 +92,52 @@ def about_us(request):
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import CompanyPage, AboutUsPage
 
+# def company_page_detail(request, slug):
+#     # Fetch the menu item
+#     page = get_object_or_404(CompanyPage, slug=slug)
+
+#     # If the page has an external URL, redirect
+#     if page.url:
+#         return redirect(page.url)
+
+#     # Handle internal pages dynamically
+#     # You can add more special cases if needed
+#     template_name = f"company/{slug}.html"
+#     context = {"page": page}
+
+#     # Example: special handling for About Us page
+#     if slug == "about-us":
+#         about_page = AboutUsPage.objects.first()  # fetch AboutUs content
+#         context["about_page"] = about_page
+
+#     # Render the template if it exists, otherwise fallback to generic template
+#     try:
+#         return render(request, template_name, context)
+#     except:
+#         # Fallback to generic template with only title/content
+#         return render(request, "company/generic_page.html", context)
+
 def company_page_detail(request, slug):
-    # Fetch the menu item
     page = get_object_or_404(CompanyPage, slug=slug)
 
-    # If the page has an external URL, redirect
     if page.url:
         return redirect(page.url)
 
-    # Handle internal pages dynamically
-    # You can add more special cases if needed
+    # Fetch sections and CTAs dynamically
+    sections = page.sections.all()
+    ctas = page.ctas.all()
+    
+    context = {
+        "page": page,
+        "sections": sections,
+        "ctas": ctas,
+        "client_logos": ClientLogo.objects.all(),  # optional
+        "config": SiteConfiguration.objects.first()
+    }
+
+    # Render slug-specific template if exists, fallback to generic
     template_name = f"company/{slug}.html"
-    context = {"page": page}
-
-    # Example: special handling for About Us page
-    if slug == "about-us":
-        about_page = AboutUsPage.objects.first()  # fetch AboutUs content
-        context["about_page"] = about_page
-
-    # Render the template if it exists, otherwise fallback to generic template
     try:
         return render(request, template_name, context)
     except:
-        # Fallback to generic template with only title/content
         return render(request, "company/generic_page.html", context)

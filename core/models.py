@@ -563,3 +563,32 @@ class AboutUsPage(models.Model):
 
     def __str__(self):
         return self.page_title
+
+
+
+class PageSection(models.Model):
+    page = models.ForeignKey('CompanyPage', related_name='sections', on_delete=models.CASCADE)
+    heading = models.CharField(max_length=200)
+    content = models.TextField()
+    image = models.ImageField(upload_to='page_sections/', blank=True, null=True)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order']
+
+    def __str__(self):
+        return f"{self.page.title} - {self.heading}"
+
+
+class CTA(models.Model):
+    page = models.ForeignKey('CompanyPage', related_name='ctas', on_delete=models.CASCADE)
+    label = models.CharField(max_length=50)
+    url = models.URLField(blank=True, null=True)
+    primary = models.BooleanField(default=False)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order']
+
+    def __str__(self):
+        return f"{self.page.title} - {self.label}"

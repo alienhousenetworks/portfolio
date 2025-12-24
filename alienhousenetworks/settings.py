@@ -185,8 +185,8 @@ environ.Env.read_env()  # Make sure .env file exists in BASE_DIR
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Security
-SECRET_KEY = env('SECRET_KEY')
-DEBUG = env.bool('DEBUG', default=False)
+SECRET_KEY = 'django-insecure-5t0vq!=o5!b684+@&i^)e4)&eh-)7_qrq#d(sre-uh+w*jqit5'
+DEBUG = env.bool('DEBUG', default=True)
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[])
 
 # Application definition
@@ -242,6 +242,18 @@ DATABASES = {
         'PORT': env('DB_PORT', default='5432'),
     }
 }
+# from decouple import config
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': config('DB_NAME'),
+#         'USER': config('DB_USER'),
+#         'PASSWORD': config('DB_PASSWORD'),
+#         'HOST': config('DB_HOST', default='localhost'),
+#         'PORT': config('DB_PORT', default='5432'),
+#     }
+# }
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [

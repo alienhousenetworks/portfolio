@@ -136,15 +136,21 @@
         <div class="w-full">
             <div class="flex whitespace-nowrap animate-marquee gap-16">
                 {% for c in client_logos %}
-                <img src="{{ c.logo.url }}" class="h-20 inline-block opacity-70 hover:opacity-100 transition duration-300">
+                    {% if c.logo %}
+                        <img src="{{ c.logo.url }}" class="h-20 inline-block opacity-70 hover:opacity-100 transition duration-300">
+                    {% endif %}
                 {% endfor %}
+    
                 <!-- Duplicate logos for seamless looping -->
                 {% for c in client_logos %}
-                <img src="{{ c.logo.url }}" class="h-20 inline-block opacity-70 hover:opacity-100 transition duration-300">
+                    {% if c.logo %}
+                        <img src="{{ c.logo.url }}" class="h-20 inline-block opacity-70 hover:opacity-100 transition duration-300">
+                    {% endif %}
                 {% endfor %}
             </div>
         </div>
     </section>
+    
     
     <style>
     @keyframes marquee {
