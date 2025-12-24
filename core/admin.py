@@ -10,7 +10,7 @@ from .models import (
     # Business Logic
     Service, SubService, BusinessTeamMember, Testimonial,
     # Geo/Contact
-    Location, ContactMessage
+    Location, ContactMessage , ContactInfo
 )
 
 # ============================================================
@@ -408,3 +408,12 @@ class CTAAdmin(admin.ModelAdmin):
     list_filter = ('primary',)
     search_fields = ('label',)
     ordering = ('page', 'order')
+
+# admin.py
+
+@admin.register(ContactInfo)
+class ContactInfoAdmin(admin.ModelAdmin):
+    list_display = ('contact_type', 'display_value', 'order')
+    list_editable = ('order',)
+    list_filter = ('contact_type',)
+    search_fields = ('display_value',)
