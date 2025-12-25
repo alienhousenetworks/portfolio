@@ -33,6 +33,7 @@ class BaseModel(models.Model):
 
 class SiteConfiguration(models.Model):
     site_name = models.CharField(max_length=100, default="ALIENHOUSE")
+    logo = models.ImageField(upload_to='site_logos/', blank=True, null=True)
     logo_highlight_text = models.CharField(max_length=100, default="HOUSE")
 
     address = models.CharField(max_length=200, default="Rajkot, Gujarat, India")
