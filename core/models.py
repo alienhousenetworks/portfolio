@@ -446,7 +446,7 @@ from django.db import models
 
 class ContactInfo(models.Model):
     CONTACT_CHOICES = [
-        ('email', 'Email'),
+        ('mail', 'mail'),
         ('phone', 'Phone'),
         ('twitter', 'Twitter'),
         ('linkedin', 'LinkedIn'),
