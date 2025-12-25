@@ -604,3 +604,5 @@ class CTA(models.Model):
 
     def __str__(self):
         return f"{self.page.title} - {self.label}"
+
+# new modesl

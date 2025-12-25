@@ -135,7 +135,7 @@ class ServiceAdmin(admin.ModelAdmin):
         "is_active"
     )
 
-    readonly_fields = ("slug",)
+    # readonly_fields = ("slug",)
 
     prepopulated_fields = {"slug": ("name",)}
 
