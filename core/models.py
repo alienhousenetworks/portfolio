@@ -477,7 +477,7 @@ class ContactInfo(models.Model):
         """
         if self.link:
             return self.link
-        if self.contact_type == 'email':
+        if self.contact_type == 'mail':
             return f"mailto:{self.display_value}"
         elif self.contact_type == 'phone':
             return f"tel:{self.display_value}"
@@ -517,6 +517,18 @@ class CompanyPage(models.Model):
 
 
 
+class PageSection(models.Model):
+    page = models.ForeignKey('CompanyPage', related_name='sections', on_delete=models.CASCADE)
+    heading = models.CharField(max_length=200)
+    content = models.TextField()
+    image = models.ImageField(upload_to='page_sections/', blank=True, null=True)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order']
+
+    def __str__(self):
+        return f"{self.page.title} - {self.heading}"
 
 
 
@@ -566,18 +578,18 @@ class AboutUsPage(models.Model):
 
 
 
-class PageSection(models.Model):
-    page = models.ForeignKey('CompanyPage', related_name='sections', on_delete=models.CASCADE)
-    heading = models.CharField(max_length=200)
-    content = models.TextField()
-    image = models.ImageField(upload_to='page_sections/', blank=True, null=True)
-    order = models.PositiveIntegerField(default=0)
+# class PageSection(models.Model):
+#     page = models.ForeignKey('CompanyPage', related_name='sections', on_delete=models.CASCADE)
+#     heading = models.CharField(max_length=200)
+#     content = models.TextField()
+#     image = models.ImageField(upload_to='page_sections/', blank=True, null=True)
+#     order = models.PositiveIntegerField(default=0)
 
-    class Meta:
-        ordering = ['order']
+#     class Meta:
+#         ordering = ['order']
 
-    def __str__(self):
-        return f"{self.page.title} - {self.heading}"
+#     def __str__(self):
+#         return f"{self.page.title} - {self.heading}"
 
 
 class CTA(models.Model):

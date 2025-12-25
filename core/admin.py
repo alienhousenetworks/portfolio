@@ -1,16 +1,18 @@
 # admin.py
 from django.contrib import admin
 from django.utils.html import format_html
+from django.contrib import admin
+from django.utils.html import format_html
+
 from .models import (
-    # Base/Configuration
     SiteConfiguration, HeroSection, CompanyProfile,
-    # Landing Page Components
     ServiceModule, TeamMemberPortfolio, ClientTicker, TacticalAdvantage,
     Project, LabExperiment,
-    # Business Logic
     Service, SubService, BusinessTeamMember, Testimonial,
-    # Geo/Contact
-    Location, ContactMessage , ContactInfo
+    Location, ContactMessage, ContactInfo,
+    ClientLogo, AboutUs,
+    CompanyPage, PageSection, CTA,
+    AboutUsPage, AboutUsSection
 )
 
 # ============================================================
@@ -294,8 +296,8 @@ class AboutUsAdmin(admin.ModelAdmin):
     short_subheading.short_description = "Subheading"
 
 
-from django.contrib import admin
-from .models import CompanyPage
+# from django.contrib import admin
+# from .models import CompanyPage
 
 @admin.register(CompanyPage)
 class CompanyPageAdmin(admin.ModelAdmin):
