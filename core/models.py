@@ -296,10 +296,18 @@ class Location(BaseModel):
 # 5. SERVICE + SUBSERVICE (Business Services)
 # ============================================================
 # Inheriting from your existing BaseModel
-class Service(BaseModel):
-    icon = models.CharField(max_length=100, help_text="Lucide icon name (e.g. 'cpu', 'shield')", null=True, blank=True)
+from django.db import models
 
-    # Add this ↓↓↓
+class Service(BaseModel):
+    order = models.PositiveIntegerField(default=0, help_text="Order of display, lower comes first")
+    
+    icon = models.CharField(
+        max_length=100,
+        help_text="Lucide icon name (e.g. 'cpu', 'shield')",
+        null=True,
+        blank=True
+    )
+    
     service_image = models.ImageField(
         upload_to="services/main/",
         blank=True,
@@ -307,9 +315,24 @@ class Service(BaseModel):
         help_text="Main image for the service"
     )
 
-    hero_image = models.ImageField(upload_to="services/hero/", blank=True, null=True)
+    service_video = models.FileField(
+        upload_to="services/video/",
+        blank=True,
+        null=True,
+        help_text="Optional background video (mp4/webm)"
+    )
 
-    short_description = models.CharField(max_length=300, help_text="Shown on cards/lists")
+    hero_image = models.ImageField(
+        upload_to="services/hero/",
+        blank=True,
+        null=True
+    )
+
+    short_description = models.CharField(
+        max_length=300,
+        help_text="Shown on cards/lists"
+    )
+    
     description = models.TextField(help_text="Main content for the detail page")
     technical_specs = models.TextField(blank=True, help_text="Technical details or tech stack")
 
@@ -317,8 +340,12 @@ class Service(BaseModel):
     advantage_2 = models.CharField(max_length=200, blank=True)
     advantage_3 = models.CharField(max_length=200, blank=True)
 
+    class Meta:
+        ordering = ['order', 'name']  # Default ordering
+
     def __str__(self):
         return self.name
+
 
 
 

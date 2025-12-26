@@ -38,7 +38,7 @@ class SiteConfigurationAdmin(admin.ModelAdmin):
     list_display = ('site_name', 'email', 'phone')
     fieldsets = (
         ("Branding & Identity", {
-            'fields': ('site_name', 'logo_highlight_text', 'footer_text')
+            'fields': ('site_name','logo', 'logo_highlight_text', 'footer_text')
         }),
         ("Contact Information", {
             'fields': ('address', 'email', 'phone')
@@ -121,23 +121,64 @@ class CompanyProfileAdmin(admin.ModelAdmin):
 # 3. SERVICES
 # ============================================================
 
+# @admin.register(Service)
+# class ServiceAdmin(admin.ModelAdmin):
+#     list_display = ("name", "icon", "is_active")
+#     search_fields = ("name", "short_description", "description")
+    
+#     fields = (
+#         "name", "slug", "icon",
+#         "service_image", "hero_image",
+#         "short_description", "description",
+#         "technical_specs",
+#         "advantage_1", "advantage_2", "advantage_3",
+#         "is_active"
+#     )
+
+#     # readonly_fields = ("slug",)
+
+#     prepopulated_fields = {"slug": ("name",)}
+
+from django.utils.html import format_html
+from django.contrib import admin
+from .models import Service
+
 @admin.register(Service)
 class ServiceAdmin(admin.ModelAdmin):
-    list_display = ("name", "icon", "is_active")
-    search_fields = ("name", "short_description", "description")
-    
+    # Columns shown in the list view
+    list_display = ['name', 'order', 'icon', 'is_active', 'image_preview', 'video_preview']
+    list_editable = ['order', 'is_active']  # Editable directly in list view
+    search_fields = ['name', 'short_description', 'description']
+
+    # Fields in the detail/edit form
     fields = (
         "name", "slug", "icon",
-        "service_image", "hero_image",
+        "service_image", "service_video", "hero_image",
         "short_description", "description",
         "technical_specs",
         "advantage_1", "advantage_2", "advantage_3",
-        "is_active"
+        "order", "is_active"
     )
 
-    # readonly_fields = ("slug",)
+    prepopulated_fields = {"slug": ("name",)}  # Auto-generate slug from name
 
-    prepopulated_fields = {"slug": ("name",)}
+    # Image preview in list view
+    def image_preview(self, obj):
+        if obj.service_image:
+            return format_html('<img src="{}" width="60" style="object-fit:cover;"/>', obj.service_image.url)
+        return "-"
+    image_preview.short_description = "Image"
+
+    # Video preview in list view
+    def video_preview(self, obj):
+        if obj.service_video:
+            return format_html(
+                '<video width="120" height="60" loop muted><source src="{}" type="video/mp4"></video>',
+                obj.service_video.url
+            )
+        return "-"
+    video_preview.short_description = "Video"
+
 
 
 
@@ -419,3 +460,4 @@ class ContactInfoAdmin(admin.ModelAdmin):
     list_editable = ('order',)
     list_filter = ('contact_type',)
     search_fields = ('display_value',)
+

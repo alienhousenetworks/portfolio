@@ -140,13 +140,24 @@
                     <!-- Card body -->
                     <div class="relative h-full bg-black/80 backdrop-blur-sm overflow-hidden">
             
-                        <!-- Service Image -->
-                        {% if service.service_image %}
+                        <!-- Service Media (video or image) -->
+                        {% if service.service_video %}
+                        <video autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity duration-500">
+                            <source src="{{ service.service_video.url }}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                        <div class="absolute inset-0 bg-black/70"></div>
+                        {% elif service.service_image %}
                         <div class="absolute inset-0">
                             <img src="{{ service.service_image.url }}"
                                  alt="{{ service.name }}"
                                  class="w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity duration-500">
                             <div class="absolute inset-0 bg-black/70"></div>
+                        </div>
+                        {% else %}
+                        <!-- Fallback background if no video or image -->
+                        <div class="absolute inset-0 bg-gray-900/50 flex items-center justify-center">
+                            <span class="text-gray-600">No media available</span>
                         </div>
                         {% endif %}
             
@@ -154,7 +165,7 @@
                         <div class="relative p-8 z-10">
                             <div class="flex justify-between items-start mb-6">
                                 <div class="p-3 bg-alien/10 border border-alien/30 rounded-sm">
-                                    <i data-lucide="{{ service.icon_name|default:'cpu' }}"
+                                    <i data-lucide="{{ service.icon|default:'cpu' }}"
                                        class="text-alien w-8 h-8"></i>
                                 </div>
                             </div>
@@ -174,6 +185,7 @@
                 <div class="text-white">No services deployed yet.</div>
                 {% endfor %}
             </div>
+            
             
             
         </div>
