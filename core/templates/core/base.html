@@ -36,7 +36,10 @@
                     backgroundImage: {
                         'grid-pattern': "linear-gradient(to right, #00ff4105 1px, transparent 1px), linear-gradient(to bottom, #00ff4105 1px, transparent 1px)",
                     },
-                    cursor: { 'none': 'none' }
+                    cursor: { 'none': 'none' },
+                    screens: {
+                        'xl': '1280px', // Explicit breakpoint for nav switch
+                    }
                 }
             }
         }
@@ -54,8 +57,21 @@
         .hud-br { bottom: 0; right: 0; border-left: 0; border-top: 0; }
         .alien-card:hover .hud-corner { width: 100%; height: 100%; opacity: 0.1; background: #00ff41; }
 
-        .mega-menu { display: none; opacity: 0; transform: translateY(-10px); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); pointer-events: none; }
-        .group:hover .mega-menu { display: block; opacity: 1; transform: translateY(0); pointer-events: auto; }
+        /* Mega Menu Animation & Positioning */
+        .mega-menu { 
+            display: none; 
+            opacity: 0; 
+            transform: translateY(-10px) translateX(-50%); /* Centering logic */
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            pointer-events: none; 
+            left: 50%; /* Anchor center */
+        }
+        .group:hover .mega-menu { 
+            display: block; 
+            opacity: 1; 
+            transform: translateY(0) translateX(-50%); 
+            pointer-events: auto; 
+        }
 
         .sci-grid { background-size: 40px 40px; mask-image: radial-gradient(circle at center, black, transparent 80%); }
 
@@ -63,13 +79,17 @@
         #trail-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9998; }
 
         .decrypt-effect { display: inline-block; }
+
+        /* Mobile Menu Transitions */
+        #mobile-menu { transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out; }
+        .mobile-submenu { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
+        .mobile-submenu.open { max-height: 500px; }
     </style>
     {% block extra_head %}{% endblock %}
 </head>
 
 <body class="font-rajdhani selection:bg-alien selection:text-black">
 
-    <!-- Cursor Ship -->
     <div id="cursor-ship">
         <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M10 13C10 9 13 6 16 6C19 6 22 9 22 13" fill="#00ff41" fill-opacity="0.3" stroke="#00ff41" stroke-width="1"/>
@@ -86,11 +106,9 @@
     <canvas id="particle-canvas" class="fixed inset-0 z-[-1] pointer-events-none"></canvas>
     <div class="fixed inset-0 bg-grid-pattern sci-grid z-[-1] opacity-20"></div>
 
-    <!-- NAVBAR -->
     <nav class="fixed w-full z-50 top-0 bg-alien-dark/90 backdrop-blur-xl border-b border-alien/20">
         <div class="max-w-[1920px] mx-auto px-6">
             <div class="flex items-center justify-between h-20">
-                <!-- LOGO -->
                 <a href="{% url 'index' %}" class="flex items-center gap-3 group cursor-pointer relative z-50">
                     {% if config.logo %}
                         <img src="{{ config.logo.url }}" alt="{{ config.site_name }}" class="h-12 w-auto">
@@ -100,15 +118,13 @@
                     <span class="font-orbitron font-bold text-2xl tracking-wider text-white">{{ config.site_name|default:"ALIENHOUSE" }}</span>
                 </a>
 
-                <!-- MENU -->
                 <div class="hidden xl:flex items-center h-full">
-                    <div class="flex h-full">
-                        <!-- COMPANY -->
+                    <div class="flex h-full relative">
                         <div class="group relative h-full flex items-center px-6 cursor-pointer border-l border-alien/5 hover:bg-alien/5 transition-colors">
                             <span class="text-gray-300 group-hover:text-alien font-orbitron text-sm tracking-widest flex items-center gap-2">
                                 COMPANY <i data-lucide="chevron-down" class="w-3 h-3 transition-transform group-hover:rotate-180"></i>
                             </span>
-                            <div class="mega-menu absolute top-20 left-0 w-[400px] bg-alien-dark border border-alien/30 p-8 shadow-[0_20px_50px_rgba(0,255,65,0.1)]">
+                            <div class="mega-menu absolute top-20 w-[400px] bg-alien-dark border border-alien/30 p-8 shadow-[0_20px_50px_rgba(0,255,65,0.1)]">
                                 <ul class="space-y-2 text-sm text-gray-400 font-mono">
                                     {% for page in company_pages %}
                                         <li class="hover:text-white hover:translate-x-2 transition-transform cursor-pointer">
@@ -121,53 +137,55 @@
                             </div>
                         </div>
 
-                        <!-- SERVICES -->
                         <div class="group relative h-full flex items-center px-6 cursor-pointer border-l border-alien/5 hover:bg-alien/5 transition-colors">
                             <span class="text-gray-300 group-hover:text-alien font-orbitron text-sm tracking-widest flex items-center gap-2">
                                 SERVICES <i data-lucide="chevron-down" class="w-3 h-3 transition-transform group-hover:rotate-180"></i>
                             </span>
-                            <div class="mega-menu absolute top-20 -left-20 w-[700px] bg-alien-dark/95 backdrop-blur-xl border border-alien/30 shadow-[0_20px_50px_rgba(0,255,65,0.15)] overflow-hidden">
+                            
+                            <div class="mega-menu absolute top-20 w-[900px] max-w-[95vw] bg-alien-dark/95 backdrop-blur-xl border border-alien/30 shadow-[0_20px_50px_rgba(0,255,65,0.15)] overflow-hidden">
                                 <div class="h-1 w-full bg-gradient-to-r from-transparent via-alien to-transparent opacity-50"></div>
-                                <div class="p-8 grid grid-cols-2 gap-x-12 gap-y-8">
-                                    {% for svc in all_services %}
-                                    <div class="relative group/item">
-                                        <a href="{% url 'service_detail' svc.slug %}" class="flex items-center gap-3 mb-3 pb-2 border-b border-white/10 group-hover/item:border-alien/50 transition-colors">
-                                            <div class="p-1.5 rounded bg-white/5 text-alien group-hover/item:bg-alien group-hover/item:text-black transition-all duration-300">
-                                                <i data-lucide="{{ svc.icon|default:'cpu' }}" class="w-5 h-5"></i>
-                                            </div>
-                                            <span class="font-orbitron font-bold text-white tracking-wide group-hover/item:text-alien transition-colors">{{ svc.name }}</span>
-                                        </a>
+                                
+                                <div class="max-h-[60vh] overflow-y-auto p-8">
+                                    
+                                    <div class="grid grid-cols-3 gap-6">
+                                        {% for svc in all_services %}
+                                        <div class="relative group/item">
+                                            <a href="{% url 'service_detail' svc.slug %}" class="flex items-center gap-3 mb-3 pb-2 border-b border-white/10 group-hover/item:border-alien/50 transition-colors">
+                                                <div class="p-1.5 rounded bg-white/5 text-alien group-hover/item:bg-alien group-hover/item:text-black transition-all duration-300">
+                                                    <i data-lucide="{{ svc.icon|default:'cpu' }}" class="w-5 h-5"></i>
+                                                </div>
+                                                <span class="font-orbitron font-bold text-white tracking-wide group-hover/item:text-alien transition-colors text-sm">{{ svc.name }}</span>
+                                            </a>
 
-                                        {% if svc.sub_services.all %}
-                                        <ul class="space-y-1.5 ml-11 border-l border-white/5 pl-4">
-                                            {% for sub in svc.sub_services.all %}
-                                                {% if sub.is_active %}
-                                                <li class="flex items-center gap-2 text-xs font-mono text-gray-500 hover:text-white transition-colors cursor-crosshair">
-                                                    <span class="text-alien opacity-50">></span> {{ sub.name }}
-                                                </li>
-                                                {% endif %}
-                                            {% endfor %}
-                                        </ul>
-                                        {% else %}
-                                        <p class="ml-11 text-[10px] text-gray-600 font-mono uppercase tracking-widest">// No Sub-routines</p>
-                                        {% endif %}
+                                            {% if svc.sub_services.all %}
+                                            <ul class="space-y-1.5 ml-11 border-l border-white/5 pl-4">
+                                                {% for sub in svc.sub_services.all %}
+                                                    {% if sub.is_active %}
+                                                    <li class="flex items-center gap-2 text-xs font-mono text-gray-500 hover:text-white transition-colors cursor-crosshair">
+                                                        <span class="text-alien opacity-50">></span> {{ sub.name }}
+                                                    </li>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </ul>
+                                            {% else %}
+                                            <p class="ml-11 text-[10px] text-gray-600 font-mono uppercase tracking-widest">// No Sub-routines</p>
+                                            {% endif %}
+                                        </div>
+                                        {% empty %}
+                                        <div class="col-span-3 text-center py-10">
+                                            <i data-lucide="wifi-off" class="w-8 h-8 text-red-500 mx-auto mb-2"></i>
+                                            <p class="text-red-500 font-mono">SYSTEM OFFLINE: No Services Deployed</p>
+                                        </div>
+                                        {% endfor %}
                                     </div>
-                                    {% empty %}
-                                    <div class="col-span-2 text-center py-10">
-                                        <i data-lucide="wifi-off" class="w-8 h-8 text-red-500 mx-auto mb-2"></i>
-                                        <p class="text-red-500 font-mono">SYSTEM OFFLINE: No Services Deployed</p>
-                                    </div>
-                                    {% endfor %}
                                 </div>
                             </div>
                         </div>
 
-                        <!-- LAB/R&D -->
                         <a href="#rnd" class="group h-full flex items-center px-6 cursor-pointer border-l border-alien/5 hover:bg-alien/5 transition-colors text-gray-300 hover:text-alien font-orbitron text-sm tracking-widest">
                             LABS / R&D
                         </a>
 
-                        <!-- CONTACT BUTTON -->
                         <div class="flex items-center ml-6">
                             <a href="#contact" class="relative px-6 py-2 bg-alien text-black font-orbitron font-bold text-sm tracking-widest hover:bg-white transition-colors">
                                 CONTACT
@@ -175,20 +193,75 @@
                         </div>
                     </div>
                 </div>
+
+                <button id="mobile-menu-btn" class="xl:hidden text-alien hover:text-white transition-colors z-50 p-2">
+                    <i data-lucide="menu" class="w-8 h-8"></i>
+                </button>
             </div>
         </div>
     </nav>
 
-    <!-- MAIN CONTENT -->
+    <div id="mobile-menu" class="fixed inset-0 z-40 bg-alien-dark/95 backdrop-blur-2xl translate-x-full pt-24 px-6 overflow-y-auto">
+        <div class="flex flex-col space-y-6">
+            
+            <div class="border-b border-alien/20 pb-4">
+                <button onclick="toggleMobileSubmenu('mobile-company')" class="flex items-center justify-between w-full text-white font-orbitron text-lg tracking-widest mb-2">
+                    COMPANY <i data-lucide="chevron-down" class="w-5 h-5 text-alien"></i>
+                </button>
+                <div id="mobile-company" class="mobile-submenu pl-4 space-y-3">
+                    {% for page in company_pages %}
+                        <a href="{{ page.get_absolute_url }}" class="block text-gray-400 font-mono text-sm hover:text-alien py-1">> {{ page.title }}</a>
+                    {% empty %}
+                        <span class="text-gray-600 font-mono text-xs">// No Pages</span>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="border-b border-alien/20 pb-4">
+                <button onclick="toggleMobileSubmenu('mobile-services')" class="flex items-center justify-between w-full text-white font-orbitron text-lg tracking-widest mb-2">
+                    SERVICES <i data-lucide="chevron-down" class="w-5 h-5 text-alien"></i>
+                </button>
+                <div id="mobile-services" class="mobile-submenu pl-4 space-y-4 pt-2">
+                    {% for svc in all_services %}
+                    <div class="mb-3">
+                        <a href="{% url 'service_detail' svc.slug %}" class="flex items-center gap-2 text-alien font-bold mb-1">
+                            <i data-lucide="{{ svc.icon|default:'cpu' }}" class="w-4 h-4"></i> {{ svc.name }}
+                        </a>
+                        {% if svc.sub_services.all %}
+                        <div class="pl-6 space-y-2 border-l border-white/10 ml-2">
+                            {% for sub in svc.sub_services.all %}
+                                {% if sub.is_active %}
+                                <div class="text-gray-500 text-xs font-mono">{{ sub.name }}</div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <a href="#rnd" class="text-white font-orbitron text-lg tracking-widest border-b border-alien/20 pb-4 block">
+                LABS / R&D
+            </a>
+
+            <a href="#contact" class="block text-center w-full py-3 bg-alien text-black font-orbitron font-bold tracking-widest mt-4">
+                INITIATE CONTACT
+            </a>
+            
+            <button onclick="closeMobileMenu()" class="absolute top-6 right-6 text-gray-500 hover:text-white">
+                <i data-lucide="x" class="w-8 h-8"></i>
+            </button>
+        </div>
+    </div>
+
     <main>
         {% block content %}{% endblock %}
     </main>
 
-    <!-- FOOTER -->
     <footer class="bg-[#050505] border-t border-alien/20 pt-20 pb-10 font-rajdhani text-sm relative z-10">
         <div class="max-w-[1920px] mx-auto px-8">
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12 mb-16">
-                <!-- Capabilities -->
                 <div>
                     <h4 class="text-white font-bold mb-6 text-lg">Capabilities</h4>
                     <ul class="space-y-3 text-gray-500 font-mono">
@@ -200,7 +273,6 @@
                     </ul>
                 </div>
 
-                <!-- Connect / Socials -->
                 <div>
                     <h4 class="text-white font-bold mb-6 text-lg">Connect</h4>
                     <div class="flex space-x-4 mb-8">
@@ -219,7 +291,6 @@
         </div>
     </footer>
 
-    <!-- SCRIPTS -->
     <script>
         lucide.createIcons();
 
@@ -313,6 +384,31 @@
             function animateParticles(){ctx.clearRect(0,0,width,height);particles.forEach(p=>{p.update();p.draw();});requestAnimationFrame(animateParticles);}
             resize(); animateParticles();
         };
+
+        // --- MOBILE MENU LOGIC ---
+        const mobileBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        mobileBtn.addEventListener('click', () => {
+            mobileMenu.classList.remove('translate-x-full');
+            document.body.style.overflow = 'hidden'; // Lock scroll
+        });
+
+        function closeMobileMenu() {
+            mobileMenu.classList.add('translate-x-full');
+            document.body.style.overflow = ''; // Unlock scroll
+        }
+
+        function toggleMobileSubmenu(id) {
+            const el = document.getElementById(id);
+            if (el.classList.contains('open')) {
+                el.classList.remove('open');
+            } else {
+                // Close others if needed
+                document.querySelectorAll('.mobile-submenu').forEach(s => s.classList.remove('open'));
+                el.classList.add('open');
+            }
+        }
 
         document.addEventListener('DOMContentLoaded', () => {
             initThreeJS();
