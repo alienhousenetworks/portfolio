@@ -127,75 +127,84 @@
                 <div class="text-white">No services deployed yet.</div>
                 {% endfor %}
             </div> -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {% for service in services %}
-                <a href="{% url 'service_detail' service.slug %}"
-                   class="group relative p-1 bg-gray-900/40 border border-gray-800 hover:border-alien transition-all duration-500 overflow-hidden">
-            
-                    <!-- Animated alien scan line -->
-                    <div class="absolute top-0 left-0 w-full h-[2px] bg-alien shadow-[0_0_20px_#00ff41]
-                                transform -translate-y-full group-hover:translate-y-[400px]
-                                transition-transform duration-1000 ease-linear opacity-50"></div>
-            
-                    <!-- Card body -->
-                    <div class="relative h-full bg-black overflow-hidden">
-
-                        <!-- Media Layer (VISIBLE) -->
-                        {% if service.service_video %}
-                        <video autoplay loop muted playsinline
-                            class="absolute inset-0 w-full h-full object-cover
-                                   opacity-60 group-hover:opacity-75
-                                   transition-opacity duration-500">
-                            <source src="{{ service.service_video.url }}" type="video/mp4">
-                        </video>
-                        {% elif service.service_image %}
-                        <img src="{{ service.service_image.url }}"
-                             alt="{{ service.name }}"
-                             class="absolute inset-0 w-full h-full object-cover
-                                    opacity-60 group-hover:opacity-75
-                                    transition-opacity duration-500">
-                        {% endif %}
-                    
-                        <!-- SINGLE Contrast Gradient -->
-                        <div class="absolute inset-0
-                            bg-gradient-to-t
-                            from-black/90 via-black/50 to-black/20">
-                        </div>
-                    
-                        <!-- Content (Contrast Anchor) -->
-                        <div class="relative z-10 p-8
-                                    bg-black/55 backdrop-blur-sm
-                                    border border-white/10">
-                    
-                            <div class="flex justify-between items-start mb-6">
-                                <div class="p-3 bg-alien/20 border border-alien/50 rounded-sm">
-                                    <i data-lucide="{{ service.icon|default:'cpu' }}"
-                                       class="text-alien w-8 h-8"></i>
-                                </div>
+            <style>
+                /* Thin professional text border */
+                .text-stroke {
+                    -webkit-text-stroke: 0.4px rgba(255,255,255,0.35);
+                    text-shadow:
+                        0 0 6px rgba(0,0,0,0.6);
+                }
+                </style>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {% for service in services %}
+                    <a href="{% url 'service_detail' service.slug %}"
+                       class="group relative p-1 bg-gray-900/40 border border-gray-800 hover:border-alien transition-all duration-500 overflow-hidden">
+                
+                        <!-- Animated alien scan line -->
+                        <div class="absolute top-0 left-0 w-full h-[2px] bg-alien shadow-[0_0_20px_#00ff41]
+                                    transform -translate-y-full group-hover:translate-y-[400px]
+                                    transition-transform duration-1000 ease-linear opacity-50"></div>
+                
+                        <!-- Card body -->
+                        <div class="relative h-full bg-black overflow-hidden">
+                
+                            <!-- Media Layer (FULL VISIBILITY) -->
+                            {% if service.service_video %}
+                            <video autoplay loop muted playsinline
+                                class="absolute inset-0 w-full h-full object-cover
+                                       opacity-85 group-hover:opacity-100
+                                       transition-opacity duration-500">
+                                <source src="{{ service.service_video.url }}" type="video/mp4">
+                            </video>
+                            {% elif service.service_image %}
+                            <img src="{{ service.service_image.url }}"
+                                 alt="{{ service.name }}"
+                                 class="absolute inset-0 w-full h-full object-cover
+                                        opacity-85 group-hover:opacity-100
+                                        transition-opacity duration-500">
+                            {% endif %}
+                
+                            <!-- Light contrast gradient (NOT blocking video) -->
+                            <div class="absolute inset-0
+                                bg-gradient-to-t
+                                from-black/60 via-black/30 to-black/10">
                             </div>
-                    
-                            <h3 class="text-2xl font-orbitron text-white mb-3
-                                       group-hover:text-alien transition-colors duration-300">
-                                {{ service.name }}
-                            </h3>
-                    
-                            <p class="text-gray-200 text-sm leading-relaxed max-w-[95%]">
-                                {{ service.short_description }}
-                            </p>
-                    
+                
+                            <!-- Content -->
+                            <div class="relative z-10 p-8
+                                        bg-black/35 backdrop-blur-sm
+                                        border border-white/15">
+                
+                                <div class="flex justify-between items-start mb-6">
+                                    <div class="p-3 bg-alien/20 border border-alien/50 rounded-sm">
+                                        <i data-lucide="{{ service.icon|default:'cpu' }}"
+                                           class="text-alien w-8 h-8"></i>
+                                    </div>
+                                </div>
+                
+                                <!-- Title -->
+                                <h3 class="text-2xl font-orbitron text-white mb-3
+                                           text-stroke
+                                           group-hover:text-alien transition-colors duration-300">
+                                    {{ service.name }}
+                                </h3>
+                
+                                <!-- Description -->
+                                <p class="text-gray-200 text-sm leading-relaxed max-w-[95%]
+                                          text-stroke">
+                                    {{ service.short_description }}
+                                </p>
+                
+                            </div>
                         </div>
-                    </div>
-                    
-                </a>
-                {% empty %}
-                <div class="text-white">No services deployed yet.</div>
-                {% endfor %}
-            </div>
-            
-            
-            
-        </div>
-    </section>
+                
+                    </a>
+                    {% empty %}
+                    <div class="text-white">No services deployed yet.</div>
+                    {% endfor %}
+                </div>
+                
 
     <!-- ========================= CLIENT LOGOS (TICKER) ======================== -->
     <section class="py-10 bg-black overflow-hidden relative">
