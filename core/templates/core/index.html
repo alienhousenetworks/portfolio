@@ -108,7 +108,7 @@
                 </h2>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {% for service in services %}
                 <a href="{% url 'service_detail' service.slug %}" class="group relative p-1 bg-gray-900/40 border border-gray-800 hover:border-alien transition-all duration-500 overflow-hidden">
                     <div class="absolute top-0 left-0 w-full h-[2px] bg-alien shadow-[0_0_20px_#00ff41] transform -translate-y-full group-hover:translate-y-[400px] transition-transform duration-1000 ease-linear opacity-50"></div>
@@ -117,7 +117,7 @@
                             <div class="p-3 bg-alien/10 border border-alien/30 rounded-sm">
                                 <i data-lucide="{{ service.icon_name|default:'cpu' }}" class="text-alien w-8 h-8"></i>
                             </div>
-                            <!-- <span class="text-gray-600 font-mono text-xs">MOD_0{{ forloop.counter }}</span> -->
+                           
                         </div>
                         <h3 class="text-2xl font-orbitron text-white mb-2 group-hover:text-alien transition-colors">{{ service.name}}</h3>
                         <p class="text-gray-400 text-sm mb-6 leading-relaxed">{{ service.short_description }}</p>
@@ -126,7 +126,55 @@
                 {% empty %}
                 <div class="text-white">No services deployed yet.</div>
                 {% endfor %}
+            </div> -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for service in services %}
+                <a href="{% url 'service_detail' service.slug %}"
+                   class="group relative p-1 bg-gray-900/40 border border-gray-800 hover:border-alien transition-all duration-500 overflow-hidden">
+            
+                    <!-- Animated alien scan line -->
+                    <div class="absolute top-0 left-0 w-full h-[2px] bg-alien shadow-[0_0_20px_#00ff41]
+                                transform -translate-y-full group-hover:translate-y-[400px]
+                                transition-transform duration-1000 ease-linear opacity-50"></div>
+            
+                    <!-- Card body -->
+                    <div class="relative h-full bg-black/80 backdrop-blur-sm overflow-hidden">
+            
+                        <!-- Service Image -->
+                        {% if service.service_image %}
+                        <div class="absolute inset-0">
+                            <img src="{{ service.service_image.url }}"
+                                 alt="{{ service.name }}"
+                                 class="w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity duration-500">
+                            <div class="absolute inset-0 bg-black/70"></div>
+                        </div>
+                        {% endif %}
+            
+                        <!-- Content -->
+                        <div class="relative p-8 z-10">
+                            <div class="flex justify-between items-start mb-6">
+                                <div class="p-3 bg-alien/10 border border-alien/30 rounded-sm">
+                                    <i data-lucide="{{ service.icon_name|default:'cpu' }}"
+                                       class="text-alien w-8 h-8"></i>
+                                </div>
+                            </div>
+            
+                            <h3 class="text-2xl font-orbitron text-white mb-2
+                                       group-hover:text-alien transition-colors">
+                                {{ service.name }}
+                            </h3>
+            
+                            <p class="text-gray-400 text-sm leading-relaxed">
+                                {{ service.short_description }}
+                            </p>
+                        </div>
+                    </div>
+                </a>
+                {% empty %}
+                <div class="text-white">No services deployed yet.</div>
+                {% endfor %}
             </div>
+            
             
         </div>
     </section>
