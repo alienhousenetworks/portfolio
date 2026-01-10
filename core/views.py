@@ -44,7 +44,35 @@ def index(request):
     
     return render(request, 'core/index.html', context)
 
+def indexgame(request):
+    # Note: 'config' and 'all_services' are now handled by the context processor!
+    # You only need to fetch data specific to the BODY of the index page.
+    about_us = AboutUs.objects.all()
+    site_config = SiteConfiguration.objects.first()
+    services = Service.objects.filter(is_active=True).prefetch_related('sub_services')
+    hero = HeroSection.objects.first()
+    team = BusinessTeamMember.objects.all()
+    ticker_items = ClientTicker.objects.all()
+    tactics = TacticalAdvantage.objects.all()
+    projects = Project.objects.all()
+    experiments = LabExperiment.objects.all()
+    clients_logo = ClientLogo.objects.all()
 
+    context = {
+        'hero': hero,
+        'team': team,
+        'ticker_items': ticker_items,
+        'tactics': tactics,
+        'projects': projects,
+        'experiments': experiments,
+        'config': site_config,
+        'services': services,
+        "about_us" : about_us,
+        "client_logos" : clients_logo,
+
+    }
+    
+    return render(request, 'core/indexgame.html', context)
 
 from django.shortcuts import render, get_object_or_404
 from .models import Service, SiteConfiguration
