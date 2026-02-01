@@ -1,0 +1,127 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+<div
+    class="relative min-h-screen bg-black text-white font-sans selection:bg-purple-500/30 selection:text-purple-200 overflow-hidden">
+
+    <!-- Background Elements -->
+    <div class="fixed inset-0 z-0 pointer-events-none">
+        <div
+            class="absolute top-0 left-0 w-[800px] h-[800px] bg-blue-900/10 rounded-full blur-3xl opacity-20 mix-blend-screen">
+        </div>
+        <div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+    </div>
+
+    <div class="relative z-10 max-w-5xl mx-auto pt-32 pb-20 px-6 sm:px-12">
+
+        <!-- Breadcrumb -->
+        <a href="{% url 'career_list' %}"
+            class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-white mb-8 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            BACK TO CAREERS
+        </a>
+
+        <!-- Job Header -->
+        <div class="mb-12 border-b border-white/10 pb-12">
+            <div class="flex items-center gap-4 mb-6">
+                <span
+                    class="bg-purple-500/20 text-purple-300 text-xs font-bold px-3 py-1 rounded-full border border-purple-500/20">
+                    {{ job.get_job_type_display }}
+                </span>
+                <span class="text-gray-400 text-sm font-mono flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                    {{ job.location }}
+                </span>
+            </div>
+
+            <h1
+                class="text-4xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
+                {{ job.title }}
+            </h1>
+
+            {% if job.salary_range %}
+            <p class="text-xl text-gray-400 font-mono">{{ job.salary_range }}</p>
+            {% endif %}
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
+            <!-- Job Description -->
+            <div class="lg:col-span-2 prose prose-invert prose-purple max-w-none">
+                <div class="text-gray-300 leading-relaxed space-y-6">
+                    {{ job.description|safe|linebreaks }}
+                </div>
+            </div>
+
+            <!-- Application Sidebar -->
+            <div class="lg:col-span-1">
+                <div class="sticky top-32 bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-md">
+                    <h3 class="text-xl font-bold mb-6">Apply for this Role</h3>
+
+                    {% if job.external_apply_url %}
+                    <p class="text-gray-400 text-sm mb-6">Complete your application on our partner site.</p>
+                    <a href="{{ job.external_apply_url }}" target="_blank"
+                        class="block w-full text-center bg-white text-black font-bold py-4 rounded-lg hover:bg-gray-200 transition-colors">
+                        APPLY NOW
+                        <span class="ml-2">↗</span>
+                    </a>
+                    {% else %}
+                    {% if messages %}
+                    {% for message in messages %}
+                    <div
+                        class="p-4 mb-6 rounded-lg {% if message.tags == 'success' %}bg-green-500/20 text-green-300 border border-green-500/30{% else %}bg-red-500/20 text-red-300 border border-red-500/30{% endif %}">
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+
+                    <form method="post" enctype="multipart/form-data" class="space-y-4">
+                        {% csrf_token %}
+
+                        <div>
+                            <label class="block text-xs font-mono text-gray-400 mb-2 uppercase">Full Name</label>
+                            {{ form.full_name }}
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-mono text-gray-400 mb-2 uppercase">Email Address</label>
+                            {{ form.email }}
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-mono text-gray-400 mb-2 uppercase">Phone Number</label>
+                            {{ form.phone }}
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-mono text-gray-400 mb-2 uppercase">Resume / CV</label>
+                            {{ form.resume }}
+                            <p class="text-xs text-gray-500 mt-2">PDF, DOCX up to 5MB</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-mono text-gray-400 mb-2 uppercase">Cover Letter</label>
+                            {{ form.cover_letter }}
+                        </div>
+
+                        <button type="submit"
+                            class="w-full bg-purple-600 text-white font-bold py-4 rounded-lg hover:bg-purple-700 transition-all shadow-[0_0_20px_rgba(147,51,234,0.3)] hover:shadow-[0_0_30px_rgba(147,51,234,0.5)]">
+                            SUBMIT APPLICATION
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

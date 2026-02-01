@@ -169,3 +169,46 @@ def company_page_detail(request, slug):
         return render(request, template_name, context)
     except:
         return render(request, "company/generic_page.html", context)
+
+
+# ============================================================
+# 10. CAREER VIEWS
+# ============================================================
+
+from .models import JobPost
+from .forms import JobApplicationForm
+from django.contrib import messages
+
+def career_list(request):
+    jobs = JobPost.objects.filter(is_active=True).order_by('-posted_at')
+    config = SiteConfiguration.objects.first()
+    
+    context = {
+        'jobs': jobs,
+        'config': config,
+    }
+    return render(request, 'core/career.html', context)
+
+def job_detail(request, slug):
+    job = get_object_or_404(JobPost, slug=slug, is_active=True)
+    config = SiteConfiguration.objects.first()
+    
+    if request.method == 'POST':
+        form = JobApplicationForm(request.POST, request.FILES)
+        if form.is_valid():
+            application = form.save(commit=False)
+            application.job = job
+            application.save()
+            messages.success(request, "Your application has been submitted successfully!")
+            return redirect('job_detail', slug=slug)
+        else:
+            messages.error(request, "There was an error with your submission. Please check the form.")
+    else:
+        form = JobApplicationForm()
+
+    context = {
+        'job': job,
+        'form': form,
+        'config': config,
+    }
+    return render(request, 'core/job_detail.html', context)
