@@ -411,6 +411,7 @@ class ContactMessage(models.Model):
     name = models.CharField(max_length=255)
     email = models.EmailField()
     phone = models.CharField(max_length=20, blank=True)
+    company = models.CharField(max_length=255, blank=True, help_text="Optional company name.")
     message = models.TextField()
 
     created_at = models.DateTimeField(auto_now_add=True)

@@ -2,11 +2,13 @@
 {% load static %}
 
 {% block content %}
-    <header class="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
-        <div id="three-container" class="absolute inset-0 z-0 opacity-80"></div>
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-alien/5 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
-        
-        <div class="relative z-10 text-center
+<header class="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
+    <div id="three-container" class="absolute inset-0 z-0 opacity-80"></div>
+    <div
+        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-alien/5 rounded-full blur-[100px] animate-pulse pointer-events-none">
+    </div>
+
+    <div class="relative z-10 text-center
                 w-full
                 w-full
                 lg:w-full
@@ -15,108 +17,120 @@
                 px-4 lg:px-8
                 pointer-events-none">
 
-            <div class="mb-4 flex justify-center pointer-events-auto">
-                <div class="px-4 py-1 border border-alien/50 rounded-full bg-alien/10 text-alien text-xs font-mono flex items-center gap-2">
-                    <span class="w-2 h-2 bg-alien rounded-full animate-ping"></span>
-                    {{ hero.status_text|default:"SYSTEM OPTIMAL" }}
-                </div>
-            </div>
-            
-            <h1 class="text-6xl md:text-8xl lg:text-9xl font-orbitron font-black text-white mb-8 leading-[0.9] tracking-tighter mix-blend-luminosity pointer-events-auto">
-                {{ hero.main_heading_line_1|default:"FUTURE" }}<br>
-                <span class="text-transparent bg-clip-text bg-gradient-to-r from-alien via-emerald-400 to-cyan-500 decrypt-effect" data-value="{{ hero.main_heading_gradient_text|default:'ENGINEERED' }}">IMAGINATION</span>
-            </h1>
-            
-            <p class="text-xl md:text-2xl text-gray-400 max-w-3xl mx-auto font-light mb-10 pointer-events-auto">
-                {{ hero.sub_text|default:"Advanced AI & Software Consultancy" }}
-            </p>
-
-            <div class="flex flex-col sm:flex-row justify-center gap-6 pointer-events-auto">
-                <button class="px-8 py-4 border border-alien bg-alien/10 text-alien hover:bg-alien hover:text-black font-orbitron font-bold tracking-widest transition-all duration-300 transform hover:scale-105" style="clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);">
-                    INITIATE PROTOCOL
-                </button>
-                <button class="px-8 py-4 border border-gray-700 text-gray-300 hover:border-white hover:text-white font-orbitron tracking-widest transition-all">
-                    VIEW DOCUMENTATION
-                </button>
+        <div class="mb-4 flex justify-center pointer-events-auto">
+            <div
+                class="px-4 py-1 border border-alien/50 rounded-full bg-alien/10 text-alien text-xs font-mono flex items-center gap-2">
+                <span class="w-2 h-2 bg-alien rounded-full animate-ping"></span>
+                {{ hero.status_text|default:"SYSTEM OPTIMAL" }}
             </div>
         </div>
-    </header>
-    <!-- ========================= ABOUT US ======================== -->
-    <section class="relative py-40 bg-black overflow-hidden">
 
-        <!-- Futuristic background grid -->
-        <div class="absolute inset-0 opacity-[0.05] pointer-events-none"
-             style="background-image: linear-gradient(#00ff41 1px, transparent 1px),
+        <h1
+            class="text-6xl md:text-8xl lg:text-9xl font-orbitron font-black text-white mb-8 leading-[0.9] tracking-tighter mix-blend-luminosity pointer-events-auto">
+            {{ hero.main_heading_line_1|default:"FUTURE" }}<br>
+            <span
+                class="text-transparent bg-clip-text bg-gradient-to-r from-alien via-emerald-400 to-cyan-500 decrypt-effect"
+                data-value="{{ hero.main_heading_gradient_text|default:'ENGINEERED' }}">IMAGINATION</span>
+        </h1>
+
+        <p class="text-xl md:text-2xl text-gray-400 max-w-3xl mx-auto font-light mb-10 pointer-events-auto">
+            {{ hero.sub_text|default:"Advanced AI & Software Consultancy" }}
+        </p>
+
+        <div class="flex flex-col sm:flex-row justify-center gap-6 pointer-events-auto">
+            <button
+                class="px-8 py-4 border border-alien bg-alien/10 text-alien hover:bg-alien hover:text-black font-orbitron font-bold tracking-widest transition-all duration-300 transform hover:scale-105"
+                style="clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);">
+                INITIATE PROTOCOL
+            </button>
+            <button
+                class="px-8 py-4 border border-gray-700 text-gray-300 hover:border-white hover:text-white font-orbitron tracking-widest transition-all">
+                VIEW DOCUMENTATION
+            </button>
+        </div>
+    </div>
+</header>
+<!-- ========================= ABOUT US ======================== -->
+<section class="relative py-40 bg-black overflow-hidden">
+
+    <!-- Futuristic background grid -->
+    <div class="absolute inset-0 opacity-[0.05] pointer-events-none" style="background-image: linear-gradient(#00ff41 1px, transparent 1px),
                           linear-gradient(90deg, #00ff41 1px, transparent 1px);
                     background-size: 80px 80px;"></div>
-    
-        <!-- Floating Glow Orbs -->
-        <div class="absolute w-72 h-72 rounded-full bg-emerald-500/20 blur-[120px] top-20 left-20 animate-pulse"></div>
-        <div class="absolute w-96 h-96 rounded-full bg-cyan-500/10 blur-[140px] bottom-10 right-32 animate-pulse"></div>
-    
-        <div class="w-full mx-auto px-6 relative z-10">
-    
-            <!-- Main Title -->
-            <div class="text-center mb-24">
-                <span class="px-3 py-1 border border-alien/40 text-alien text-xs font-mono tracking-[0.25em]">
-                    // COMPANY MISSION BRIEF
-                </span>
-                <h2 class="text-5xl md:text-6xl font-orbitron font-bold text-white mt-4">
-                    Lets Get a Intro
-                </h2>
-            </div>
-    
-            <!-- About Cards Row -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-    
-                {% for about in about_us %}
-                <div class="relative p-8 bg-gray-900/50 border border-alien/30 backdrop-blur-xl rounded-xl hover:shadow-[0_0_50px_#00ff4180] transition-all duration-500">
-                    
-                    <!-- HUD Corners -->
-                    <div class="hud-corner hud-tl"></div><div class="hud-corner hud-tr"></div>
-                    <div class="hud-corner hud-bl"></div><div class="hud-corner hud-br"></div>
-    
-                    <!-- Index / Label -->
-                    <div class="text-alien font-mono text-xs mb-2 tracking-[0.2em]"></div>
-    
-                    <!-- Heading -->
-                    <h3 class="text-2xl md:text-3xl font-orbitron text-white mb-4">{{ about.heading }}</h3>
-    
-                    <!-- Subheading -->
-                    <p class="text-gray-300 text-sm md:text-base leading-relaxed">{{ about.subheading }}</p>
-    
-                    <!-- Optional Image -->
-                    {% if about.image %}
-                    <div class="mt-4 rounded-lg overflow-hidden">
-                        <img src="{{ about.image.url }}" class="w-full h-48 object-cover rounded-md shadow-lg hover:shadow-[0_0_50px_#00ff4180] transition duration-500">
-                    </div>
-                    {% endif %}
+
+    <!-- Floating Glow Orbs -->
+    <div class="absolute w-72 h-72 rounded-full bg-emerald-500/20 blur-[120px] top-20 left-20 animate-pulse"></div>
+    <div class="absolute w-96 h-96 rounded-full bg-cyan-500/10 blur-[140px] bottom-10 right-32 animate-pulse"></div>
+
+    <div class="w-full mx-auto px-6 relative z-10">
+
+        <!-- Main Title -->
+        <div class="text-center mb-24">
+            <span class="px-3 py-1 border border-alien/40 text-alien text-xs font-mono tracking-[0.25em]">
+                // COMPANY MISSION BRIEF
+            </span>
+            <h2 class="text-5xl md:text-6xl font-orbitron font-bold text-white mt-4">
+                Lets Get a Intro
+            </h2>
+        </div>
+
+        <!-- About Cards Row -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+
+            {% for about in about_us %}
+            <div
+                class="relative p-8 bg-gray-900/50 border border-alien/30 backdrop-blur-xl rounded-xl hover:shadow-[0_0_50px_#00ff4180] transition-all duration-500">
+
+                <!-- HUD Corners -->
+                <div class="hud-corner hud-tl"></div>
+                <div class="hud-corner hud-tr"></div>
+                <div class="hud-corner hud-bl"></div>
+                <div class="hud-corner hud-br"></div>
+
+                <!-- Index / Label -->
+                <div class="text-alien font-mono text-xs mb-2 tracking-[0.2em]"></div>
+
+                <!-- Heading -->
+                <h3 class="text-2xl md:text-3xl font-orbitron text-white mb-4">{{ about.heading }}</h3>
+
+                <!-- Subheading -->
+                <p class="text-gray-300 text-sm md:text-base leading-relaxed">{{ about.subheading }}</p>
+
+                <!-- Optional Image -->
+                {% if about.image %}
+                <div class="mt-4 rounded-lg overflow-hidden">
+                    <img src="{{ about.image.url }}"
+                        class="w-full h-48 object-cover rounded-md shadow-lg hover:shadow-[0_0_50px_#00ff4180] transition duration-500">
                 </div>
-                {% endfor %}
-    
+                {% endif %}
             </div>
+            {% endfor %}
+
         </div>
-    </section>
-    
+    </div>
+</section>
 
-    <section id="services" class="py-24 bg-alien-dark relative border-b border-alien/20">
-        <div class="absolute inset-0 grid grid-cols-6 gap-4 opacity-5 pointer-events-none">
-            <div class="border-r border-alien h-full"></div>
-            <div class="border-r border-alien h-full"></div>
-            <div class="border-r border-alien h-full"></div>
-            <div class="border-r border-alien h-full"></div>
-            <div class="border-r border-alien h-full"></div>
+
+<section id="services" class="py-24 bg-alien-dark relative border-b border-alien/20">
+    <div class="absolute inset-0 grid grid-cols-6 gap-4 opacity-5 pointer-events-none">
+        <div class="border-r border-alien h-full"></div>
+        <div class="border-r border-alien h-full"></div>
+        <div class="border-r border-alien h-full"></div>
+        <div class="border-r border-alien h-full"></div>
+        <div class="border-r border-alien h-full"></div>
+    </div>
+
+    <div class="w-full mx-auto px-6 relative z-10">
+        <div class="text-center mb-20">
+            <div
+                class="inline-block px-3 py-1 border border-alien/30 rounded text-alien text-xs font-mono mb-4 tracking-[0.2em]">
+                CAPABILITY MATRIX_</div>
+            <h2 class="text-4xl md:text-6xl font-orbitron font-bold text-white mb-4">
+                OPERATIONAL <span class="text-alien">MODULES</span>
+            </h2>
         </div>
 
-        <div class="w-full mx-auto px-6 relative z-10">
-            <div class="text-center mb-20">
-                <div class="inline-block px-3 py-1 border border-alien/30 rounded text-alien text-xs font-mono mb-4 tracking-[0.2em]">CAPABILITY MATRIX_</div>
-                <h2 class="text-4xl md:text-6xl font-orbitron font-bold text-white mb-4">
-                    OPERATIONAL <span class="text-alien">MODULES</span>
-                </h2>
-            </div>
-
-            <!-- <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {% for service in services %}
                 <a href="{% url 'service_detail' service.slug %}" class="group relative p-1 bg-gray-900/40 border border-gray-800 hover:border-alien transition-all duration-500 overflow-hidden">
                     <div class="absolute top-0 left-0 w-full h-[2px] bg-alien shadow-[0_0_20px_#00ff41] transform -translate-y-full group-hover:translate-y-[400px] transition-transform duration-1000 ease-linear opacity-50"></div>
@@ -135,206 +149,560 @@
                 <div class="text-white">No services deployed yet.</div>
                 {% endfor %}
             </div> -->
-            <style>
-                /* Thin professional text border */
-                .text-stroke {
-                    -webkit-text-stroke: 0.4px rgba(255,255,255,0.35);
-                    text-shadow:
-                        0 0 6px rgba(0,0,0,0.6);
-                }
-                </style>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {% for service in services %}
-                    <a href="{% url 'service_detail' service.slug %}"
-                       class="group relative p-1 bg-gray-900/40 border border-gray-800 hover:border-alien transition-all duration-500 overflow-hidden">
-                
-                        <!-- Animated alien scan line -->
-                        <div class="absolute top-0 left-0 w-full h-[2px] bg-alien shadow-[0_0_20px_#00ff41]
+        <style>
+            /* Thin professional text border */
+            .text-stroke {
+                -webkit-text-stroke: 0.4px rgba(255, 255, 255, 0.35);
+                text-shadow:
+                    0 0 6px rgba(0, 0, 0, 0.6);
+            }
+        </style>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for service in services %}
+            <a href="{% url 'service_detail' service.slug %}"
+                class="group relative p-1 bg-gray-900/40 border border-gray-800 hover:border-alien transition-all duration-500 overflow-hidden">
+
+                <!-- Animated alien scan line -->
+                <div class="absolute top-0 left-0 w-full h-[2px] bg-alien shadow-[0_0_20px_#00ff41]
                                     transform -translate-y-full group-hover:translate-y-[400px]
                                     transition-transform duration-1000 ease-linear opacity-50"></div>
-                
-                        <!-- Card body -->
-                        <div class="relative h-full bg-black overflow-hidden">
-                
-                            <!-- Media Layer (FULL VISIBILITY) -->
-                            {% if service.service_video %}
-                            <video autoplay loop muted playsinline
-                                class="absolute inset-0 w-full h-full object-cover
+
+                <!-- Card body -->
+                <div class="relative h-full bg-black overflow-hidden">
+
+                    <!-- Media Layer (FULL VISIBILITY) -->
+                    {% if service.service_video %}
+                    <video autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover
                                        opacity-100 group-hover:opacity-100
                                        transition-opacity duration-500">
-                                <source src="{{ service.service_video.url }}" type="video/mp4">
-                            </video>
-                            {% elif service.service_image %}
-                            <img src="{{ service.service_image.url }}"
-                                 alt="{{ service.name }}"
-                                 class="absolute inset-0 w-full h-full object-cover
+                        <source src="{{ service.service_video.url }}" type="video/mp4">
+                    </video>
+                    {% elif service.service_image %}
+                    <img src="{{ service.service_image.url }}" alt="{{ service.name }}" class="absolute inset-0 w-full h-full object-cover
                                         opacity-85 group-hover:opacity-100
                                         transition-opacity duration-500">
-                            {% endif %}
-                
-                            <!-- Light contrast gradient (NOT blocking video) -->
-                            <div class="absolute inset-0
+                    {% endif %}
+
+                    <!-- Light contrast gradient (NOT blocking video) -->
+                    <div class="absolute inset-0
                                 bg-gradient-to-t
                                 from-black/60 via-black/30 to-black/10">
-                            </div>
-                
-                            <!-- Content -->
-                            <div class="relative z-10 p-8
+                    </div>
+
+                    <!-- Content -->
+                    <div class="relative z-10 p-8
                                         bg-black/35 backdrop-blur-sm
                                         border border-white/15">
-                
-                                <div class="flex justify-between items-start mb-6">
-                                    <div class="p-3 bg-alien/20 border border-alien/50 rounded-sm">
-                                        <i data-lucide="{{ service.icon|default:'cpu' }}"
-                                           class="text-alien w-8 h-8"></i>
-                                    </div>
-                                </div>
-                
-                                <!-- Title -->
-                                <h3 class="text-2xl font-orbitron text-white mb-3
-                                           text-stroke
-                                           group-hover:text-alien transition-colors duration-300">
-                                    {{ service.name }}
-                                </h3>
-                
-                                <!-- Description -->
-                                <p class="text-gray-200 text-sm leading-relaxed max-w-[95%]
-                                          text-stroke">
-                                    {{ service.short_description }}
-                                </p>
-                
+
+                        <div class="flex justify-between items-start mb-6">
+                            <div class="p-3 bg-alien/20 border border-alien/50 rounded-sm">
+                                <i data-lucide="{{ service.icon|default:'cpu' }}" class="text-alien w-8 h-8"></i>
                             </div>
                         </div>
-                
-                    </a>
-                    {% empty %}
-                    <div class="text-white">No services deployed yet.</div>
+
+                        <!-- Title -->
+                        <h3 class="text-2xl font-orbitron text-white mb-3
+                                           text-stroke
+                                           group-hover:text-alien transition-colors duration-300">
+                            {{ service.name }}
+                        </h3>
+
+                        <!-- Description -->
+                        <p class="text-gray-200 text-sm leading-relaxed max-w-[95%]
+                                          text-stroke">
+                            {{ service.short_description }}
+                        </p>
+
+                    </div>
+                </div>
+
+            </a>
+            {% empty %}
+            <div class="text-white">No services deployed yet.</div>
+            {% endfor %}
+        </div>
+
+
+        <!-- ========================= CLIENT LOGOS (TICKER) ======================== -->
+        <section class="py-10 bg-black overflow-hidden relative">
+            <div class="w-full">
+                <div class="flex whitespace-nowrap animate-marquee gap-16">
+                    {% for c in client_logos %}
+                    {% if c.logo %}
+                    <img src="{{ c.logo.url }}"
+                        class="h-20 inline-block opacity-70 hover:opacity-100 transition duration-300">
+                    {% endif %}
+                    {% endfor %}
+
+                    <!-- Duplicate logos for seamless looping -->
+                    {% for c in client_logos %}
+                    {% if c.logo %}
+                    <img src="{{ c.logo.url }}"
+                        class="h-20 inline-block opacity-70 hover:opacity-100 transition duration-300">
+                    {% endif %}
                     {% endfor %}
                 </div>
-                
-
-    <!-- ========================= CLIENT LOGOS (TICKER) ======================== -->
-    <section class="py-10 bg-black overflow-hidden relative">
-        <div class="w-full">
-            <div class="flex whitespace-nowrap animate-marquee gap-16">
-                {% for c in client_logos %}
-                    {% if c.logo %}
-                        <img src="{{ c.logo.url }}" class="h-20 inline-block opacity-70 hover:opacity-100 transition duration-300">
-                    {% endif %}
-                {% endfor %}
-    
-                <!-- Duplicate logos for seamless looping -->
-                {% for c in client_logos %}
-                    {% if c.logo %}
-                        <img src="{{ c.logo.url }}" class="h-20 inline-block opacity-70 hover:opacity-100 transition duration-300">
-                    {% endif %}
-                {% endfor %}
             </div>
-        </div>
-    </section>
-    
-    
-    <style>
-    @keyframes marquee {
-        0%   { transform: translateX(0); }
-        100% { transform: translateX(-50%); } /* scroll half width since content is duplicated */
-    }
-    
-    .animate-marquee {
-        display: inline-flex;
-        animation: marquee 20s linear infinite;
-    }
-    </style>
-    
+        </section>
 
-    <section id="personnel" class="py-24 bg-black border-y border-alien/20 relative overflow-hidden">
-        <div class="absolute top-0 right-0 w-64 h-64 bg-alien/10 blur-[80px]"></div>
-        <div class="w-full mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div class="mb-16 border-l-4 border-alien pl-6">
-                <h2 class="text-4xl md:text-6xl font-orbitron font-bold text-white mb-2">SENTIENT <span class="text-alien">ASSETS</span></h2>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                {% for member in team %}
-                <div class="group relative bg-gray-900/50 border border-gray-800 hover:border-alien transition-all duration-500 overflow-hidden hover:-translate-y-2">
-                    <div class="hud-corner hud-tl"></div><div class="hud-corner hud-tr"></div>
-                    <div class="hud-corner hud-bl"></div><div class="hud-corner hud-br"></div>
-                    
-                    <div class="h-72 bg-cover bg-center grayscale group-hover:grayscale-0 transition-all duration-700" 
-                    {% if member.image %}
-                         style="background-image: url('{{ member.image.url }}'); background-color: #111;">
-                    {% endif %}
+
+        <style>
+            @keyframes marquee {
+                0% {
+                    transform: translateX(0);
+                }
+
+                100% {
+                    transform: translateX(-50%);
+                }
+
+                /* scroll half width since content is duplicated */
+            }
+
+            .animate-marquee {
+                display: inline-flex;
+                animation: marquee 20s linear infinite;
+            }
+        </style>
+
+
+        <section id="personnel" class="py-24 bg-black border-y border-alien/20 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-64 h-64 bg-alien/10 blur-[80px]"></div>
+            <div class="w-full mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                <div class="mb-16 border-l-4 border-alien pl-6">
+                    <h2 class="text-4xl md:text-6xl font-orbitron font-bold text-white mb-2">SENTIENT <span
+                            class="text-alien">ASSETS</span></h2>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    {% for member in team %}
+                    <div
+                        class="group relative bg-gray-900/50 border border-gray-800 hover:border-alien transition-all duration-500 overflow-hidden hover:-translate-y-2">
+                        <div class="hud-corner hud-tl"></div>
+                        <div class="hud-corner hud-tr"></div>
+                        <div class="hud-corner hud-bl"></div>
+                        <div class="hud-corner hud-br"></div>
+
+                        <div class="h-72 bg-cover bg-center grayscale group-hover:grayscale-0 transition-all duration-700"
+                            {% if member.image %}
+                            style="background-image: url('{{ member.image.url }}'); background-color: #111;">
+                            {% endif %}
+                        </div>
+                        <div class="p-6 relative z-10 -mt-16 bg-gradient-to-t from-black via-black to-transparent">
+                            <div
+                                class="inline-block px-2 py-0.5 bg-alien text-black text-[10px] font-bold font-orbitron mb-2">
+                                {{ member.role }}</div>
+                            <h3 class="text-2xl font-orbitron text-white transition-colors">{{ member.name }}</h3>
+                            <p class="text-xs text-gray-400 font-mono mb-4">{{ member.job_title }}</p>
+                        </div>
                     </div>
-                    <div class="p-6 relative z-10 -mt-16 bg-gradient-to-t from-black via-black to-transparent">
-                        <div class="inline-block px-2 py-0.5 bg-alien text-black text-[10px] font-bold font-orbitron mb-2">{{ member.role }}</div>
-                        <h3 class="text-2xl font-orbitron text-white transition-colors">{{ member.name }}</h3>
-                        <p class="text-xs text-gray-400 font-mono mb-4">{{ member.job_title }}</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================= OUR PROCESS ======================== -->
+        <section class="py-24 bg-black relative border-b border-alien/10">
+            <div class="w-full mx-auto px-6 relative z-10">
+                <div class="text-center mb-16">
+                    <span class="text-alien text-xs font-mono tracking-[0.2em] uppercase">// Methodology</span>
+                    <h2 class="text-4xl md:text-5xl font-orbitron font-bold text-white mt-2">EXECUTION <span
+                            class="text-alien">PROTOCOL</span></h2>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                    <!-- Step 1 -->
+                    <div
+                        class="group relative p-6 border border-gray-800 hover:border-alien/50 bg-gray-900/20 backdrop-blur-sm transition-all duration-300">
+                        <div
+                            class="absolute -top-3 -left-3 text-4xl font-black text-gray-800 group-hover:text-alien/20 transition-colors">
+                            01</div>
+                        <h3 class="text-xl font-orbitron text-white mb-2 relative z-10">DISCOVERY</h3>
+                        <p class="text-gray-400 text-sm">Analyzing signal patterns and defining core objectives.</p>
+                    </div>
+                    <!-- Step 2 -->
+                    <div
+                        class="group relative p-6 border border-gray-800 hover:border-alien/50 bg-gray-900/20 backdrop-blur-sm transition-all duration-300">
+                        <div
+                            class="absolute -top-3 -left-3 text-4xl font-black text-gray-800 group-hover:text-alien/20 transition-colors">
+                            02</div>
+                        <h3 class="text-xl font-orbitron text-white mb-2 relative z-10">STRATEGY</h3>
+                        <p class="text-gray-400 text-sm">Architecting the neural pathways for optimal routing.</p>
+                    </div>
+                    <!-- Step 3 -->
+                    <div
+                        class="group relative p-6 border border-gray-800 hover:border-alien/50 bg-gray-900/20 backdrop-blur-sm transition-all duration-300">
+                        <div
+                            class="absolute -top-3 -left-3 text-4xl font-black text-gray-800 group-hover:text-alien/20 transition-colors">
+                            03</div>
+                        <h3 class="text-xl font-orbitron text-white mb-2 relative z-10">EXECUTION</h3>
+                        <p class="text-gray-400 text-sm">Deploying codebase with military-grade precision.</p>
+                    </div>
+                    <!-- Step 4 -->
+                    <div
+                        class="group relative p-6 border border-gray-800 hover:border-alien/50 bg-gray-900/20 backdrop-blur-sm transition-all duration-300">
+                        <div
+                            class="absolute -top-3 -left-3 text-4xl font-black text-gray-800 group-hover:text-alien/20 transition-colors">
+                            04</div>
+                        <h3 class="text-xl font-orbitron text-white mb-2 relative z-10">OPTIMIZATION</h3>
+                        <p class="text-gray-400 text-sm">Continuous recursive improvement cycles.</p>
                     </div>
                 </div>
-                {% endfor %}
             </div>
-        </div>
-    </section>
+        </section>
 
-    <section id="rnd" class="py-24 bg-black relative overflow-hidden">
-        <div class="absolute inset-0" style="background-image: radial-gradient(#00ff41 1px, transparent 1px); background-size: 30px 30px; opacity: 0.1;"></div>
-        <div class="w-full mx-auto px-6 relative z-10">
-            <div class="flex justify-between items-end mb-12">
-                <h2 class="text-4xl font-orbitron font-bold text-white">ALIENHOUSE <span class="text-purple-500">LABS</span></h2>
-                <span class="text-xs font-mono text-purple-500 border border-purple-500 px-2 py-1 animate-pulse">CLASSIFIED</span>
+        <!-- ========================= TESTIMONIALS ======================== -->
+        <section class="py-24 bg-black relative overflow-hidden">
+            <!-- Background Grid -->
+            <div class="absolute inset-0 opacity-[0.03]"
+                style="background-image: linear-gradient(#ffffff 1px, transparent 1px), linear-gradient(90deg, #ffffff 1px, transparent 1px); background-size: 40px 40px;">
             </div>
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                {% for exp in experiments %}
-                <div class="border border-purple-500/30 p-8 bg-purple-900/5 backdrop-blur-sm relative">
-                    <i data-lucide="{{ exp.icon_name|default:'flask-conical' }}" class="text-purple-500 w-10 h-10 mb-4"></i>
-                    <h3 class="text-2xl font-orbitron text-white mb-2">{{ exp.title }}</h3>
-                    <p class="text-gray-400 mb-6">{{ exp.description }}</p>
-                    <div class="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
-                        <div class="bg-purple-500 h-full w-[{{ exp.progress_percent }}%] relative overflow-hidden"></div>
-                    </div>
-                    <p class="text-right text-xs font-mono text-purple-400 mt-2">PROGRESS: {{ exp.progress_percent }}%</p>
+
+            <div class="w-full mx-auto px-6 relative z-10">
+                <div class="mb-12 border-l-4 border-white pl-6">
+                    <h2 class="text-4xl md:text-6xl font-orbitron font-bold text-white mb-2">CLIENT <span
+                            class="text-gray-500">TRANSMISSIONS</span></h2>
                 </div>
-                {% endfor %}
-            </div>
-        </div>
-    </section>
 
-    <section id="contact" class="h-[500px] relative w-full border-y border-alien/20">
-        <div class="w-full h-full absolute inset-0">
-            <iframe 
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d14031.10930712629!2d77.0266!3d28.4595!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x390d186ec4c1d4c9%3A0x8d5d2c8d9b6e2e4e!2sGurugram%2C%20Haryana!5e0!3m2!1sen!2sin!4v1735170000000"
-                width="100%"
-                height="100%"
-                style="border:0; filter: grayscale(100%) invert(92%) hue-rotate(100deg) contrast(120%) brightness(90%); pointer-events: none;"
-                allowfullscreen
-                loading="lazy">
-            </iframe>
-        </div>
-        
-        <div class="absolute top-10 left-10 bg-black/90 p-8 border border-alien max-w-md backdrop-blur-md">
-            <h3 class="text-2xl font-orbitron text-white mb-4">EARTH HQ</h3>
-            <p class="text-gray-400 mb-2"><i data-lucide="map-pin" class="inline w-4 h-4 text-alien mr-2"></i> {{ config.address }}</p>
-            <p class="text-gray-400 mb-2"><i data-lucide="mail" class="inline w-4 h-4 text-alien mr-2"></i> {{ config.email }}</p>
-            <p class="text-gray-400"><i data-lucide="phone" class="inline w-4 h-4 text-alien mr-2"></i> {{ config.phone }}</p>
-        </div>
-    </section>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {% for t in testimonials %}
+                    <div class="p-8 bg-white/5 border border-white/10 backdrop-blur-md rounded-lg relative">
+                        <div class="text-alien text-4xl font-serif absolute top-4 left-4 opacity-50">"</div>
+                        <p class="text-gray-300 italic mb-6 relative z-10 pt-4">{{ t.content }}</p>
+                        <div class="flex items-center gap-4">
+                            <div
+                                class="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center text-white font-bold">
+                                {{ t.name|slice:":1" }}
+                            </div>
+                            <div>
+                                <h4 class="text-white font-bold text-sm">{{ t.name }}</h4>
+                                <p class="text-alien text-xs">{{ t.company }}</p>
+                            </div>
+                        </div>
+                        <div class="absolute bottom-4 right-4 text-yellow-500 text-xs tracking-widest">
+                            {% for i in "12345"|make_list %}★{% endfor %}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-span-3 text-center text-gray-500 italic">No transmissions received yet.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
 
-    <div id="cookie-banner" class="fixed bottom-0 left-0 w-full bg-black/95 backdrop-blur-lg border-t border-alien/30 p-6 z-[100] transform translate-y-full transition-transform duration-500">
-        <div class="w-full mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-            <div class="text-gray-400 text-sm max-w-2xl">
-                <h4 class="text-white font-bold mb-2">WE TRACK SIGNALS</h4>
-                <p>We use cookies and advanced tracking pixels to analyze intergalactic traffic.</p>
+        <!-- ========================= ALIENHOUSE LABS (FLEX-ACCORDION V3) ======================== -->
+        <section id="rnd" class="py-32 bg-black relative overflow-hidden border-t border-purple-500/10">
+            <!-- Cyberpunk Environment -->
+            <div
+                class="absolute inset-0 bg-[linear-gradient(rgba(18,18,18,0)_1px,transparent_1px),linear-gradient(90deg,rgba(18,18,18,0)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_70%,transparent_100%)]">
             </div>
-            <div class="flex gap-4">
-                <button onclick="document.getElementById('cookie-banner').style.transform='translateY(100%)'" class="px-6 py-2 border border-gray-600 text-gray-300 hover:text-white text-xs font-bold tracking-widest cursor-none">REJECT</button>
-                <button onclick="document.getElementById('cookie-banner').style.transform='translateY(100%)'" class="px-6 py-2 bg-alien text-black hover:bg-white transition-colors text-xs font-bold tracking-widest cursor-none">ACCEPT ALL</button>
+            <div
+                class="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-[500px] bg-purple-600/10 blur-[120px] rounded-full pointer-events-none">
+            </div>
+
+            <div class="w-full mx-auto px-6 relative z-10 max-w-7xl">
+
+                <!-- Section Identity -->
+                <div class="text-center mb-16">
+                    <span
+                        class="inline-block py-1 px-3 rounded border border-purple-500/30 bg-purple-500/5 text-purple-300 font-mono text-xs tracking-[0.3em] mb-4 backdrop-blur-md">
+                        // INTERNAL_R&D_DIVISION
+                    </span>
+                    <h2 class="text-5xl md:text-7xl font-orbitron font-bold text-white mb-2">
+                        HYPER<span
+                            class="text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-fuchsia-400">LABS</span>
+                    </h2>
+                    <p class="text-gray-500 font-mono text-xs">Hover to decrypt experiment details</p>
+                </div>
+
+                <!-- Flexbox Accordion Container -->
+                <div class="flex flex-col lg:flex-row gap-4 h-auto lg:h-[500px] w-full">
+                    {% for exp in experiments %}
+                    <div
+                        class="relative group flex-1 hover:flex-[3] transition-[flex-grow] duration-500 ease-out bg-gray-900/40 border border-white/5 hover:border-purple-500/50 rounded-2xl overflow-hidden backdrop-blur-sm flex flex-col lg:flex-row hover:bg-black/80">
+
+                        <!-- Collapsed State / Vertical Strip (Visible mainly on Desktop default) -->
+                        <div
+                            class="p-6 flex lg:flex-col items-center justify-between lg:w-16 lg:min-w-[4rem] border-b lg:border-b-0 lg:border-r border-white/5 bg-black/20 z-20">
+                            <span
+                                class="font-mono text-[10px] text-gray-500 rotate-0 lg:-rotate-90 whitespace-nowrap">EXP_{{
+                                forloop.counter|stringformat:"02d" }}</span>
+                            <div class="my-4 text-purple-500 group-hover:text-white transition-colors">
+                                <i data-lucide="{{ exp.icon_name|default:'flask-conical' }}" class="w-6 h-6"></i>
+                            </div>
+                            <div
+                                class="hidden lg:block w-px h-10 bg-white/10 group-hover:bg-purple-500/50 transition-colors">
+                            </div>
+                        </div>
+
+                        <!-- Content Area (Expands) -->
+                        <div class="relative flex-1 p-8 lg:p-10 flex flex-col justify-end min-w-[300px]">
+
+                            <!-- Large Background Icon (Decorative) -->
+                            <i data-lucide="{{ exp.icon_name|default:'flask-conical' }}"
+                                class="absolute -top-10 -right-10 w-64 h-64 text-white/5 group-hover:text-purple-500/5 rotate-12 transition-colors duration-700 pointer-events-none"></i>
+
+                            <!-- Main Content -->
+                            <div
+                                class="relative z-10 transform lg:translate-y-8 lg:group-hover:translate-y-0 transition-transform duration-500">
+                                <h3
+                                    class="text-2xl md:text-4xl font-orbitron text-white mb-4 leading-tight group-hover:text-purple-100">
+                                    {{ exp.title }}
+                                </h3>
+
+                                <div
+                                    class="opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-500 delay-100 max-w-lg">
+                                    <p class="text-gray-400 text-sm leading-relaxed mb-8">
+                                        {{ exp.description }}
+                                    </p>
+
+                                    <!-- Technical Stats -->
+                                    <div class="grid grid-cols-2 gap-4 border-t border-white/10 pt-6">
+                                        <div>
+                                            <div class="text-[10px] uppercase font-mono text-gray-500 mb-1">Compute Load
+                                            </div>
+                                            <div class="h-1 w-full bg-gray-800 rounded-full overflow-hidden">
+                                                <div class="h-full bg-purple-500 w-[78%]"></div>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div class="text-[10px] uppercase font-mono text-gray-500 mb-1">Completion
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-white font-bold">{{ exp.progress_percent }}%</span>
+                                                <span class="text-[10px] text-purple-400 animate-pulse">● LIVE</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- "Read More" Arrow (Visual Cue) -->
+                            <div
+                                class="absolute bottom-6 right-6 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-300 delay-200">
+                                <div
+                                    class="p-2 border border-white/20 rounded-full text-white/50 group-hover:text-white group-hover:border-white transition-all">
+                                    <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================= CONTACT SECTION ======================== -->
+        <section id="contact" class="py-32 bg-black relative border-t border-white/10">
+            <div class="w-full mx-auto px-6 max-w-7xl relative z-10">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+
+                    <!-- Contact Info -->
+                    <div>
+                        <span class="text-alien text-xs font-mono tracking-[0.2em] uppercase mb-4 block">/// Initialize
+                            Handshake</span>
+                        <h2 class="text-5xl md:text-6xl font-orbitron font-bold text-white mb-8">
+                            ESTABLISH <span class="text-alien">CONNECTION</span>
+                        </h2>
+                        <p class="text-gray-400 text-lg mb-12 max-w-md">
+                            Ready to upgrade your digital infrastructure? Send a secure transmission to our team.
+                        </p>
+
+                        <div class="space-y-8">
+                            <div class="flex items-center gap-6 group">
+                                <div
+                                    class="w-14 h-14 bg-alien/5 border border-alien/20 rounded-full flex items-center justify-center group-hover:bg-alien/20 group-hover:border-alien transition-all duration-300">
+                                    <i data-lucide="map-pin" class="text-alien w-6 h-6"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-white font-bold font-orbitron mb-1">HQ COORDINATES</h4>
+                                    <p class="text-gray-400 text-sm">{{ config.address }}</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-6 group">
+                                <div
+                                    class="w-14 h-14 bg-alien/5 border border-alien/20 rounded-full flex items-center justify-center group-hover:bg-alien/20 group-hover:border-alien transition-all duration-300">
+                                    <i data-lucide="mail" class="text-alien w-6 h-6"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-white font-bold font-orbitron mb-1">SIGNAL FREQUENCY</h4>
+                                    <p class="text-gray-400 text-sm">{{ config.email }}</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-6 group">
+                                <div
+                                    class="w-14 h-14 bg-alien/5 border border-alien/20 rounded-full flex items-center justify-center group-hover:bg-alien/20 group-hover:border-alien transition-all duration-300">
+                                    <i data-lucide="phone" class="text-alien w-6 h-6"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-white font-bold font-orbitron mb-1">VOICE CHANNEL</h4>
+                                    <p class="text-gray-400 text-sm">{{ config.phone }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contact Form -->
+                    <div class="relative">
+                        <div class="absolute inset-0 bg-alien/5 blur-3xl rounded-full opacity-20 pointer-events-none">
+                        </div>
+
+                        <div
+                            class="bg-gray-900/40 backdrop-blur-xl border border-white/10 p-8 md:p-10 rounded-2xl relative overflow-hidden">
+
+                            <!-- Success Overlay (Hidden by default) -->
+                            <div id="success-overlay"
+                                class="absolute inset-0 bg-black/95 z-50 flex flex-col items-center justify-center text-center p-8 transition-opacity duration-500 opacity-0 pointer-events-none">
+                                <div
+                                    class="w-20 h-20 bg-alien/10 rounded-full flex items-center justify-center mb-6 border border-alien animate-pulse">
+                                    <i data-lucide="check" class="w-10 h-10 text-alien"></i>
+                                </div>
+                                <h3 class="text-2xl font-orbitron text-white mb-2">TRANSMISSION RECEIVED</h3>
+                                <p class="text-gray-400 text-sm">Our team is decoding your message.<br>Stand by for
+                                    response.</p>
+                                <button onclick="resetForm()"
+                                    class="mt-8 text-alien text-xs font-bold tracking-widest hover:text-white transition-colors">SEND
+                                    ANOTHER</button>
+                            </div>
+
+                            <form id="contact-form" method="post" action="{% url 'contact_submit' %}"
+                                class="space-y-6 relative z-10">
+                                {% csrf_token %}
+                                <div>
+                                    <label
+                                        class="text-xs font-mono text-gray-500 mb-2 block uppercase tracking-widest">Name</label>
+                                    {{ contact_form.name }}
+                                </div>
+                                <div>
+                                    <label
+                                        class="text-xs font-mono text-gray-500 mb-2 block uppercase tracking-widest">Phone</label>
+                                    {{ contact_form.phone }}
+                                </div>
+                                <div>
+                                    <label
+                                        class="text-xs font-mono text-gray-500 mb-2 block uppercase tracking-widest">Email</label>
+                                    {{ contact_form.email }}
+                                </div>
+                                <div>
+                                    <label
+                                        class="text-xs font-mono text-gray-500 mb-2 block uppercase tracking-widest">Company
+                                        (Not Mandatory)</label>
+                                    {{ contact_form.company }}
+                                </div>
+                                <div>
+                                    <label
+                                        class="text-xs font-mono text-gray-500 mb-2 block uppercase tracking-widest">Message</label>
+                                    {{ contact_form.message }}
+                                </div>
+
+                                <button type="submit" id="submit-btn"
+                                    class="w-full bg-alien text-black font-bold font-orbitron py-4 px-8 hover:bg-white transition-all duration-300 tracking-widest flex items-center justify-center gap-2 group">
+                                    <span>SEND MESSAGE</span>
+                                    <i data-lucide="arrow-right"
+                                        class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <script>
+            document.getElementById('contact-form').addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                const form = this;
+                const btn = document.getElementById('submit-btn');
+                const originalText = btn.innerHTML;
+                const overlay = document.getElementById('success-overlay');
+
+                // Loading State
+                btn.innerHTML = '<span class="animate-pulse">TRANSMITTING...</span>';
+                btn.disabled = true;
+
+                const formData = new FormData(form);
+
+                fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Show Success Overlay
+                            overlay.classList.remove('opacity-0', 'pointer-events-none');
+                            form.reset();
+                        } else {
+                            alert('Transmission Failed: ' + JSON.stringify(data.errors));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Connection Error. Signal Lost.');
+                    })
+                    .finally(() => {
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                    });
+            });
+
+            function resetForm() {
+                const overlay = document.getElementById('success-overlay');
+                overlay.classList.add('opacity-0', 'pointer-events-none');
+            }
+        </script>
+
+        <div id="cookie-banner"
+            class="fixed bottom-0 left-0 w-full bg-black/95 backdrop-blur-lg border-t border-alien/30 p-6 z-[100] transform translate-y-full transition-transform duration-500">
+            <div class="w-full mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+                <div class="flex items-center gap-4">
+                    <i data-lucide="cookie" class="text-alien w-8 h-8"></i>
+                    <p class="text-gray-300 text-sm">We use cookies to enhance your experience. By continuing to visit
+                        this site you agree to our use of cookies.</p>
+                </div>
+                <div class="flex gap-4">
+                    <button onclick="acceptCookies()"
+                        class="px-6 py-2 bg-alien text-black font-bold uppercase hover:bg-white transition-colors">Accept</button>
+                    <button onclick="hideCookieBanner()"
+                        class="px-6 py-2 border border-gray-600 text-gray-400 hover:text-white hover:border-white transition-colors">Decline</button>
+                </div>
             </div>
         </div>
-    </div>
-    
-    <script>
-        // Trigger cookie banner
-        setTimeout(() => { document.getElementById('cookie-banner').style.transform = 'translateY(0)'; }, 2000);
-    </script>
-{% endblock %}
+
+        <!-- ========================= MAP SECTION (RESTORED) ======================== -->
+        <section class="h-[400px] w-full relative border-t border-alien/20">
+            <div class="w-full h-full absolute inset-0">
+                <iframe
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d14031.10930712629!2d77.0266!3d28.4595!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x390d186ec4c1d4c9%3A0x8d5d2c8d9b6e2e4e!2sGurugram%2C%20Haryana!5e0!3m2!1sen!2sin!4v1735170000000"
+                    width="100%" height="100%"
+                    style="border:0; filter: grayscale(100%) invert(92%) hue-rotate(100deg) contrast(120%) brightness(90%);"
+                    allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">
+                </iframe>
+            </div>
+            <!-- Optional overlay to make it match the theme -->
+            <div class="absolute inset-0 bg-alien/5 pointer-events-none mix-blend-overlay"></div>
+        </section>
+
+        <script>
+            // Trigger cookie banner
+            setTimeout(() => { document.getElementById('cookie-banner').style.transform = 'translateY(0)'; }, 2000);
+
+            function hideCookieBanner() {
+                document.getElementById('cookie-banner').style.transform = 'translateY(100%)';
+            }
+
+            function acceptCookies() {
+                // Logic to set cookie/local storage could go here
+                hideCookieBanner();
+            }
+        </script>
+        {% endblock %}

@@ -3,7 +3,7 @@ import json
 from .models import (
     SiteConfiguration, HeroSection, ServiceModule, 
     BusinessTeamMember, ClientTicker, TacticalAdvantage, 
-    Project, LabExperiment, AboutUs , ClientLogo
+    Project, LabExperiment, AboutUs, ClientLogo, Testimonial
 )
 
 
@@ -13,6 +13,7 @@ from .models import (
     HeroSection, Service, BusinessTeamMember, 
     ClientTicker, TacticalAdvantage, Project, LabExperiment
 )
+from .forms import ContactForm
 
 def index(request):
     # Note: 'config' and 'all_services' are now handled by the context processor!
@@ -26,7 +27,10 @@ def index(request):
     tactics = TacticalAdvantage.objects.all()
     projects = Project.objects.all()
     experiments = LabExperiment.objects.all()
+    experiments = LabExperiment.objects.all()
     clients_logo = ClientLogo.objects.all()
+    testimonials = Testimonial.objects.all()
+    contact_form = ContactForm()
 
     context = {
         'hero': hero,
@@ -39,7 +43,8 @@ def index(request):
         'services': services,
         "about_us" : about_us,
         "client_logos" : clients_logo,
-
+        "testimonials": testimonials,
+        "contact_form": contact_form,
     }
     
     return render(request, 'core/index.html', context)
@@ -108,11 +113,13 @@ def about_us(request):
     sections = about_page.sections.all() if about_page else []
 
     site_config = SiteConfiguration.objects.first()
+    team = BusinessTeamMember.objects.all()
 
     context = {
         "about_page": about_page,
         "sections": sections,
         "config": site_config,
+        "team": team,
     }
     return render(request, "core/about_us.html", context)
 
@@ -212,3 +219,16 @@ def job_detail(request, slug):
         'config': config,
     }
     return render(request, 'core/job_detail.html', context)
+
+from django.http import JsonResponse
+from .forms import ContactForm
+
+def contact_submit(request):
+    if request.method == 'POST':
+        form = ContactForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return JsonResponse({'success': True, 'message': 'TRANSMISSION RECEIVED. WE WILL RESPOND SHORTLY.'})
+        else:
+            return JsonResponse({'success': False, 'errors': form.errors}, status=400)
+    return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=405)
