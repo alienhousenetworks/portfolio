@@ -58,7 +58,7 @@
     </div>
 </header>
 <!-- ========================= ABOUT US ======================== -->
-<section class="relative py-40 bg-black/80 backdrop-blur-sm overflow-hidden">
+<section class="relative py-40 bg-black/80 overflow-hidden">
 
     <!-- Futuristic background grid -->
     <div class="absolute inset-0 opacity-[0.05] pointer-events-none" style="background-image: linear-gradient(#00ff41 1px, transparent 1px),
@@ -118,7 +118,7 @@
 </section>
 
 
-<section id="services" class="py-24 bg-alien-dark/90 backdrop-blur-sm relative border-b border-alien/20">
+<section id="services" class="py-24 bg-alien-dark/90 relative border-b border-alien/20">
     <div class="absolute inset-0 grid grid-cols-6 gap-4 opacity-5 pointer-events-none">
         <div class="border-r border-alien h-full"></div>
         <div class="border-r border-alien h-full"></div>
@@ -232,7 +232,7 @@
 
 
         <!-- ========================= CLIENT LOGOS (TICKER) ======================== -->
-        <section class="py-10 bg-black/80 backdrop-blur-sm overflow-hidden relative">
+        <section class="py-10 bg-black/80 overflow-hidden relative">
             <div class="w-full">
                 <div class="flex whitespace-nowrap animate-marquee gap-16">
                     {% for c in client_logos %}
@@ -274,8 +274,7 @@
         </style>
 
 
-        <section id="personnel"
-            class="py-24 bg-black/90 backdrop-blur-sm border-y border-alien/20 relative overflow-hidden">
+        <section id="personnel" class="py-24 bg-black/80 border-y border-alien/20 relative overflow-hidden">
             <div class="absolute top-0 right-0 w-64 h-64 bg-alien/10 blur-[80px]"></div>
             <div class="w-full mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                 <div class="mb-16 border-l-4 border-alien pl-6">
@@ -311,7 +310,7 @@
         </section>
 
         <!-- ========================= OUR PROCESS ======================== -->
-        <section class="py-24 bg-black/90 backdrop-blur-sm relative border-b border-alien/10">
+        <section class="py-24 bg-black/80 relative border-b border-alien/10">
             <div class="w-full mx-auto px-6 relative z-10">
                 <div class="text-center mb-16">
                     <span class="text-alien text-xs font-mono tracking-[0.2em] uppercase">// Methodology</span>
@@ -361,7 +360,7 @@
         </section>
 
         <!-- ========================= TESTIMONIALS ======================== -->
-        <section class="py-24 bg-black/90 backdrop-blur-sm relative overflow-hidden">
+        <section class="py-24 bg-black/80 relative overflow-hidden">
             <!-- Background Grid -->
             <div class="absolute inset-0 opacity-[0.03]"
                 style="background-image: linear-gradient(#ffffff 1px, transparent 1px), linear-gradient(90deg, #ffffff 1px, transparent 1px); background-size: 40px 40px;">
@@ -400,8 +399,7 @@
         </section>
 
         <!-- ========================= ALIENHOUSE LABS (FLEX-ACCORDION V3) ======================== -->
-        <section id="rnd"
-            class="py-32 bg-black/90 backdrop-blur-sm relative overflow-hidden border-t border-purple-500/10">
+        <section id="rnd" class="py-32 bg-black/80 relative overflow-hidden border-t border-purple-500/10">
             <!-- Cyberpunk Environment -->
             <div
                 class="absolute inset-0 bg-[linear-gradient(rgba(18,18,18,0)_1px,transparent_1px),linear-gradient(90deg,rgba(18,18,18,0)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_70%,transparent_100%)]">
@@ -504,7 +502,7 @@
         </section>
 
         <!-- ========================= CONTACT SECTION ======================== -->
-        <section id="contact" class="py-32 bg-black/90 backdrop-blur-sm relative border-t border-white/10">
+        <section id="contact" class="py-32 bg-black/80 relative border-t border-white/10">
             <div class="w-full mx-auto px-6 max-w-7xl relative z-10">
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
@@ -688,17 +686,27 @@
         </div>
 
         <!-- ========================= MAP SECTION (RESTORED) ======================== -->
-        <section class="h-[400px] w-full relative border-t border-alien/20">
-            <div class="w-full h-full absolute inset-0">
-                <iframe
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d14031.10930712629!2d77.0266!3d28.4595!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x390d186ec4c1d4c9%3A0x8d5d2c8d9b6e2e4e!2sGurugram%2C%20Haryana!5e0!3m2!1sen!2sin!4v1735170000000"
-                    width="100%" height="100%"
-                    style="border:0; filter: grayscale(100%) invert(92%) hue-rotate(100deg) contrast(120%) brightness(90%);"
-                    allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">
-                </iframe>
-            </div>
-            <!-- Optional overlay to make it match the theme -->
-            <div class="absolute inset-0 bg-alien/5 pointer-events-none mix-blend-overlay"></div>
+        <section class="h-[400px] w-full relative border-t border-alien/20 group overflow-hidden">
+            <!-- Static Map Placeholder -->
+            <a href="https://www.google.com/maps/search/?api=1&query=Gurugram+Haryana" target="_blank"
+                class="block w-full h-full relative">
+                <div class="absolute inset-0 bg-gray-900 flex items-center justify-center">
+                    <div class="text-center">
+                        <i data-lucide="map-pin" class="w-12 h-12 text-alien mx-auto mb-4 animate-bounce"></i>
+                        <h3 class="text-2xl font-orbitron text-white">LOCATE HQ</h3>
+                        <p class="text-gray-400 font-mono text-sm mt-2">CLICK TO ESTABLISH SAT-LINK</p>
+                    </div>
+                </div>
+
+                <!-- Use a static image if available, else this dark bg is fine -->
+                <div
+                    class="absolute inset-0 bg-[url('https://maps.googleapis.com/maps/api/staticmap?center=Gurugram,Haryana&zoom=12&size=600x300&maptype=roadmap&style=feature:all|element:all|saturation:-100|lightness:-60|invert_lightness:true&key=YOUR_API_KEY')] bg-cover bg-center opacity-30 group-hover:opacity-50 transition-opacity duration-500">
+                </div>
+
+                <div
+                    class="absolute inset-0 bg-alien/5 group-hover:bg-alien/10 transition-colors pointer-events-none mix-blend-overlay">
+                </div>
+            </a>
         </section>
 
         <script>

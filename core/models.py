@@ -42,12 +42,23 @@ class SiteConfiguration(models.Model):
     phone = models.CharField(max_length=50, default="+91 999-999-9999", help_text="Contact phone number.")
     footer_text = models.CharField(max_length=200, default="Galactic Rights Reserved.", help_text="Text displayed at the very bottom of the page.")
 
+    def save(self, *args, **kwargs):
+        if self.logo:
+            compress_image_to_webp(self.logo)
+        if self.favicon:
+            # Favicons usually need to be ICO or PNG, but browsers support WebP favicons now.
+            # However, keeping favicon as is might be safer for compatibility.
+            # Let's compress it anyway for modern browsers.
+            compress_image_to_webp(self.favicon)
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return "Site Configuration"
 
     class Meta:
         verbose_name = "Global Site Configuration"
         verbose_name_plural = "Global Site Configurations"
+
 # -------------------------
 # ABOUT US SECTION inside home page indes.html
 # -------------------------
@@ -59,6 +70,11 @@ class AboutUs(models.Model):
 
     class Meta:
         ordering = ['order']
+
+    def save(self, *args, **kwargs):
+        if self.image:
+            compress_image_to_webp(self.image)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.heading
@@ -95,6 +111,11 @@ class ClientLogo(models.Model):
 
     class Meta:
         ordering = ['order']
+
+    def save(self, *args, **kwargs):
+        if self.logo:
+            compress_image_to_webp(self.logo)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
@@ -156,14 +177,7 @@ class TacticalAdvantage(models.Model):
         return self.title
 
 
-class Project(models.Model):
-    title = models.CharField(max_length=100)
-    tech_stack = models.CharField(max_length=100)
-    description = models.TextField()
-    image = models.ImageField(upload_to='projects/')
-    color_class = models.CharField(max_length=50, default="text-alien")
-    def __str__(self):
-        return self.title
+
 
 
 class LabExperiment(models.Model):
@@ -297,10 +311,9 @@ class Location(BaseModel):
 # ============================================================
 # 5. SERVICE + SUBSERVICE (Business Services)
 # ============================================================
-# Inheriting from your existing BaseModel
-from django.db import models
-
 class Service(BaseModel):
+
+    # ... (fields)
     order = models.PositiveIntegerField(default=0, help_text="Order in which this service appears (lowest number first).")
     
     icon = models.CharField(
@@ -329,7 +342,8 @@ class Service(BaseModel):
         blank=True,
         null=True
     )
-
+    # ... (other fields)
+    
     short_description = models.CharField(
         max_length=300,
         help_text="Shown on cards/lists"
@@ -342,11 +356,45 @@ class Service(BaseModel):
     advantage_2 = models.CharField(max_length=200, blank=True)
     advantage_3 = models.CharField(max_length=200, blank=True)
 
+    def save(self, *args, **kwargs):
+        # Optimization: Compress images to WebP on save
+        if self.pk:
+            # Check if image has changed (optional optimization, skipping for now for simplicity)
+            pass
+        
+        if self.service_image:
+            compress_image_to_webp(self.service_image)
+        if self.hero_image:
+            compress_image_to_webp(self.hero_image)
+            
+        super().save(*args, **kwargs)
+
     class Meta:
-        ordering = ['order', 'name']  # Default ordering
+        ordering = ['order', 'name']
 
     def __str__(self):
         return self.name
+
+# ... (Other models)
+
+class Project(models.Model):
+    title = models.CharField(max_length=100)
+    tech_stack = models.CharField(max_length=100)
+    description = models.TextField()
+    image = models.ImageField(upload_to='projects/')
+    color_class = models.CharField(max_length=50, default="text-alien")
+    
+    def save(self, *args, **kwargs):
+        if self.image:
+            compress_image_to_webp(self.image)
+        super().save(*args, **kwargs)
+        
+    def __str__(self):
+        return self.title
+
+
+
+
 
 
 
@@ -369,9 +417,6 @@ class SubService(BaseModel):
         return f"{self.service.name} -> {self.name}"
 
 
-# ============================================================
-# 6. TEAM (for Company Website)
-# ============================================================
 
 class BusinessTeamMember(models.Model):
     name = models.CharField(max_length=255)
@@ -383,8 +428,16 @@ class BusinessTeamMember(models.Model):
 
     order = models.PositiveIntegerField(default=1)
 
+    def save(self, *args, **kwargs):
+        if self.image:
+            compress_image_to_webp(self.image)
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return self.name
+
+
+
 
 
 # ============================================================

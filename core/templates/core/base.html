@@ -223,7 +223,6 @@
     </div>
 
     <canvas id="trail-canvas"></canvas>
-    <canvas id="particle-canvas" class="fixed inset-0 z-[-1] pointer-events-none"></canvas>
     <div class="fixed inset-0 bg-grid-pattern sci-grid z-[-1] opacity-20"></div>
 
     <nav class="fixed w-full z-50 top-0 bg-alien-dark/90 backdrop-blur-xl border-b border-alien/20">
@@ -452,7 +451,8 @@
 
             const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
+            // PERFORMANCE FIX: Cap pixel ratio to 1 to reduce GPU load on high-DPI screens
+            renderer.setPixelRatio(1);
             container.appendChild(renderer.domElement);
 
             // Lighting
@@ -476,13 +476,13 @@
 
             const earthGeometry = new THREE.SphereGeometry(10, 64, 64);
             const earthMaterial = new THREE.MeshPhongMaterial({
-                map: loader.load('{% static "core/textures/alien_earth_like_surface.png" %}'),
-                emissiveMap: loader.load('{% static "core/textures/alien_earth_like_clouds.png" %}'), // Using clouds as emissive map for a glowing atmosphere effect
+                map: loader.load('{% static "core/textures/alien_earth_like_surface.webp" %}'),
+                emissiveMap: loader.load('{% static "core/textures/alien_earth_like_clouds.webp" %}'), // Using clouds as emissive map for a glowing atmosphere effect
                 emissive: new THREE.Color(0x0044ff),
                 emissiveIntensity: 0.2,
                 specular: new THREE.Color(0x00aaff),
                 shininess: 45,
-                bumpMap: loader.load('{% static "core/textures/alien_earth_like_surface.png" %}'),
+                bumpMap: loader.load('{% static "core/textures/alien_earth_like_surface.webp" %}'),
                 bumpScale: 0.08
             });
             const earth = new THREE.Mesh(earthGeometry, earthMaterial);
@@ -503,7 +503,7 @@
             // Earth Clouds
             const cloudGeometry = new THREE.SphereGeometry(10.1, 64, 64);
             const cloudMaterial = new THREE.MeshPhongMaterial({
-                map: loader.load('{% static "core/textures/alien_earth_like_clouds.png" %}'),
+                map: loader.load('{% static "core/textures/alien_earth_like_clouds.webp" %}'),
                 transparent: true,
                 opacity: 0.5,
                 blending: THREE.AdditiveBlending,
@@ -515,7 +515,7 @@
             // Second Cloud Layer (Higher, faster)
             const cloud2Geometry = new THREE.SphereGeometry(10.25, 64, 64);
             const cloud2Material = new THREE.MeshPhongMaterial({
-                map: loader.load('{% static "core/textures/alien_earth_like_clouds.png" %}'),
+                map: loader.load('{% static "core/textures/alien_earth_like_clouds.webp" %}'),
                 transparent: true,
                 opacity: 0.3,
                 blending: THREE.AdditiveBlending,
@@ -595,7 +595,7 @@
 
             const moonGeometry = new THREE.SphereGeometry(2, 32, 32);
             const moonMaterial = new THREE.MeshPhongMaterial({
-                map: loader.load('{% static "core/textures/moon_map.png" %}'),
+                map: loader.load('{% static "core/textures/moon_map.webp" %}'),
                 shininess: 0
             });
             const moon = new THREE.Mesh(moonGeometry, moonMaterial);
@@ -606,7 +606,7 @@
             // Mars is independent, larger orbit in background
             const marsGeometry = new THREE.SphereGeometry(4, 32, 32);
             const marsMaterial = new THREE.MeshPhongMaterial({
-                map: loader.load('{% static "core/textures/mars_map.png" %}'),
+                map: loader.load('{% static "core/textures/mars_map.webp" %}'),
                 shininess: 5
             });
             const mars = new THREE.Mesh(marsGeometry, marsMaterial);
@@ -628,8 +628,13 @@
                 mouseY = (e.clientY - window.innerHeight / 2) / window.innerHeight;
             });
 
+            let isAnimating = true;
+            let animationId;
+
             const animate = () => {
-                requestAnimationFrame(animate);
+                if (!isAnimating) return;
+
+                animationId = requestAnimationFrame(animate);
 
                 // Rotations
                 earth.rotation.y += 0.0005; // Slower Earth spin
@@ -673,6 +678,25 @@
 
                 renderer.render(scene, camera);
             };
+
+            // PERFORMANCE FIX: Intersection Observer to pause animation when not visible
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        if (!isAnimating) {
+                            isAnimating = true;
+                            animate();
+                        }
+                    } else {
+                        isAnimating = false;
+                        if (animationId) cancelAnimationFrame(animationId);
+                    }
+                });
+            }, { threshold: 0 });
+
+            observer.observe(container);
+
+            // Start animation initially
             animate();
 
             window.addEventListener('resize', () => {
@@ -715,27 +739,7 @@
             animateTrail();
         };
 
-        // --- PARTICLE BACKGROUND ---
-        const initParticles = () => {
-            const canvas = document.getElementById('particle-canvas');
-            const ctx = canvas.getContext('2d');
-            let particles = [], width, height;
-            let mouse = { x: null, y: null, radius: 150 };
-            window.addEventListener('resize', resize);
-            window.addEventListener('mousemove', (e) => { mouse.x = e.x; mouse.y = e.y; });
-            function resize() { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; createParticles(); }
-            class Particle {
-                constructor() { this.x = Math.random() * width; this.y = Math.random() * height; this.vx = (Math.random() - 0.5); this.vy = (Math.random() - 0.5); this.size = Math.random() * 1.5; this.baseX = this.x; this.baseY = this.y; }
-                update() {
-                    let dx = mouse.x - this.x; let dy = mouse.y - this.y; let distance = Math.sqrt(dx * dx + dy * dy);
-                    if (distance < mouse.radius) { this.x -= (dx / distance) * 2; this.y -= (dy / distance) * 2; } else { if (this.x !== this.baseX) this.x -= (this.x - this.baseX) / 20; if (this.y !== this.baseY) this.y -= (this.y - this.baseY) / 20; }
-                }
-                draw() { ctx.fillStyle = '#00ff41'; ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill(); }
-            }
-            function createParticles() { particles = []; for (let i = 0; i < (width * height) / 9000; i++)particles.push(new Particle()); }
-            function animateParticles() { ctx.clearRect(0, 0, width, height); particles.forEach(p => { p.update(); p.draw(); }); requestAnimationFrame(animateParticles); }
-            resize(); animateParticles();
-        };
+
 
         // --- MOBILE MENU LOGIC ---
         const mobileBtn = document.getElementById('mobile-menu-btn');
@@ -765,7 +769,6 @@
         document.addEventListener('DOMContentLoaded', () => {
             initThreeJS();
             initCursorSystem();
-            initParticles();
 
             // --- DECRYPT EFFECT ---
             const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*";

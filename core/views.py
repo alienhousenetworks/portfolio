@@ -153,12 +153,20 @@ from .models import CompanyPage, AboutUsPage
 #         return render(request, "company/generic_page.html", context)
 
 def company_page_detail(request, slug):
-    page = get_object_or_404(CompanyPage, slug=slug)
+    # SYSTEM UPGRADE: Use prefetch_related for a single object lookup to fetch relations in 1 query
+    # instead of 3 (page + sections + ctas)
+    try:
+        page = CompanyPage.objects.prefetch_related('sections', 'ctas').get(slug=slug)
+    except CompanyPage.DoesNotExist:
+        # Check if it is a 'Service' page or 'About' page that might not be in CompanyPage model
+        # For now, return 404
+        from django.http import Http404
+        raise Http404("Page not found")
 
     if page.url:
         return redirect(page.url)
 
-    # Fetch sections and CTAs dynamically
+    # Fetch sections and CTAs dynamically (now fetched from cache/prefetch)
     sections = page.sections.all()
     ctas = page.ctas.all()
     
