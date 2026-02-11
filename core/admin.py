@@ -78,7 +78,7 @@ class SiteConfigurationAdmin(admin.ModelAdmin):
     
     fieldsets = (
         ("Branding & Identity", {
-            'fields': ('site_name', 'logo', 'logo_highlight_text', 'footer_text'),
+            'fields': ('site_name', 'logo', 'favicon', 'logo_highlight_text', 'footer_text'),
             'description': "<strong>Impacts:</strong> Global settings. 'Site Name' appears in the browser tab. 'Logo' is in the top header. 'Footer Text' is at the bottom of every page."
         }),
         ("Contact Information", {

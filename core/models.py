@@ -34,6 +34,7 @@ class BaseModel(models.Model):
 class SiteConfiguration(models.Model):
     site_name = models.CharField(max_length=100, default="ALIENHOUSE", help_text="The main name of the website displayed in the browser tab.")
     logo = models.ImageField(upload_to='site_logos/', blank=True, null=True, help_text="Upload the main site logo.")
+    favicon = models.ImageField(upload_to='site_favicons/', blank=True, null=True, help_text="Upload the site favicon (ideally 32x32 or 16x16 png/ico).")
     logo_highlight_text = models.CharField(max_length=100, default="HOUSE", help_text="Part of the logo text to highlight (usually in a different color).")
 
     address = models.CharField(max_length=200, default="Rajkot, Gujarat, India", help_text="Physical address displayed in the footer.")

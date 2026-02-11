@@ -1,14 +1,23 @@
 <!DOCTYPE html>
 {% load static %}
 <html lang="en" class="scroll-smooth">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{{ config.site_name }} | Hyper-Advanced Digital Ecosystems{% endblock %}</title>
 
+    {% if config.favicon %}
+    <link rel="icon" type="image/png" href="{{ config.favicon.url }}">
+    {% else %}
+    <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
+    {% endif %}
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap"
+        rel="stylesheet">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -46,44 +55,132 @@
     </script>
 
     <style>
-        body { background-color: #020202; color: #e0ffe0; overflow-x: hidden; cursor: none !important; }
-        ::-webkit-scrollbar { width: 6px; background: #000; }
-        ::-webkit-scrollbar-thumb { background: #00ff41; box-shadow: 0 0 10px #00ff41; }
+        body {
+            background-color: #020202;
+            color: #e0ffe0;
+            overflow-x: hidden;
+            cursor: none !important;
+        }
 
-        .hud-corner { position: absolute; width: 20px; height: 20px; border: 2px solid #00ff41; transition: all 0.3s; }
-        .hud-tl { top: 0; left: 0; border-right: 0; border-bottom: 0; }
-        .hud-tr { top: 0; right: 0; border-left: 0; border-bottom: 0; }
-        .hud-bl { bottom: 0; left: 0; border-right: 0; border-top: 0; }
-        .hud-br { bottom: 0; right: 0; border-left: 0; border-top: 0; }
-        .alien-card:hover .hud-corner { width: 100%; height: 100%; opacity: 0.1; background: #00ff41; }
+        ::-webkit-scrollbar {
+            width: 6px;
+            background: #000;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #00ff41;
+            box-shadow: 0 0 10px #00ff41;
+        }
+
+        .hud-corner {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #00ff41;
+            transition: all 0.3s;
+        }
+
+        .hud-tl {
+            top: 0;
+            left: 0;
+            border-right: 0;
+            border-bottom: 0;
+        }
+
+        .hud-tr {
+            top: 0;
+            right: 0;
+            border-left: 0;
+            border-bottom: 0;
+        }
+
+        .hud-bl {
+            bottom: 0;
+            left: 0;
+            border-right: 0;
+            border-top: 0;
+        }
+
+        .hud-br {
+            bottom: 0;
+            right: 0;
+            border-left: 0;
+            border-top: 0;
+        }
+
+        .alien-card:hover .hud-corner {
+            width: 100%;
+            height: 100%;
+            opacity: 0.1;
+            background: #00ff41;
+        }
 
         /* Mega Menu Animation & Positioning */
-        .mega-menu { 
-            display: none; 
-            opacity: 0; 
-            transform: translateY(-10px) translateX(-50%); /* Centering logic */
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
-            pointer-events: none; 
-            left: 50%; /* Anchor center */
-        }
-        .group:hover .mega-menu { 
-            display: block; 
-            opacity: 1; 
-            transform: translateY(0) translateX(-50%); 
-            pointer-events: auto; 
+        .mega-menu {
+            display: none;
+            opacity: 0;
+            transform: translateY(-10px) translateX(-50%);
+            /* Centering logic */
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            left: 50%;
+            /* Anchor center */
         }
 
-        .sci-grid { background-size: 40px 40px; mask-image: radial-gradient(circle at center, black, transparent 80%); }
+        .group:hover .mega-menu {
+            display: block;
+            opacity: 1;
+            transform: translateY(0) translateX(-50%);
+            pointer-events: auto;
+        }
 
-        #cursor-ship { position: fixed; top: 0; left: 0; width: 48px; height: 48px; pointer-events: none; z-index: 9999; transform: translate(-50%, -50%); transition: transform 0.08s ease-out; mix-blend-mode: exclusion; filter: drop-shadow(0 0 8px rgba(0, 255, 65, 0.6)); }
-        #trail-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9998; }
+        .sci-grid {
+            background-size: 40px 40px;
+            mask-image: radial-gradient(circle at center, black, transparent 80%);
+        }
 
-        .decrypt-effect { display: inline-block; }
+        #cursor-ship {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 48px;
+            height: 48px;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            transition: transform 0.08s ease-out;
+            mix-blend-mode: exclusion;
+            filter: drop-shadow(0 0 8px rgba(0, 255, 65, 0.6));
+        }
+
+        #trail-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9998;
+        }
+
+        .decrypt-effect {
+            display: inline-block;
+        }
 
         /* Mobile Menu Transitions */
-        #mobile-menu { transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out; }
-        .mobile-submenu { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
-        .mobile-submenu.open { max-height: 500px; }
+        #mobile-menu {
+            transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+        }
+
+        .mobile-submenu {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .mobile-submenu.open {
+            max-height: 500px;
+        }
     </style>
     {% block extra_head %}{% endblock %}
 </head>
@@ -92,13 +189,14 @@
 
     <div id="cursor-ship">
         <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M10 13C10 9 13 6 16 6C19 6 22 9 22 13" fill="#00ff41" fill-opacity="0.3" stroke="#00ff41" stroke-width="1"/>
-            <ellipse cx="16" cy="16" rx="15" ry="5" fill="#020202" stroke="#00ff41" stroke-width="1.5"/>
-            <path d="M4 17Q16 23 28 17" stroke="#00ff41" stroke-width="1" stroke-linecap="round"/>
-            <circle cx="7" cy="18" r="1" fill="#fff" class="animate-pulse"/>
-            <circle cx="16" cy="20" r="1.5" fill="#fff"/>
-            <circle cx="25" cy="18" r="1" fill="#fff" class="animate-pulse"/>
-            <ellipse cx="16" cy="21" rx="4" ry="1.5" fill="#00ff41" fill-opacity="0.8"/>
+            <path d="M10 13C10 9 13 6 16 6C19 6 22 9 22 13" fill="#00ff41" fill-opacity="0.3" stroke="#00ff41"
+                stroke-width="1" />
+            <ellipse cx="16" cy="16" rx="15" ry="5" fill="#020202" stroke="#00ff41" stroke-width="1.5" />
+            <path d="M4 17Q16 23 28 17" stroke="#00ff41" stroke-width="1" stroke-linecap="round" />
+            <circle cx="7" cy="18" r="1" fill="#fff" class="animate-pulse" />
+            <circle cx="16" cy="20" r="1.5" fill="#fff" />
+            <circle cx="25" cy="18" r="1" fill="#fff" class="animate-pulse" />
+            <ellipse cx="16" cy="21" rx="4" ry="1.5" fill="#00ff41" fill-opacity="0.8" />
         </svg>
     </div>
 
@@ -111,64 +209,83 @@
             <div class="flex items-center justify-between h-20">
                 <a href="{% url 'index' %}" class="flex items-center gap-3 group cursor-pointer relative z-50">
                     {% if config.logo %}
-                        <img src="{{ config.logo.url }}" alt="{{ config.site_name }}" class="h-12 w-auto">
+                    <img src="{{ config.logo.url }}" alt="{{ config.site_name }}" class="h-12 w-auto">
                     {% else %}
-                        <i data-lucide="zap" class="h-8 w-8 text-alien group-hover:animate-pulse"></i>
+                    <i data-lucide="zap" class="h-8 w-8 text-alien group-hover:animate-pulse"></i>
                     {% endif %}
-                    <span class="font-orbitron font-bold text-2xl tracking-wider text-white">{{ config.site_name|default:"ALIENHOUSE" }}</span>
+                    <span class="font-orbitron font-bold text-2xl tracking-wider text-white">
+                        {{ config.site_name|default:"ALIENHOUSE" }}</span>
                 </a>
 
                 <div class="hidden xl:flex items-center h-full">
                     <div class="flex h-full relative">
-                        <div class="group relative h-full flex items-center px-6 cursor-pointer border-l border-alien/5 hover:bg-alien/5 transition-colors">
-                            <span class="text-gray-300 group-hover:text-alien font-orbitron text-sm tracking-widest flex items-center gap-2">
-                                COMPANY <i data-lucide="chevron-down" class="w-3 h-3 transition-transform group-hover:rotate-180"></i>
+                        <div
+                            class="group relative h-full flex items-center px-6 cursor-pointer border-l border-alien/5 hover:bg-alien/5 transition-colors">
+                            <span
+                                class="text-gray-300 group-hover:text-alien font-orbitron text-sm tracking-widest flex items-center gap-2">
+                                COMPANY <i data-lucide="chevron-down"
+                                    class="w-3 h-3 transition-transform group-hover:rotate-180"></i>
                             </span>
-                            <div class="mega-menu absolute top-20 w-[400px] bg-alien-dark border border-alien/30 p-8 shadow-[0_20px_50px_rgba(0,255,65,0.1)]">
+                            <div
+                                class="mega-menu absolute top-20 w-[400px] bg-alien-dark border border-alien/30 p-8 shadow-[0_20px_50px_rgba(0,255,65,0.1)]">
                                 <ul class="space-y-2 text-sm text-gray-400 font-mono">
                                     {% for page in company_pages %}
-                                        <li class="hover:text-white hover:translate-x-2 transition-transform cursor-pointer">
-                                            <a href="{{ page.get_absolute_url }}">{{ page.title }}</a>
-                                        </li>
+                                    <li
+                                        class="hover:text-white hover:translate-x-2 transition-transform cursor-pointer">
+                                        <a href="{{ page.get_absolute_url }}">{{ page.title }}</a>
+                                    </li>
                                     {% empty %}
-                                        <li class="text-gray-500">No company pages found</li>
+                                    <li class="text-gray-500">No company pages found</li>
                                     {% endfor %}
                                 </ul>
                             </div>
                         </div>
 
-                        <div class="group relative h-full flex items-center px-6 cursor-pointer border-l border-alien/5 hover:bg-alien/5 transition-colors">
-                            <span class="text-gray-300 group-hover:text-alien font-orbitron text-sm tracking-widest flex items-center gap-2">
-                                SERVICES <i data-lucide="chevron-down" class="w-3 h-3 transition-transform group-hover:rotate-180"></i>
+                        <div
+                            class="group relative h-full flex items-center px-6 cursor-pointer border-l border-alien/5 hover:bg-alien/5 transition-colors">
+                            <span
+                                class="text-gray-300 group-hover:text-alien font-orbitron text-sm tracking-widest flex items-center gap-2">
+                                SERVICES <i data-lucide="chevron-down"
+                                    class="w-3 h-3 transition-transform group-hover:rotate-180"></i>
                             </span>
-                            
-                            <div class="mega-menu absolute top-20 w-[900px] max-w-[95vw] bg-alien-dark/95 backdrop-blur-xl border border-alien/30 shadow-[0_20px_50px_rgba(0,255,65,0.15)] overflow-hidden">
-                                <div class="h-1 w-full bg-gradient-to-r from-transparent via-alien to-transparent opacity-50"></div>
-                                
+
+                            <div
+                                class="mega-menu absolute top-20 w-[900px] max-w-[95vw] bg-alien-dark/95 backdrop-blur-xl border border-alien/30 shadow-[0_20px_50px_rgba(0,255,65,0.15)] overflow-hidden">
+                                <div
+                                    class="h-1 w-full bg-gradient-to-r from-transparent via-alien to-transparent opacity-50">
+                                </div>
+
                                 <div class="max-h-[60vh] overflow-y-auto p-8">
-                                    
+
                                     <div class="grid grid-cols-3 gap-6">
                                         {% for svc in all_services %}
                                         <div class="relative group/item">
-                                            <a href="{% url 'service_detail' svc.slug %}" class="flex items-center gap-3 mb-3 pb-2 border-b border-white/10 group-hover/item:border-alien/50 transition-colors">
-                                                <div class="p-1.5 rounded bg-white/5 text-alien group-hover/item:bg-alien group-hover/item:text-black transition-all duration-300">
+                                            <a href="{% url 'service_detail' svc.slug %}"
+                                                class="flex items-center gap-3 mb-3 pb-2 border-b border-white/10 group-hover/item:border-alien/50 transition-colors">
+                                                <div
+                                                    class="p-1.5 rounded bg-white/5 text-alien group-hover/item:bg-alien group-hover/item:text-black transition-all duration-300">
                                                     <i data-lucide="{{ svc.icon|default:'cpu' }}" class="w-5 h-5"></i>
                                                 </div>
-                                                <span class="font-orbitron font-bold text-white tracking-wide group-hover/item:text-alien transition-colors text-sm">{{ svc.name }}</span>
+                                                <span
+                                                    class="font-orbitron font-bold text-white tracking-wide group-hover/item:text-alien transition-colors text-sm">
+                                                    {{ svc.name }}</span>
                                             </a>
 
                                             {% if svc.sub_services.all %}
                                             <ul class="space-y-1.5 ml-11 border-l border-white/5 pl-4">
                                                 {% for sub in svc.sub_services.all %}
-                                                    {% if sub.is_active %}
-                                                    <li class="flex items-center gap-2 text-xs font-mono text-gray-500 hover:text-white transition-colors cursor-crosshair">
-                                                        <span class="text-alien opacity-50">></span> {{ sub.name }}
-                                                    </li>
-                                                    {% endif %}
+                                                {% if sub.is_active %}
+                                                <li
+                                                    class="flex items-center gap-2 text-xs font-mono text-gray-500 hover:text-white transition-colors cursor-crosshair">
+                                                    <span class="text-alien opacity-50">></span> {{ sub.name }}
+                                                </li>
+                                                {% endif %}
                                                 {% endfor %}
                                             </ul>
                                             {% else %}
-                                            <p class="ml-11 text-[10px] text-gray-600 font-mono uppercase tracking-widest">// No Sub-routines</p>
+                                            <p
+                                                class="ml-11 text-[10px] text-gray-600 font-mono uppercase tracking-widest">
+                                                // No Sub-routines</p>
                                             {% endif %}
                                         </div>
                                         {% empty %}
@@ -182,12 +299,14 @@
                             </div>
                         </div>
 
-                        <a href="#rnd" class="group h-full flex items-center px-6 cursor-pointer border-l border-alien/5 hover:bg-alien/5 transition-colors text-gray-300 hover:text-alien font-orbitron text-sm tracking-widest">
+                        <a href="#rnd"
+                            class="group h-full flex items-center px-6 cursor-pointer border-l border-alien/5 hover:bg-alien/5 transition-colors text-gray-300 hover:text-alien font-orbitron text-sm tracking-widest">
                             LABS / R&D
                         </a>
 
                         <div class="flex items-center ml-6">
-                            <a href="#contact" class="relative px-6 py-2 bg-alien text-black font-orbitron font-bold text-sm tracking-widest hover:bg-white transition-colors">
+                            <a href="#contact"
+                                class="relative px-6 py-2 bg-alien text-black font-orbitron font-bold text-sm tracking-widest hover:bg-white transition-colors">
                                 CONTACT
                             </a>
                         </div>
@@ -201,38 +320,43 @@
         </div>
     </nav>
 
-    <div id="mobile-menu" class="fixed inset-0 z-40 bg-alien-dark/95 backdrop-blur-2xl translate-x-full pt-24 px-6 overflow-y-auto">
+    <div id="mobile-menu"
+        class="fixed inset-0 z-40 bg-alien-dark/95 backdrop-blur-2xl translate-x-full pt-24 px-6 overflow-y-auto">
         <div class="flex flex-col space-y-6">
-            
+
             <div class="border-b border-alien/20 pb-4">
-                <button onclick="toggleMobileSubmenu('mobile-company')" class="flex items-center justify-between w-full text-white font-orbitron text-lg tracking-widest mb-2">
+                <button onclick="toggleMobileSubmenu('mobile-company')"
+                    class="flex items-center justify-between w-full text-white font-orbitron text-lg tracking-widest mb-2">
                     COMPANY <i data-lucide="chevron-down" class="w-5 h-5 text-alien"></i>
                 </button>
                 <div id="mobile-company" class="mobile-submenu pl-4 space-y-3">
                     {% for page in company_pages %}
-                        <a href="{{ page.get_absolute_url }}" class="block text-gray-400 font-mono text-sm hover:text-alien py-1">> {{ page.title }}</a>
+                    <a href="{{ page.get_absolute_url }}"
+                        class="block text-gray-400 font-mono text-sm hover:text-alien py-1">> {{ page.title }}</a>
                     {% empty %}
-                        <span class="text-gray-600 font-mono text-xs">// No Pages</span>
+                    <span class="text-gray-600 font-mono text-xs">// No Pages</span>
                     {% endfor %}
                 </div>
             </div>
 
             <div class="border-b border-alien/20 pb-4">
-                <button onclick="toggleMobileSubmenu('mobile-services')" class="flex items-center justify-between w-full text-white font-orbitron text-lg tracking-widest mb-2">
+                <button onclick="toggleMobileSubmenu('mobile-services')"
+                    class="flex items-center justify-between w-full text-white font-orbitron text-lg tracking-widest mb-2">
                     SERVICES <i data-lucide="chevron-down" class="w-5 h-5 text-alien"></i>
                 </button>
                 <div id="mobile-services" class="mobile-submenu pl-4 space-y-4 pt-2">
                     {% for svc in all_services %}
                     <div class="mb-3">
-                        <a href="{% url 'service_detail' svc.slug %}" class="flex items-center gap-2 text-alien font-bold mb-1">
+                        <a href="{% url 'service_detail' svc.slug %}"
+                            class="flex items-center gap-2 text-alien font-bold mb-1">
                             <i data-lucide="{{ svc.icon|default:'cpu' }}" class="w-4 h-4"></i> {{ svc.name }}
                         </a>
                         {% if svc.sub_services.all %}
                         <div class="pl-6 space-y-2 border-l border-white/10 ml-2">
                             {% for sub in svc.sub_services.all %}
-                                {% if sub.is_active %}
-                                <div class="text-gray-500 text-xs font-mono">{{ sub.name }}</div>
-                                {% endif %}
+                            {% if sub.is_active %}
+                            <div class="text-gray-500 text-xs font-mono">{{ sub.name }}</div>
+                            {% endif %}
                             {% endfor %}
                         </div>
                         {% endif %}
@@ -245,10 +369,11 @@
                 LABS / R&D
             </a>
 
-            <a href="#contact" class="block text-center w-full py-3 bg-alien text-black font-orbitron font-bold tracking-widest mt-4">
+            <a href="#contact"
+                class="block text-center w-full py-3 bg-alien text-black font-orbitron font-bold tracking-widest mt-4">
                 INITIATE CONTACT
             </a>
-            
+
             <button onclick="closeMobileMenu()" class="absolute top-6 right-6 text-gray-500 hover:text-white">
                 <i data-lucide="x" class="w-8 h-8"></i>
             </button>
@@ -277,7 +402,8 @@
                     <h4 class="text-white font-bold mb-6 text-lg">Connect</h4>
                     <div class="flex space-x-4 mb-8">
                         {% for contact in contacts %}
-                        <a href="{{ contact.get_link }}" target="_blank" class="w-10 h-10 rounded border border-gray-700 flex items-center justify-center text-gray-400 hover:border-alien hover:text-alien hover:bg-alien/10 transition-all">
+                        <a href="{{ contact.get_link }}" target="_blank"
+                            class="w-10 h-10 rounded border border-gray-700 flex items-center justify-center text-gray-400 hover:border-alien hover:text-alien hover:bg-alien/10 transition-all">
                             <i data-lucide="{{ contact.contact_type }}"></i>
                         </a>
                         {% endfor %}
@@ -294,40 +420,244 @@
     <script>
         lucide.createIcons();
 
-        // --- THREE.JS GLOBE ---
+        // --- THREE.JS GLOBE AND PLANETS ---
         const initThreeJS = () => {
             const container = document.getElementById('three-container');
-            if(!container) return;
+            if (!container) return;
             const scene = new THREE.Scene();
             const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.z = 30;
+            camera.position.z = 25; // Adjusted camera distance
+
             const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
             container.appendChild(renderer.domElement);
-            const geometry = new THREE.IcosahedronGeometry(13, 2); 
-            const wireframe = new THREE.WireframeGeometry(geometry);
-            const material = new THREE.LineBasicMaterial({ color: 0x00ff41, transparent: true, opacity: 0.1 });
-            const globe = new THREE.LineSegments(wireframe, material);
-            scene.add(globe);
 
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0x333333);
+            scene.add(ambientLight);
+
+            const sunLight = new THREE.DirectionalLight(0xffffff, 1.5);
+            sunLight.position.set(50, 30, 50);
+            scene.add(sunLight);
+
+            // Texture Loader
+            const loader = new THREE.TextureLoader();
+
+            // Group to hold all celestial bodies
+            const solarSystem = new THREE.Group();
+            scene.add(solarSystem);
+
+            // --- EARTH ---
+            const earthGroup = new THREE.Group(); // Rotating group for Earth system
+            solarSystem.add(earthGroup);
+
+            const earthGeometry = new THREE.SphereGeometry(10, 64, 64);
+            const earthMaterial = new THREE.MeshPhongMaterial({
+                map: loader.load('{% static "core/textures/alien_earth_like_surface.png" %}'),
+                emissiveMap: loader.load('{% static "core/textures/alien_earth_like_clouds.png" %}'), // Using clouds as emissive map for a glowing atmosphere effect
+                emissive: new THREE.Color(0x0044ff),
+                emissiveIntensity: 0.2,
+                specular: new THREE.Color(0x00aaff),
+                shininess: 45,
+                bumpMap: loader.load('{% static "core/textures/alien_earth_like_surface.png" %}'),
+                bumpScale: 0.08
+            });
+            const earth = new THREE.Mesh(earthGeometry, earthMaterial);
+            earthGroup.add(earth);
+
+            // --- ATMOSPHERE GLOW ---
+            const atmosGeometry = new THREE.SphereGeometry(10.3, 64, 64);
+            const atmosMaterial = new THREE.MeshPhongMaterial({
+                color: 0x0088ff,
+                transparent: true,
+                opacity: 0.15,
+                side: THREE.BackSide,
+                blending: THREE.AdditiveBlending,
+            });
+            const atmosphere = new THREE.Mesh(atmosGeometry, atmosMaterial);
+            earthGroup.add(atmosphere);
+
+            // Earth Clouds
+            const cloudGeometry = new THREE.SphereGeometry(10.1, 64, 64);
+            const cloudMaterial = new THREE.MeshPhongMaterial({
+                map: loader.load('{% static "core/textures/alien_earth_like_clouds.png" %}'),
+                transparent: true,
+                opacity: 0.5,
+                blending: THREE.AdditiveBlending,
+                side: THREE.DoubleSide
+            });
+            const clouds = new THREE.Mesh(cloudGeometry, cloudMaterial);
+            earthGroup.add(clouds);
+
+            // Second Cloud Layer (Higher, faster)
+            const cloud2Geometry = new THREE.SphereGeometry(10.25, 64, 64);
+            const cloud2Material = new THREE.MeshPhongMaterial({
+                map: loader.load('{% static "core/textures/alien_earth_like_clouds.png" %}'),
+                transparent: true,
+                opacity: 0.3,
+                blending: THREE.AdditiveBlending,
+                side: THREE.DoubleSide
+            });
+            const clouds2 = new THREE.Mesh(cloud2Geometry, cloud2Material);
+            clouds2.rotation.y = 1.5; // Offset
+            earthGroup.add(clouds2);
+
+            // --- ORBITING SHIPS (COMPLEX PROCEDURAL) ---
+            const shipsGroup = new THREE.Group();
+            earthGroup.add(shipsGroup);
+
+            // Function to create a sci-fi ship mesh
+            const createSciFiShip = () => {
+                const ship = new THREE.Group();
+
+                // Fuselage
+                const fuselageGeom = new THREE.CylinderGeometry(0.05, 0.05, 0.6, 8);
+                const fuselageMat = new THREE.MeshPhongMaterial({ color: 0x888888, specular: 0xffffff });
+                const fuselage = new THREE.Mesh(fuselageGeom, fuselageMat);
+                fuselage.rotation.x = Math.PI / 2;
+                ship.add(fuselage);
+
+                // Wings
+                const wingGeom = new THREE.BoxGeometry(0.4, 0.02, 0.2);
+                const wingMat = new THREE.MeshPhongMaterial({ color: 0x333333 });
+                const wings = new THREE.Mesh(wingGeom, wingMat);
+                wings.position.set(0, 0, 0);
+                ship.add(wings);
+
+                // Engine Glow
+                const engineGeom = new THREE.SphereGeometry(0.06, 8, 8);
+                const engineMat = new THREE.MeshBasicMaterial({ color: 0x00ffff });
+                const engine = new THREE.Mesh(engineGeom, engineMat);
+                engine.position.z = 0.3; // Behind
+                ship.add(engine);
+
+                // Engine Light
+                const light = new THREE.PointLight(0x00ffff, 1, 2);
+                light.position.set(0, 0, 0.35);
+                ship.add(light);
+
+                return ship;
+            };
+
+            for (let i = 0; i < 15; i++) {
+                const ship = createSciFiShip();
+                const distance = 13 + Math.random() * 6;
+                const angle = Math.random() * Math.PI * 2;
+                const height = (Math.random() - 0.5) * 12;
+
+                ship.position.set(
+                    Math.cos(angle) * distance,
+                    height,
+                    Math.sin(angle) * distance
+                );
+
+                ship.userData = {
+                    distance: distance,
+                    angle: angle,
+                    speed: 0.002 + Math.random() * 0.005,
+                    height: height,
+                    orbitTilt: (Math.random() - 0.5) * 0.5
+                };
+
+                // Initial rotation setup
+                ship.lookAt(0, 0, 0);
+                shipsGroup.add(ship);
+            }
+
+
+
+            // --- MOON ---
+            const moonGroup = new THREE.Group(); // Pivot for Moon orbit
+            earthGroup.add(moonGroup);
+
+            const moonGeometry = new THREE.SphereGeometry(2, 32, 32);
+            const moonMaterial = new THREE.MeshPhongMaterial({
+                map: loader.load('{% static "core/textures/moon_map.png" %}'),
+                shininess: 0
+            });
+            const moon = new THREE.Mesh(moonGeometry, moonMaterial);
+            moon.position.set(20, 5, -10); // Orbit radius relative to Earth
+            moonGroup.add(moon);
+
+            // --- MARS ---
+            // Mars is independent, larger orbit in background
+            const marsGeometry = new THREE.SphereGeometry(4, 32, 32);
+            const marsMaterial = new THREE.MeshPhongMaterial({
+                map: loader.load('{% static "core/textures/mars_map.png" %}'),
+                shininess: 5
+            });
+            const mars = new THREE.Mesh(marsGeometry, marsMaterial);
+            mars.position.set(-30, 15, -40); // Far background
+            solarSystem.add(mars);
+
+
+            // --- STARS / PARTICLES ---
             const particlesGeom = new THREE.BufferGeometry();
-            const posArray = new Float32Array(700 * 3);
-            for(let i = 0; i < 700 * 3; i++) posArray[i] = (Math.random() - 0.5) * 80; 
+            const posArray = new Float32Array(1500 * 3);
+            for (let i = 0; i < 1500 * 3; i++) posArray[i] = (Math.random() - 0.5) * 200;
             particlesGeom.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-            const particlesMesh = new THREE.Points(particlesGeom, new THREE.PointsMaterial({ size: 0.05, color: 0x00ff41, transparent: true, opacity: 0.3 }));
+            const particlesMesh = new THREE.Points(particlesGeom, new THREE.PointsMaterial({ size: 0.1, color: 0xffffff, transparent: true, opacity: 0.6 }));
             scene.add(particlesMesh);
 
             let mouseX = 0, mouseY = 0;
-            document.addEventListener('mousemove', (e) => { mouseX = e.clientX / window.innerWidth - 0.5; mouseY = e.clientY / window.innerHeight - 0.5; });
+            document.addEventListener('mousemove', (e) => {
+                mouseX = (e.clientX - window.innerWidth / 2) / window.innerWidth; // -0.5 to 0.5
+                mouseY = (e.clientY - window.innerHeight / 2) / window.innerHeight;
+            });
+
             const animate = () => {
                 requestAnimationFrame(animate);
-                globe.rotation.y += 0.001 + mouseX * 0.05;
-                globe.rotation.x += 0.0005 + mouseY * 0.05;
-                particlesMesh.rotation.y = -mouseX * 0.1;
+
+                // Rotations
+                earth.rotation.y += 0.0005; // Slower Earth spin
+                clouds.rotation.y += 0.0008; // Clouds spin
+                clouds2.rotation.y += 0.0012; // Clouds2 spin faster
+
+                // Animate Ships
+                shipsGroup.children.forEach(ship => {
+                    ship.userData.angle += ship.userData.speed;
+
+                    // Complex orbit path
+                    const x = Math.cos(ship.userData.angle) * ship.userData.distance;
+                    const z = Math.sin(ship.userData.angle) * ship.userData.distance;
+                    const y = ship.userData.height + Math.sin(ship.userData.angle * 2) * 2; // Wobbly orbit
+
+                    ship.position.set(x, y, z);
+
+                    // Orient ship to face movement direction
+                    const nextX = Math.cos(ship.userData.angle + 0.1) * ship.userData.distance;
+                    const nextZ = Math.sin(ship.userData.angle + 0.1) * ship.userData.distance;
+                    const nextY = ship.userData.height + Math.sin((ship.userData.angle + 0.1) * 2) * 2;
+                    ship.lookAt(nextX, nextY, nextZ);
+
+                    ship.rotation.z += 0.02; // Banking effect
+                });
+
+
+
+                // Moon Orbit (rotate the pivot group)
+                moonGroup.rotation.y += 0.0005;
+                moon.rotation.y += 0.002; // Moon spins on axis
+
+                // Mars
+                mars.rotation.y += 0.0008;
+
+                // Interactive tilt based on mouse
+                solarSystem.rotation.y = mouseX * 0.2;
+                solarSystem.rotation.x = mouseY * 0.2;
+
+                particlesMesh.rotation.y = -mouseX * 0.05;
+
                 renderer.render(scene, camera);
             };
             animate();
-            window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
         };
 
         // --- CURSOR SYSTEM ---
@@ -336,7 +666,7 @@
             const trailCanvas = document.getElementById('trail-canvas');
             const ctx = trailCanvas.getContext('2d');
             let trail = [];
-            let mouse = { x: window.innerWidth/2, y: window.innerHeight/2 };
+            let mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
             const resizeTrail = () => { trailCanvas.width = window.innerWidth; trailCanvas.height = window.innerHeight; };
             window.addEventListener('resize', resizeTrail); resizeTrail();
             document.addEventListener('mousemove', (e) => {
@@ -353,7 +683,7 @@
                     ctx.beginPath();
                     ctx.moveTo(trail[0].x, trail[0].y);
                     for (let i = 1; i < trail.length; i++) ctx.lineTo(trail[i].x, trail[i].y);
-                    const gradient = ctx.createLinearGradient(trail[0].x, trail[0].y, trail[trail.length-1].x, trail[trail.length-1].y);
+                    const gradient = ctx.createLinearGradient(trail[0].x, trail[0].y, trail[trail.length - 1].x, trail[trail.length - 1].y);
                     gradient.addColorStop(0, 'rgba(0, 255, 65, 0)');
                     gradient.addColorStop(1, 'rgba(0, 255, 65, 0.5)');
                     ctx.lineWidth = 4; ctx.strokeStyle = gradient; ctx.lineCap = 'round'; ctx.stroke();
@@ -373,15 +703,15 @@
             window.addEventListener('mousemove', (e) => { mouse.x = e.x; mouse.y = e.y; });
             function resize() { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; createParticles(); }
             class Particle {
-                constructor() { this.x = Math.random() * width; this.y = Math.random() * height; this.vx = (Math.random()-0.5); this.vy = (Math.random()-0.5); this.size = Math.random()*1.5; this.baseX=this.x; this.baseY=this.y; }
+                constructor() { this.x = Math.random() * width; this.y = Math.random() * height; this.vx = (Math.random() - 0.5); this.vy = (Math.random() - 0.5); this.size = Math.random() * 1.5; this.baseX = this.x; this.baseY = this.y; }
                 update() {
-                    let dx = mouse.x - this.x; let dy = mouse.y - this.y; let distance = Math.sqrt(dx*dx+dy*dy);
-                    if(distance<mouse.radius){this.x-=(dx/distance)*2; this.y-=(dy/distance)*2;}else{if(this.x!==this.baseX)this.x-=(this.x-this.baseX)/20;if(this.y!==this.baseY)this.y-=(this.y-this.baseY)/20;}
+                    let dx = mouse.x - this.x; let dy = mouse.y - this.y; let distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < mouse.radius) { this.x -= (dx / distance) * 2; this.y -= (dy / distance) * 2; } else { if (this.x !== this.baseX) this.x -= (this.x - this.baseX) / 20; if (this.y !== this.baseY) this.y -= (this.y - this.baseY) / 20; }
                 }
-                draw(){ctx.fillStyle='#00ff41';ctx.beginPath();ctx.arc(this.x,this.y,this.size,0,Math.PI*2);ctx.fill();}
+                draw() { ctx.fillStyle = '#00ff41'; ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill(); }
             }
-            function createParticles(){particles=[];for(let i=0;i<(width*height)/9000;i++)particles.push(new Particle());}
-            function animateParticles(){ctx.clearRect(0,0,width,height);particles.forEach(p=>{p.update();p.draw();});requestAnimationFrame(animateParticles);}
+            function createParticles() { particles = []; for (let i = 0; i < (width * height) / 9000; i++)particles.push(new Particle()); }
+            function animateParticles() { ctx.clearRect(0, 0, width, height); particles.forEach(p => { p.update(); p.draw(); }); requestAnimationFrame(animateParticles); }
             resize(); animateParticles();
         };
 
@@ -421,9 +751,9 @@
                 el.addEventListener('mouseover', () => {
                     let iteration = 0; const original = el.dataset.value || el.innerText;
                     const interval = setInterval(() => {
-                        el.innerText = original.split("").map((l,i)=>i<iteration?original[i]:letters[Math.floor(Math.random()*letters.length)]).join("");
-                        if(iteration>=original.length) clearInterval(interval);
-                        iteration += 1/3;
+                        el.innerText = original.split("").map((l, i) => i < iteration ? original[i] : letters[Math.floor(Math.random() * letters.length)]).join("");
+                        if (iteration >= original.length) clearInterval(interval);
+                        iteration += 1 / 3;
                     }, 30);
                 });
             });
@@ -432,4 +762,5 @@
 
     {% block extra_scripts %}{% endblock %}
 </body>
+
 </html>

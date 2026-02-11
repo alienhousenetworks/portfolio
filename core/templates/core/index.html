@@ -1,12 +1,18 @@
 {% extends 'core/base.html' %}
 {% load static %}
 
+
 {% block content %}
-<header class="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
-    <div id="three-container" class="absolute inset-0 z-0 opacity-80"></div>
+<div id="three-container" class="fixed inset-0 z-0 opacity-80 pointer-events-none"></div>
+<header class="relative min-h-screen flex items-center justify-center overflow-hidden pt-20 bg-transparent">
+    <!-- 3D Container Removed -->
     <div
         class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-alien/5 rounded-full blur-[100px] animate-pulse pointer-events-none">
     </div>
+    <!-- Text Visibility Overlay -->
+    <div class="absolute inset-0 z-0 bg-gradient-to-b from-black/60 via-transparent to-black/80 pointer-events-none">
+    </div>
+    <div class="absolute inset-0 z-0 bg-black/20 pointer-events-none"></div>
 
     <div class="relative z-10 text-center
                 w-full
@@ -21,19 +27,20 @@
             <div
                 class="px-4 py-1 border border-alien/50 rounded-full bg-alien/10 text-alien text-xs font-mono flex items-center gap-2">
                 <span class="w-2 h-2 bg-alien rounded-full animate-ping"></span>
-                {{ hero.status_text|default:"SYSTEM OPTIMAL" }}
+                {{ hero.status_text|default:"Welcome to AlienHouse Networks" }}
             </div>
         </div>
 
         <h1
-            class="text-6xl md:text-8xl lg:text-9xl font-orbitron font-black text-white mb-8 leading-[0.9] tracking-tighter mix-blend-luminosity pointer-events-auto">
+            class="text-6xl md:text-8xl lg:text-9xl font-orbitron font-black text-white mb-8 leading-[0.9] tracking-tighter drop-shadow-[0_4px_4px_rgba(0,0,0,1)] pointer-events-auto">
             {{ hero.main_heading_line_1|default:"FUTURE" }}<br>
             <span
                 class="text-transparent bg-clip-text bg-gradient-to-r from-alien via-emerald-400 to-cyan-500 decrypt-effect"
                 data-value="{{ hero.main_heading_gradient_text|default:'ENGINEERED' }}">IMAGINATION</span>
         </h1>
 
-        <p class="text-xl md:text-2xl text-gray-400 max-w-3xl mx-auto font-light mb-10 pointer-events-auto">
+        <p
+            class="text-xl md:text-2xl text-gray-200 max-w-3xl mx-auto font-light mb-10 pointer-events-auto drop-shadow-md">
             {{ hero.sub_text|default:"Advanced AI & Software Consultancy" }}
         </p>
 
@@ -51,7 +58,7 @@
     </div>
 </header>
 <!-- ========================= ABOUT US ======================== -->
-<section class="relative py-40 bg-black overflow-hidden">
+<section class="relative py-40 bg-black/80 backdrop-blur-sm overflow-hidden">
 
     <!-- Futuristic background grid -->
     <div class="absolute inset-0 opacity-[0.05] pointer-events-none" style="background-image: linear-gradient(#00ff41 1px, transparent 1px),
@@ -111,7 +118,7 @@
 </section>
 
 
-<section id="services" class="py-24 bg-alien-dark relative border-b border-alien/20">
+<section id="services" class="py-24 bg-alien-dark/90 backdrop-blur-sm relative border-b border-alien/20">
     <div class="absolute inset-0 grid grid-cols-6 gap-4 opacity-5 pointer-events-none">
         <div class="border-r border-alien h-full"></div>
         <div class="border-r border-alien h-full"></div>
@@ -225,7 +232,7 @@
 
 
         <!-- ========================= CLIENT LOGOS (TICKER) ======================== -->
-        <section class="py-10 bg-black overflow-hidden relative">
+        <section class="py-10 bg-black/80 backdrop-blur-sm overflow-hidden relative">
             <div class="w-full">
                 <div class="flex whitespace-nowrap animate-marquee gap-16">
                     {% for c in client_logos %}
@@ -267,7 +274,8 @@
         </style>
 
 
-        <section id="personnel" class="py-24 bg-black border-y border-alien/20 relative overflow-hidden">
+        <section id="personnel"
+            class="py-24 bg-black/90 backdrop-blur-sm border-y border-alien/20 relative overflow-hidden">
             <div class="absolute top-0 right-0 w-64 h-64 bg-alien/10 blur-[80px]"></div>
             <div class="w-full mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                 <div class="mb-16 border-l-4 border-alien pl-6">
@@ -303,7 +311,7 @@
         </section>
 
         <!-- ========================= OUR PROCESS ======================== -->
-        <section class="py-24 bg-black relative border-b border-alien/10">
+        <section class="py-24 bg-black/90 backdrop-blur-sm relative border-b border-alien/10">
             <div class="w-full mx-auto px-6 relative z-10">
                 <div class="text-center mb-16">
                     <span class="text-alien text-xs font-mono tracking-[0.2em] uppercase">// Methodology</span>
@@ -353,7 +361,7 @@
         </section>
 
         <!-- ========================= TESTIMONIALS ======================== -->
-        <section class="py-24 bg-black relative overflow-hidden">
+        <section class="py-24 bg-black/90 backdrop-blur-sm relative overflow-hidden">
             <!-- Background Grid -->
             <div class="absolute inset-0 opacity-[0.03]"
                 style="background-image: linear-gradient(#ffffff 1px, transparent 1px), linear-gradient(90deg, #ffffff 1px, transparent 1px); background-size: 40px 40px;">
@@ -392,7 +400,8 @@
         </section>
 
         <!-- ========================= ALIENHOUSE LABS (FLEX-ACCORDION V3) ======================== -->
-        <section id="rnd" class="py-32 bg-black relative overflow-hidden border-t border-purple-500/10">
+        <section id="rnd"
+            class="py-32 bg-black/90 backdrop-blur-sm relative overflow-hidden border-t border-purple-500/10">
             <!-- Cyberpunk Environment -->
             <div
                 class="absolute inset-0 bg-[linear-gradient(rgba(18,18,18,0)_1px,transparent_1px),linear-gradient(90deg,rgba(18,18,18,0)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_70%,transparent_100%)]">
@@ -495,7 +504,7 @@
         </section>
 
         <!-- ========================= CONTACT SECTION ======================== -->
-        <section id="contact" class="py-32 bg-black relative border-t border-white/10">
+        <section id="contact" class="py-32 bg-black/90 backdrop-blur-sm relative border-t border-white/10">
             <div class="w-full mx-auto px-6 max-w-7xl relative z-10">
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
