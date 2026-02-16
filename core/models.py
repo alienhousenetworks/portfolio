@@ -2,6 +2,7 @@ from django.db import models
 from django.utils.text import slugify
 from django.core.validators import MinValueValidator
 from geopy.distance import geodesic
+from .utils import compress_image_to_webp
 
 import requests
 
@@ -43,13 +44,18 @@ class SiteConfiguration(models.Model):
     footer_text = models.CharField(max_length=200, default="Galactic Rights Reserved.", help_text="Text displayed at the very bottom of the page.")
 
     def save(self, *args, **kwargs):
-        if self.logo:
-            compress_image_to_webp(self.logo)
-        if self.favicon:
-            # Favicons usually need to be ICO or PNG, but browsers support WebP favicons now.
-            # However, keeping favicon as is might be safer for compatibility.
-            # Let's compress it anyway for modern browsers.
-            compress_image_to_webp(self.favicon)
+        try:
+            if self.logo:
+                compress_image_to_webp(self.logo)
+            if self.favicon:
+                # Favicons usually need to be ICO or PNG, but browsers support WebP favicons now.
+                # However, keeping favicon as is might be safer for compatibility.
+                # Let's compress it anyway for modern browsers.
+                compress_image_to_webp(self.favicon)
+        except Exception as e:
+            # Log the error but don't stop the save
+            # logger.error(f"Error compressing images: {e}")
+            pass
         super().save(*args, **kwargs)
 
     def __str__(self):
