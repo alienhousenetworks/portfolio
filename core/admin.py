@@ -9,7 +9,7 @@ from .models import (
     Location, ContactMessage, ContactInfo,
     ClientLogo, AboutUs,
     CompanyPage, PageSection, CTA,
-    AboutUsPage, AboutUsSection,
+    AboutUsPage, AboutUsSection, AboutUsGalleryImage,
     JobPost, JobApplication
 )
 
@@ -66,6 +66,13 @@ class AboutUsSectionInline(admin.TabularInline):
     verbose_name = "Connected Section"
     verbose_name_plural = "Connected Sections (Impacts: About Us Page Body)"
     description = "These sections will be displayed on the About Us page."
+
+class AboutUsGalleryImageInline(admin.TabularInline):
+    model = AboutUsGalleryImage
+    extra = 1
+    verbose_name = "Gallery Image"
+    verbose_name_plural = "Gallery / Slideshow Images"
+
 
 
 # ============================================================
@@ -418,7 +425,8 @@ class CompanyPageAdmin(admin.ModelAdmin):
 @admin.register(AboutUsPage)
 class AboutUsPageAdmin(admin.ModelAdmin):
     list_display = ("page_title", "hero_heading")
-    inlines = [AboutUsSectionInline]
+    list_display = ("page_title", "hero_heading")
+    inlines = [AboutUsSectionInline, AboutUsGalleryImageInline]
     
     fieldsets = (
         ("Hero Banner", {

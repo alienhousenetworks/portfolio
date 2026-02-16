@@ -109,7 +109,7 @@ def about_us(request):
     """
     Fetch About Us page and its dynamic sections.
     """
-    about_page = AboutUsPage.objects.prefetch_related('sections').first()
+    about_page = AboutUsPage.objects.prefetch_related('sections', 'gallery_images').first()
     sections = about_page.sections.all() if about_page else []
 
     site_config = SiteConfiguration.objects.first()

@@ -203,6 +203,22 @@
         .lenis.lenis-scrolling iframe {
             pointer-events: none;
         }
+
+        /* Custom Utilities */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            /* IE and Edge */
+            scrollbar-width: none;
+            /* Firefox */
+        }
+
+        .text-balance {
+            text-wrap: balance;
+        }
     </style>
     {% block extra_head %}{% endblock %}
 </head>

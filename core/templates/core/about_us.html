@@ -15,10 +15,10 @@
             <div
                 class="inline-block px-3 py-1 border border-alien/30 rounded text-alien text-xs font-mono mb-4 tracking-[0.2em]">
                 ORIGIN STORY</div>
-            <h1 class="text-5xl md:text-7xl font-orbitron font-bold text-white mb-6">
+            <h1 class="text-5xl md:text-7xl font-orbitron font-bold text-white mb-6 text-balance">
                 {{ about_page.hero_heading|default:"WE BUILD THE FUTURE" }}
             </h1>
-            <p class="text-xl md:text-2xl text-gray-400 max-w-3xl mx-auto font-light leading-relaxed">
+            <p class="text-xl md:text-2xl text-gray-400 max-w-3xl mx-auto font-light leading-relaxed text-balance">
                 {{ about_page.hero_subtext|default:"AlienHouse Networks is an advanced technology collective dedicated
                 to pushing the boundaries of software engineering and artificial intelligence." }}
             </p>
@@ -33,7 +33,8 @@
             <div class="p-8 border-l-2 border-alien bg-gradient-to-r from-gray-900/50 to-transparent backdrop-blur-sm">
                 <i data-lucide="target" class="w-10 h-10 text-alien mb-4"></i>
                 <h3 class="text-2xl font-orbitron font-bold text-white mb-4">OUR MISSION</h3>
-                <p class="text-gray-400 leading-relaxed">To accelerate the evolution of digital infrastructure by
+                <p class="text-gray-400 leading-relaxed text-balance">To accelerate the evolution of digital
+                    infrastructure by
                     providing elite-grade engineering solutions that defy conventional limits.</p>
             </div>
             <!-- Vision -->
@@ -41,11 +42,49 @@
                 class="p-8 border-l-2 border-purple-500 bg-gradient-to-r from-gray-900/50 to-transparent backdrop-blur-sm">
                 <i data-lucide="eye" class="w-10 h-10 text-purple-500 mb-4"></i>
                 <h3 class="text-2xl font-orbitron font-bold text-white mb-4">OUR VISION</h3>
-                <p class="text-gray-400 leading-relaxed">A world where intelligent systems and human creativity merge
+                <p class="text-gray-400 leading-relaxed text-balance">A world where intelligent systems and human
+                    creativity merge
                     seamlessly to solve the most complex challenges of the 21st century.</p>
             </div>
         </div>
     </section>
+
+    <!-- Gallery / Office Life Carousel -->
+    {% if about_page.gallery_images.exists %}
+    <section class="py-24 overflow-hidden border-b border-white/5">
+        <div class="container mx-auto px-6 mb-12 text-center">
+            <span class="text-alien text-xs font-mono tracking-[0.2em]">INSIDE THE LAB</span>
+            <h2 class="text-3xl md:text-4xl font-orbitron font-bold text-white mt-2">LIFE AT <span
+                    class="text-alien">ALIENHOUSE</span></h2>
+        </div>
+
+        <!-- CSS-only Scroll Snap Carousel -->
+        <div class="relative w-full flex gap-6 overflow-x-auto snap-x snap-mandatory pb-8 px-6 no-scrollbar"
+            style="scrollbar-width: none; -ms-overflow-style: none;">
+            {% for img in about_page.gallery_images.all %}
+            <div
+                class="snap-center shrink-0 w-[85vw] md:w-[600px] h-[400px] relative rounded-xl overflow-hidden border border-white/10 group">
+                <img src="{{ img.image.url }}" alt="{{ img.caption }}"
+                    class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-80">
+                </div>
+                {% if img.caption %}
+                <div class="absolute bottom-0 left-0 p-6 w-full">
+                    <p class="text-white font-orbitron text-lg">{{ img.caption }}</p>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Decorative Indicators/Controls Hint -->
+        <div class="flex justify-center gap-2 mt-4">
+            <div class="text-gray-500 text-xs font-mono animate-pulse">
+                << DRAG TO EXPLORE>>
+            </div>
+        </div>
+    </section>
+    {% endif %}
 
     <!-- Company History / Timeline (Simplified) -->
     {% if sections %}
@@ -72,7 +111,7 @@
                         {% endif %}
                     </div>
                     <div class="w-full md:w-1/2">
-                        <h3 class="text-2xl font-orbitron text-white mb-4">{{ section.heading }}</h3>
+                        <h3 class="text-2xl font-orbitron text-white mb-4 text-balance">{{ section.heading }}</h3>
                         <div class="text-gray-300 leading-relaxed prose prose-invert">
                             {{ section.content|safe }}
                         </div>

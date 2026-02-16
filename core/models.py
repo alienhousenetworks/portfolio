@@ -667,6 +667,28 @@ class AboutUsPage(models.Model):
         return self.page_title
 
 
+class AboutUsGalleryImage(models.Model):
+    """
+    Images for the About Us page slideshow/gallery.
+    """
+    about_page = models.ForeignKey(AboutUsPage, on_delete=models.CASCADE, related_name="gallery_images")
+    image = models.ImageField(upload_to="about_us/gallery/")
+    caption = models.CharField(max_length=200, blank=True, help_text="Optional caption for the image.")
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["order"]
+
+    def save(self, *args, **kwargs):
+        if self.image:
+           from .utils import compress_image_to_webp
+           compress_image_to_webp(self.image)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Gallery Image {self.order} - {self.caption or 'No Caption'}"
+
+
 
 # class PageSection(models.Model):
 #     page = models.ForeignKey('CompanyPage', related_name='sections', on_delete=models.CASCADE)
