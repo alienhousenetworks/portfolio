@@ -428,7 +428,9 @@
                     <h4 class="text-white font-bold mb-6 text-lg">Capabilities</h4>
                     <ul class="space-y-3 text-gray-500 font-mono">
                         {% for cap in all_services %}
-                        <li class="hover:text-alien cursor-pointer">{{ cap.name }}</li>
+                        <li class="hover:text-alien cursor-pointer">
+                            <a href="{% url 'service_detail' cap.slug %}">{{ cap.name }}</a>
+                        </li>
                         {% empty %}
                         <li class="text-gray-600">No capabilities listed</li>
                         {% endfor %}
