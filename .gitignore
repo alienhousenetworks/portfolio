@@ -19,3 +19,13 @@ media/
 .env
 __pycache__/
 *.py[cod]
+
+__pycache__/
+*.pyc
+port/
+core/migrations/
+*.sqlite3
+db.sqlite3
+.env
+node_modules/
+media/
