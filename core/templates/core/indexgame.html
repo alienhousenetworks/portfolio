@@ -1,7 +1,7 @@
-
 <!DOCTYPE html>
 {% load static %}
 <html lang="en" class="scroll-smooth">
+
 <head>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -15,7 +15,9 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
 
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap"
+        rel="stylesheet">
 
     <style>
         /* --- VISUAL CONFIG --- */
@@ -25,30 +27,42 @@
             --bg-color: #050505;
         }
 
-        body, html {
-            margin: 0; padding: 0;
+        body,
+        html {
+            margin: 0;
+            padding: 0;
             background-color: var(--bg-color);
-            overflow: hidden; 
+            overflow: hidden;
             font-family: 'Rajdhani', sans-serif;
             color: white;
-            height: 100vh; width: 100vw;
+            height: 100vh;
+            width: 100vw;
         }
 
         /* --- GAME CANVAS --- */
         #game-canvas {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
             z-index: 0;
         }
 
         /* --- MILITARY HUD OVERLAY --- */
         #ui-layer {
-            position: fixed; inset: 0; z-index: 50; pointer-events: none;
-            background: radial-gradient(circle at center, transparent 80%, rgba(0,0,0,0.8));
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            pointer-events: none;
+            background: radial-gradient(circle at center, transparent 80%, rgba(0, 0, 0, 0.8));
         }
 
         /* VIGNETTE & SCANLINES */
         #ui-layer::before {
-            content: " "; position: absolute; inset: 0;
+            content: " ";
+            position: absolute;
+            inset: 0;
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%);
             background-size: 100% 4px;
             pointer-events: none;
@@ -70,38 +84,75 @@
         }
 
         /* HUD LAYOUT */
-        .hud-top-left { top: 30px; left: 30px; border-left: 4px solid var(--hud-color); }
-        .hud-top-right { top: 30px; right: 30px; text-align: right; border-right: 4px solid var(--hud-color); }
-        
-        .hud-bar-container {
-            width: 200px; height: 10px; background: rgba(0,0,0,0.5); margin-top: 5px;
-            border: 1px solid rgba(255,255,255,0.1); overflow: hidden;
+        .hud-top-left {
+            top: 30px;
+            left: 30px;
+            border-left: 4px solid var(--hud-color);
         }
-        .hud-bar { height: 100%; width: 100%; transform-origin: left; transform: scaleX(1); transition: 0.2s; box-shadow: 0 0 15px currentColor; }
+
+        .hud-top-right {
+            top: 30px;
+            right: 30px;
+            text-align: right;
+            border-right: 4px solid var(--hud-color);
+        }
+
+        .hud-bar-container {
+            width: 200px;
+            height: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            margin-top: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+        }
+
+        .hud-bar {
+            height: 100%;
+            width: 100%;
+            transform-origin: left;
+            transform: scaleX(1);
+            transition: 0.2s;
+            box-shadow: 0 0 15px currentColor;
+        }
 
         /* SCROLL CONTAINER */
         #main-scroll-container {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100vh;
-            overflow-y: hidden; /* Locked initially */
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            overflow-y: hidden;
+            /* Locked initially */
             scroll-behavior: smooth;
             z-index: 20;
             perspective: 1000px;
-            pointer-events: none; /* Passes clicks to game */
+            pointer-events: none;
+            /* Passes clicks to game */
         }
-        
+
         /* The "Empty" spacer for game view */
-        .scroll-spacer { height: 100vh; width: 100%; pointer-events: none; }
+        .scroll-spacer {
+            height: 100vh;
+            width: 100%;
+            pointer-events: none;
+        }
 
         /* SECTIONS */
         .profile-section {
             min-height: 100vh;
-            display: flex; align-items: center; justify-content: center;
-            opacity: 0; transform: rotateX(10deg) translateY(100px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transform: rotateX(10deg) translateY(100px);
             transition: all 1s cubic-bezier(0.2, 1, 0.3, 1);
             padding: 100px 20px;
         }
+
         .profile-section.active {
-            opacity: 1; transform: rotateX(0) translateY(0);
+            opacity: 1;
+            transform: rotateX(0) translateY(0);
             pointer-events: auto;
         }
 
@@ -110,476 +161,580 @@
             background: rgba(10, 15, 20, 0.7);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-top: 1px solid rgba(0, 240, 255, 0.5);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 0 20px rgba(0, 240, 255, 0.05);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 240, 255, 0.05);
             backdrop-filter: blur(20px);
             padding: 40px;
-            max-width: 1100px; width: 100%;
+            max-width: 1100px;
+            width: 100%;
             border-radius: 4px;
         }
 
         /* START SCREEN */
         #start-screen {
-            position: fixed; inset: 0; z-index: 100;
+            position: fixed;
+            inset: 0;
+            z-index: 100;
             background: black;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
+
         .title-glitch {
-            font-family: 'Orbitron'; font-size: 5rem; font-weight: 900;
+            font-family: 'Orbitron';
+            font-size: 5rem;
+            font-weight: 900;
             text-shadow: 4px 0 var(--danger-color), -4px 0 var(--hud-color);
             animation: shake 0.5s infinite;
         }
+
         .btn-start {
-            margin-top: 40px; padding: 20px 60px;
-            background: var(--hud-color); color: black;
-            font-family: 'Orbitron'; font-weight: 900; font-size: 1.5rem;
-            border: none; clip-path: polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px);
-            cursor: pointer; transition: 0.3s;
+            margin-top: 40px;
+            padding: 20px 60px;
+            background: var(--hud-color);
+            color: black;
+            font-family: 'Orbitron';
+            font-weight: 900;
+            font-size: 1.5rem;
+            border: none;
+            clip-path: polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px);
+            cursor: pointer;
+            transition: 0.3s;
             box-shadow: 0 0 30px var(--hud-color);
         }
-        .btn-start:hover { background: white; box-shadow: 0 0 60px white; }
+
+        .btn-start:hover {
+            background: white;
+            box-shadow: 0 0 60px white;
+        }
 
         /* FOOTER FIX */
         .game-footer {
-            opacity: 0; pointer-events: none; transition: opacity 1s;
-            position: relative; /* Normal flow inside scroller */
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s;
+            position: relative;
+            /* Normal flow inside scroller */
             z-index: 30;
             background: black;
             border-top: 1px solid var(--hud-color);
             padding: 50px 0;
             text-align: center;
         }
-        body.game-complete .game-footer { opacity: 1; pointer-events: auto; }
 
+        body.game-complete .game-footer {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* MOBILE OPTIMIZATIONS */
+        @media (max-width: 768px) {
+            .title-glitch {
+                font-size: 3rem;
+            }
+
+            .btn-start {
+                padding: 15px 40px;
+                font-size: 1.2rem;
+            }
+
+            .hud-element {
+                padding: 5px;
+                font-size: 0.8rem;
+            }
+
+            .hud-top-left {
+                top: 10px;
+                left: 10px;
+            }
+
+            .hud-top-right {
+                top: 10px;
+                right: 10px;
+            }
+
+            .hud-bar-container {
+                width: 100px;
+                height: 6px;
+            }
+
+            .profile-section {
+                padding: 60px 10px;
+            }
+
+            .glass-panel {
+                padding: 20px;
+            }
+
+            /* Ensure text doesn't overflow */
+            h2 {
+                font-size: 2rem !important;
+                word-wrap: break-word;
+            }
+
+            p {
+                font-size: 1rem !important;
+            }
+
+            /* Card Grid for Mobile */
+            .grid {
+                grid-template-columns: 1fr !important;
+            }
+        }
     </style>
-    </head>
+</head>
 
-    <div id="start-screen">
-        <h1 class="title-glitch">WARP_DRIVE</h1>
-        <p style="letter-spacing: 4px; color: #888; margin-top: 10px;">TACTICAL DEVELOPER PORTFOLIO</p>
-        <button class="btn-start" onclick="initGame()">ENGAGE</button>
+<div id="start-screen">
+    <h1 class="title-glitch">WARP_DRIVE</h1>
+    <p style="letter-spacing: 4px; color: #888; margin-top: 10px;">TACTICAL DEVELOPER PORTFOLIO</p>
+    <button class="btn-start" onclick="initGame()">ENGAGE</button>
+</div>
+
+<div id="ui-layer" style="display: none;">
+    <div class="hud-element hud-top-left">
+        <div>ARMOR STATUS</div>
+        <div class="hud-bar-container">
+            <div id="hp-bar" class="hud-bar" style="background: var(--danger-color); width: 100%;"></div>
+        </div>
+    </div>
+    <div class="hud-element hud-top-right">
+        <div>DECRYPTION LEVEL <span id="lvl-txt" style="color:white">0</span></div>
+        <div class="hud-bar-container">
+            <div id="xp-bar" class="hud-bar" style="background: var(--hud-color); width: 0%;"></div>
+        </div>
     </div>
 
-    <div id="ui-layer" style="display: none;">
-        <div class="hud-element hud-top-left">
-            <div>ARMOR STATUS</div>
-            <div class="hud-bar-container"><div id="hp-bar" class="hud-bar" style="background: var(--danger-color); width: 100%;"></div></div>
-        </div>
-        <div class="hud-element hud-top-right">
-            <div>DECRYPTION LEVEL <span id="lvl-txt" style="color:white">0</span></div>
-            <div class="hud-bar-container"><div id="xp-bar" class="hud-bar" style="background: var(--hud-color); width: 0%;"></div></div>
-        </div>
-        
-        <button onclick="unlockAll()" style="position: absolute; bottom: 20px; right: 20px; pointer-events: auto; opacity: 0.5; background: black; border: 1px solid white; color: white; padding: 5px 10px;">
-            DEV_UNLOCK
-        </button>
-    </div>
+    <button onclick="unlockAll()"
+        style="position: absolute; bottom: 20px; right: 20px; pointer-events: auto; opacity: 0.5; background: black; border: 1px solid white; color: white; padding: 5px 10px;">
+        DEV_UNLOCK
+    </button>
+</div>
 
-    <div id="game-canvas"></div>
+<div id="game-canvas"></div>
 
-    <div id="main-scroll-container">
-        
-        <div class="scroll-spacer"></div>
+<div id="main-scroll-container">
 
-        <div id="section-1" class="profile-section">
-            <div class="glass-panel">
-                <div class="flex flex-col md:flex-row gap-12 items-center">
-                    <div class="relative group">
-                        <div class="w-48 h-48 rounded-sm overflow-hidden border-2 border-cyan-500 relative z-10">
-                            <div class="w-full h-full bg-gray-900 flex items-center justify-center">
-                                <i data-lucide="user" class="w-20 h-20 text-cyan-500"></i>
-                            </div>
+    <div class="scroll-spacer"></div>
+
+    <div id="section-1" class="profile-section">
+        <div class="glass-panel">
+            <div class="flex flex-col md:flex-row gap-12 items-center">
+                <div class="relative group">
+                    <div class="w-48 h-48 rounded-sm overflow-hidden border-2 border-cyan-500 relative z-10">
+                        <div class="w-full h-full bg-gray-900 flex items-center justify-center">
+                            <i data-lucide="user" class="w-20 h-20 text-cyan-500"></i>
                         </div>
-                        <div class="absolute inset-0 border-2 border-red-500 transform translate-x-4 translate-y-4 -z-0"></div>
                     </div>
-                    <div class="flex-1">
-                        <div class="flex items-center gap-4 mb-4">
-                            <h2 class="text-6xl font-black font-orbitron text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600">
-                                OPERATOR
-                            </h2>
-                            <div class="px-3 py-1 bg-cyan-900/50 border border-cyan-500 text-cyan-400 text-xs font-bold tracking-widest">
-                                ONLINE
-                            </div>
+                    <div class="absolute inset-0 border-2 border-red-500 transform translate-x-4 translate-y-4 -z-0">
+                    </div>
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-center gap-4 mb-4">
+                        <h2
+                            class="text-6xl font-black font-orbitron text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600">
+                            OPERATOR
+                        </h2>
+                        <div
+                            class="px-3 py-1 bg-cyan-900/50 border border-cyan-500 text-cyan-400 text-xs font-bold tracking-widest">
+                            ONLINE
                         </div>
-                        <p class="text-xl text-gray-300 font-rajdhani font-medium leading-relaxed max-w-2xl">
-                            Elite Full Stack Engineer specializing in high-performance architecture. 
-                            Deploying scalable Python/Django backends and immersive Three.js frontends.
-                            <br><br>
-                            <span class="text-cyan-400">> MISSION:</span> Build the future of web interaction.
-                        </p>
                     </div>
+                    <p class="text-xl text-gray-300 font-rajdhani font-medium leading-relaxed max-w-2xl">
+                        Elite Full Stack Engineer specializing in high-performance architecture.
+                        Deploying scalable Python/Django backends and immersive Three.js frontends.
+                        <br><br>
+                        <span class="text-cyan-400">> MISSION:</span> Build the future of web interaction.
+                    </p>
                 </div>
             </div>
         </div>
-
-        <div id="section-2" class="profile-section">
-            <div class="glass-panel">
-                <h2 class="text-5xl font-orbitron font-bold text-white mb-12 text-center">WEAPONRY <span class="text-red-500">LOADOUT</span></h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {% for service in services %}
-                    <div class="bg-black/40 border border-gray-700 p-8 hover:border-cyan-500 hover:bg-cyan-900/10 transition-all duration-300 group">
-                        <i data-lucide="{{ service.icon|default:'zap' }}" class="w-10 h-10 text-gray-500 group-hover:text-cyan-400 mb-6 transition-colors"></i>
-                        <h3 class="text-2xl font-bold font-rajdhani text-white mb-2">{{ service.name }}</h3>
-                        <p class="text-gray-400 text-sm">{{ service.short_description }}</p>
-                    </div>
-                    {% empty %}
-                    <div class="bg-black/40 border border-gray-700 p-8"><h3 class="text-white">BACKEND OPS</h3></div>
-                    <div class="bg-black/40 border border-gray-700 p-8"><h3 class="text-white">FRONTEND WARFARE</h3></div>
-                    <div class="bg-black/40 border border-gray-700 p-8"><h3 class="text-white">CLOUD DEPLOYMENT</h3></div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-
-        <div id="section-3" class="profile-section">
-            <div class="glass-panel text-center py-20">
-                <h2 class="text-6xl font-orbitron text-white mb-6">MISSION <span class="text-cyan-400">COMPLETE</span></h2>
-                <p class="text-gray-400 text-xl mb-12 max-w-xl mx-auto">
-                    All levels cleared. Uplink established. You may now contact the developer directly.
-                </p>
-                <a href="mailto:{{ config.email }}" class="inline-block px-12 py-6 bg-white text-black font-black font-orbitron text-xl hover:bg-cyan-400 hover:scale-110 transition-all duration-300 clip-path-polygon">
-                    INITIATE CONTACT
-                </a>
-            </div>
-        </div>
-
-        <div class="game-footer">
-            <div class="text-gray-500 text-sm font-mono mb-4">SYSTEM ID: {{ config.email }}</div>
-            <div class="text-gray-700 text-xs">COPYRIGHT 2026 // ALL RIGHTS RESERVED</div>
-        </div>
-
     </div>
 
-    <script>
-        // --- CONSTANTS ---
-        const CONFIG = {
-            speed: 1.5,
-            boostSpeed: 4.0,
-            colors: {
-                fog: 0x020205,
-                neonBlue: 0x00f3ff,
-                neonRed: 0xff003c,
-                building: 0x0a0a0a
-            }
-        };
+    <div id="section-2" class="profile-section">
+        <div class="glass-panel">
+            <h2 class="text-5xl font-orbitron font-bold text-white mb-12 text-center">WEAPONRY <span
+                    class="text-red-500">LOADOUT</span></h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {% for service in services %}
+                <div
+                    class="bg-black/40 border border-gray-700 p-8 hover:border-cyan-500 hover:bg-cyan-900/10 transition-all duration-300 group">
+                    <i data-lucide="{{ service.icon|default:'zap' }}"
+                        class="w-10 h-10 text-gray-500 group-hover:text-cyan-400 mb-6 transition-colors"></i>
+                    <h3 class="text-2xl font-bold font-rajdhani text-white mb-2">{{ service.name }}</h3>
+                    <p class="text-gray-400 text-sm">{{ service.short_description }}</p>
+                </div>
+                {% empty %}
+                <div class="bg-black/40 border border-gray-700 p-8">
+                    <h3 class="text-white">BACKEND OPS</h3>
+                </div>
+                <div class="bg-black/40 border border-gray-700 p-8">
+                    <h3 class="text-white">FRONTEND WARFARE</h3>
+                </div>
+                <div class="bg-black/40 border border-gray-700 p-8">
+                    <h3 class="text-white">CLOUD DEPLOYMENT</h3>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
 
-        // --- GLOBAL STATE ---
-        let state = {
-            active: false,
-            health: 100,
-            xp: 0,
-            level: 0,
-            maxLevels: 3,
-            gameBeaten: false
-        };
+    <div id="section-3" class="profile-section">
+        <div class="glass-panel text-center py-20">
+            <h2 class="text-6xl font-orbitron text-white mb-6">MISSION <span class="text-cyan-400">COMPLETE</span></h2>
+            <p class="text-gray-400 text-xl mb-12 max-w-xl mx-auto">
+                All levels cleared. Uplink established. You may now contact the developer directly.
+            </p>
+            <a href="mailto:{{ config.email }}"
+                class="inline-block px-12 py-6 bg-white text-black font-black font-orbitron text-xl hover:bg-cyan-400 hover:scale-110 transition-all duration-300 clip-path-polygon">
+                INITIATE CONTACT
+            </a>
+        </div>
+    </div>
 
-        // --- THREE.JS SETUP ---
-        const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(CONFIG.colors.fog, 0.015); // Dense fog for depth
+    <div class="game-footer">
+        <div class="text-gray-500 text-sm font-mono mb-4">SYSTEM ID: {{ config.email }}</div>
+        <div class="text-gray-700 text-xs">COPYRIGHT 2026 // ALL RIGHTS RESERVED</div>
+    </div>
 
-        const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 2000);
-        camera.position.set(0, 3, 10);
+</div>
 
-        const renderer = new THREE.WebGLRenderer({ powerPreference: "high-performance", antialias: false });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-        renderer.toneMapping = THREE.ReinhardToneMapping;
-        document.getElementById('game-canvas').appendChild(renderer.domElement);
+<script>
+    // --- CONSTANTS ---
+    const isMobile = window.innerWidth < 768;
 
-        // --- POST PROCESSING (THE MAGIC SAUCE) ---
-        const composer = new THREE.EffectComposer(renderer);
-        const renderPass = new THREE.RenderPass(scene, camera);
-        composer.addPass(renderPass);
+    const CONFIG = {
+        speed: isMobile ? 1.0 : 1.5,
+        boostSpeed: 4.0,
+        colors: {
+            fog: 0x020205,
+            neonBlue: 0x00f3ff,
+            neonRed: 0xff003c,
+            building: 0x0a0a0a
+        }
+    };
 
-        // UNREAL BLOOM - Makes everything GLOW
-        const bloomPass = new THREE.UnrealBloomPass(
-            new THREE.Vector2(window.innerWidth, window.innerHeight),
-            1.5, // Strength
-            0.4, // Radius
-            0.85 // Threshold
+    // --- GLOBAL STATE ---
+    let state = {
+        active: false,
+        health: 100,
+        xp: 0,
+        level: 0,
+        maxLevels: 3,
+        gameBeaten: false
+    };
+
+    // --- THREE.JS SETUP ---
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(CONFIG.colors.fog, 0.015); // Dense fog for depth
+
+    const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 2000);
+    camera.position.set(0, 3, 10);
+
+    const renderer = new THREE.WebGLRenderer({ powerPreference: "high-performance", antialias: false });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(isMobile ? 1 : Math.min(window.devicePixelRatio, 1.5));
+    renderer.toneMapping = THREE.ReinhardToneMapping;
+    document.getElementById('game-canvas').appendChild(renderer.domElement);
+
+    // --- POST PROCESSING (THE MAGIC SAUCE) ---
+    const composer = new THREE.EffectComposer(renderer);
+    const renderPass = new THREE.RenderPass(scene, camera);
+    composer.addPass(renderPass);
+
+    // UNREAL BLOOM - Makes everything GLOW
+    const bloomPass = new THREE.UnrealBloomPass(
+        new THREE.Vector2(window.innerWidth, window.innerHeight),
+        1.5, // Strength
+        0.4, // Radius
+        0.85 // Threshold
+    );
+    composer.addPass(bloomPass);
+
+    // --- LIGHTING ---
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
+    scene.add(ambientLight);
+
+    // Hero Light (Ship Glow)
+    const shipLight = new THREE.PointLight(CONFIG.colors.neonBlue, 2, 50);
+    shipLight.position.set(0, 2, 5);
+    scene.add(shipLight);
+
+    // --- ASSETS: PROCEDURAL CITY ---
+    // We create instances for buildings for performance
+    const cityGroup = new THREE.Group();
+    const buildingGeo = new THREE.BoxGeometry(1, 1, 1);
+    const buildingMat = new THREE.MeshPhongMaterial({
+        color: 0x111111,
+        emissive: 0x000000,
+        specular: 0x111111,
+        shininess: 30
+    });
+
+    // Edge glow for buildings (wireframe illusion)
+    const edgeMat = new THREE.LineBasicMaterial({ color: 0x0044aa, transparent: true, opacity: 0.1 });
+
+    function createBuilding(x, z) {
+        const height = Math.random() * 20 + 5;
+        const width = Math.random() * 4 + 2;
+
+        const mesh = new THREE.Mesh(buildingGeo, buildingMat);
+        mesh.position.set(x, height / 2 - 10, z);
+        mesh.scale.set(width, height, width);
+
+        // Add subtle rim light logic via placement or simple wireframe
+        // For perf, we skip full wireframe on every building, just mass volume
+        cityGroup.add(mesh);
+        return mesh;
+    }
+
+    // Generate City "Trench"
+    const buildings = [];
+    const buildingCount = isMobile ? 30 : 60;
+    for (let i = 0; i < buildingCount; i++) {
+        // Left side
+        buildings.push(createBuilding(-(Math.random() * 30 + 15), -(i * 10)));
+        // Right side
+        buildings.push(createBuilding((Math.random() * 30 + 15), -(i * 10)));
+    }
+    scene.add(cityGroup);
+
+    // Floor Grid (Neon Road)
+    const gridHelper = new THREE.GridHelper(200, 40, CONFIG.colors.neonBlue, 0x001133);
+    gridHelper.position.y = -2;
+    scene.add(gridHelper);
+
+    // --- HERO SHIP (Fighter Jet Style) ---
+    const ship = new THREE.Group();
+
+    // Main Fuselage
+    const fuselage = new THREE.Mesh(
+        new THREE.ConeGeometry(0.8, 4, 4),
+        new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.4, metalness: 0.8 })
+    );
+    fuselage.rotation.x = Math.PI / 2;
+    fuselage.rotation.z = Math.PI / 4;
+    ship.add(fuselage);
+
+    // Engine Thrusters (Glowing Rings)
+    const thrusterGeo = new THREE.CylinderGeometry(0.4, 0.1, 0.5, 8);
+    const thrusterMat = new THREE.MeshBasicMaterial({ color: CONFIG.colors.neonBlue });
+    const lThruster = new THREE.Mesh(thrusterGeo, thrusterMat);
+    lThruster.rotation.x = Math.PI / 2;
+    lThruster.position.set(-0.8, 0, 1.5);
+
+    const rThruster = lThruster.clone();
+    rThruster.position.set(0.8, 0, 1.5);
+
+    ship.add(lThruster);
+    ship.add(rThruster);
+
+    // Wings
+    const wings = new THREE.Mesh(
+        new THREE.BoxGeometry(4, 0.1, 1.5),
+        new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.9 })
+    );
+    wings.position.set(0, 0, 0.5);
+    ship.add(wings);
+
+    scene.add(ship);
+
+
+    // --- PARTICLES (EXPLOSIONS) ---
+    const particles = [];
+    const particleGeo = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+    const particleMat = new THREE.MeshBasicMaterial({ color: CONFIG.colors.neonRed });
+
+    function spawnExplosion(pos) {
+        const count = isMobile ? 5 : 15;
+        for (let i = 0; i < count; i++) {
+            const p = new THREE.Mesh(particleGeo, particleMat);
+            p.position.copy(pos);
+            p.userData = {
+                vel: new THREE.Vector3(
+                    (Math.random() - 0.5) * 0.5,
+                    (Math.random() - 0.5) * 0.5,
+                    (Math.random() - 0.5) * 0.5
+                ),
+                life: 1.0
+            };
+            scene.add(p);
+            particles.push(p);
+        }
+    }
+
+    // --- GAME OBJECTS ---
+    const targets = []; // Enemies/Coins
+    const enemyGeo = new THREE.OctahedronGeometry(1);
+    const enemyMat = new THREE.MeshBasicMaterial({ color: CONFIG.colors.neonRed, wireframe: true });
+
+    const coinGeo = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+    const coinMat = new THREE.MeshBasicMaterial({ color: CONFIG.colors.neonBlue });
+
+    function spawnTarget() {
+        if (!state.active) return;
+
+        const isEnemy = Math.random() > 0.6;
+        const mesh = new THREE.Mesh(isEnemy ? enemyGeo : coinGeo, isEnemy ? enemyMat : coinMat);
+
+        mesh.position.set(
+            (Math.random() - 0.5) * 20,
+            (Math.random() - 0.5) * 8,
+            -200 // Far away
         );
-        composer.addPass(bloomPass);
 
-        // --- LIGHTING ---
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
-        scene.add(ambientLight);
-        
-        // Hero Light (Ship Glow)
-        const shipLight = new THREE.PointLight(CONFIG.colors.neonBlue, 2, 50);
-        shipLight.position.set(0, 2, 5);
-        scene.add(shipLight);
+        mesh.userData = { type: isEnemy ? 'enemy' : 'coin' };
+        scene.add(mesh);
+        targets.push(mesh);
+    }
 
-        // --- ASSETS: PROCEDURAL CITY ---
-        // We create instances for buildings for performance
-        const cityGroup = new THREE.Group();
-        const buildingGeo = new THREE.BoxGeometry(1, 1, 1);
-        const buildingMat = new THREE.MeshPhongMaterial({ 
-            color: 0x111111, 
-            emissive: 0x000000,
-            specular: 0x111111,
-            shininess: 30
+    // --- LOGIC LOOP ---
+    let mouse = { x: 0, y: 0 };
+    document.addEventListener('mousemove', (e) => {
+        mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+    });
+
+    function initGame() {
+        document.getElementById('start-screen').style.display = 'none';
+        document.getElementById('ui-layer').style.display = 'block';
+        state.active = true;
+        setInterval(spawnTarget, isMobile ? 1000 : 600); // Slower spawn on mobile
+    }
+
+    function update() {
+        if (!state.active) return;
+
+        // 1. Move Environment (Illusion of speed)
+        const speed = CONFIG.speed;
+        gridHelper.position.z += speed;
+        if (gridHelper.position.z > 10) gridHelper.position.z = 0;
+
+        buildings.forEach(b => {
+            b.position.z += speed;
+            if (b.position.z > 20) b.position.z = -200; // Recycle building
         });
-        
-        // Edge glow for buildings (wireframe illusion)
-        const edgeMat = new THREE.LineBasicMaterial({ color: 0x0044aa, transparent: true, opacity: 0.1 });
 
-        function createBuilding(x, z) {
-            const height = Math.random() * 20 + 5;
-            const width = Math.random() * 4 + 2;
-            
-            const mesh = new THREE.Mesh(buildingGeo, buildingMat);
-            mesh.position.set(x, height / 2 - 10, z);
-            mesh.scale.set(width, height, width);
-            
-            // Add subtle rim light logic via placement or simple wireframe
-            // For perf, we skip full wireframe on every building, just mass volume
-            cityGroup.add(mesh);
-            return mesh;
-        }
+        // 2. Ship Movement (Lerp)
+        ship.position.x += (mouse.x * 12 - ship.position.x) * 0.1;
+        ship.position.y += (mouse.y * 6 - ship.position.y) * 0.1;
 
-        // Generate City "Trench"
-        const buildings = [];
-        for(let i=0; i<60; i++) {
-            // Left side
-            buildings.push(createBuilding(-(Math.random() * 30 + 15), -(i * 10)));
-            // Right side
-            buildings.push(createBuilding((Math.random() * 30 + 15), -(i * 10)));
-        }
-        scene.add(cityGroup);
+        // Banking
+        ship.rotation.z = -ship.position.x * 0.05;
+        ship.rotation.x = -ship.position.y * 0.05;
 
-        // Floor Grid (Neon Road)
-        const gridHelper = new THREE.GridHelper(200, 40, CONFIG.colors.neonBlue, 0x001133);
-        gridHelper.position.y = -2;
-        scene.add(gridHelper);
+        // 3. Update Targets
+        for (let i = targets.length - 1; i >= 0; i--) {
+            let t = targets[i];
+            t.position.z += speed;
+            t.rotation.x += 0.05;
+            t.rotation.y += 0.05;
 
-        // --- HERO SHIP (Fighter Jet Style) ---
-        const ship = new THREE.Group();
-        
-        // Main Fuselage
-        const fuselage = new THREE.Mesh(
-            new THREE.ConeGeometry(0.8, 4, 4),
-            new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.4, metalness: 0.8 })
-        );
-        fuselage.rotation.x = Math.PI / 2;
-        fuselage.rotation.z = Math.PI / 4;
-        ship.add(fuselage);
-
-        // Engine Thrusters (Glowing Rings)
-        const thrusterGeo = new THREE.CylinderGeometry(0.4, 0.1, 0.5, 8);
-        const thrusterMat = new THREE.MeshBasicMaterial({ color: CONFIG.colors.neonBlue });
-        const lThruster = new THREE.Mesh(thrusterGeo, thrusterMat);
-        lThruster.rotation.x = Math.PI / 2;
-        lThruster.position.set(-0.8, 0, 1.5);
-        
-        const rThruster = lThruster.clone();
-        rThruster.position.set(0.8, 0, 1.5);
-        
-        ship.add(lThruster);
-        ship.add(rThruster);
-
-        // Wings
-        const wings = new THREE.Mesh(
-            new THREE.BoxGeometry(4, 0.1, 1.5),
-            new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.9 })
-        );
-        wings.position.set(0, 0, 0.5);
-        ship.add(wings);
-
-        scene.add(ship);
-
-
-        // --- PARTICLES (EXPLOSIONS) ---
-        const particles = [];
-        const particleGeo = new THREE.BoxGeometry(0.2, 0.2, 0.2);
-        const particleMat = new THREE.MeshBasicMaterial({ color: CONFIG.colors.neonRed });
-
-        function spawnExplosion(pos) {
-            for(let i=0; i<15; i++) {
-                const p = new THREE.Mesh(particleGeo, particleMat);
-                p.position.copy(pos);
-                p.userData = {
-                    vel: new THREE.Vector3(
-                        (Math.random()-0.5)*0.5,
-                        (Math.random()-0.5)*0.5,
-                        (Math.random()-0.5)*0.5
-                    ),
-                    life: 1.0
-                };
-                scene.add(p);
-                particles.push(p);
+            // Collision
+            if (t.position.distanceTo(ship.position) < 2.5) {
+                if (t.userData.type === 'enemy') {
+                    spawnExplosion(t.position);
+                    state.health -= 20;
+                    updateHUD();
+                    // Shake camera
+                    camera.position.x += (Math.random() - 0.5);
+                } else {
+                    state.xp += 25;
+                    checkLevel();
+                    updateHUD();
+                }
+                scene.remove(t);
+                targets.splice(i, 1);
+            } else if (t.position.z > 10) {
+                scene.remove(t);
+                targets.splice(i, 1);
             }
         }
 
-        // --- GAME OBJECTS ---
-        const targets = []; // Enemies/Coins
-        const enemyGeo = new THREE.OctahedronGeometry(1);
-        const enemyMat = new THREE.MeshBasicMaterial({ color: CONFIG.colors.neonRed, wireframe: true });
-        
-        const coinGeo = new THREE.BoxGeometry(0.8, 0.8, 0.8);
-        const coinMat = new THREE.MeshBasicMaterial({ color: CONFIG.colors.neonBlue });
-
-        function spawnTarget() {
-            if(!state.active) return;
-            
-            const isEnemy = Math.random() > 0.6;
-            const mesh = new THREE.Mesh(isEnemy ? enemyGeo : coinGeo, isEnemy ? enemyMat : coinMat);
-            
-            mesh.position.set(
-                (Math.random()-0.5) * 20, 
-                (Math.random()-0.5) * 8, 
-                -200 // Far away
-            );
-            
-            mesh.userData = { type: isEnemy ? 'enemy' : 'coin' };
-            scene.add(mesh);
-            targets.push(mesh);
+        // 4. Update Particles
+        for (let i = particles.length - 1; i >= 0; i--) {
+            let p = particles[i];
+            p.position.add(p.userData.vel);
+            p.userData.life -= 0.05;
+            p.scale.setScalar(p.userData.life);
+            if (p.userData.life <= 0) {
+                scene.remove(p);
+                particles.splice(i, 1);
+            }
         }
+    }
 
-        // --- LOGIC LOOP ---
-        let mouse = { x: 0, y: 0 };
-        document.addEventListener('mousemove', (e) => {
-            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-        });
+    function updateHUD() {
+        const hpPct = Math.max(0, state.health);
+        document.getElementById('hp-bar').style.width = hpPct + '%';
 
-        function initGame() {
-            document.getElementById('start-screen').style.display = 'none';
-            document.getElementById('ui-layer').style.display = 'block';
-            state.active = true;
-            setInterval(spawnTarget, 600); // Fast spawn rate
+        const xpPct = Math.min(100, (state.xp / 100) * 100);
+        document.getElementById('xp-bar').style.width = xpPct + '%';
+    }
+
+    function checkLevel() {
+        if (state.xp >= 100) {
+            state.xp = 0;
+            state.level++;
+            document.getElementById('lvl-txt').innerText = state.level;
+            unlockSection(state.level);
         }
+    }
 
-        function update() {
-            if(!state.active) return;
+    function unlockSection(lvl) {
+        // Speed Boost FX
+        const oldSpeed = CONFIG.speed;
+        CONFIG.speed = CONFIG.boostSpeed;
+        setTimeout(() => CONFIG.speed = oldSpeed, 1000);
 
-            // 1. Move Environment (Illusion of speed)
-            const speed = CONFIG.speed;
-            gridHelper.position.z += speed;
-            if(gridHelper.position.z > 10) gridHelper.position.z = 0;
+        // Reveal DOM
+        const section = document.getElementById(`section-${lvl}`);
+        if (section) {
+            document.getElementById('main-scroll-container').style.overflowY = 'auto';
+            document.getElementById('main-scroll-container').style.pointerEvents = 'auto';
+            section.classList.add('active');
 
-            buildings.forEach(b => {
-                b.position.z += speed;
-                if(b.position.z > 20) b.position.z = -200; // Recycle building
+            // Smooth Scroll
+            gsap.to('#main-scroll-container', {
+                scrollTop: section.offsetTop,
+                duration: 1.5,
+                ease: "power2.inOut"
             });
-
-            // 2. Ship Movement (Lerp)
-            ship.position.x += (mouse.x * 12 - ship.position.x) * 0.1;
-            ship.position.y += (mouse.y * 6 - ship.position.y) * 0.1;
-            
-            // Banking
-            ship.rotation.z = -ship.position.x * 0.05; 
-            ship.rotation.x = -ship.position.y * 0.05;
-
-            // 3. Update Targets
-            for(let i = targets.length - 1; i >= 0; i--) {
-                let t = targets[i];
-                t.position.z += speed;
-                t.rotation.x += 0.05;
-                t.rotation.y += 0.05;
-
-                // Collision
-                if(t.position.distanceTo(ship.position) < 2.5) {
-                    if(t.userData.type === 'enemy') {
-                        spawnExplosion(t.position);
-                        state.health -= 20;
-                        updateHUD();
-                        // Shake camera
-                        camera.position.x += (Math.random()-0.5);
-                    } else {
-                        state.xp += 25;
-                        checkLevel();
-                        updateHUD();
-                    }
-                    scene.remove(t);
-                    targets.splice(i, 1);
-                } else if(t.position.z > 10) {
-                    scene.remove(t);
-                    targets.splice(i, 1);
-                }
-            }
-
-            // 4. Update Particles
-            for(let i = particles.length - 1; i >= 0; i--) {
-                let p = particles[i];
-                p.position.add(p.userData.vel);
-                p.userData.life -= 0.05;
-                p.scale.setScalar(p.userData.life);
-                if(p.userData.life <= 0) {
-                    scene.remove(p);
-                    particles.splice(i, 1);
-                }
-            }
         }
 
-        function updateHUD() {
-            const hpPct = Math.max(0, state.health);
-            document.getElementById('hp-bar').style.width = hpPct + '%';
-            
-            const xpPct = Math.min(100, (state.xp / 100) * 100);
-            document.getElementById('xp-bar').style.width = xpPct + '%';
+        // Check Endgame
+        if (lvl >= 3) {
+            state.gameBeaten = true;
+            document.body.classList.add('game-complete');
         }
+    }
 
-        function checkLevel() {
-            if(state.xp >= 100) {
-                state.xp = 0;
-                state.level++;
-                document.getElementById('lvl-txt').innerText = state.level;
-                unlockSection(state.level);
-            }
-        }
+    function unlockAll() {
+        initGame();
+        unlockSection(1);
+        setTimeout(() => unlockSection(2), 500);
+        setTimeout(() => unlockSection(3), 1000);
+    }
 
-        function unlockSection(lvl) {
-            // Speed Boost FX
-            const oldSpeed = CONFIG.speed;
-            CONFIG.speed = CONFIG.boostSpeed;
-            setTimeout(() => CONFIG.speed = oldSpeed, 1000);
+    function render() {
+        requestAnimationFrame(render);
+        update();
+        // Use Composer instead of standard renderer
+        composer.render();
+    }
 
-            // Reveal DOM
-            const section = document.getElementById(`section-${lvl}`);
-            if(section) {
-                document.getElementById('main-scroll-container').style.overflowY = 'auto';
-                document.getElementById('main-scroll-container').style.pointerEvents = 'auto';
-                section.classList.add('active');
-                
-                // Smooth Scroll
-                gsap.to('#main-scroll-container', {
-                    scrollTop: section.offsetTop, 
-                    duration: 1.5, 
-                    ease: "power2.inOut"
-                });
-            }
+    // Resize
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        composer.setSize(window.innerWidth, window.innerHeight);
+    });
 
-            // Check Endgame
-            if(lvl >= 3) {
-                state.gameBeaten = true;
-                document.body.classList.add('game-complete');
-            }
-        }
+    lucide.createIcons();
+    render(); // Start loop
 
-        function unlockAll() {
-            initGame();
-            unlockSection(1);
-            setTimeout(() => unlockSection(2), 500);
-            setTimeout(() => unlockSection(3), 1000);
-        }
-
-        function render() {
-            requestAnimationFrame(render);
-            update();
-            // Use Composer instead of standard renderer
-            composer.render();
-        }
-
-        // Resize
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            composer.setSize(window.innerWidth, window.innerHeight);
-        });
-
-        lucide.createIcons();
-        render(); // Start loop
-
-    </script>
+</script>
 </body>
+
 </html>
