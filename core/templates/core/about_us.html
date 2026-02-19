@@ -118,9 +118,11 @@
                         {% endif %}
                     </div>
                     <div class="w-full md:w-1/2">
-                        <h3 class="text-xl md:text-2xl font-orbitron text-white mb-3 md:mb-4 text-balance">{{
-                            section.heading }}</h3>
-                        <div class="text-gray-300 text-sm md:text-base leading-relaxed prose prose-invert">
+                        <h3 class="text-xl md:text-2xl font-orbitron text-white mb-3 md:mb-4 text-balance">
+                            {{section.heading }}</h3>
+
+                        <div
+                            class="text-gray-300 text-sm md:text-base leading-relaxed prose prose-invert max-w-full [&_*]:max-w-full [&_img]:!h-auto [&_iframe]:w-full break-words">
                             {{ section.content|safe }}
                         </div>
                     </div>
