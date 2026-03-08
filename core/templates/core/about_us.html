@@ -297,8 +297,9 @@
                         <!-- HUD badge over image -->
                         <div
                             class="absolute top-6 left-6 px-4 py-2 bg-black/70 backdrop-blur-md border border-alien/20 rounded-sm">
-                            <span class="text-alien text-[10px] font-mono tracking-widest font-black">ARCHIVE_FILE_{{
-                                forloop.counter|stringformat:"03d" }}</span>
+                            <span class="text-alien text-[10px] font-mono tracking-widest font-black">
+                                ARCHIVE_FILE_{{forloop.counter|stringformat:"03d" }}</span>
+
                         </div>
                     </div>
                     {% else %}
@@ -307,8 +308,9 @@
                         class="md:w-1/2 w-full flex-shrink-0 relative overflow-hidden min-h-[300px] bg-black/40 flex items-center justify-center border-r border-white/5">
                         <div class="flex flex-col items-center gap-6 opacity-20">
                             <i data-lucide="terminal" class="w-24 h-24 text-alien"></i>
-                            <span class="text-alien font-mono text-xs tracking-[0.4em] uppercase">ARCHIVE_FILE_{{
-                                forloop.counter|stringformat:"03d" }}</span>
+                            <span class="text-alien font-mono text-xs tracking-[0.4em] uppercase">
+                                ARCHIVE_FILE_{{forloop.counter|stringformat:"03d" }}</span>
+
                         </div>
                         <!-- Animated scan line -->
                         <div class="absolute inset-0 pointer-events-none scanline-overlay"></div>
