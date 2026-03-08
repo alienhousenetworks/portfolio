@@ -538,12 +538,14 @@
                 <div>
                     <h4
                         class="font-orbitron font-bold text-white text-2xl mb-1 group-hover:text-alien transition-colors">
-                        {% if forloop.counter == 1 %}Newsroom{% elif forloop.counter == 2 %}Insights{% elif
-                        forloop.counter == 3 %}Recognition{% else %}Studies{% endif %}
+                        {% if forloop.counter == 1 %}Newsroom{% elif forloop.counter == 2 %}Insights
+                        {% elif forloop.counter == 3 %}Recognition{% else %}Studies{% endif %}
+
                     </h4>
                     <span
-                        class="text-gray-600 text-[10px] font-mono uppercase tracking-widest font-black">Archive_Module_{{
-                        forloop.counter }}</span>
+                        class="text-gray-600 text-[10px] font-mono uppercase tracking-widest font-black">Archive_Module_
+                        {{ forloop.counter }}</span>
+
                 </div>
             </div>
             {% endfor %}
