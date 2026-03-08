@@ -27,7 +27,7 @@
             height: 15px;
             border: 1.5px solid #00ff41;
             opacity: 0.6;
-            transition: all 0.4s ease;
+            transition: all 0.1s ease;
         }
 
         .hud-tl {
@@ -100,7 +100,7 @@
         <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-alien/5 blur-[120px] rounded-full animate-pulse">
         </div>
         <div class="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-500/5 blur-[120px] rounded-full animate-pulse"
-            style="animation-delay: 2s;"></div>
+            style="animation-delay: 0.1s;"></div>
     </div>
 
     <!-- Hero Section -->
@@ -150,8 +150,7 @@
                     {{ about_page.hero_heading|default:"The only constant in life is change" }}</span>
 
                 <span
-                    class="text-transparent bg-clip-text bg-gradient-to-r from-alien via-emerald-400 to-cyan-500 decrypt-effect block py-2"
-                    data-value="{{ about_page.hero_subtext|default:'To thrive, change is what we must become.' }}">
+                    class="text-transparent bg-clip-text bg-gradient-to-r from-alien via-emerald-400 to-cyan-500 block py-2">
                     {{ about_page.hero_subtext|default:"To thrive, change is what we must become." }}
                 </span>
             </h1>
@@ -646,25 +645,7 @@
 <script>
     lucide.createIcons();
 
-    // Decrypt Effect — faster, auto-plays on load + re-triggers on hover
-    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*";
-    function runDecrypt(el) {
-        const original = el.dataset.value || el.innerText.trim();
-        let iteration = 0;
-        clearInterval(el._decryptTimer);
-        el._decryptTimer = setInterval(() => {
-            el.innerText = original.split("").map((char, i) => {
-                if (i < iteration) return original[i];
-                return char === " " ? " " : letters[Math.floor(Math.random() * letters.length)];
-            }).join("");
-            iteration += 1;
-            if (iteration > original.length) clearInterval(el._decryptTimer);
-        }, 12);
-    }
-    document.querySelectorAll(".decrypt-effect").forEach(el => {
-        // Auto-play on page load only
-        setTimeout(() => runDecrypt(el), 400);
-    });
+
 
     // Slider for What's New
     const newSlider = document.getElementById('new-slider');
