@@ -645,10 +645,8 @@
         }, 12);
     }
     document.querySelectorAll(".decrypt-effect").forEach(el => {
-        // Auto-play on page load with a short delay
+        // Auto-play on page load only
         setTimeout(() => runDecrypt(el), 400);
-        // Re-trigger on hover
-        el.addEventListener('mouseover', () => runDecrypt(el));
     });
 
     // Slider for What's New
