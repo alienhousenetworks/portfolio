@@ -129,8 +129,9 @@
             </div>
 
             <h1 class="text-5xl md:text-9xl font-orbitron font-black text-white mb-8 leading-[0.85] tracking-tighter">
-                <span class="block mb-4">{{ about_page.hero_heading|default:"The only constant in life is change"
-                    }}</span>
+                <span class="block mb-4">
+                    {{ about_page.hero_heading|default:"The only constant in life is change" }}</span>
+
                 <span
                     class="text-transparent bg-clip-text bg-gradient-to-r from-alien via-emerald-400 to-cyan-500 decrypt-effect block py-2"
                     data-value="{{ about_page.hero_subtext|default:'To thrive, change is what we must become.' }}">
@@ -193,8 +194,11 @@
                     <div class="absolute inset-0 bg-gradient-to-t from-[#111] via-transparent to-transparent"></div>
                     <div
                         class="absolute top-6 left-6 px-4 py-1.5 bg-black/60 backdrop-blur-md border border-white/10 rounded-sm">
-                        <span class="text-alien text-[10px] font-mono tracking-widest font-black">LOG_ID: {{
-                            forloop.counter|stringformat:"03d" }}</span>
+                        <span class="text-alien text-[10px] font-mono tracking-widest font-black">
+
+
+                            LOG_ID: {{forloop.counter|stringformat:"03d" }}</span>
+
                     </div>
                 </div>
                 <div class="p-12">
@@ -218,60 +222,73 @@
     </section>
     {% endif %}
 
-    <!-- RESTORED: Connected Sections (Journey in Original Design Style) -->
+    <!-- Journey Sections (Alternating Full-Width Design) -->
     {% if sections %}
     <section class="py-32 bg-transparent relative z-10 border-t border-white/5">
         <div class="container mx-auto px-6">
             <div class="text-center mb-24">
                 <div
                     class="inline-block px-4 py-1.5 border border-alien/30 bg-alien/5 text-alien text-[10px] font-mono tracking-[0.4em] uppercase mb-6 rounded-sm backdrop-blur-md">
-                    // Historical_Archive_Restored
+                    // Historical_Archive
                 </div>
                 <h2 class="text-5xl md:text-8xl font-orbitron font-black text-white leading-none">THE <span
                         class="text-alien">JOURNEY</span></h2>
             </div>
 
-            <!-- RESTORING ORIGINAL SECTION DESIGN (HUD Cards) -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+            <!-- Alternating vertical sections, one per row -->
+            <div class="flex flex-col gap-24">
                 {% for section in sections %}
-                <div class="hud-card p-10 group min-h-[450px] flex flex-col rounded-xl">
+                <div class="hud-card rounded-2xl overflow-hidden group relative
+                    {% if forloop.counter|divisibleby:2 %}md:flex-row-reverse{% else %}md:flex-row{% endif %}
+                    flex flex-col md:flex-row">
                     <!-- HUD Corners -->
                     <div class="hud-corner hud-tl"></div>
                     <div class="hud-corner hud-tr"></div>
                     <div class="hud-corner hud-bl"></div>
                     <div class="hud-corner hud-br"></div>
 
-                    <!-- Index -->
-                    <div
-                        class="text-alien font-mono text-xs mb-6 tracking-[0.3em] font-black opacity-50 group-hover:opacity-100">
-                        ARCHIVE_FILE_{{ forloop.counter }}</div>
-
-                    <!-- Heading -->
-                    <h3
-                        class="text-3xl font-orbitron font-bold text-white mb-8 group-hover:text-alien transition-colors duration-500">
-                        {{ section.heading }}
-                    </h3>
-
-                    <!-- Content (The Original Style used subheading space for this) -->
-                    <div
-                        class="text-gray-300 text-base leading-relaxed mb-8 flex-grow prose prose-invert max-w-none prose-p:mb-4">
-                        {{ section.content|safe }}
-                    </div>
-
-                    <!-- Optional Image with HUD Glow -->
+                    <!-- Image Side -->
                     {% if section.image %}
-                    <div
-                        class="mt-auto rounded-lg overflow-hidden border border-white/10 group-hover:border-alien/40 transition-colors">
+                    <div class="md:w-1/2 w-full flex-shrink-0 relative overflow-hidden min-h-[360px] md:min-h-[480px]">
                         <img src="{{ section.image.url }}" alt="{{ section.heading }}"
-                            class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-700">
+                            class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000">
+                        <div class="absolute inset-0 bg-gradient-to-br from-black/60 via-transparent to-black/20"></div>
+                        <!-- HUD badge over image -->
+                        <div
+                            class="absolute top-6 left-6 px-4 py-2 bg-black/70 backdrop-blur-md border border-alien/20 rounded-sm">
+                            <span class="text-alien text-[10px] font-mono tracking-widest font-black">ARCHIVE_FILE_{{
+                                forloop.counter|stringformat:"03d" }}</span>
+                        </div>
                     </div>
                     {% else %}
+                    <!-- Decorative placeholder when no image -->
                     <div
-                        class="mt-auto w-full h-24 bg-white/5 rounded-lg flex items-center justify-center border border-white/5 group-hover:border-alien/20">
-                        <i data-lucide="hash"
-                            class="w-10 h-10 text-white/5 group-hover:text-alien/50 transition-colors"></i>
+                        class="md:w-1/2 w-full flex-shrink-0 relative overflow-hidden min-h-[300px] bg-black/40 flex items-center justify-center border-r border-white/5">
+                        <div class="flex flex-col items-center gap-6 opacity-20">
+                            <i data-lucide="terminal" class="w-24 h-24 text-alien"></i>
+                            <span class="text-alien font-mono text-xs tracking-[0.4em] uppercase">ARCHIVE_FILE_{{
+                                forloop.counter|stringformat:"03d" }}</span>
+                        </div>
+                        <!-- Animated scan line -->
+                        <div class="absolute inset-0 pointer-events-none scanline-overlay"></div>
                     </div>
                     {% endif %}
+
+                    <!-- Text Side -->
+                    <div class="md:w-1/2 w-full p-12 md:p-16 flex flex-col justify-center">
+                        <div
+                            class="text-alien font-mono text-[10px] mb-5 tracking-[0.4em] font-black uppercase opacity-60 group-hover:opacity-100 transition-opacity">
+                            ARCHIVE_FILE_{{ forloop.counter }}
+                        </div>
+                        <h3
+                            class="text-3xl md:text-5xl font-orbitron font-bold text-white mb-8 leading-tight group-hover:text-alien transition-colors duration-500">
+                            {{ section.heading }}
+                        </h3>
+                        <div
+                            class="text-gray-300 text-base leading-relaxed prose prose-invert max-w-none prose-p:mb-4 prose-p:text-gray-300">
+                            {{ section.content|safe }}
+                        </div>
+                    </div>
                 </div>
                 {% endfor %}
             </div>
@@ -447,7 +464,8 @@
                     class="text-alien text-xs font-mono tracking-[0.5em] uppercase block mb-6 font-black animate-pulse">//
                     Sentient_Asset_Collective</span>
                 <h2 class="text-5xl md:text-9xl font-orbitron font-black text-white leading-none tracking-tight">THE
-                    <span class="text-alien">ELDERS</span></h2>
+                    <span class="text-alien">ELDERS</span>
+                </h2>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12">
@@ -555,94 +573,31 @@
         </div>
     </section>
 
-    <!-- FINAL Contact Form Section -->
-    <section id="contact-final" class="py-32 bg-gray-900 border-t border-alien/20 relative z-10">
-        <div class="container mx-auto px-6 max-w-6xl relative">
-            <div class="grid grid-cols-1 lg:grid-cols-5 gap-20 items-center">
-                <div class="lg:col-span-2">
-                    <span class="text-alien text-sm font-mono tracking-[0.5em] uppercase mb-8 block font-black">//
-                        Uplink_Request</span>
-                    <h2 class="text-4xl md:text-7xl font-orbitron font-black text-white mb-10 leading-[0.9]">
-                        SECURE<br><span class="text-alien">CHANNEL</span></h2>
-                    <p class="text-gray-400 text-xl mb-16 font-light leading-relaxed">
-                        Our transmission intakes are open. Establish a secure handshake today.
-                    </p>
-
-                    <div class="space-y-12">
-                        <div class="flex gap-8 group">
-                            <div
-                                class="w-16 h-16 bg-alien/5 border border-alien/20 rounded-2xl flex items-center justify-center group-hover:bg-alien group-hover:text-black transition-all duration-500 shadow-[0_0_15px_rgba(0,255,65,0.1)]">
-                                <i data-lucide="shield-check" class="w-8 h-8"></i>
-                            </div>
-                            <div>
-                                <h4 class="text-white font-black font-orbitron mb-2 tracking-widest text-lg">ENCRYPTED
-                                </h4>
-                                <p
-                                    class="text-gray-500 text-xs font-mono font-bold tracking-widest uppercase opacity-60">
-                                    HANDSHAKE_ACTIVE</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="lg:col-span-3 hud-card p-12 md:p-20 rounded-3xl relative shadow-2xl">
-                    <div class="hud-corner hud-tl"></div>
-                    <div class="hud-corner hud-tr"></div>
-                    <div class="hud-corner hud-bl"></div>
-                    <div class="hud-corner hud-br"></div>
-
-                    <div id="contact-success"
-                        class="absolute inset-0 bg-black/95 z-50 flex flex-col items-center justify-center text-center p-12 opacity-0 pointer-events-none transition-opacity duration-700 rounded-3xl">
-                        <div
-                            class="w-24 h-24 bg-alien/10 rounded-full flex items-center justify-center mb-10 border border-alien/30 animate-pulse">
-                            <i data-lucide="thumbs-up" class="w-12 h-12 text-alien"></i>
-                        </div>
-                        <h3 class="text-4xl font-orbitron font-black text-white mb-6 uppercase tracking-tight">
-                            SIGNAL_ACKNOWLEDGED</h3>
-                        <p class="text-gray-400 text-lg mb-12 font-light max-w-sm">Transmission received. Our intake
-                            units are processing the packet.</p>
-                        <button onclick="resetContact()"
-                            class="text-alien text-xs font-bold font-mono tracking-[0.5em] uppercase border-b-2 border-alien/30 pb-2 hover:border-alien transition-all">SEND_NEW_SIGNAL</button>
-                    </div>
-
-                    <form id="about-form-v3" method="post" action="{% url 'contact_submit' %}"
-                        class="space-y-10 relative z-10">
-                        {% csrf_token %}
-                        <div class="space-y-10">
-                            <div class="relative group">
-                                <label
-                                    class="text-[10px] font-mono text-gray-500 mb-2 block uppercase tracking-[0.3em] font-black group-focus-within:text-alien transition-colors">Subject_ID</label>
-                                <div
-                                    class="bg-white/5 border-b-2 border-white/10 group-focus-within:border-alien transition-all duration-500 pb-2">
-                                    {{ contact_form.name }}
-                                </div>
-                            </div>
-                            <div class="relative group">
-                                <label
-                                    class="text-[10px] font-mono text-gray-500 mb-2 block uppercase tracking-[0.3em] font-black group-focus-within:text-alien transition-colors">Digital_Uplink</label>
-                                <div
-                                    class="bg-white/5 border-b-2 border-white/10 group-focus-within:border-alien transition-all duration-500 pb-2">
-                                    {{ contact_form.email }}
-                                </div>
-                            </div>
-                            <div class="relative group">
-                                <label
-                                    class="text-[10px] font-mono text-gray-500 mb-2 block uppercase tracking-[0.3em] font-black group-focus-within:text-alien transition-colors">Packet_Data</label>
-                                <div
-                                    class="bg-white/5 border-b-2 border-white/10 group-focus-within:border-alien transition-all duration-500">
-                                    {{ contact_form.message }}
-                                </div>
-                            </div>
-                        </div>
-
-                        <button type="submit" id="about-submit-btn"
-                            class="w-full bg-alien text-black font-black font-orbitron py-6 px-10 hover:bg-white transition-all duration-500 tracking-[0.4em] flex items-center justify-center gap-4 text-sm">
-                            <span class="btn-text">INITIATE_TRANSMISSION</span>
-                            <i data-lucide="arrow-right" class="w-6 h-6 btn-icon"></i>
-                        </button>
-                    </form>
-                </div>
+    <!-- Transmission CTA Banner (replaces full contact form) -->
+    <section
+        class="py-24 bg-gradient-to-r from-black via-alien/5 to-black border-t border-alien/20 relative z-10 overflow-hidden">
+        <div class="absolute inset-0 pointer-events-none">
+            <div
+                class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-alien/5 rounded-full blur-[100px]">
             </div>
+        </div>
+        <div class="container mx-auto px-6 text-center relative z-10">
+            <span class="text-alien text-xs font-mono tracking-[0.5em] uppercase block mb-6 font-black">//
+                Uplink_Request</span>
+            <h2 class="text-4xl md:text-7xl font-orbitron font-black text-white mb-8 leading-[0.9]">SECURE<br><span
+                    class="text-alien">CHANNEL</span></h2>
+            <p class="text-gray-400 text-xl mb-12 font-light leading-relaxed max-w-2xl mx-auto">
+                Our transmission intakes are open. Establish a secure handshake today.
+            </p>
+            <a href="mailto:signal@alienhouse.net"
+                class="group relative inline-flex items-center gap-6 px-14 py-6 bg-transparent border border-alien text-alien font-black font-orbitron tracking-[0.3em] transition-all duration-500 hover:text-black overflow-hidden uppercase text-sm">
+                <span class="relative z-10">INITIATE_UPLINK</span>
+                <div
+                    class="absolute inset-0 bg-alien translate-x-[-101%] group-hover:translate-x-0 transition-transform duration-500 ease-out z-0">
+                </div>
+                <i data-lucide="arrow-right"
+                    class="w-6 h-6 relative z-10 group-hover:translate-x-2 transition-transform"></i>
+            </a>
         </div>
     </section>
 
@@ -697,52 +652,6 @@
         }, 12000);
     }
 
-    // Form Customization
-    const stylingInputs = () => {
-        const inputs = document.querySelectorAll('#about-form-v3 input, #about-form-v3 textarea');
-        inputs.forEach(input => {
-            input.className = "w-full bg-transparent border-none text-white font-mono placeholder-gray-700 focus:ring-0 px-0 py-4 outline-none";
-            if (input.tagName === 'INPUT') input.placeholder = "AWAITING_INPUT...";
-            else input.placeholder = "ESTABLISH_MESSAGE_PARAMETERS...";
-        });
-    };
-    stylingInputs();
 
-    // Contact Submission
-    document.getElementById('about-form-v3')?.addEventListener('submit', function (e) {
-        e.preventDefault();
-        const btn = document.getElementById('about-submit-btn');
-        const text = btn.querySelector('.btn-text');
-        const icon = btn.querySelector('.btn-icon');
-        const success = document.getElementById('contact-success');
-
-        btn.disabled = true;
-        text.innerText = "TRANSMITTING_PACKET...";
-        icon.classList.add('animate-spin');
-
-        fetch(this.action, {
-            method: 'POST',
-            body: new FormData(this),
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    success.classList.remove('opacity-0', 'pointer-events-none');
-                    this.reset();
-                } else {
-                    alert('TRANSMISSION_ERROR: ' + JSON.stringify(data.errors));
-                }
-            })
-            .finally(() => {
-                btn.disabled = false;
-                text.innerText = "INITIATE_TRANSMISSION";
-                icon.classList.remove('animate-spin');
-            });
-    });
-
-    function resetContact() {
-        document.getElementById('contact-success').classList.add('opacity-0', 'pointer-events-none');
-    }
 </script>
 {% endblock %}
