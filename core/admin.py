@@ -448,8 +448,14 @@ class AboutUsPageAdmin(admin.ModelAdmin):
     
     fieldsets = (
         ("Hero Banner", {
-            'fields': ('page_title', 'hero_heading', 'hero_subtext', 'hero_image', 'hero_video', 'hero_cta_text', 'hero_cta_url'),
-            'description': "<strong>Impacts:</strong> The main standalone 'About Us' page. This section controls the top banner (TCS Style)."
+            'fields': ('page_title', 'hero_heading', 'hero_subtext', 'hero_image', 'hero_video', 'hero_video_url', 'hero_cta_text', 'hero_cta_url'),
+            'description': (
+                "<strong>Impacts:</strong> The top banner of the About Us page.<br><br>"
+                "<strong>Hero Video Url</strong> — Paste an external video link here (takes priority over Hero Image). Supported formats:<br>"
+                "&nbsp;&nbsp;• YouTube: <code>https://youtube.com/watch?v=VIDEO_ID</code> or <code>https://youtu.be/VIDEO_ID</code><br>"
+                "&nbsp;&nbsp;• Direct mp4/webm: any CDN or GitHub release link<br>"
+                "<em>Note: Uploaded video file (Hero Video) takes priority over the URL if both are set.</em>"
+            )
         }),
     )
 
