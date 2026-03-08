@@ -137,35 +137,60 @@
 
         <div class="absolute inset-0 bg-gradient-to-b from-black/70 via-black/30 to-black z-10"></div>
 
-        <div class="container mx-auto px-6 relative z-20 text-center">
-            <div
-                class="mb-8 inline-flex items-center gap-3 px-6 py-2 border border-alien/20 bg-black/50 backdrop-blur-xl rounded-full">
-                <span class="w-2 h-2 bg-alien rounded-full animate-ping"></span>
-                <span class="text-alien text-[10px] md:text-sm font-mono tracking-[0.4em] uppercase font-bold">Protocol:
-                    Mission_Brief</span>
-            </div>
+        <!-- Premium editorial hero text layout -->
+        <div class="absolute inset-0 z-20 flex flex-col justify-end pb-20 md:pb-28">
+            <div class="container mx-auto px-8 md:px-16">
 
-            <h1 class="text-5xl md:text-9xl font-orbitron font-black text-white mb-8 leading-[0.85] tracking-tighter">
-                <span class="block mb-4">
-                    {{ about_page.hero_heading|default:"The only constant in life is change" }}</span>
+                <!-- Top label row -->
+                <div class="flex items-center gap-5 mb-10">
+                    <div class="flex items-center gap-3">
+                        <span class="w-8 h-[1px] bg-alien"></span>
+                        <span class="text-alien text-[10px] font-mono tracking-[0.5em] uppercase font-black">//
+                            About</span>
+                        <span class="w-8 h-[1px] bg-alien/40"></span>
+                    </div>
+                    <span class="text-white/20 text-[10px] font-mono tracking-widest">ALIENHOUSE.NETWORKS</span>
+                </div>
 
-                <span
-                    class="text-transparent bg-clip-text bg-gradient-to-r from-alien via-emerald-400 to-cyan-500 block py-2">
-                    {{ about_page.hero_subtext|default:"To thrive, change is what we must become." }}
-                </span>
-            </h1>
+                <!-- Main heading -->
+                {% if about_page.hero_heading %}
+                <h1 class="font-orbitron font-black text-white leading-[0.88] tracking-tight mb-6"
+                    style="font-size: clamp(3rem, 9vw, 9rem);">
+                    <span class="block">{{ about_page.hero_heading }}</span>
+                </h1>
+                {% endif %}
 
-            {% if about_page.hero_cta_text %}
-            <div class="flex justify-center mt-12">
+                <!-- Gradient accent / subtext as a standalone line -->
+                {% if about_page.hero_subtext %}
+                <div class="flex items-start gap-6 max-w-3xl mb-12">
+                    <div class="w-px bg-alien/50 self-stretch mt-1 flex-shrink-0" style="min-height:2.5rem;"></div>
+                    <p class="text-gray-300 text-lg md:text-2xl font-light leading-relaxed tracking-wide">
+                        {{ about_page.hero_subtext }}
+                    </p>
+                </div>
+                {% endif %}
+
+                <!-- CTA button -->
+                {% if about_page.hero_cta_text %}
                 <a href="{{ about_page.hero_cta_url|default:'#' }}"
-                    class="group relative px-12 py-5 bg-transparent border border-alien text-alien font-bold font-orbitron tracking-[0.3em] transition-all duration-500 hover:text-black overflow-hidden uppercase text-sm">
+                    class="group relative inline-flex items-center gap-5 px-10 py-5 bg-transparent border border-alien text-alien font-bold font-orbitron tracking-[0.3em] transition-all duration-500 hover:text-black overflow-hidden uppercase text-xs">
                     <span class="relative z-10">{{ about_page.hero_cta_text }}</span>
                     <div
                         class="absolute inset-0 bg-alien translate-x-[-101%] group-hover:translate-x-0 transition-transform duration-500 ease-out z-0">
                     </div>
+                    <i data-lucide="arrow-right"
+                        class="w-5 h-5 relative z-10 group-hover:translate-x-1 transition-transform"></i>
                 </a>
+                {% endif %}
+
             </div>
-            {% endif %}
+
+            <!-- Scroll indicator -->
+            <div class="absolute bottom-8 right-10 hidden md:flex flex-col items-center gap-3">
+                <span class="text-white/20 text-[9px] font-mono tracking-[0.4em] uppercase"
+                    style="writing-mode:vertical-rl;">Scroll</span>
+                <div class="w-px h-16 bg-gradient-to-b from-alien/50 to-transparent"></div>
+            </div>
         </div>
     </header>
 

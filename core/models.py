@@ -667,8 +667,8 @@ class AboutUsPage(models.Model):
         blank=True, null=True,
         help_text="External video URL — supports YouTube (youtube.com/watch?v=..., youtu.be/...) or any direct video link (CDN mp4/webm, GitHub raw, etc.)."
     )
-    hero_heading = models.CharField(max_length=200, blank=True, default="The only constant in life is change")
-    hero_subtext = models.TextField(blank=True, default="To thrive, change is what we must become.")
+    hero_heading = models.CharField(max_length=200, blank=True, default="")
+    hero_subtext = models.TextField(blank=True, default="")
     hero_cta_text = models.CharField(max_length=50, default="Learn more", blank=True)
     hero_cta_url = models.CharField(max_length=255, default="#", blank=True)
 
