@@ -5,6 +5,96 @@
 <div
     class="bg-black text-white selection:bg-alien/30 selection:text-alien font-sans min-h-screen overflow-x-hidden relative">
 
+    <!-- Global Styling for HUD card system -->
+    <style>
+        .hud-card {
+            position: relative;
+            background: rgba(17, 17, 17, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 255, 65, 0.2);
+            transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .hud-card:hover {
+            border-color: rgba(0, 255, 65, 0.8);
+            box-shadow: 0 0 40px rgba(0, 255, 65, 0.2);
+            transform: translateY(-5px);
+        }
+
+        .hud-corner {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            border: 1.5px solid #00ff41;
+            opacity: 0.6;
+            transition: all 0.4s ease;
+        }
+
+        .hud-tl {
+            top: -1px;
+            left: -1px;
+            border-right: 0;
+            border-bottom: 0;
+        }
+
+        .hud-tr {
+            top: -1px;
+            right: -1px;
+            border-left: 0;
+            border-bottom: 0;
+        }
+
+        .hud-bl {
+            bottom: -1px;
+            left: -1px;
+            border-right: 0;
+            border-top: 0;
+        }
+
+        .hud-br {
+            bottom: -1px;
+            right: -1px;
+            border-left: 0;
+            border-top: 0;
+        }
+
+        .hud-card:hover .hud-corner {
+            width: 25px;
+            height: 25px;
+            opacity: 1;
+            filter: drop-shadow(0 0 5px #00ff41);
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Scanline animations */
+        @keyframes scanline {
+            0% {
+                transform: translateY(-100%);
+            }
+
+            100% {
+                transform: translateY(100%);
+            }
+        }
+
+        .scanline-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom, transparent 95%, rgba(0, 255, 65, 0.1) 95%);
+            background-size: 100% 4px;
+            pointer-events: none;
+            opacity: 0.3;
+        }
+    </style>
+
     <!-- Background Ambient Glows -->
     <div class="fixed top-0 left-0 w-full h-full pointer-events-none z-0">
         <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-alien/5 blur-[120px] rounded-full animate-pulse">
@@ -13,9 +103,8 @@
             style="animation-delay: 2s;"></div>
     </div>
 
-    <!-- Hero Section (Premium TCS Style) -->
-    <header class="relative h-[90vh] md:h-screen flex items-center justify-center overflow-hidden">
-        <!-- Background Video/Image -->
+    <!-- Hero Section -->
+    <header class="relative h-[85vh] md:h-screen flex items-center justify-center overflow-hidden">
         {% if about_page.hero_video %}
         <video autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover">
             <source src="{{ about_page.hero_video.url }}" type="video/mp4">
@@ -29,27 +118,21 @@
         </div>
         {% endif %}
 
-        <!-- Animated Overlay -->
-        <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 to-black/80 z-10"></div>
-
-        <!-- Scanline Effect -->
-        <div
-            class="absolute inset-0 z-10 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]">
-        </div>
+        <div class="absolute inset-0 bg-gradient-to-b from-black/70 via-black/30 to-black z-10"></div>
 
         <div class="container mx-auto px-6 relative z-20 text-center">
             <div
-                class="mb-6 inline-flex items-center gap-3 px-4 py-1.5 border border-alien/30 bg-alien/5 backdrop-blur-md rounded-full">
-                <span class="w-1.5 h-1.5 bg-alien rounded-full animate-ping"></span>
-                <span class="text-alien text-[10px] md:text-xs font-mono tracking-[0.3em] uppercase">Status: Evolution
-                    In Progress</span>
+                class="mb-8 inline-flex items-center gap-3 px-6 py-2 border border-alien/20 bg-black/50 backdrop-blur-xl rounded-full">
+                <span class="w-2 h-2 bg-alien rounded-full animate-ping"></span>
+                <span class="text-alien text-[10px] md:text-sm font-mono tracking-[0.4em] uppercase font-bold">Protocol:
+                    Mission_Brief</span>
             </div>
 
-            <h1 class="text-4xl md:text-8xl font-orbitron font-black text-white mb-8 leading-[0.9] tracking-tighter">
-                <span class="block mb-2">{{ about_page.hero_heading|default:"The only constant in life is change"
+            <h1 class="text-5xl md:text-9xl font-orbitron font-black text-white mb-8 leading-[0.85] tracking-tighter">
+                <span class="block mb-4">{{ about_page.hero_heading|default:"The only constant in life is change"
                     }}</span>
                 <span
-                    class="text-transparent bg-clip-text bg-gradient-to-r from-alien via-emerald-400 to-cyan-500 decrypt-effect"
+                    class="text-transparent bg-clip-text bg-gradient-to-r from-alien via-emerald-400 to-cyan-500 decrypt-effect block py-2"
                     data-value="{{ about_page.hero_subtext|default:'To thrive, change is what we must become.' }}">
                     {{ about_page.hero_subtext|default:"To thrive, change is what we must become." }}
                 </span>
@@ -58,73 +141,75 @@
             {% if about_page.hero_cta_text %}
             <div class="flex justify-center mt-12">
                 <a href="{{ about_page.hero_cta_url|default:'#' }}"
-                    class="group relative px-10 py-4 bg-alien/10 border border-alien text-alien font-bold font-orbitron tracking-[0.2em] transition-all duration-500 hover:bg-alien hover:text-black overflow-hidden">
+                    class="group relative px-12 py-5 bg-transparent border border-alien text-alien font-bold font-orbitron tracking-[0.3em] transition-all duration-500 hover:text-black overflow-hidden uppercase text-sm">
                     <span class="relative z-10">{{ about_page.hero_cta_text }}</span>
                     <div
-                        class="absolute inset-0 bg-white translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-500 ease-out z-0">
+                        class="absolute inset-0 bg-alien translate-x-[-101%] group-hover:translate-x-0 transition-transform duration-500 ease-out z-0">
                     </div>
                 </a>
             </div>
             {% endif %}
         </div>
-
-        <!-- Scroll Indicator -->
-        <div class="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 animate-bounce">
-            <div class="w-6 h-10 border-2 border-white/20 rounded-full flex justify-center p-1">
-                <div class="w-1.5 h-1.5 bg-alien rounded-full"></div>
-            </div>
-        </div>
     </header>
 
-    <!-- What's New Section (Card Slider) -->
+    <!-- What's New Section -->
     {% if about_page.whats_new_items.exists %}
-    <section class="py-32 bg-transparent relative z-10">
-        <div
-            class="container mx-auto px-6 mb-16 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-            <div class="max-w-xl">
-                <div class="flex items-center gap-4 mb-4">
-                    <span class="h-px w-12 bg-alien"></span>
-                    <span class="text-alien text-xs font-mono tracking-[0.3em] uppercase">Latest Transmissions</span>
+    <section class="py-32 relative z-10 overflow-hidden">
+        <div class="container mx-auto px-6 mb-16 flex flex-col md:flex-row justify-between items-end gap-10">
+            <div class="max-w-2xl">
+                <div class="flex items-center gap-4 mb-6">
+                    <span class="h-px w-16 bg-alien"></span>
+                    <span
+                        class="text-alien text-xs font-mono tracking-[0.4em] uppercase font-bold text-shadow-glow">Live
+                        Signals</span>
                 </div>
-                <h2 class="text-4xl md:text-6xl font-orbitron font-bold text-white leading-none">WHAT'S <span
+                <h2 class="text-5xl md:text-7xl font-orbitron font-bold text-white leading-[0.9]">WHAT'S <span
                         class="text-alien">NEW</span></h2>
             </div>
-            <div class="flex gap-4">
+            <div class="flex gap-4 pb-2">
                 <button id="prev-new"
-                    class="w-12 h-12 flex items-center justify-center border border-white/10 rounded-full hover:border-alien hover:text-alien transition-all group">
-                    <i data-lucide="arrow-left" class="w-5 h-5 group-hover:-translate-x-1 transition-transform"></i>
+                    class="w-14 h-14 flex items-center justify-center border border-white/10 rounded-full hover:border-alien hover:text-alien hover:bg-alien/5 transition-all group backdrop-blur-md">
+                    <i data-lucide="chevron-left" class="w-6 h-6 group-hover:-translate-x-1 transition-transform"></i>
                 </button>
                 <button id="next-new"
-                    class="w-12 h-12 flex items-center justify-center border border-white/10 rounded-full hover:border-alien hover:text-alien transition-all group">
-                    <i data-lucide="arrow-right" class="w-5 h-5 group-hover:translate-x-1 transition-transform"></i>
+                    class="w-14 h-14 flex items-center justify-center border border-white/10 rounded-full hover:border-alien hover:text-alien hover:bg-alien/5 transition-all group backdrop-blur-md">
+                    <i data-lucide="chevron-right" class="w-6 h-6 group-hover:translate-x-1 transition-transform"></i>
                 </button>
             </div>
         </div>
 
         <div id="new-slider"
-            class="flex gap-8 overflow-x-auto no-scrollbar scroll-smooth px-6 md:px-[calc((100vw-min(1536px,95vw))/2)] pb-12">
+            class="flex gap-8 overflow-x-auto no-scrollbar scroll-smooth px-6 md:px-[calc((100vw-min(1536px,95vw))/2)] pb-20">
             {% for item in about_page.whats_new_items.all %}
-            <div
-                class="min-w-[320px] md:min-w-[450px] bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden group hover:border-alien/40 transition-all duration-700 hover:-translate-y-2">
-                <div class="h-72 overflow-hidden relative">
+            <div class="min-w-[320px] md:min-w-[480px] hud-card rounded-2xl overflow-hidden group">
+                <div class="hud-corner hud-tl"></div>
+                <div class="hud-corner hud-tr"></div>
+                <div class="hud-corner hud-bl"></div>
+                <div class="hud-corner hud-br"></div>
+
+                <div class="h-80 overflow-hidden relative">
                     <img src="{{ item.image.url }}" alt="{{ item.title }}"
                         class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+                    <div class="absolute inset-0 bg-gradient-to-t from-[#111] via-transparent to-transparent"></div>
                     <div
-                        class="absolute top-6 left-6 px-3 py-1 bg-alien/20 backdrop-blur-md border border-alien/30 rounded-sm text-[10px] text-alien font-mono uppercase tracking-widest font-bold">
-                        Update_{{ forloop.counter }}
+                        class="absolute top-6 left-6 px-4 py-1.5 bg-black/60 backdrop-blur-md border border-white/10 rounded-sm">
+                        <span class="text-alien text-[10px] font-mono tracking-widest font-black">LOG_ID: {{
+                            forloop.counter|stringformat:"03d" }}</span>
                     </div>
                 </div>
-                <div class="p-10">
+                <div class="p-12">
                     <h3
-                        class="text-2xl font-orbitron font-bold text-white mb-4 group-hover:text-alien transition-colors">
+                        class="text-2xl font-orbitron font-bold text-white mb-6 group-hover:text-alien transition-colors">
                         {{ item.title }}</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed mb-8 line-clamp-3">{{ item.description }}</p>
+                    <p class="text-gray-400 text-base leading-relaxed mb-10 line-clamp-3 font-light">{{ item.description
+                        }}</p>
                     <a href="{{ item.link_url }}"
-                        class="inline-flex items-center gap-3 text-white font-bold text-xs tracking-widest uppercase group/btn">
+                        class="inline-flex items-center gap-4 text-white font-black text-xs tracking-[0.2em] uppercase group/btn">
                         <span>{{ item.link_text }}</span>
-                        <div class="w-8 h-px bg-alien group-hover/btn:w-12 transition-all"></div>
-                        <i data-lucide="chevron-right" class="w-4 h-4 text-alien"></i>
+                        <div
+                            class="w-12 h-px bg-alien/50 group-hover/btn:w-16 group-hover/btn:bg-alien transition-all duration-500">
+                        </div>
+                        <i data-lucide="arrow-right" class="w-5 h-5 text-alien"></i>
                     </a>
                 </div>
             </div>
@@ -133,87 +218,128 @@
     </section>
     {% endif %}
 
+    <!-- RESTORED: Connected Sections (Journey in Original Design Style) -->
+    {% if sections %}
+    <section class="py-32 bg-transparent relative z-10 border-t border-white/5">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-24">
+                <div
+                    class="inline-block px-4 py-1.5 border border-alien/30 bg-alien/5 text-alien text-[10px] font-mono tracking-[0.4em] uppercase mb-6 rounded-sm backdrop-blur-md">
+                    // Historical_Archive_Restored
+                </div>
+                <h2 class="text-5xl md:text-8xl font-orbitron font-black text-white leading-none">THE <span
+                        class="text-alien">JOURNEY</span></h2>
+            </div>
+
+            <!-- RESTORING ORIGINAL SECTION DESIGN (HUD Cards) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+                {% for section in sections %}
+                <div class="hud-card p-10 group min-h-[450px] flex flex-col rounded-xl">
+                    <!-- HUD Corners -->
+                    <div class="hud-corner hud-tl"></div>
+                    <div class="hud-corner hud-tr"></div>
+                    <div class="hud-corner hud-bl"></div>
+                    <div class="hud-corner hud-br"></div>
+
+                    <!-- Index -->
+                    <div
+                        class="text-alien font-mono text-xs mb-6 tracking-[0.3em] font-black opacity-50 group-hover:opacity-100">
+                        ARCHIVE_FILE_{{ forloop.counter }}</div>
+
+                    <!-- Heading -->
+                    <h3
+                        class="text-3xl font-orbitron font-bold text-white mb-8 group-hover:text-alien transition-colors duration-500">
+                        {{ section.heading }}
+                    </h3>
+
+                    <!-- Content (The Original Style used subheading space for this) -->
+                    <div
+                        class="text-gray-300 text-base leading-relaxed mb-8 flex-grow prose prose-invert max-w-none prose-p:mb-4">
+                        {{ section.content|safe }}
+                    </div>
+
+                    <!-- Optional Image with HUD Glow -->
+                    {% if section.image %}
+                    <div
+                        class="mt-auto rounded-lg overflow-hidden border border-white/10 group-hover:border-alien/40 transition-colors">
+                        <img src="{{ section.image.url }}" alt="{{ section.heading }}"
+                            class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-700">
+                    </div>
+                    {% else %}
+                    <div
+                        class="mt-auto w-full h-24 bg-white/5 rounded-lg flex items-center justify-center border border-white/5 group-hover:border-alien/20">
+                        <i data-lucide="hash"
+                            class="w-10 h-10 text-white/5 group-hover:text-alien/50 transition-colors"></i>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
     <!-- Industries / Services / Platforms Grid -->
-    <section class="py-32 bg-white/[0.02] border-y border-white/5 relative z-10">
+    <section class="py-32 bg-white/[0.01] border-y border-white/5 relative z-10">
         <div class="container mx-auto px-6">
             <div
-                class="grid grid-cols-1 md:grid-cols-3 gap-px bg-white/10 rounded-2xl overflow-hidden border border-white/10">
-                <div class="group relative p-16 bg-black hover:bg-alien/5 transition-all duration-700 cursor-crosshair">
-                    <div class="absolute top-0 left-0 w-1 h-0 bg-alien transition-all duration-700 group-hover:h-full">
+                class="grid grid-cols-1 md:grid-cols-3 gap-px bg-white/10 rounded-2xl overflow-hidden border border-white/10 backdrop-blur-sm">
+                <div class="group relative p-16 bg-black hover:bg-alien/5 transition-all duration-700">
+                    <div
+                        class="absolute top-0 left-0 w-1 h-0 bg-alien transition-all duration-700 group-hover:h-full shadow-[0_0_15px_#00ff41]">
                     </div>
                     <div class="relative z-10">
-                        <span class="text-alien text-[10px] font-mono tracking-[0.4em] uppercase block mb-6">//
-                            Domain_Matrix</span>
+                        <span class="text-alien text-[10px] font-mono tracking-[0.4em] uppercase block mb-8">//
+                            Operational_Layer [01]</span>
                         <h2 class="text-4xl font-orbitron font-bold text-white mb-6">Industries</h2>
-                        <p class="text-gray-400 mb-10 text-sm leading-relaxed">Select your industry. Discover tactical
-                            impact across global sectors.</p>
-                        <div class="flex items-center justify-between">
-                            <i data-lucide="factory"
-                                class="w-10 h-10 text-white/10 group-hover:text-alien transition-colors duration-500"></i>
-                            <div
-                                class="w-10 h-10 border border-white/10 rounded-full flex items-center justify-center group-hover:border-alien group-hover:bg-alien group-hover:text-black transition-all">
-                                <i data-lucide="plus" class="w-5 h-5"></i>
-                            </div>
-                        </div>
+                        <p class="text-gray-400 mb-12 text-base font-light leading-relaxed">Strategic deployment across
+                            high-frequency global sectors and emerging markets.</p>
+                        <i data-lucide="factory"
+                            class="w-14 h-14 text-white/10 group-hover:text-alien transition-all duration-500"></i>
                     </div>
                 </div>
-
+                <!-- Repeating for Services/Products with slight color variations for depth -->
                 <div
-                    class="group relative p-16 bg-black hover:bg-emerald-500/5 transition-all duration-700 cursor-crosshair border-l border-white/10">
+                    class="group relative p-16 bg-black hover:bg-emerald-500/5 transition-all duration-700 border-l border-white/10">
                     <div
-                        class="absolute top-0 left-0 w-1 h-0 bg-emerald-500 transition-all duration-700 group-hover:h-full">
+                        class="absolute top-0 left-0 w-1 h-0 bg-emerald-500 transition-all duration-700 group-hover:h-full shadow-[0_0_15px_#10b981]">
                     </div>
                     <div class="relative z-10">
-                        <span class="text-emerald-400 text-[10px] font-mono tracking-[0.4em] uppercase block mb-6">//
-                            Deployment_Ops</span>
+                        <span class="text-emerald-400 text-[10px] font-mono tracking-[0.4em] uppercase block mb-8">//
+                            Capability_Core [02]</span>
                         <h2 class="text-4xl font-orbitron font-bold text-white mb-6">Services</h2>
-                        <p class="text-gray-400 mb-10 text-sm leading-relaxed">Experience elite-grade digital services.
-                            Transform your operational core.</p>
-                        <div class="flex items-center justify-between">
-                            <i data-lucide="cpu"
-                                class="w-10 h-10 text-white/10 group-hover:text-emerald-400 transition-colors duration-500"></i>
-                            <div
-                                class="w-10 h-10 border border-white/10 rounded-full flex items-center justify-center group-hover:border-emerald-500 group-hover:bg-emerald-500 group-hover:text-black transition-all">
-                                <i data-lucide="plus" class="w-5 h-5"></i>
-                            </div>
-                        </div>
+                        <p class="text-gray-400 mb-12 text-base font-light leading-relaxed">Architecting elite-grade
+                            digital infrastructure and neural business logic.</p>
+                        <i data-lucide="cpu"
+                            class="w-14 h-14 text-white/10 group-hover:text-emerald-400 transition-all duration-500"></i>
                     </div>
                 </div>
-
                 <div
-                    class="group relative p-16 bg-black hover:bg-cyan-500/5 transition-all duration-700 cursor-crosshair border-l border-white/10">
+                    class="group relative p-16 bg-black hover:bg-cyan-500/5 transition-all duration-700 border-l border-white/10">
                     <div
-                        class="absolute top-0 left-0 w-1 h-0 bg-cyan-500 transition-all duration-700 group-hover:h-full">
+                        class="absolute top-0 left-0 w-1 h-0 bg-cyan-500 transition-all duration-700 group-hover:h-full shadow-[0_0_15px_#06b6d4]">
                     </div>
                     <div class="relative z-10">
-                        <span class="text-cyan-400 text-[10px] font-mono tracking-[0.4em] uppercase block mb-6">//
-                            Product_Layer</span>
+                        <span class="text-cyan-400 text-[10px] font-mono tracking-[0.4em] uppercase block mb-8">//
+                            Proprietary_Platform [03]</span>
                         <h2 class="text-4xl font-orbitron font-bold text-white mb-6">Products</h2>
-                        <p class="text-gray-400 mb-10 text-sm leading-relaxed">Explore proprietary frameworks.
-                            Accelerate performance with AH architecture.</p>
-                        <div class="flex items-center justify-between">
-                            <i data-lucide="layers"
-                                class="w-10 h-10 text-white/10 group-hover:text-cyan-400 transition-colors duration-500"></i>
-                            <div
-                                class="w-10 h-10 border border-white/10 rounded-full flex items-center justify-center group-hover:border-cyan-500 group-hover:bg-cyan-500 group-hover:text-black transition-all">
-                                <i data-lucide="plus" class="w-5 h-5"></i>
-                            </div>
-                        </div>
+                        <p class="text-gray-400 mb-12 text-base font-light leading-relaxed">Modular frameworks and
+                            secure environments engineered for exponential scale.</p>
+                        <i data-lucide="layers"
+                            class="w-14 h-14 text-white/10 group-hover:text-cyan-400 transition-all duration-500"></i>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Customer Stories (Glass Carousel) -->
+    <!-- Customer Stories -->
     {% if about_page.customer_stories.exists %}
     <section class="py-32 bg-transparent relative z-10 overflow-hidden">
-        <div class="container mx-auto px-6 mb-16">
-            <div class="flex items-center gap-4 mb-4">
-                <span class="h-px w-12 bg-purple-500"></span>
-                <span class="text-purple-400 text-xs font-mono tracking-[0.3em] uppercase">Impact Evidence</span>
-            </div>
-            <h2 class="text-4xl md:text-6xl font-orbitron font-bold text-white">CUSTOMER <span
+        <div class="container mx-auto px-6 mb-20 text-center">
+            <span class="text-purple-500 text-xs font-mono tracking-[0.4em] uppercase font-bold block mb-4">// Impact
+                Confirmation</span>
+            <h2 class="text-5xl md:text-8xl font-orbitron font-black text-white">CUSTOMER <span
                     class="text-purple-500">STORIES</span></h2>
         </div>
 
@@ -222,53 +348,36 @@
                 {% for story in about_page.customer_stories.all %}
                 <div class="min-w-full">
                     <div
-                        class="bg-white/[0.02] backdrop-blur-2xl border border-white/10 rounded-3xl p-8 md:p-16 flex flex-col md:flex-row gap-12 items-center relative overflow-hidden">
-                        <!-- Decorative glow -->
+                        class="bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-3xl p-10 md:p-20 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                         <div
-                            class="absolute top-[-20%] right-[-10%] w-[40%] h-[60%] bg-purple-500/10 blur-[100px] rounded-full pointer-events-none">
-                        </div>
-
-                        <div
-                            class="w-full md:w-[45%] rounded-2xl overflow-hidden border border-white/10 shadow-2xl relative group">
+                            class="rounded-2xl overflow-hidden shadow-2xl relative group border border-white/5 hover:border-purple-500/40 transition-all duration-700">
                             <img src="{{ story.image.url }}" alt="{{ story.client_name }}"
-                                class="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105">
-                            <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                            <div class="absolute bottom-6 left-6 flex items-center gap-3">
-                                <div
-                                    class="w-10 h-10 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center">
-                                    <i data-lucide="briefcase" class="w-4 h-4 text-white"></i>
-                                </div>
-                                <span
-                                    class="bg-purple-500/80 backdrop-blur-md px-3 py-1 rounded-sm text-[10px] font-bold tracking-widest uppercase">Client
-                                    Profile</span>
-                            </div>
+                                class="w-full h-[450px] object-cover filter brightness-75 group-hover:brightness-100 transition-all duration-1000">
                         </div>
-
-                        <div class="w-full md:w-[55%] space-y-8 relative z-10">
-                            <div class="flex items-center gap-2">
+                        <div class="space-y-10">
+                            <div class="inline-flex items-center gap-4">
                                 <span
-                                    class="text-purple-500 font-orbitron font-bold text-lg tracking-widest uppercase">{{
+                                    class="text-purple-500 font-orbitron font-bold text-2xl tracking-[0.2em] uppercase">{{
                                     story.client_name }}</span>
-                                <span class="h-px w-8 bg-white/20"></span>
+                                <div class="w-12 h-px bg-white/20"></div>
                             </div>
-                            <h3 class="text-3xl md:text-5xl font-orbitron text-white leading-tight font-black">{{
-                                story.title }}</h3>
-                            <p class="text-gray-400 text-lg leading-relaxed font-light">{{ story.description }}</p>
-
-                            <div class="pt-6">
-                                <a href="{{ story.link_url }}"
-                                    class="inline-flex items-center gap-4 px-8 py-3 bg-white text-black font-bold font-orbitron tracking-widest hover:bg-purple-500 hover:text-white transition-all duration-300">
-                                    {{ story.link_text }} <i data-lucide="external-link" class="w-4 h-4"></i>
-                                </a>
-                            </div>
+                            <h3
+                                class="text-3xl md:text-6xl font-orbitron text-white leading-tight font-black tracking-tight">
+                                {{ story.title }}</h3>
+                            <p class="text-gray-400 text-xl leading-relaxed font-light">{{ story.description }}</p>
+                            <a href="{{ story.link_url }}"
+                                class="group/btn relative inline-flex items-center gap-6 px-10 py-5 bg-purple-600 text-white font-black font-orbitron tracking-widest hover:bg-white hover:text-purple-600 transition-all duration-500 overflow-hidden">
+                                <span class="relative z-10">{{ story.link_text }}</span>
+                                <div
+                                    class="absolute inset-0 bg-white translate-x-[-101%] group-hover/btn:translate-x-0 transition-transform duration-500 ease-out z-0">
+                                </div>
+                            </a>
                         </div>
                     </div>
                 </div>
                 {% endfor %}
             </div>
-
-            <!-- Custom Pagination -->
-            <div class="flex justify-center gap-4 mt-12">
+            <div class="flex justify-center gap-4 mt-16">
                 {% for story in about_page.customer_stories.all %}
                 <button onclick="goToStory({{ forloop.counter0 }})"
                     class="story-dot w-3 h-3 rounded-full bg-white/10 hover:bg-purple-500 transition-all"
@@ -279,114 +388,48 @@
     </section>
     {% endif %}
 
-    <!-- Connected Sections / The Journey (Timeline Style) -->
-    {% if sections %}
-    <section class="py-32 bg-white/[0.01] relative z-10 border-y border-white/5">
-        <div class="container mx-auto px-6">
-            <div class="text-center mb-24">
-                <span class="text-alien text-[10px] font-mono tracking-[0.5em] uppercase block mb-4">//
-                    Historical_Flow</span>
-                <h2 class="text-5xl md:text-7xl font-orbitron font-bold text-white leading-none">THE <span
-                        class="text-alien">JOURNEY</span></h2>
-            </div>
-
-            <div class="relative">
-                <!-- Center Line -->
-                <div
-                    class="absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-alien/30 to-transparent hidden md:block">
-                </div>
-
-                <div class="space-y-32">
-                    {% for section in sections %}
-                    <div class="flex flex-col md:flex-row gap-12 items-center relative">
-                        <!-- Desktop Dot -->
-                        <div
-                            class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-black border-2 border-alien rounded-full z-20 hidden md:block group">
-                            <div class="absolute inset-0 bg-alien rounded-full animate-ping opacity-30"></div>
-                        </div>
-
-                        <div class="w-full md:w-1/2 {% if forloop.counter|divisibleby:2 %}md:order-2{% endif %}">
-                            <div
-                                class="relative group p-4 border border-white/10 rounded-2xl bg-white/[0.02] backdrop-blur-md overflow-hidden transition-all duration-700 hover:border-alien/30 hover:-translate-y-2">
-                                <div
-                                    class="absolute inset-0 bg-alien/5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                </div>
-                                {% if section.image %}
-                                <img src="{{ section.image.url }}" alt="{{ section.heading }}"
-                                    class="rounded-xl shadow-2xl grayscale group-hover:grayscale-0 transition-all duration-1000 w-full aspect-[16/9] object-cover">
-                                {% else %}
-                                <div
-                                    class="w-full aspect-[16/9] bg-gray-900/50 rounded-xl flex items-center justify-center border border-white/5">
-                                    <i data-lucide="milestone"
-                                        class="w-16 h-16 text-white/5 group-hover:text-alien transition-colors"></i>
-                                </div>
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        <div
-                            class="w-full md:w-1/2 {% if forloop.counter|divisibleby:2 %}md:order-1 md:text-right{% endif %}">
-                            <div class="space-y-6">
-                                <span class="text-alien font-mono text-xs tracking-widest uppercase">Phase_{{
-                                    forloop.counter|stringformat:"02d" }}</span>
-                                <h3 class="text-3xl md:text-5xl font-orbitron text-white leading-tight font-black">
-                                    {{ section.heading }}
-                                </h3>
-                                <div
-                                    class="text-gray-400 text-lg leading-relaxed font-light prose prose-invert max-w-none prose-p:mb-4">
-                                    {{ section.content|safe }}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-    </section>
-    {% endif %}
-
     <!-- Meet Us Here (Events) -->
     {% if about_page.events.exists %}
-    <section class="py-32 bg-transparent relative z-10">
-        <div class="container mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-16">
-            <div class="lg:col-span-12 mb-12">
-                <div class="flex items-center gap-4 mb-4">
-                    <span class="h-px w-12 bg-cyan-500"></span>
-                    <span class="text-cyan-400 text-xs font-mono tracking-[0.3em] uppercase">Rendezvous Points</span>
-                </div>
-                <h2 class="text-5xl md:text-7xl font-orbitron font-bold text-white">MEET US <span
+    <section class="py-32 bg-white/[0.01] border-y border-white/5 relative z-10">
+        <div class="container mx-auto px-6">
+            <div class="mb-20">
+                <span
+                    class="text-cyan-500 text-xs font-mono tracking-[0.4em] uppercase block mb-6 px-4 py-1.5 border border-cyan-500/20 bg-cyan-500/5 w-fit rounded-full">//
+                    Signal_Interception</span>
+                <h2 class="text-5xl md:text-8xl font-orbitron font-black text-white leading-[0.9]">MEET US <span
                         class="text-cyan-500">HERE</span></h2>
             </div>
 
-            <div class="lg:col-span-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {% for event in about_page.events.all %}
                 <div
-                    class="p-10 bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-2xl hover:border-cyan-500/50 transition-all duration-500 group relative overflow-hidden h-full flex flex-col">
-                    <div
-                        class="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-100 group-hover:text-cyan-500 transition-all duration-500 rotate-12 group-hover:rotate-0">
-                        <i data-lucide="calendar" class="w-16 h-16"></i>
-                    </div>
+                    class="hud-card p-12 group rounded-2xl flex flex-col h-full border-cyan-500/10 hover:border-cyan-500/50">
+                    <div class="hud-corner hud-tl !border-cyan-500"></div>
+                    <div class="hud-corner hud-tr !border-cyan-500"></div>
+                    <div class="hud-corner hud-bl !border-cyan-500"></div>
+                    <div class="hud-corner hud-br !border-cyan-500"></div>
 
                     <span
-                        class="text-cyan-400 font-mono text-[10px] uppercase tracking-[0.4em] block mb-6 px-3 py-1 border border-cyan-500/30 rounded-full w-fit bg-cyan-500/5">{{
-                        event.location_name }}</span>
+                        class="text-cyan-500 font-mono text-xs uppercase tracking-[0.4em] block mb-8 font-black">Archive_{{
+                        forloop.counter }}</span>
                     <h3
-                        class="text-2xl font-orbitron font-bold text-white mb-4 leading-tight group-hover:text-cyan-100">
+                        class="text-3xl font-orbitron font-bold text-white mb-6 leading-tight group-hover:text-cyan-400 transition-colors uppercase">
                         {{ event.title }}</h3>
-                    <div class="flex items-center gap-2 text-cyan-500/60 font-mono text-xs mb-8">
-                        <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+                    <div
+                        class="flex items-center gap-4 text-cyan-500/70 font-mono text-sm mb-10 pb-6 border-b border-white/5">
+                        <i data-lucide="map-pin" class="w-5 h-5"></i>
+                        <span>{{ event.location_name }}</span>
+                        <span class="opacity-30">|</span>
                         <span>{{ event.date_text }}</span>
                     </div>
-                    <p class="text-gray-400 text-base leading-relaxed mb-8 flex-grow">{{ event.description }}</p>
+                    <p class="text-gray-400 text-base leading-relaxed mb-10 flex-grow font-light">{{ event.description
+                        }}</p>
 
-                    <a href="{{ event.link_url }}"
-                        class="flex items-center justify-between w-full group/btn pt-6 border-t border-white/5">
-                        <span class="text-white text-xs font-black tracking-widest font-orbitron">EXPLORE SESSION</span>
-                        <div
-                            class="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center group-hover/btn:bg-cyan-500 group-hover/btn:text-black transition-all">
-                            <i data-lucide="arrow-right" class="w-5 h-5"></i>
-                        </div>
+                    <a href="{{ event.link_url }}" class="flex items-center justify-between group/link pt-6">
+                        <span
+                            class="text-white text-xs font-black tracking-widest font-orbitron group-hover/link:text-cyan-400">INITIATE_INTAKE</span>
+                        <i data-lucide="arrow-right"
+                            class="w-6 h-6 text-cyan-500 group-hover/link:translate-x-2 transition-all"></i>
                     </a>
                 </div>
                 {% endfor %}
@@ -397,30 +440,31 @@
 
     <!-- Team Section -->
     {% if team %}
-    <section class="py-32 bg-white/[0.02] border-y border-white/5 relative z-10">
+    <section class="py-32 bg-transparent relative z-10">
         <div class="container mx-auto px-6">
-            <div class="text-center mb-24">
-                <span class="text-alien text-[10px] font-mono tracking-[0.5em] uppercase block mb-4">//
-                    Human_Capital</span>
-                <h2 class="text-5xl md:text-7xl font-orbitron font-bold text-white uppercase">THE <span
-                        class="text-alien">COLLECTIVE</span></h2>
+            <div class="text-center mb-28">
+                <span
+                    class="text-alien text-xs font-mono tracking-[0.5em] uppercase block mb-6 font-black animate-pulse">//
+                    Sentient_Asset_Collective</span>
+                <h2 class="text-5xl md:text-9xl font-orbitron font-black text-white leading-none tracking-tight">THE
+                    <span class="text-alien">ELDERS</span></h2>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12">
                 {% for member in team %}
                 <div class="group relative flex flex-col items-center">
                     <div
-                        class="w-56 h-56 md:w-64 md:h-64 rounded-full p-2 border border-white/10 group-hover:border-alien transition-all duration-700 relative mb-8">
+                        class="w-64 h-64 md:w-80 md:h-80 rounded-full p-3 border border-white/10 group-hover:border-alien transition-all duration-1000 relative mb-10">
                         <div
-                            class="absolute inset-0 rounded-full border border-alien opacity-0 scale-75 group-hover:opacity-20 group-hover:scale-100 transition-all duration-1000">
+                            class="absolute inset-0 rounded-full border border-alien opacity-0 scale-75 group-hover:opacity-40 group-hover:scale-110 transition-all duration-1000 animate-pulse">
                         </div>
                         <div class="w-full h-full rounded-full overflow-hidden relative z-10">
                             {% if member.image %}
                             <img src="{{ member.image.url }}" alt="{{ member.name }}"
-                                class="w-full h-full object-cover transition-all duration-700 ease-out grayscale group-hover:grayscale-0 group-hover:scale-110">
+                                class="w-full h-full object-cover transition-all duration-1000 grayscale group-hover:grayscale-0 group-hover:scale-105">
                             {% else %}
                             <div class="w-full h-full bg-gray-900 flex items-center justify-center">
-                                <i data-lucide="user" class="w-16 h-16 text-white/5"></i>
+                                <i data-lucide="user" class="w-24 h-24 text-white/5"></i>
                             </div>
                             {% endif %}
                             <div
@@ -429,25 +473,25 @@
                         </div>
                     </div>
 
-                    <div class="text-center space-y-2">
+                    <div class="text-center">
                         <h3
-                            class="text-2xl font-orbitron text-white uppercase font-black transition-colors group-hover:text-alien">
+                            class="text-3xl font-orbitron text-white uppercase font-black transition-colors group-hover:text-alien mb-2">
                             {{ member.name }}</h3>
-                        <p class="text-alien text-[10px] font-mono uppercase tracking-[0.4em] font-bold">{{ member.role
-                            }}</p>
+                        <p class="text-alien text-xs font-mono uppercase tracking-[0.4em] font-bold">{{ member.role }}
+                        </p>
 
                         <div
-                            class="flex justify-center gap-6 pt-6 opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500 delay-100">
+                            class="flex justify-center gap-8 pt-8 opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-700">
                             {% if member.linkedin %}
                             <a href="{{ member.linkedin }}" target="_blank"
-                                class="text-gray-500 hover:text-white transition-colors">
-                                <i data-lucide="linkedin" class="w-5 h-5"></i>
+                                class="text-gray-500 hover:text-alien hover:scale-125 transition-all">
+                                <i data-lucide="linkedin" class="w-6 h-6"></i>
                             </a>
                             {% endif %}
                             {% if member.instagram %}
                             <a href="{{ member.instagram }}" target="_blank"
-                                class="text-gray-500 hover:text-white transition-colors">
-                                <i data-lucide="instagram" class="w-5 h-5"></i>
+                                class="text-gray-500 hover:text-alien hover:scale-125 transition-all">
+                                <i data-lucide="instagram" class="w-6 h-6"></i>
                             </a>
                             {% endif %}
                         </div>
@@ -459,223 +503,142 @@
     </section>
     {% endif %}
 
-    <!-- News and Insights (Premium Grid) -->
-    <section class="py-32 bg-black relative z-10 border-b border-white/5">
-        <div class="container mx-auto px-6">
-            <div class="flex flex-col md:flex-row justify-between items-end gap-8 mb-24">
-                <div class="max-w-2xl">
-                    <span class="text-gray-500 text-[10px] font-mono tracking-[0.5em] uppercase block mb-4">//
-                        Intelligence_Report</span>
-                    <h2 class="text-5xl md:text-7xl font-orbitron font-bold text-white leading-none">NEWS & <span
-                            class="text-gray-600">INSIGHTS</span></h2>
+    <!-- News and Insights -->
+    <section class="py-32 bg-white/[0.02] relative z-10 border-y border-white/5">
+        <div class="container mx-auto px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {% for item in 1234|make_list %}
+            <div
+                class="hud-card p-10 h-72 group flex flex-col justify-between cursor-pointer rounded-xl border border-white/5">
+                <div class="hud-corner hud-tl !border-gray-500 group-hover:!border-alien"></div>
+                <div class="hud-corner hud-br !border-gray-500 group-hover:!border-alien"></div>
+
+                <div
+                    class="w-14 h-14 bg-white/5 flex items-center justify-center rounded-lg border border-white/5 group-hover:bg-alien group-hover:text-black transition-all">
+                    <i data-lucide="{% if forloop.counter == 1 %}megaphone{% elif forloop.counter == 2 %}bar-chart-2{% elif forloop.counter == 3 %}award{% else %}globe{% endif %}"
+                        class="w-7 h-7"></i>
                 </div>
-                <div class="hidden md:block">
-                    <div class="w-24 h-px bg-white/10"></div>
+                <div>
+                    <h4
+                        class="font-orbitron font-bold text-white text-2xl mb-1 group-hover:text-alien transition-colors">
+                        {% if forloop.counter == 1 %}Newsroom{% elif forloop.counter == 2 %}Insights{% elif
+                        forloop.counter == 3 %}Recognition{% else %}Studies{% endif %}
+                    </h4>
+                    <span
+                        class="text-gray-600 text-[10px] font-mono uppercase tracking-widest font-black">Archive_Module_{{
+                        forloop.counter }}</span>
                 </div>
             </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div
-                    class="group h-80 relative bg-white/[0.03] backdrop-blur-xl border border-white/5 p-10 hover:bg-alien/10 transition-all duration-500 rounded-2xl cursor-pointer">
-                    <div class="h-full flex flex-col justify-between">
-                        <div
-                            class="p-4 bg-white/5 w-fit rounded-xl border border-white/10 group-hover:bg-alien group-hover:text-black transition-all">
-                            <i data-lucide="megaphone" class="w-8 h-8"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-orbitron font-bold text-white text-2xl mb-4 group-hover:text-alien">Newsroom
-                            </h4>
-                            <p class="text-gray-500 text-xs font-mono uppercase tracking-widest leading-loose">Latest
-                                Press Transmissions</p>
-                        </div>
-                    </div>
-                    <div
-                        class="absolute bottom-10 right-10 text-white/10 group-hover:text-alien/30 font-black text-6xl font-orbitron select-none">
-                        01</div>
-                </div>
-
-                <div
-                    class="group h-80 relative bg-white/[0.03] backdrop-blur-xl border border-white/5 p-10 hover:bg-purple-500/10 transition-all duration-500 rounded-2xl cursor-pointer">
-                    <div class="h-full flex flex-col justify-between">
-                        <div
-                            class="p-4 bg-white/5 w-fit rounded-xl border border-white/10 group-hover:bg-purple-500 group-hover:text-white transition-all">
-                            <i data-lucide="bar-chart-2" class="w-8 h-8"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-orbitron font-bold text-white text-2xl mb-4 group-hover:text-purple-400">
-                                Insights</h4>
-                            <p class="text-gray-500 text-xs font-mono uppercase tracking-widest leading-loose">Deep
-                                Neural Analysis</p>
-                        </div>
-                    </div>
-                    <div
-                        class="absolute bottom-10 right-10 text-white/10 group-hover:text-purple-500/30 font-black text-6xl font-orbitron select-none">
-                        02</div>
-                </div>
-
-                <div
-                    class="group h-80 relative bg-white/[0.03] backdrop-blur-xl border border-white/5 p-10 hover:bg-cyan-500/10 transition-all duration-500 rounded-2xl cursor-pointer">
-                    <div class="h-full flex flex-col justify-between">
-                        <div
-                            class="p-4 bg-white/5 w-fit rounded-xl border border-white/10 group-hover:bg-cyan-500 group-hover:text-black transition-all">
-                            <i data-lucide="award" class="w-8 h-8"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-orbitron font-bold text-white text-2xl mb-4 group-hover:text-cyan-400">
-                                Recognition</h4>
-                            <p class="text-gray-500 text-xs font-mono uppercase tracking-widest leading-loose">Analyst
-                                Identifications</p>
-                        </div>
-                    </div>
-                    <div
-                        class="absolute bottom-10 right-10 text-white/10 group-hover:text-cyan-500/30 font-black text-6xl font-orbitron select-none">
-                        03</div>
-                </div>
-
-                <div
-                    class="group h-80 relative bg-white/[0.03] backdrop-blur-xl border border-white/5 p-10 hover:bg-emerald-500/10 transition-all duration-500 rounded-2xl cursor-pointer">
-                    <div class="h-full flex flex-col justify-between">
-                        <div
-                            class="p-4 bg-white/5 w-fit rounded-xl border border-white/10 group-hover:bg-emerald-500 group-hover:text-black transition-all">
-                            <i data-lucide="globe" class="w-8 h-8"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-orbitron font-bold text-white text-2xl mb-4 group-hover:text-emerald-400">
-                                Studies</h4>
-                            <p class="text-gray-500 text-xs font-mono uppercase tracking-widest leading-loose">Global
-                                Sector Research</p>
-                        </div>
-                    </div>
-                    <div
-                        class="absolute bottom-10 right-10 text-white/10 group-hover:text-emerald-500/30 font-black text-6xl font-orbitron select-none">
-                        04</div>
-                </div>
-            </div>
+            {% endfor %}
         </div>
     </section>
 
-    <!-- Careers Section (Sleek CTA) -->
-    <section class="py-40 bg-black relative overflow-hidden z-10">
-        <div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 bg-repeat">
+    <!-- Careers Section -->
+    <section class="py-48 bg-transparent relative z-10 text-center overflow-hidden">
+        <div
+            class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.15] bg-repeat">
         </div>
-        <div class="container mx-auto px-6 text-center relative z-10">
-            <div class="flex justify-center mb-8">
-                <div
-                    class="px-6 py-2 border border-alien/50 bg-alien/10 rounded-full text-alien text-[10px] font-mono tracking-[0.4em] uppercase font-black backdrop-blur-md">
-                    Careers</div>
-            </div>
-            <h2 class="text-6xl md:text-9xl font-orbitron font-black text-white mb-12 leading-[0.85] tracking-tighter">
-                SEIZE THE<br><span
-                    class="text-transparent bg-clip-text bg-gradient-to-r from-alien via-emerald-400 to-cyan-500">FUTURE</span>
+        <div class="container mx-auto px-6 relative z-10">
+            <h2
+                class="text-7xl md:text-[12rem] font-orbitron font-black text-white mb-16 leading-[0.8] tracking-tighter">
+                JOIN THE<br><span
+                    class="text-transparent bg-clip-text bg-gradient-to-r from-alien via-emerald-400 to-cyan-500">VOYAGE</span>
             </h2>
-            <p class="text-gray-400 max-w-3xl mx-auto mb-16 text-xl font-light leading-relaxed">
-                Join an elite-grade engineering collective. Deploy the future of digital infrastructure and push the
-                boundaries of what's modularly possible.
+            <p class="text-gray-400 max-w-4xl mx-auto mb-20 text-2xl font-light leading-relaxed">
+                We are recruiting the next generation of digital architects. Deploy your consciousness into our
+                engineering collective.
             </p>
             <a href="{% url 'career_list' %}"
-                class="group relative inline-flex items-center gap-6 px-16 py-6 bg-white text-black font-black font-orbitron tracking-[0.2em] transition-all duration-500 hover:bg-alien hover:text-black hover:gap-10">
-                <span class="relative z-10">JOIN THE COLLECTIVE</span>
-                <i data-lucide="arrow-right" class="w-6 h-6 transition-transform"></i>
+                class="group relative inline-flex items-center gap-8 px-20 py-8 bg-white text-black font-black font-orbitron tracking-[0.3em] transition-all duration-700 hover:bg-alien hover:scale-105 active:scale-95 text-lg">
+                <span class="relative z-10">INITIATE DEPLOYMENT</span>
+                <i data-lucide="arrow-right" class="w-8 h-8 group-hover:translate-x-3 transition-transform"></i>
             </a>
-        </div>
-
-        <!-- Background Elements -->
-        <div
-            class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-5xl h-[500px] bg-alien/5 blur-[150px] rounded-full">
         </div>
     </section>
 
-    <!-- NEW Contact Form Section (MOVED TO THE END) -->
-    <section id="contact-final" class="py-32 bg-gray-900/40 border-t border-white/5 relative z-10 backdrop-blur-3xl">
-        <div class="container mx-auto px-6 max-w-5xl relative">
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
-                <div>
-                    <span class="text-alien text-xs font-mono tracking-[0.4em] uppercase mb-6 block">///
-                        Safe_Port_Entry</span>
-                    <h2 class="text-4xl md:text-6xl font-orbitron font-bold text-white mb-8">ESTABLISH<br><span
-                            class="text-alien">SIGNAL</span></h2>
-                    <p class="text-gray-400 text-lg mb-12 max-w-md font-light">
-                        Ready to upgrade your enterprise architecture? Send a secure transmission to our primary intake
-                        module.
+    <!-- FINAL Contact Form Section -->
+    <section id="contact-final" class="py-32 bg-gray-900 border-t border-alien/20 relative z-10">
+        <div class="container mx-auto px-6 max-w-6xl relative">
+            <div class="grid grid-cols-1 lg:grid-cols-5 gap-20 items-center">
+                <div class="lg:col-span-2">
+                    <span class="text-alien text-sm font-mono tracking-[0.5em] uppercase mb-8 block font-black">//
+                        Uplink_Request</span>
+                    <h2 class="text-4xl md:text-7xl font-orbitron font-black text-white mb-10 leading-[0.9]">
+                        SECURE<br><span class="text-alien">CHANNEL</span></h2>
+                    <p class="text-gray-400 text-xl mb-16 font-light leading-relaxed">
+                        Our transmission intakes are open. Establish a secure handshake today.
                     </p>
 
-                    <div class="space-y-10">
-                        <div class="flex gap-6 group">
+                    <div class="space-y-12">
+                        <div class="flex gap-8 group">
                             <div
-                                class="w-14 h-14 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center group-hover:bg-alien group-hover:text-black transition-all">
-                                <i data-lucide="shield-check" class="w-6 h-6"></i>
+                                class="w-16 h-16 bg-alien/5 border border-alien/20 rounded-2xl flex items-center justify-center group-hover:bg-alien group-hover:text-black transition-all duration-500 shadow-[0_0_15px_rgba(0,255,65,0.1)]">
+                                <i data-lucide="shield-check" class="w-8 h-8"></i>
                             </div>
                             <div>
-                                <h4 class="text-white font-bold font-orbitron mb-1 tracking-wider uppercase text-sm">
-                                    Secure Transmission</h4>
-                                <p class="text-gray-500 text-xs font-mono">ENCRYPTION: AES-256 ACTIVE</p>
-                            </div>
-                        </div>
-                        <div class="flex gap-6 group">
-                            <div
-                                class="w-14 h-14 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center group-hover:bg-alien group-hover:text-black transition-all">
-                                <i data-lucide="cpu" class="w-6 h-6"></i>
-                            </div>
-                            <div>
-                                <h4 class="text-white font-bold font-orbitron mb-1 tracking-wider uppercase text-sm">
-                                    Response Time</h4>
-                                <p class="text-gray-500 text-xs font-mono">LATENCY: < 24 HOURS</p>
+                                <h4 class="text-white font-black font-orbitron mb-2 tracking-widest text-lg">ENCRYPTED
+                                </h4>
+                                <p
+                                    class="text-gray-500 text-xs font-mono font-bold tracking-widest uppercase opacity-60">
+                                    HANDSHAKE_ACTIVE</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div
-                    class="bg-black border border-white/10 p-10 md:p-14 rounded-3xl relative shadow-[0_30px_60px_-12px_rgba(0,0,0,0.5)]">
+                <div class="lg:col-span-3 hud-card p-12 md:p-20 rounded-3xl relative shadow-2xl">
+                    <div class="hud-corner hud-tl"></div>
+                    <div class="hud-corner hud-tr"></div>
+                    <div class="hud-corner hud-bl"></div>
+                    <div class="hud-corner hud-br"></div>
+
                     <div id="contact-success"
-                        class="absolute inset-0 bg-black z-50 flex flex-col items-center justify-center text-center p-8 opacity-0 pointer-events-none transition-opacity duration-500 rounded-3xl">
+                        class="absolute inset-0 bg-black/95 z-50 flex flex-col items-center justify-center text-center p-12 opacity-0 pointer-events-none transition-opacity duration-700 rounded-3xl">
                         <div
-                            class="w-20 h-20 bg-alien/10 rounded-full flex items-center justify-center mb-8 border border-alien/50 animate-pulse">
-                            <i data-lucide="check-circle" class="w-10 h-10 text-alien"></i>
+                            class="w-24 h-24 bg-alien/10 rounded-full flex items-center justify-center mb-10 border border-alien/30 animate-pulse">
+                            <i data-lucide="thumbs-up" class="w-12 h-12 text-alien"></i>
                         </div>
-                        <h3 class="text-3xl font-orbitron text-white mb-4">SIGNAL RECEIVED</h3>
-                        <p class="text-gray-400 text-sm mb-10 leading-relaxed">Your data has been successfully
-                            routed.<br>Our synthetics are processing the request.</p>
+                        <h3 class="text-4xl font-orbitron font-black text-white mb-6 uppercase tracking-tight">
+                            SIGNAL_ACKNOWLEDGED</h3>
+                        <p class="text-gray-400 text-lg mb-12 font-light max-w-sm">Transmission received. Our intake
+                            units are processing the packet.</p>
                         <button onclick="resetContact()"
-                            class="text-alien text-[10px] font-bold font-mono tracking-[0.4em] uppercase border-b border-alien/30 pb-1">SEND
-                            NEW_PING</button>
+                            class="text-alien text-xs font-bold font-mono tracking-[0.5em] uppercase border-b-2 border-alien/30 pb-2 hover:border-alien transition-all">SEND_NEW_SIGNAL</button>
                     </div>
 
-                    <form id="about-form-v2" method="post" action="{% url 'contact_submit' %}" class="space-y-8">
+                    <form id="about-form-v3" method="post" action="{% url 'contact_submit' %}"
+                        class="space-y-10 relative z-10">
                         {% csrf_token %}
-                        <div class="space-y-6">
+                        <div class="space-y-10">
                             <div class="relative group">
                                 <label
-                                    class="text-[10px] font-mono text-gray-600 mb-2 block uppercase tracking-widest transition-colors group-focus-within:text-alien">Intake_Subject</label>
+                                    class="text-[10px] font-mono text-gray-500 mb-2 block uppercase tracking-[0.3em] font-black group-focus-within:text-alien transition-colors">Subject_ID</label>
                                 <div
-                                    class="bg-white/5 border-b border-white/10 group-focus-within:border-alien transition-colors">
+                                    class="bg-white/5 border-b-2 border-white/10 group-focus-within:border-alien transition-all duration-500 pb-2">
                                     {{ contact_form.name }}
                                 </div>
                             </div>
                             <div class="relative group">
                                 <label
-                                    class="text-[10px] font-mono text-gray-600 mb-2 block uppercase tracking-widest transition-colors group-focus-within:text-alien">Communication_Channel</label>
+                                    class="text-[10px] font-mono text-gray-500 mb-2 block uppercase tracking-[0.3em] font-black group-focus-within:text-alien transition-colors">Digital_Uplink</label>
                                 <div
-                                    class="bg-white/5 border-b border-white/10 group-focus-within:border-alien transition-colors">
+                                    class="bg-white/5 border-b-2 border-white/10 group-focus-within:border-alien transition-all duration-500 pb-2">
                                     {{ contact_form.email }}
                                 </div>
                             </div>
                             <div class="relative group">
                                 <label
-                                    class="text-[10px] font-mono text-gray-600 mb-2 block uppercase tracking-widest transition-colors group-focus-within:text-alien">Transmission_Content</label>
+                                    class="text-[10px] font-mono text-gray-500 mb-2 block uppercase tracking-[0.3em] font-black group-focus-within:text-alien transition-colors">Packet_Data</label>
                                 <div
-                                    class="bg-white/5 border-b border-white/10 group-focus-within:border-alien transition-colors">
+                                    class="bg-white/5 border-b-2 border-white/10 group-focus-within:border-alien transition-all duration-500">
                                     {{ contact_form.message }}
                                 </div>
                             </div>
                         </div>
 
                         <button type="submit" id="about-submit-btn"
-                            class="w-full bg-white text-black font-black font-orbitron py-5 px-8 hover:bg-alien transition-all duration-300 tracking-[0.3em] flex items-center justify-center gap-3 group">
-                            <span>INITIATE SEND</span>
-                            <i data-lucide="arrow-right"
-                                class="w-5 h-5 group-hover:translate-x-2 transition-transform"></i>
+                            class="w-full bg-alien text-black font-black font-orbitron py-6 px-10 hover:bg-white transition-all duration-500 tracking-[0.4em] flex items-center justify-center gap-4 text-sm">
+                            <span class="btn-text">INITIATE_TRANSMISSION</span>
+                            <i data-lucide="arrow-right" class="w-6 h-6 btn-icon"></i>
                         </button>
                     </form>
                 </div>
@@ -685,40 +648,10 @@
 
 </div>
 
-<!-- Styles for better premium feel -->
-<style>
-    .no-scrollbar::-webkit-scrollbar {
-        display: none;
-    }
-
-    .no-scrollbar {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-    }
-
-    #about-form-v2 input,
-    #about-form-v2 textarea,
-    #about-form-v2 select {
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        color: white !important;
-        padding: 1rem 0 !important;
-        width: 100% !important;
-        outline: none !important;
-    }
-
-    .story-dot.active {
-        background: #00ff41 !important;
-        width: 1.5rem !important;
-        border-radius: 4px !important;
-    }
-</style>
-
 <script>
     lucide.createIcons();
 
-    // Decrypt Effect Logic (Standardized)
+    // Decrypt Effect Logic
     const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*";
     document.querySelectorAll(".decrypt-effect").forEach(el => {
         const original = el.dataset.value || el.innerText;
@@ -727,7 +660,7 @@
             const interval = setInterval(() => {
                 el.innerText = original.split("").map((l, i) => {
                     if (i < iteration) return original[i];
-                    return letters[Math.floor(Math.random() * 41)];
+                    return letters[Math.floor(Math.random() * letters.length)];
                 }).join("");
                 if (iteration >= original.length) clearInterval(interval);
                 iteration += 1 / 3;
@@ -735,45 +668,57 @@
         });
     });
 
-    // Simple Slider for What's New
-    const nextNew = document.getElementById('next-new');
-    const prevNew = document.getElementById('prev-new');
+    // Slider for What's New
     const newSlider = document.getElementById('new-slider');
-    if (nextNew && prevNew && newSlider) {
-        nextNew.addEventListener('click', () => newSlider.scrollLeft += 500);
-        prevNew.addEventListener('click', () => newSlider.scrollLeft -= 500);
-    }
+    document.getElementById('next-new')?.addEventListener('click', () => newSlider.scrollLeft += 500);
+    document.getElementById('prev-new')?.addEventListener('click', () => newSlider.scrollLeft -= 500);
 
-    // Customer Stories Carousel Logic (Go to index)
-    const storiesTrack = document.getElementById('stories-track');
+    // Customer Stories Loop
+    let storyIndex = 0;
+    const track = document.getElementById('stories-track');
     const dots = document.querySelectorAll('.story-dot');
 
     function goToStory(index) {
-        if (!storiesTrack) return;
-        storiesTrack.style.transform = `translateX(-${index * 100}%)`;
-        dots.forEach(d => d.classList.remove('active'));
-        dots[index]?.classList.add('active');
+        if (!track) return;
+        track.style.transform = `translateX(-${index * 100}%)`;
+        dots.forEach(d => d.style.background = 'rgba(255,255,255,0.1)');
+        if (dots[index]) {
+            dots[index].style.background = '#00ff41';
+            dots[index].style.boxShadow = '0 0 10px #00ff41';
+        }
+        storyIndex = index;
     }
 
-    // Initial active state
-    goToStory(0);
+    if (track && track.children.length > 0) {
+        goToStory(0);
+        setInterval(() => {
+            storyIndex = (storyIndex + 1) % track.children.length;
+            goToStory(storyIndex);
+        }, 12000);
+    }
 
-    // Auto-rotation
-    let storyIndex = 0;
-    setInterval(() => {
-        if (!storiesTrack) return;
-        storyIndex = (storyIndex + 1) % storiesTrack.children.length;
-        goToStory(storyIndex);
-    }, 10000);
+    // Form Customization
+    const stylingInputs = () => {
+        const inputs = document.querySelectorAll('#about-form-v3 input, #about-form-v3 textarea');
+        inputs.forEach(input => {
+            input.className = "w-full bg-transparent border-none text-white font-mono placeholder-gray-700 focus:ring-0 px-0 py-4 outline-none";
+            if (input.tagName === 'INPUT') input.placeholder = "AWAITING_INPUT...";
+            else input.placeholder = "ESTABLISH_MESSAGE_PARAMETERS...";
+        });
+    };
+    stylingInputs();
 
-    // Form Handling
-    document.getElementById('about-form-v2')?.addEventListener('submit', function (e) {
+    // Contact Submission
+    document.getElementById('about-form-v3')?.addEventListener('submit', function (e) {
         e.preventDefault();
         const btn = document.getElementById('about-submit-btn');
+        const text = btn.querySelector('.btn-text');
+        const icon = btn.querySelector('.btn-icon');
         const success = document.getElementById('contact-success');
 
         btn.disabled = true;
-        btn.innerHTML = '<span class="animate-pulse">TRANSMITTING...</span>';
+        text.innerText = "TRANSMITTING_PACKET...";
+        icon.classList.add('animate-spin');
 
         fetch(this.action, {
             method: 'POST',
@@ -786,13 +731,13 @@
                     success.classList.remove('opacity-0', 'pointer-events-none');
                     this.reset();
                 } else {
-                    alert('Connection Error: ' + JSON.stringify(data.errors));
+                    alert('TRANSMISSION_ERROR: ' + JSON.stringify(data.errors));
                 }
             })
             .finally(() => {
                 btn.disabled = false;
-                btn.innerHTML = '<span>INITIATE SEND</span><i data-lucide="arrow-right" class="w-5 h-5 group-hover:translate-x-2 transition-transform"></i>';
-                lucide.createIcons();
+                text.innerText = "INITIATE_TRANSMISSION";
+                icon.classList.remove('animate-spin');
             });
     });
 
