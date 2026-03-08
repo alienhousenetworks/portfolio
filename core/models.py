@@ -658,13 +658,74 @@ class AboutUsPage(models.Model):
     Represents the full About Us page. Allows flexibility for future additions.
     """
     page_title = models.CharField(max_length=200, default="About Us")
-    sections = models.ManyToManyField(AboutUsSection, related_name="pages")
+    sections = models.ManyToManyField(AboutUsSection, related_name="pages", blank=True)
+    
+    # Hero Section
     hero_image = models.ImageField(upload_to="about_us/hero/", blank=True, null=True)
-    hero_heading = models.CharField(max_length=200, blank=True, default="About AlienHouse")
-    hero_subtext = models.TextField(blank=True)
+    hero_video = models.FileField(upload_to="about_us/hero_video/", blank=True, null=True, help_text="Background video for hero section")
+    hero_heading = models.CharField(max_length=200, blank=True, default="The only constant in life is change")
+    hero_subtext = models.TextField(blank=True, default="To thrive, change is what we must become.")
+    hero_cta_text = models.CharField(max_length=50, default="Learn more", blank=True)
+    hero_cta_url = models.CharField(max_length=255, default="#", blank=True)
+
+    # What's New Section (List of cards)
+    # We'll use a separate model for What's New items
+
+    # Industries, Services, Products & Platforms are already handled by Service model
+    # but we might want a specific way to flag them for About Us if they differ from Home
 
     def __str__(self):
         return self.page_title
+
+
+class WhatsNewItem(models.Model):
+    about_page = models.ForeignKey(AboutUsPage, on_delete=models.CASCADE, related_name="whats_new_items")
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    image = models.ImageField(upload_to="about_us/whats_new/")
+    link_text = models.CharField(max_length=50, default="Read more")
+    link_url = models.CharField(max_length=255, default="#")
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["order"]
+
+    def __str__(self):
+        return self.title
+
+
+class CustomerStory(models.Model):
+    about_page = models.ForeignKey(AboutUsPage, on_delete=models.CASCADE, related_name="customer_stories")
+    client_name = models.CharField(max_length=100)
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    image = models.ImageField(upload_to="about_us/stories/")
+    link_text = models.CharField(max_length=50, default="READ MORE")
+    link_url = models.CharField(max_length=255, default="#")
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["order"]
+
+    def __str__(self):
+        return f"{self.client_name} - {self.title}"
+
+
+class EventItem(models.Model):
+    about_page = models.ForeignKey(AboutUsPage, on_delete=models.CASCADE, related_name="events")
+    location_name = models.CharField(max_length=100, help_text="e.g. Australia, USA")
+    title = models.CharField(max_length=200)
+    date_text = models.CharField(max_length=100, help_text="e.g. Thursday, March 5, 2026")
+    description = models.TextField()
+    link_text = models.CharField(max_length=50, default="READ MORE")
+    link_url = models.CharField(max_length=255, default="#")
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["order"]
+
+    def __str__(self):
+        return self.title
 
 
 class AboutUsGalleryImage(models.Model):

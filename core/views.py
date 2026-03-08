@@ -114,12 +114,14 @@ def about_us(request):
 
     site_config = SiteConfiguration.objects.first()
     team = BusinessTeamMember.objects.all()
+    contact_form = ContactForm()
 
     context = {
         "about_page": about_page,
         "sections": sections,
         "config": site_config,
         "team": team,
+        "contact_form": contact_form,
     }
     return render(request, "core/about_us.html", context)
 

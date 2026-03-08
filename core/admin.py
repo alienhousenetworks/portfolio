@@ -10,6 +10,7 @@ from .models import (
     ClientLogo, AboutUs,
     CompanyPage, PageSection, CTA,
     AboutUsPage, AboutUsSection, AboutUsGalleryImage,
+    WhatsNewItem, CustomerStory, EventItem,
     JobPost, JobApplication
 )
 
@@ -72,6 +73,18 @@ class AboutUsGalleryImageInline(admin.TabularInline):
     extra = 1
     verbose_name = "Gallery Image"
     verbose_name_plural = "Gallery / Slideshow Images"
+
+class WhatsNewItemInline(admin.TabularInline):
+    model = WhatsNewItem
+    extra = 1
+
+class CustomerStoryInline(admin.TabularInline):
+    model = CustomerStory
+    extra = 1
+
+class EventItemInline(admin.TabularInline):
+    model = EventItem
+    extra = 1
 
 
 
@@ -425,13 +438,18 @@ class CompanyPageAdmin(admin.ModelAdmin):
 @admin.register(AboutUsPage)
 class AboutUsPageAdmin(admin.ModelAdmin):
     list_display = ("page_title", "hero_heading")
-    list_display = ("page_title", "hero_heading")
-    inlines = [AboutUsSectionInline, AboutUsGalleryImageInline]
+    inlines = [
+        WhatsNewItemInline, 
+        CustomerStoryInline, 
+        EventItemInline,
+        AboutUsSectionInline, 
+        AboutUsGalleryImageInline
+    ]
     
     fieldsets = (
         ("Hero Banner", {
-            'fields': ('page_title', 'hero_heading', 'hero_subtext', 'hero_image'),
-            'description': "<strong>Impacts:</strong> The main standalone 'About Us' page at /about-us/. This section controls the top banner."
+            'fields': ('page_title', 'hero_heading', 'hero_subtext', 'hero_image', 'hero_video', 'hero_cta_text', 'hero_cta_url'),
+            'description': "<strong>Impacts:</strong> The main standalone 'About Us' page. This section controls the top banner (TCS Style)."
         }),
     )
 

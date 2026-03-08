@@ -2,129 +2,194 @@
 {% load static %}
 
 {% block content %}
-<div class="bg-black text-white selection:bg-alien/30 selection:text-alien font-sans min-h-screen">
+<div class="bg-black text-white selection:bg-alien/30 selection:text-alien font-sans min-h-screen overflow-x-hidden">
 
-    <!-- Hero Section -->
-    <div class="relative pt-24 pb-12 md:pt-32 md:pb-20 overflow-hidden">
-        <div class="absolute inset-0 bg-gradient-to-b from-alien/5 to-transparent pointer-events-none"></div>
-        <div
-            class="absolute top-0 right-0 w-[300px] h-[300px] md:w-[600px] md:h-[600px] bg-alien/10 rounded-full blur-[60px] md:blur-[120px] opacity-20 animate-pulse pointer-events-none">
+    <!-- Hero Section (TCS Style) -->
+    <header class="relative h-screen flex items-center justify-center overflow-hidden">
+        <!-- Background Video/Image -->
+        {% if about_page.hero_video %}
+        <video autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover">
+            <source src="{{ about_page.hero_video.url }}" type="video/mp4">
+        </video>
+        {% elif about_page.hero_image %}
+        <div class="absolute inset-0 bg-cover bg-center"
+            style="background-image: url('{{ about_page.hero_image.url }}');"></div>
+        {% else %}
+        <!-- Default Fallback Background (Dynamic Div) -->
+        <div class="absolute inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-900">
+            <div class="absolute inset-0 bg-grid-pattern opacity-20"></div>
         </div>
+        {% endif %}
 
-        <div class="container mx-auto px-4 md:px-6 relative z-10 text-center">
-            <div
-                class="inline-block px-3 py-1 border border-alien/30 rounded text-alien text-[10px] md:text-xs font-mono mb-4 tracking-[0.2em]">
-                ORIGIN STORY</div>
-            <h1 class="text-3xl md:text-7xl font-orbitron font-bold text-white mb-4 md:mb-6 text-balance">
-                {{ about_page.hero_heading|default:"WE BUILD THE FUTURE" }}
+        <!-- Overlay for better text readability -->
+        <div class="absolute inset-0 bg-black/40 z-10"></div>
+
+        <div class="container mx-auto px-6 relative z-20 text-center">
+            <h1 class="text-4xl md:text-7xl font-orbitron font-black text-white mb-6 leading-tight drop-shadow-2xl">
+                {{ about_page.hero_heading|default:"The only constant in life is change" }}
+                <span class="block text-alien text-2xl md:text-4xl mt-4 font-light italic">
+                    {{ about_page.hero_subtext|default:"To thrive, change is what we must become." }}
+                </span>
             </h1>
-            <p class="text-base md:text-2xl text-gray-400 max-w-3xl mx-auto font-light leading-relaxed text-balance">
-                {% if about_page.hero_subheading %}
-                {{about_page.hero_subheading}}
-                {% else %}
-                "AlienHouse Networks is an advanced technology collective dedicated
-                to pushing the boundaries of Problem Solving." </p>
+
+            {% if about_page.hero_cta_text %}
+            <a href="{{ about_page.hero_cta_url|default:'#' }}"
+                class="inline-block mt-8 px-8 py-3 bg-alien text-black font-bold font-orbitron tracking-widest hover:bg-white transition-all duration-300">
+                {{ about_page.hero_cta_text }}
+            </a>
             {% endif %}
         </div>
-    </div>
+    </header>
 
-    <!-- Mission & Vision -->
-    <section class="py-12 md:py-20 border-y border-white/10 relative">
-        <div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-5 md:opacity-10">
-        </div>
-        <div class="container mx-auto px-4 md:px-6 grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 relative z-10">
-            <!-- Mission -->
+    <!-- Contact Form Section (KEEPING ORIGINAL HTML AS REQUESTED) -->
+    <section id="contact-intro" class="py-16 md:py-24 bg-gray-900/30 border-y border-white/5">
+        <div class="container mx-auto px-6 max-w-4xl">
             <div
-                class="p-6 md:p-8 border-l-2 border-alien bg-gradient-to-r from-gray-900/50 to-transparent backdrop-blur-sm">
-                <i data-lucide="target" class="w-8 h-8 md:w-10 md:h-10 text-alien mb-4"></i>
-                <h3 class="text-xl md:text-2xl font-orbitron font-bold text-white mb-3 md:mb-4">OUR MISSION</h3>
-                <p class="text-sm md:text-base text-gray-400 leading-relaxed text-balance">To accelerate the evolution
-                    of digital
-                    infrastructure by
-                    providing elite-grade engineering solutions that defy conventional limits.</p>
-            </div>
-            <!-- Vision -->
-            <div
-                class="p-6 md:p-8 border-l-2 border-purple-500 bg-gradient-to-r from-gray-900/50 to-transparent backdrop-blur-sm">
-                <i data-lucide="eye" class="w-8 h-8 md:w-10 md:h-10 text-purple-500 mb-4"></i>
-                <h3 class="text-xl md:text-2xl font-orbitron font-bold text-white mb-3 md:mb-4">OUR VISION</h3>
-                <p class="text-sm md:text-base text-gray-400 leading-relaxed text-balance">A world where intelligent
-                    systems and human
-                    creativity merge
-                    seamlessly to solve the most complex challenges of the 21st century.</p>
+                class="bg-black/60 backdrop-blur-xl border border-white/10 p-8 md:p-12 rounded-2xl relative overflow-hidden">
+                <div class="text-center mb-10">
+                    <span class="text-alien text-xs font-mono tracking-[0.2em] uppercase mb-2 block">// Establish
+                        Connection</span>
+                    <h2 class="text-2xl md:text-4xl font-orbitron font-bold text-white">INITIATE HANDSHAKE</h2>
+                </div>
+
+                <form id="about-contact-form" method="post" action="{% url 'contact_submit' %}" class="space-y-6">
+                    {% csrf_token %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label
+                                class="text-xs font-mono text-gray-500 mb-2 block uppercase tracking-widest">Name</label>
+                            {{ contact_form.name }}
+                        </div>
+                        <div>
+                            <label
+                                class="text-xs font-mono text-gray-500 mb-2 block uppercase tracking-widest">Email</label>
+                            {{ contact_form.email }}
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label
+                                class="text-xs font-mono text-gray-500 mb-2 block uppercase tracking-widest">Phone</label>
+                            {{ contact_form.phone }}
+                        </div>
+                        <div>
+                            <label
+                                class="text-xs font-mono text-gray-500 mb-2 block uppercase tracking-widest">Company</label>
+                            {{ contact_form.company }}
+                        </div>
+                    </div>
+                    <div>
+                        <label
+                            class="text-xs font-mono text-gray-500 mb-2 block uppercase tracking-widest">Message</label>
+                        {{ contact_form.message }}
+                    </div>
+
+                    <button type="submit"
+                        class="w-full bg-alien text-black font-bold font-orbitron py-4 hover:bg-white transition-all duration-300 tracking-widest">
+                        SEND TRANSMISSION
+                    </button>
+                </form>
             </div>
         </div>
     </section>
 
-    <!-- Gallery / Office Life Carousel -->
-    {% if about_page.gallery_images.exists %}
-    <section class="py-16 md:py-24 overflow-hidden border-b border-white/5">
-        <div class="container mx-auto px-4 md:px-6 mb-8 md:mb-12 text-center">
-            <span class="text-alien text-[10px] md:text-xs font-mono tracking-[0.2em]">INSIDE THE LAB</span>
-            <h2 class="text-2xl md:text-4xl font-orbitron font-bold text-white mt-2">LIFE AT <span
-                    class="text-alien">ALIENHOUSE</span></h2>
+    <!-- What's New Section (Card Slider) -->
+    {% if about_page.whats_new_items.exists %}
+    <section class="py-20 bg-black">
+        <div class="container mx-auto px-6 mb-12 flex justify-between items-end">
+            <div>
+                <span class="text-alien text-[10px] md:text-xs font-mono tracking-[0.2em] uppercase">// Periodic
+                    Updates</span>
+                <h2 class="text-3xl md:text-5xl font-orbitron font-bold text-white mt-2">WHAT'S NEW</h2>
+            </div>
+            <div class="hidden md:flex gap-4">
+                <button id="prev-new"
+                    class="p-2 border border-white/20 rounded hover:border-alien text-white transition-colors"><i
+                        data-lucide="chevron-left"></i></button>
+                <button id="next-new"
+                    class="p-2 border border-white/20 rounded hover:border-alien text-white transition-colors"><i
+                        data-lucide="chevron-right"></i></button>
+            </div>
         </div>
 
-        <!-- CSS-only Scroll Snap Carousel -->
-        <div class="relative w-full flex gap-4 md:gap-6 overflow-x-auto snap-x snap-mandatory pb-8 px-4 md:px-6 no-scrollbar"
-            style="scrollbar-width: none; -ms-overflow-style: none;">
-            {% for img in about_page.gallery_images.all %}
+        <div id="new-slider"
+            class="flex gap-8 overflow-x-auto no-scrollbar scroll-smooth px-6 md:px-[calc((100vw-min(1280px,95vw))/2)]">
+            {% for item in about_page.whats_new_items.all %}
             <div
-                class="snap-center shrink-0 w-[80vw] md:w-[600px] h-[300px] md:h-[400px] relative rounded-xl overflow-hidden border border-white/10 group">
-                <img src="{{ img.image.url }}" alt="{{ img.caption }}"
-                    class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
-                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-80">
+                class="min-w-[300px] md:min-w-[400px] bg-gray-900/50 border border-white/5 rounded-xl overflow-hidden group hover:border-alien/30 transition-all duration-500">
+                <div class="h-64 overflow-hidden relative">
+                    <img src="{{ item.image.url }}" alt="{{ item.title }}"
+                        class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                    <div class="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent"></div>
                 </div>
-                {% if img.caption %}
-                <div class="absolute bottom-0 left-0 p-4 md:p-6 w-full">
-                    <p class="text-white font-orbitron text-base md:text-lg">{{ img.caption }}</p>
+                <div class="p-8">
+                    <h3 class="text-xl font-orbitron font-bold text-white mb-4">{{ item.title }}</h3>
+                    <p class="text-gray-400 text-sm mb-6 line-clamp-3">{{ item.description }}</p>
+                    <a href="{{ item.link_url }}"
+                        class="text-alien font-mono text-xs uppercase tracking-widest flex items-center gap-2 hover:gap-4 transition-all">
+                        {{ item.link_text }} <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    </a>
                 </div>
-                {% endif %}
             </div>
             {% endfor %}
         </div>
-
-        <!-- Decorative Indicators/Controls Hint -->
-        <div class="flex justify-center gap-2 mt-4">
-            <div class="text-gray-500 text-[10px] md:text-xs font-mono animate-pulse">
-                << DRAG TO EXPLORE>>
-            </div>
-        </div>
     </section>
     {% endif %}
 
-    <!-- Company History / Timeline (Simplified) -->
-    {% if sections %}
-    <section class="py-16 md:py-24">
-        <div class="container mx-auto px-4 md:px-6">
-            <div class="text-center mb-10 md:mb-16">
-                <h2 class="text-2xl md:text-4xl font-orbitron font-bold text-white">THE <span
-                        class="text-alien">JOURNEY</span></h2>
+    <!-- Industries / Services / Platforms Grid -->
+    <section class="py-24 bg-gray-900/20 relative">
+        <div class="container mx-auto px-6">
+            <div
+                class="grid grid-cols-1 md:grid-cols-3 gap-px bg-white/10 border border-white/10 rounded-2xl overflow-hidden">
+                <div class="p-12 md:p-16 bg-black hover:bg-gray-900 transition-colors group">
+                    <h2 class="text-4xl font-orbitron font-bold text-white mb-4">Industries</h2>
+                    <p class="text-gray-500 mb-8 font-mono text-sm uppercase tracking-widest">Select your industry.
+                        Discover our impact.</p>
+                    <i data-lucide="factory"
+                        class="w-12 h-12 text-alien opacity-20 group-hover:opacity-100 transition-opacity"></i>
+                </div>
+                <div class="p-12 md:p-16 bg-black hover:bg-gray-900 transition-colors group border-l border-white/10">
+                    <h2 class="text-4xl font-orbitron font-bold text-white mb-4">Services</h2>
+                    <p class="text-gray-500 mb-8 font-mono text-sm uppercase tracking-widest">Experience our services.
+                        Transform your business.</p>
+                    <i data-lucide="cpu"
+                        class="w-12 h-12 text-alien opacity-20 group-hover:opacity-100 transition-opacity"></i>
+                </div>
+                <div class="p-12 md:p-16 bg-black hover:bg-gray-900 transition-colors group border-l border-white/10">
+                    <h2 class="text-4xl font-orbitron font-bold text-white mb-4">Products</h2>
+                    <p class="text-gray-500 mb-8 font-mono text-sm uppercase tracking-widest">Explore our products.
+                        Accelerate performance.</p>
+                    <i data-lucide="layers"
+                        class="w-12 h-12 text-alien opacity-20 group-hover:opacity-100 transition-opacity"></i>
+                </div>
             </div>
+        </div>
+    </section>
 
-            <div class="space-y-12">
-                {% for section in sections %}
-                <div
-                    class="flex flex-col md:flex-row gap-6 md:gap-8 items-center {% if forloop.counter|divisibleby:2 %}md:flex-row-reverse{% endif %}">
-                    <div class="w-full md:w-1/2">
-                        {% if section.image %}
-                        <img src="{{ section.image.url }}" alt="{{ section.heading }}"
-                            class="rounded-lg shadow-[0_0_30px_rgba(0,255,65,0.1)] border border-white/10 grayscale hover:grayscale-0 transition-all duration-500 w-full h-auto">
-                        {% else %}
-                        <div
-                            class="w-full h-48 md:h-64 bg-gray-900 rounded-lg flex items-center justify-center border border-white/10">
-                            <i data-lucide="image" class="w-12 h-12 text-gray-700"></i>
-                        </div>
-                        {% endif %}
+    <!-- Customer Stories (Carousel) -->
+    {% if about_page.customer_stories.exists %}
+    <section class="py-24 bg-black overflow-hidden">
+        <div class="container mx-auto px-6 mb-12">
+            <span class="text-alien text-xs font-mono tracking-[0.2em] uppercase">// Operational Success</span>
+            <h2 class="text-3xl md:text-5xl font-orbitron font-bold text-white mt-2 uppercase">Customer Stories</h2>
+        </div>
+
+        <div class="relative w-full overflow-hidden">
+            <div id="stories-track" class="flex transition-transform duration-700 ease-in-out">
+                {% for story in about_page.customer_stories.all %}
+                <div class="min-w-full px-6 flex flex-col md:flex-row gap-12 items-center">
+                    <div class="w-full md:w-1/2 aspect-video rounded-2xl overflow-hidden border border-white/10">
+                        <img src="{{ story.image.url }}" alt="{{ story.client_name }}"
+                            class="w-full h-full object-cover">
                     </div>
-                    <div class="w-full md:w-1/2">
-                        <h3 class="text-xl md:text-2xl font-orbitron text-white mb-3 md:mb-4 text-balance">
-                            {{section.heading }}</h3>
-
-                        <div
-                            class="text-gray-300 text-sm md:text-base leading-relaxed prose prose-invert w-full max-w-full overflow-hidden break-words [&_*]:!max-w-full [&_img]:!h-auto [&_iframe]:!w-full [&_pre]:whitespace-pre-wrap [&_pre]:break-all [&_table]:block [&_table]:overflow-x-auto">
-                            {{ section.content|safe }}
-                        </div>
+                    <div class="w-full md:w-1/2 space-y-6">
+                        <span class="text-alien font-orbitron font-bold">{{ story.client_name }}</span>
+                        <h3 class="text-2xl md:text-4xl font-orbitron text-white leading-tight">{{ story.title }}</h3>
+                        <p class="text-gray-400 leading-relaxed">{{ story.description }}</p>
+                        <a href="{{ story.link_url }}"
+                            class="inline-block border-b-2 border-alien pb-1 text-sm font-bold tracking-widest hover:text-alien transition-colors">
+                            {{ story.link_text }}
+                        </a>
                     </div>
                 </div>
                 {% endfor %}
@@ -133,62 +198,118 @@
     </section>
     {% endif %}
 
-    <!-- Team Section -->
-    <section class="py-16 md:py-24 bg-gray-900/30 border-t border-white/5">
-        <div class="container mx-auto px-4 md:px-6">
-            <div class="text-center mb-10 md:mb-16">
-                <span class="text-purple-500 text-[10px] md:text-xs font-mono tracking-[0.2em]">THE COLLECTIVE</span>
-                <h2 class="text-2xl md:text-5xl font-orbitron font-bold text-white mt-2">MEET THE <span
-                        class="text-purple-500">MINDS</span></h2>
+    <!-- Meet Us Here (Events) -->
+    {% if about_page.events.exists %}
+    <section class="py-24 bg-gray-900/10 border-t border-white/5">
+        <div class="container mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12">
+            <div class="lg:col-span-4 self-center">
+                <h2 class="text-4xl md:text-6xl font-orbitron font-bold text-white">Meet us <span
+                        class="text-alien">here</span></h2>
             </div>
+            <div class="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+                {% for event in about_page.events.all %}
+                <div class="p-8 border-l border-white/10 hover:border-alien transition-colors group">
+                    <span class="text-alien font-mono text-xs uppercase tracking-widest">{{ event.location_name
+                        }}</span>
+                    <h3 class="text-xl font-orbitron font-bold text-white mt-4 mb-2">{{ event.title }}</h3>
+                    <p class="text-gray-500 text-xs font-mono mb-6">{{ event.date_text }}</p>
+                    <p class="text-gray-400 text-sm mb-6 line-clamp-3">{{ event.description }}</p>
+                    <a href="{{ event.link_url }}"
+                        class="text-white text-[10px] font-bold tracking-[0.2em] font-orbitron flex items-center gap-2 group-hover:text-alien">
+                        {{ event.link_text }} <i data-lucide="chevron-right" class="w-3 h-3"></i>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-                {% for member in team %}
-                <div
-                    class="group relative bg-black border border-gray-800 hover:border-purple-500/50 transition-all duration-300 p-6 flex flex-col items-center text-center">
+    <!-- News and Insights -->
+    <section class="py-24 bg-black border-y border-white/5">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-5xl font-orbitron font-bold text-white">News and <span
+                        class="text-gray-500">Insights</span></h2>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+                <div class="text-center group cursor-pointer">
                     <div
-                        class="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden mb-4 md:mb-6 border-2 border-gray-700 group-hover:border-purple-500 transition-colors">
-                        {% if member.image %}
-                        <img src="{{ member.image.url }}" alt="{{ member.name }}"
-                            class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500">
-                        {% else %}
-                        <div class="w-full h-full bg-gray-800 flex items-center justify-center">
-                            <i data-lucide="user" class="w-8 h-8 text-gray-600"></i>
-                        </div>
-                        {% endif %}
+                        class="aspect-square bg-gray-900 flex items-center justify-center mb-6 rounded-lg border border-white/5 group-hover:border-alien transition-all">
+                        <i data-lucide="megaphone" class="w-12 h-12 text-alien opacity-50"></i>
                     </div>
-                    <h3 class="text-lg md:text-xl font-orbitron text-white mb-1">{{ member.name }}</h3>
-                    <p class="text-purple-400 text-xs font-mono mb-4">{{ member.role }}</p>
-
-                    <div class="flex gap-4">
-                        {% if member.linkedin %}
-                        <a href="{{ member.linkedin }}" target="_blank"
-                            class="text-gray-500 hover:text-white transition-colors"><i data-lucide="linkedin"
-                                class="w-4 h-4"></i></a>
-                        {% endif %}
-                        {% if member.instagram %}
-                        <a href="{{ member.instagram }}" target="_blank"
-                            class="text-gray-500 hover:text-white transition-colors"><i data-lucide="instagram"
-                                class="w-4 h-4"></i></a>
-                        {% endif %}
-                    </div>
+                    <h4 class="font-orbitron font-bold text-white text-lg">Newsroom</h4>
                 </div>
-                {% empty %}
-                <div class="col-span-4 text-center text-gray-500">Team data loading...</div>
-                {% endfor %}
+                <div class="text-center group cursor-pointer">
+                    <div
+                        class="aspect-square bg-gray-900 flex items-center justify-center mb-6 rounded-lg border border-white/5 group-hover:border-alien transition-all">
+                        <i data-lucide="bar-chart-2" class="w-12 h-12 text-alien opacity-50"></i>
+                    </div>
+                    <h4 class="font-orbitron font-bold text-white text-lg">Insights</h4>
+                </div>
+                <div class="text-center group cursor-pointer">
+                    <div
+                        class="aspect-square bg-gray-900 flex items-center justify-center mb-6 rounded-lg border border-white/5 group-hover:border-alien transition-all">
+                        <i data-lucide="award" class="w-12 h-12 text-alien opacity-50"></i>
+                    </div>
+                    <h4 class="font-orbitron font-bold text-white text-lg">Analyst Recognitions</h4>
+                </div>
+                <div class="text-center group cursor-pointer">
+                    <div
+                        class="aspect-square bg-gray-900 flex items-center justify-center mb-6 rounded-lg border border-white/5 group-hover:border-alien transition-all">
+                        <i data-lucide="globe" class="w-12 h-12 text-alien opacity-50"></i>
+                    </div>
+                    <h4 class="font-orbitron font-bold text-white text-lg">Global Studies</h4>
+                </div>
             </div>
         </div>
     </section>
 
-    <!-- Closing CTA -->
-    <section class="py-16 md:py-24 text-center">
-        <h2 class="text-2xl md:text-5xl font-orbitron font-bold text-white mb-6 md:mb-8">READY TO <span
-                class="text-alien">ASCEND?</span></h2>
-        <a href="{% url 'career_list' %}"
-            class="inline-block px-6 py-3 md:px-8 md:py-4 bg-alien text-black text-sm md:text-base font-bold font-orbitron tracking-widest hover:bg-white transition-colors duration-300">
-            JOIN US
-        </a>
+    <!-- Careers Section (CTA) -->
+    <section
+        class="py-32 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] bg-repeat opacity-80 text-center relative">
+        <div class="absolute inset-0 bg-alien/5 mix-blend-overlay"></div>
+        <div class="container mx-auto px-6 relative z-10">
+            <span class="text-alien text-xs font-mono tracking-[0.4em] mb-4 block uppercase font-black">Careers</span>
+            <h2 class="text-4xl md:text-8xl font-orbitron font-black text-white mb-10 leading-none">SEIZE THE <br> <span
+                    class="text-transparent bg-clip-text bg-gradient-to-r from-alien to-emerald-400">FUTURE</span></h2>
+            <p class="text-gray-400 max-w-2xl mx-auto mb-12 text-lg">
+                Our teams are leading change on every front. From deploying the most advanced technologies to building a
+                greener, more inclusive world.
+            </p>
+            <a href="{% url 'career_list' %}"
+                class="inline-block px-12 py-5 bg-white text-black font-black font-orbitron tracking-widest hover:bg-alien transition-all duration-300 transform hover:scale-105">
+                JOIN THE COLLECTIVE
+            </a>
+        </div>
     </section>
 
 </div>
+
+<script>
+    // Simple Slider Logic
+    const nextNew = document.getElementById('next-new');
+    const prevNew = document.getElementById('prev-new');
+    const newSlider = document.getElementById('new-slider');
+
+    if (nextNew && prevNew && newSlider) {
+        nextNew.addEventListener('click', () => {
+            newSlider.scrollLeft += 400;
+        });
+        prevNew.addEventListener('click', () => {
+            newSlider.scrollLeft -= 400;
+        });
+    }
+
+    // Customer Stories Loop (Basic Logic)
+    let currentStory = 0;
+    const track = document.getElementById('stories-track');
+    if (track) {
+        setInterval(() => {
+            const count = track.children.length;
+            currentStory = (currentStory + 1) % count;
+            track.style.transform = `translateX(-${currentStory * 100}%)`;
+        }, 8000);
+    }
+</script>
 {% endblock %}
