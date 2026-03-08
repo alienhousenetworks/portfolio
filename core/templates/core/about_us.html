@@ -559,21 +559,26 @@
 <script>
     lucide.createIcons();
 
-    // Decrypt Effect Logic
+    // Decrypt Effect — faster, auto-plays on load + re-triggers on hover
     const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*";
+    function runDecrypt(el) {
+        const original = el.dataset.value || el.innerText.trim();
+        let iteration = 0;
+        clearInterval(el._decryptTimer);
+        el._decryptTimer = setInterval(() => {
+            el.innerText = original.split("").map((char, i) => {
+                if (i < iteration) return original[i];
+                return char === " " ? " " : letters[Math.floor(Math.random() * letters.length)];
+            }).join("");
+            iteration += 1;
+            if (iteration > original.length) clearInterval(el._decryptTimer);
+        }, 12);
+    }
     document.querySelectorAll(".decrypt-effect").forEach(el => {
-        const original = el.dataset.value || el.innerText;
-        el.addEventListener('mouseover', () => {
-            let iteration = 0;
-            const interval = setInterval(() => {
-                el.innerText = original.split("").map((l, i) => {
-                    if (i < iteration) return original[i];
-                    return letters[Math.floor(Math.random() * letters.length)];
-                }).join("");
-                if (iteration >= original.length) clearInterval(interval);
-                iteration += 1 / 3;
-            }, 30);
-        });
+        // Auto-play on page load with a short delay
+        setTimeout(() => runDecrypt(el), 400);
+        // Re-trigger on hover
+        el.addEventListener('mouseover', () => runDecrypt(el));
     });
 
     // Slider for What's New
