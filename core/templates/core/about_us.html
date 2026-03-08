@@ -106,9 +106,26 @@
     <!-- Hero Section -->
     <header class="relative h-[85vh] md:h-screen flex items-center justify-center overflow-hidden">
         {% if about_page.hero_video %}
+        {# --- Uploaded video file (highest priority) --- #}
         <video autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover">
             <source src="{{ about_page.hero_video.url }}" type="video/mp4">
         </video>
+        {% elif about_page.hero_video_url %}
+        {# --- External video URL: YouTube or direct CDN/GitHub link --- #}
+        {% with embed=about_page.get_hero_video_embed %}
+        {% if embed.type == 'youtube' %}
+        {# YouTube embed: muted, autoplay, loop, no controls #}
+        <iframe src="{{ embed.url }}" class="absolute inset-0 w-full h-full pointer-events-none"
+            style="width:100%;height:100%;object-fit:cover;border:0;transform:scale(1.1);"
+            allow="autoplay; encrypted-media" allowfullscreen loading="lazy" title="Hero background video">
+        </iframe>
+        {% else %}
+        {# Direct link: CDN, GitHub raw mp4/webm, etc. #}
+        <video autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover">
+            <source src="{{ embed.url }}">
+        </video>
+        {% endif %}
+        {% endwith %}
         {% elif about_page.hero_image %}
         <div class="absolute inset-0 bg-cover bg-center"
             style="background-image: url('{{ about_page.hero_image.url }}');"></div>

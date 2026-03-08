@@ -663,6 +663,10 @@ class AboutUsPage(models.Model):
     # Hero Section
     hero_image = models.ImageField(upload_to="about_us/hero/", blank=True, null=True)
     hero_video = models.FileField(upload_to="about_us/hero_video/", blank=True, null=True, help_text="Background video for hero section")
+    hero_video_url = models.URLField(
+        blank=True, null=True,
+        help_text="External video URL — supports YouTube (youtube.com/watch?v=..., youtu.be/...) or any direct video link (CDN mp4/webm, GitHub raw, etc.)."
+    )
     hero_heading = models.CharField(max_length=200, blank=True, default="The only constant in life is change")
     hero_subtext = models.TextField(blank=True, default="To thrive, change is what we must become.")
     hero_cta_text = models.CharField(max_length=50, default="Learn more", blank=True)
@@ -673,6 +677,33 @@ class AboutUsPage(models.Model):
 
     # Industries, Services, Products & Platforms are already handled by Service model
     # but we might want a specific way to flag them for About Us if they differ from Home
+
+    def get_hero_video_embed(self):
+        """
+        Returns a dict with 'type' and 'url':
+          - type='youtube' + embed URL  → render as <iframe>
+          - type='direct'  + raw URL    → render as <video src>
+          - None if no external URL set
+        """
+        import re
+        url = self.hero_video_url
+        if not url:
+            return None
+        # Detect YouTube
+        yt_match = re.search(
+            r'(?:youtube\.com/(?:watch\?v=|shorts/)|youtu\.be/)([a-zA-Z0-9_-]{11})',
+            url
+        )
+        if yt_match:
+            vid_id = yt_match.group(1)
+            embed = (
+                f"https://www.youtube.com/embed/{vid_id}"
+                f"?autoplay=1&mute=1&loop=1&playlist={vid_id}"
+                f"&controls=0&showinfo=0&rel=0&playsinline=1"
+            )
+            return {'type': 'youtube', 'url': embed}
+        # Direct link (CDN, GitHub raw, etc.)
+        return {'type': 'direct', 'url': url}
 
     def __str__(self):
         return self.page_title
