@@ -153,6 +153,71 @@
             box-shadow: 0 0 6px #00ff41;
             transition: width 0.08s linear;
         }
+
+        /* ── Video loading overlay ──────────────────────── */
+        #sv-loader {
+            position: fixed;
+            inset: 0;
+            z-index: 90;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            transition: opacity 0.8s ease;
+        }
+
+        #sv-loader.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Spinning ring */
+        .sv-spinner {
+            width: 52px;
+            height: 52px;
+            border: 2px solid rgba(0, 255, 65, 0.15);
+            border-top-color: #00ff41;
+            border-radius: 50%;
+            animation: sv-spin 0.9s linear infinite;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+        }
+
+        @keyframes sv-spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Buffering bar */
+        .sv-buffer-track {
+            width: 160px;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.08);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sv-buffer-fill {
+            position: absolute;
+            left: -100%;
+            top: 0;
+            height: 100%;
+            width: 60%;
+            background: linear-gradient(to right, transparent, #00ff41, transparent);
+            animation: sv-slide 1.4s ease-in-out infinite;
+        }
+
+        @keyframes sv-slide {
+            0% {
+                left: -60%;
+            }
+
+            100% {
+                left: 110%;
+            }
+        }
     </style>
 
 
@@ -166,6 +231,16 @@
 
     {% with scroll_url=about_page.get_scroll_video_url %}
     {% if scroll_url %}
+    <!-- ── Loading overlay: fades out on canplay ────────────── -->
+    <div id="sv-loader">
+        <div class="sv-spinner"></div>
+        <div class="sv-buffer-track">
+            <div class="sv-buffer-fill"></div>
+        </div>
+        <span
+            style="color:rgba(0,255,65,0.5);font-size:9px;font-family:monospace;letter-spacing:0.4em;text-transform:uppercase;">Loading
+            video&hellip;</span>
+    </div>
     <!-- ── Fixed Scroll-Driven Background Video ──────────────── -->
     <video id="scroll-video-bg" muted playsinline preload="auto" src="{{ scroll_url }}"></video>
     <!-- Dark tint so content on top stays readable -->
@@ -180,8 +255,12 @@
             <div class="sv-bar-fill" id="sv-bar-fill"></div>
         </div>
     </div>
+    {% else %}
+    <!-- No scroll video: keep page black -->
+    <div style="position:fixed;inset:0;background:#000;z-index:-3;pointer-events:none;"></div>
     {% endif %}
     {% endwith %}
+
 
     <!-- Hero Section -->
     <header class="relative h-[85vh] md:h-screen flex items-center justify-center overflow-hidden">
@@ -757,23 +836,33 @@
         const video = document.getElementById('scroll-video-bg');
         const barFill = document.getElementById('sv-bar-fill');
         const progEl = document.getElementById('scroll-video-progress');
+        const loader = document.getElementById('sv-loader');
 
-        if (!video) return;
+        // No video configured — dismiss loader immediately
+        if (!video) {
+            if (loader) { loader.style.opacity = '0'; setTimeout(() => loader && loader.remove(), 900); }
+            return;
+        }
+
+        function hideLoader() {
+            if (!loader) return;
+            loader.classList.add('hidden');
+            setTimeout(() => { if (loader && loader.parentNode) loader.remove(); }, 900);
+        }
+
+        // Hide as soon as browser can play (enough data buffered)
+        video.addEventListener('canplay', hideLoader, { once: true });
+        // Safety net: force-hide after 15 s regardless (slow GitHub servers)
+        setTimeout(hideLoader, 15000);
 
         video.addEventListener('loadedmetadata', function () {
-            // Show the progress indicator
             if (progEl) progEl.classList.add('ready');
 
             function onScroll() {
-                // Full-page progress: 0 at top, 1 at very bottom
                 const scrolled = window.scrollY;
                 const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
                 const progress = maxScroll > 0 ? Math.min(scrolled / maxScroll, 1) : 0;
-
-                // Scrub the video frame
                 video.currentTime = progress * video.duration;
-
-                // Update progress bar
                 if (barFill) barFill.style.width = (progress * 100) + '%';
             }
 
@@ -781,6 +870,7 @@
             onScroll();
         });
     })();
+
 
 
 
