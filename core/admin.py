@@ -457,6 +457,18 @@ class AboutUsPageAdmin(admin.ModelAdmin):
                 "<em>Note: Uploaded video file (Hero Video) takes priority over the URL if both are set.</em>"
             )
         }),
+        ("🎬 Scroll-Driven Video Section", {
+            'fields': ('scroll_video_url', 'scroll_video_heading', 'scroll_video_subtext'),
+            'description': (
+                "<strong>Impacts:</strong> A full-screen video section on the About Us page where the video scrubs frame-by-frame as the user scrolls.<br><br>"
+                "<strong>⚠️ YouTube NOT supported here</strong> — YouTube iframes can't be controlled by JS. "
+                "Use a <strong>direct video link</strong> instead:<br>"
+                "&nbsp;&nbsp;• CDN mp4: <code>https://cdn.example.com/video.mp4</code><br>"
+                "&nbsp;&nbsp;• GitHub release: <code>https://github.com/user/repo/releases/download/v1/video.mp4</code><br>"
+                "&nbsp;&nbsp;• Any self-hosted <code>.mp4</code> or <code>.webm</code> URL<br>"
+                "<em>Leave Scroll Video URL blank to hide this entire section.</em>"
+            )
+        }),
     )
 
 @admin.register(AboutUsSection)

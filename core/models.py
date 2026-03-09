@@ -672,11 +672,47 @@ class AboutUsPage(models.Model):
     hero_cta_text = models.CharField(max_length=50, default="Learn more", blank=True)
     hero_cta_url = models.CharField(max_length=255, default="#", blank=True)
 
+    # ── Scroll-Driven Video Section ──────────────────────────
+    scroll_video_url = models.URLField(
+        blank=True, null=True,
+        verbose_name="Scroll Video URL",
+        help_text=(
+            "Paste a DIRECT video link for the scroll-driven effect section. "
+            "Supported: CDN mp4/webm, GitHub raw release (.mp4/.webm), or any hosted video URL. "
+            "⚠️ YouTube is NOT supported here (iframes can't be scrubbed). "
+            "Leave blank to hide this section entirely."
+        )
+    )
+    scroll_video_heading = models.CharField(
+        max_length=200, blank=True, default="",
+        verbose_name="Scroll Video Heading",
+        help_text="Optional large heading overlaid on the scroll video section."
+    )
+    scroll_video_subtext = models.TextField(
+        blank=True, default="",
+        verbose_name="Scroll Video Subtext",
+        help_text="Optional supporting text below the heading on the scroll video section."
+    )
+
     # What's New Section (List of cards)
     # We'll use a separate model for What's New items
 
     # Industries, Services, Products & Platforms are already handled by Service model
     # but we might want a specific way to flag them for About Us if they differ from Home
+
+    def get_scroll_video_url(self):
+        """
+        Returns the raw URL for the scroll-driven video <video> element,
+        or None if: no URL is set, or it is a YouTube link (can't be scrubbed).
+        """
+        import re
+        url = self.scroll_video_url
+        if not url:
+            return None
+        # Block YouTube — iframe can't be scrubbed with JS currentTime
+        if re.search(r'(youtube\.com|youtu\.be)', url):
+            return None
+        return url
 
     def get_hero_video_embed(self):
         """
