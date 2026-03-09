@@ -2,8 +2,8 @@
 {% load static %}
 
 {% block content %}
-<div
-    class="bg-black text-white selection:bg-alien/30 selection:text-alien font-sans min-h-screen overflow-x-hidden relative">
+<div class="text-white selection:bg-alien/30 selection:text-alien font-sans min-h-screen overflow-x-hidden relative"
+    style="background:transparent;">
 
     <!-- Global Styling for HUD card system -->
     <style>
@@ -94,86 +94,67 @@
             opacity: 0.3;
         }
 
-        /* ── Scroll-Video Section ───────────────────────────── */
-        #scroll-video-section {
-            position: relative;
-            /* height controls scrub duration: taller = slower / longer scrub */
-            height: 350vh;
-        }
-
-        #scroll-video-sticky {
-            position: sticky;
-            top: 0;
-            height: 100vh;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        #scroll-video {
-            position: absolute;
+        /* ── Scroll-Video Fixed Background ─────────────────────── */
+        #scroll-video-bg {
+            position: fixed;
             inset: 0;
             width: 100%;
             height: 100%;
             object-fit: cover;
-            /* fully paused — JS controls playback position */
+            z-index: -2;
             pointer-events: none;
         }
 
-        .scroll-video-overlay {
-            position: absolute;
+        #scroll-video-tint {
+            position: fixed;
             inset: 0;
-            background: linear-gradient(to bottom,
-                    rgba(0, 0, 0, 0.55) 0%,
-                    rgba(0, 0, 0, 0.15) 50%,
-                    rgba(0, 0, 0, 0.65) 100%);
-            z-index: 1;
+            z-index: -1;
+            background: rgba(0, 0, 0, 0.55);
+            pointer-events: none;
         }
 
-        .scroll-video-text {
-            position: relative;
-            z-index: 2;
-            text-align: center;
-            padding: 0 1.5rem;
-            opacity: 0;
-            transform: translateY(30px);
-            transition: opacity 0.8s ease, transform 0.8s ease;
+        #scroll-video-scan {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background: linear-gradient(to bottom, transparent 95%, rgba(0, 255, 65, 0.05) 95%);
+            background-size: 100% 4px;
+            pointer-events: none;
+            opacity: 0.25;
         }
 
-        .scroll-video-text.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .scroll-video-progress {
-            position: absolute;
-            bottom: 2.5rem;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 3;
-            display: flex;
+        #scroll-video-progress {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            z-index: 50;
+            display: none;
             flex-direction: column;
-            align-items: center;
-            gap: 0.5rem;
+            align-items: flex-end;
+            gap: 0.35rem;
         }
 
-        .scroll-video-bar {
-            width: 120px;
+        #scroll-video-progress.ready {
+            display: flex;
+        }
+
+        .sv-bar {
+            width: 80px;
             height: 2px;
-            background: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.1);
             border-radius: 2px;
             overflow: hidden;
         }
 
-        .scroll-video-bar-fill {
+        .sv-bar-fill {
             height: 100%;
             width: 0%;
             background: #00ff41;
-            box-shadow: 0 0 8px #00ff41;
-            transition: width 0.1s linear;
+            box-shadow: 0 0 6px #00ff41;
+            transition: width 0.08s linear;
         }
     </style>
+
 
     <!-- Background Ambient Glows -->
     <div class="fixed top-0 left-0 w-full h-full pointer-events-none z-0">
@@ -182,6 +163,25 @@
         <div class="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-500/5 blur-[120px] rounded-full animate-pulse"
             style="animation-delay: 0.1s;"></div>
     </div>
+
+    {% with scroll_url=about_page.get_scroll_video_url %}
+    {% if scroll_url %}
+    <!-- ── Fixed Scroll-Driven Background Video ──────────────── -->
+    <video id="scroll-video-bg" muted playsinline preload="auto" src="{{ scroll_url }}"></video>
+    <!-- Dark tint so content on top stays readable -->
+    <div id="scroll-video-tint"></div>
+    <!-- Subtle scanline overlay -->
+    <div id="scroll-video-scan"></div>
+    <!-- Progress indicator (bottom-right, fixed) -->
+    <div id="scroll-video-progress">
+        <span
+            style="color:rgba(255,255,255,0.2);font-size:8px;font-family:monospace;letter-spacing:0.3em;text-transform:uppercase;">Scroll</span>
+        <div class="sv-bar">
+            <div class="sv-bar-fill" id="sv-bar-fill"></div>
+        </div>
+    </div>
+    {% endif %}
+    {% endwith %}
 
     <!-- Hero Section -->
     <header class="relative h-[85vh] md:h-screen flex items-center justify-center overflow-hidden">
@@ -273,55 +273,6 @@
             </div>
         </div>
     </header>
-
-    {% with scroll_url=about_page.get_scroll_video_url %}
-    {% if scroll_url %}
-    <!-- ── Scroll-Driven Video Section ─────────────────────── -->
-    <section id="scroll-video-section" class="relative z-10">
-        <div id="scroll-video-sticky">
-            <!-- The video: muted, no autoplay, no controls — JS scrubs it -->
-            <video id="scroll-video" muted playsinline preload="auto" src="{{ scroll_url }}"></video>
-
-            <!-- Dark gradient overlay -->
-            <div class="scroll-video-overlay"></div>
-
-            <!-- Optional text overlay -->
-            {% if about_page.scroll_video_heading or about_page.scroll_video_subtext %}
-            <div class="scroll-video-text" id="scroll-video-text">
-                {% if about_page.scroll_video_heading %}
-                <div class="flex items-center justify-center gap-4 mb-8">
-                    <span class="h-px w-12 bg-alien"></span>
-                    <span class="text-alien text-[10px] font-mono tracking-[0.5em] uppercase font-black">//
-                        Visual_Archive</span>
-                    <span class="h-px w-12 bg-alien/40"></span>
-                </div>
-                <h2 class="font-orbitron font-black text-white leading-tight tracking-tight mb-6"
-                    style="font-size: clamp(2.5rem, 7vw, 7rem);">
-                    {{ about_page.scroll_video_heading }}
-                </h2>
-                {% endif %}
-                {% if about_page.scroll_video_subtext %}
-                <p class="text-gray-300 text-lg md:text-2xl font-light max-w-2xl mx-auto leading-relaxed">
-                    {{ about_page.scroll_video_subtext }}
-                </p>
-                {% endif %}
-            </div>
-            {% endif %}
-
-            <!-- Progress bar + scroll hint -->
-            <div class="scroll-video-progress">
-                <span class="text-white/20 text-[9px] font-mono tracking-[0.4em] uppercase">Scroll to play</span>
-                <div class="scroll-video-bar">
-                    <div class="scroll-video-bar-fill" id="scroll-video-bar-fill"></div>
-                </div>
-            </div>
-
-            <!-- Scanline aesthetic layer -->
-            <div class="scanline-overlay"></div>
-        </div>
-    </section>
-    {% endif %}
-    {% endwith %}
 
 
     {% if about_page.whats_new_items.exists %}
@@ -801,44 +752,33 @@
 <script>
     lucide.createIcons();
 
-    // ── Scroll-Driven Video ──────────────────────────────────────
+    // ── Scroll-Driven Background Video ───────────────────────────
     (function () {
-        const section = document.getElementById('scroll-video-section');
-        const sticky = document.getElementById('scroll-video-sticky');
-        const video = document.getElementById('scroll-video');
-        const barFill = document.getElementById('scroll-video-bar-fill');
-        const textEl = document.getElementById('scroll-video-text');
+        const video = document.getElementById('scroll-video-bg');
+        const barFill = document.getElementById('sv-bar-fill');
+        const progEl = document.getElementById('scroll-video-progress');
 
-        if (!section || !video) return;
+        if (!video) return;
 
-        // Wait for metadata so video.duration is known
         video.addEventListener('loadedmetadata', function () {
-            function onScroll() {
-                const rect = section.getBoundingClientRect();
-                const sectionTop = window.scrollY + rect.top;
-                // How far we've scrolled into the section (0 to sectionHeight - vh)
-                const scrollInto = Math.max(0, window.scrollY - sectionTop);
-                const maxScroll = section.offsetHeight - window.innerHeight;
-                const progress = maxScroll > 0 ? Math.min(scrollInto / maxScroll, 1) : 0;
+            // Show the progress indicator
+            if (progEl) progEl.classList.add('ready');
 
-                // Scrub the video
+            function onScroll() {
+                // Full-page progress: 0 at top, 1 at very bottom
+                const scrolled = window.scrollY;
+                const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+                const progress = maxScroll > 0 ? Math.min(scrolled / maxScroll, 1) : 0;
+
+                // Scrub the video frame
                 video.currentTime = progress * video.duration;
 
                 // Update progress bar
                 if (barFill) barFill.style.width = (progress * 100) + '%';
-
-                // Fade in text when 15%–85% through
-                if (textEl) {
-                    if (progress > 0.15 && progress < 0.85) {
-                        textEl.classList.add('visible');
-                    } else {
-                        textEl.classList.remove('visible');
-                    }
-                }
             }
 
             window.addEventListener('scroll', onScroll, { passive: true });
-            onScroll(); // run once on load
+            onScroll();
         });
     })();
 
