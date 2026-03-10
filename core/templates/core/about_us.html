@@ -103,6 +103,17 @@
             object-fit: cover;
             z-index: -2;
             pointer-events: none;
+
+            /* Safari compositor isolation */
+            transform: translate3d(0, 0, 0);
+            backface-visibility: hidden;
+        }
+
+        #hero-video {
+            transform: translate3d(0, 0, 0);
+            will-change: opacity, transform;
+            backface-visibility: hidden;
+            contain: layout paint size style;
         }
 
         #scroll-video-tint {
@@ -242,7 +253,7 @@
             video&hellip;</span>
     </div>
     <!-- ── Fixed Scroll-Driven Background Video ──────────────── -->
-    <video id="scroll-video-bg" muted playsinline preload="auto">
+    <video id="scroll-video-bg" muted playsinline preload="metadata">
         <source src="{{ scroll_url }}" type="video/mp4">
     </video>
     <!-- Dark tint so content on top stays readable -->
@@ -908,6 +919,10 @@
             heroVideo.setAttribute("playsinline", "");
             heroVideo.setAttribute("webkit-playsinline", "");
 
+            // Force hardware decoding start
+            heroVideo.load();
+            heroVideo.play().catch(() => { });
+
             function startHeroVideo() {
                 const promise = heroVideo.play();
                 if (promise !== undefined) {
@@ -999,11 +1014,21 @@
                 // Lerp factor
                 currentVideoTime += (targetVideoTime - currentVideoTime) * 0.1;
 
-                // Chrome optimization
+                // Chrome/Safari optimization
                 const delta = Math.abs(currentVideoTime - lastSeekedTime);
-                if (delta > 0.015) {
+                if (delta > 0.04) {
                     video.currentTime = currentVideoTime;
                     lastSeekedTime = currentVideoTime;
+                }
+
+                // ── [NEW] Safari Optimization: Pause Hero Video on Scroll ──
+                // When user scrolls down significantly, pause hero video to save GPU
+                if (heroVideo) {
+                    if (window.scrollY > window.innerHeight * 0.8) {
+                        if (!heroVideo.paused) heroVideo.pause();
+                    } else {
+                        if (heroVideo.paused) heroVideo.play().catch(() => { });
+                    }
                 }
 
                 // Update bar
