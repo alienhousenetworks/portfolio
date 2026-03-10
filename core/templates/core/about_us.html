@@ -74,6 +74,27 @@
             scrollbar-width: none;
         }
 
+        /* Premium Cyberpunk Scrollbar */
+        .cyber-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .cyber-scrollbar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+
+        .cyber-scrollbar::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, rgba(0, 255, 65, 0.1), rgba(0, 255, 65, 0.8), rgba(0, 255, 65, 0.1));
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+        }
+
+        .cyber-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 255, 65, 1);
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.8);
+        }
+
         /* Scanline animations */
         @keyframes scanline {
             0% {
@@ -469,7 +490,7 @@
 
                     <!-- Content -->
                     <div class="absolute inset-0 flex items-center z-10">
-                        <div class="px-10 md:px-24 lg:px-40 max-w-4xl">
+                        <div class="px-10 md:px-24 lg:px-40 w-full">
                             <!-- Archive badge -->
                             <div class="journey-text-0 flex items-center gap-4 mb-8"
                                 style="will-change: transform, opacity; opacity:0; transform:translateY(40px)">
@@ -493,7 +514,7 @@
                                 style="box-shadow:0 0 12px #00ff41; will-change: transform, opacity; opacity:0; transform:translateY(40px)">
                             </div>
                             <!-- Body text -->
-                            <div class="journey-text-4 max-h-[45vh] overflow-y-auto no-scrollbar pr-4 text-gray-300 text-lg md:text-xl leading-relaxed font-light max-w-2xl prose prose-invert prose-p:mb-4 prose-p:text-gray-300"
+                            <div class="journey-text-4 max-h-[60vh] overflow-y-auto cyber-scrollbar pr-6 text-gray-300 text-lg md:text-xl leading-relaxed font-light w-full prose prose-invert prose-p:mb-4 prose-p:text-gray-300"
                                 style="will-change: transform, opacity; opacity:0; transform:translateY(40px)">
                                 {{ section.content|safe }}
                             </div>
