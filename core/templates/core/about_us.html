@@ -436,7 +436,7 @@
     </div>
 
     <!-- Sticky scroll-highjack wrapper -->
-    <div id="journey-scroll-root" class="relative z-10" style="height: calc({{ sections|length }} * 100vh);">
+    <div id="journey-scroll-root" class="relative z-10" style="height: calc({{ sections|length }} * 200vh);">
         <div id="journey-sticky" class="sticky top-0 w-full overflow-hidden" style="height: 100vh;">
             <!-- Shared slide viewport -->
             <div id="journey-viewport" class="relative w-full h-full">
@@ -1127,28 +1127,44 @@
                 // E.g. 3 slides -> progress goes 0.0 to 1.0.
                 // slide 0: progress 0 - 0.5
                 // slide 1: progress 0.5 - 1.0 (etc)
-                const exactSlide = jProgress * (numSlides - 1);
-                const activeSlide = Math.min(numSlides - 1, Math.floor(exactSlide));
+                // localScroll goes from 0 to (numSlides * 2 - 1)
+                // Each slide i has:
+                // - Transition In: localScroll from (2i - 1) to (2i)
+                // - Hold: localScroll from (2i) to (2i + 1)
+                // - Transition Out: localScroll from (2i + 1) to (2i + 2)
+                const localScroll = jProgress * (numSlides * 2 - 1);
+                const activeSlide = Math.min(numSlides - 1, Math.floor(localScroll / 2));
 
-                // Update Slide Positions (Scrubbing effect)
+                // Update Slide Positions (Discrete Hold/Transition effect)
                 jSlides.forEach((s, i) => {
-                    // Difference from exact scroll position to this slide's index
-                    const diff = i - exactSlide;
+                    const transInStart = i * 2 - 1;
+                    const holdStart = i * 2;
+                    const transOutStart = i * 2 + 1;
+                    const totallyOff = i * 2 + 2;
 
-                    if (diff === 0) {
+                    if (localScroll < transInStart) {
+                        // Far right
+                        s.style.transform = 'translateX(100%)';
+                        s.style.opacity = '0';
+                    } else if (localScroll >= transInStart && localScroll < holdStart) {
+                        // Transition In (from right)
+                        const prg = localScroll - transInStart;
+                        s.style.transform = `translateX(${(1 - prg) * 100}%)`;
+                        s.style.opacity = '1';
+                    } else if (localScroll >= holdStart && localScroll <= transOutStart) {
+                        // Hold (stay perfectly still)
                         s.style.transform = 'translateX(0%)';
                         s.style.opacity = '1';
-                    } else if (diff > 0 && diff <= 1) {
-                        // Incoming from right
-                        s.style.transform = `translateX(${diff * 100}%)`;
-                        s.style.opacity = '1';
-                    } else if (diff < 0 && diff >= -1) {
-                        // Outgoing to left
-                        s.style.transform = `translateX(${diff * 100}%)`;
+                    } else if (localScroll > transOutStart && localScroll <= totallyOff) {
+                        // Transition Out (to left, covered by next incoming if any)
+                        // Actually, UX is better if the next slide covers it while it stays still
+                        // So let's keep it at 0% or slightly move it (-20% parallax)
+                        const prg = localScroll - transOutStart;
+                        s.style.transform = `translateX(${-prg * 30}%)`; // slight parallax left
                         s.style.opacity = '1';
                     } else {
-                        // Off screen
-                        s.style.transform = diff > 0 ? 'translateX(100%)' : 'translateX(-100%)';
+                        // Far left
+                        s.style.transform = 'translateX(-30%)';
                         s.style.opacity = '0';
                     }
                 });
