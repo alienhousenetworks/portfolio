@@ -1025,48 +1025,174 @@
 <script>
     lucide.createIcons();
 
-    // ── Scroll-Driven Background Video ───────────────────────────
     (function () {
+        /* Elements */
         const video = document.getElementById('scroll-video-bg');
-        const barFill = document.getElementById('sv-bar-fill');
-        const progEl = document.getElementById('scroll-video-progress');
         const loader = document.getElementById('sv-loader');
+        const vProgEl = document.getElementById('scroll-video-progress');
+        const vBarFill = document.getElementById('sv-bar-fill');
 
-        // No video configured — dismiss loader immediately
-        if (!video) {
+        const jRoot = document.getElementById('journey-scroll-root');
+        const jSlides = document.querySelectorAll('.journey-slide');
+        const jCurEl = document.getElementById('journey-current');
+        const jBar = document.getElementById('journey-progress-bar');
+        const jHint = document.getElementById('journey-scroll-hint');
+        const numSlides = jSlides ? jSlides.length : 0;
+
+        /* Video Loader Setup */
+        if (video) {
+            function hideLoader() {
+                if (!loader) return;
+                loader.classList.add('hidden');
+                setTimeout(() => { if (loader && loader.parentNode) loader.remove(); }, 900);
+            }
+            video.addEventListener('canplay', hideLoader, { once: true });
+            setTimeout(hideLoader, 15000);
+            video.addEventListener('loadedmetadata', function () {
+                if (vProgEl) vProgEl.classList.add('ready');
+                onScroll(); // trigger initial layout
+            });
+        } else {
             if (loader) { loader.style.opacity = '0'; setTimeout(() => loader && loader.remove(), 900); }
-            return;
         }
 
-        function hideLoader() {
-            if (!loader) return;
-            loader.classList.add('hidden');
-            setTimeout(() => { if (loader && loader.parentNode) loader.remove(); }, 900);
+        /* Journey Dot Setup */
+        let jDots = [];
+        if (numSlides > 0) {
+            const viewport = document.getElementById('journey-viewport');
+            const dotsWrap = document.createElement('div');
+            dotsWrap.style.cssText =
+                'position:absolute;right:1.75rem;top:50%;transform:translateY(-50%);' +
+                'display:flex;flex-direction:column;gap:10px;z-index:40;';
+            viewport.appendChild(dotsWrap);
+
+            for (let i = 0; i < numSlides; i++) {
+                const d = document.createElement('div');
+                d.style.cssText = 'width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);transition:all 0.3s ease;';
+                dotsWrap.appendChild(d);
+                jDots.push(d);
+            }
         }
 
-        // Hide as soon as browser can play (enough data buffered)
-        video.addEventListener('canplay', hideLoader, { once: true });
-        // Safety net: force-hide after 15 s regardless (slow GitHub servers)
-        setTimeout(hideLoader, 15000);
+        function updateJourneyDots(idx) {
+            jDots.forEach((d, i) => {
+                if (i === idx) {
+                    d.style.background = '#00ff41';
+                    d.style.boxShadow = '0 0 8px #00ff41';
+                    d.style.width = d.style.height = '8px';
+                } else {
+                    d.style.background = 'rgba(255,255,255,0.2)';
+                    d.style.boxShadow = 'none';
+                    d.style.width = d.style.height = '6px';
+                }
+            });
+        }
 
-        video.addEventListener('loadedmetadata', function () {
-            if (progEl) progEl.classList.add('ready');
+        /* Initialise Slides */
+        if (numSlides > 0) {
+            jSlides.forEach((s, i) => {
+                s.style.transition = 'none';
+                s.style.opacity = i === 0 ? '1' : '0';
+                s.style.transform = i === 0 ? 'translateX(0%)' : 'translateX(100%)';
+            });
+            updateJourneyDots(0);
+        }
 
-            function onScroll() {
-                const scrolled = window.scrollY;
-                const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-                const progress = maxScroll > 0 ? Math.min(scrolled / maxScroll, 1) : 0;
-                video.currentTime = progress * video.duration;
-                if (barFill) barFill.style.width = (progress * 100) + '%';
+        /* Unified Scroll Engine */
+        function onScroll() {
+            const scrollY = window.scrollY;
+            const viewH = window.innerHeight;
+            const docH = document.documentElement.scrollHeight;
+
+            let jStart = 0;
+            let jEnd = 0;
+            let jScrollDist = 0;
+
+            // 1. Calculate Journey Section Metrics
+            if (numSlides > 0 && jRoot) {
+                // We use offsetTop because getBoundingClientRect changes with scroll
+                jStart = jRoot.offsetTop;
+                jEnd = jStart + jRoot.offsetHeight;
+                jScrollDist = jRoot.offsetHeight - viewH;
+
+                // How far are we through the Journey section? (0.0 to 1.0)
+                let jProgress = 0;
+                if (scrollY >= jStart && scrollY <= jEnd - viewH) {
+                    jProgress = (scrollY - jStart) / Math.max(1, jScrollDist);
+                } else if (scrollY > jEnd - viewH) {
+                    jProgress = 1;
+                }
+
+                // Which slide is active?
+                // E.g. 3 slides -> progress goes 0.0 to 1.0.
+                // slide 0: progress 0 - 0.5
+                // slide 1: progress 0.5 - 1.0 (etc)
+                const exactSlide = jProgress * (numSlides - 1);
+                const activeSlide = Math.min(numSlides - 1, Math.floor(exactSlide));
+
+                // Update Slide Positions (Scrubbing effect)
+                jSlides.forEach((s, i) => {
+                    // Difference from exact scroll position to this slide's index
+                    const diff = i - exactSlide;
+
+                    if (diff === 0) {
+                        s.style.transform = 'translateX(0%)';
+                        s.style.opacity = '1';
+                    } else if (diff > 0 && diff <= 1) {
+                        // Incoming from right
+                        s.style.transform = `translateX(${diff * 100}%)`;
+                        s.style.opacity = '1';
+                    } else if (diff < 0 && diff >= -1) {
+                        // Outgoing to left
+                        s.style.transform = `translateX(${diff * 100}%)`;
+                        s.style.opacity = '1';
+                    } else {
+                        // Off screen
+                        s.style.transform = diff > 0 ? 'translateX(100%)' : 'translateX(-100%)';
+                        s.style.opacity = '0';
+                    }
+                });
+
+                // Update UI
+                if (jCurEl) jCurEl.textContent = String(activeSlide + 1).padStart(2, '0');
+                if (jBar) jBar.style.width = (jProgress * 100) + '%';
+                if (jHint) jHint.style.opacity = activeSlide === 0 ? Math.max(0, 0.6 - (jProgress * 5)) : '0';
+                updateJourneyDots(activeSlide);
             }
 
-            window.addEventListener('scroll', onScroll, { passive: true });
-            onScroll();
-        });
+            // 2. Calculate Video Background Metrics (Pausing during Journey)
+            if (video && video.duration > 0) {
+                const totalScrollable = docH - viewH;
+
+                // Effective scroll removes the vertical height consumed INSIDE the journey section
+                let effectiveScroll = scrollY;
+                if (numSlides > 0 && jRoot) {
+                    if (scrollY > jStart && scrollY <= jEnd - viewH) {
+                        // While inside journey, video pauses at the state exactly when journey started
+                        effectiveScroll = jStart;
+                    } else if (scrollY > jEnd - viewH) {
+                        // After journey, subtract the entire journey scroll distance so it resumes perfectly
+                        effectiveScroll = scrollY - jScrollDist;
+                    }
+                }
+
+                const effectiveTotal = Math.max(1, totalScrollable - jScrollDist);
+                const vProgress = Math.min(1, Math.max(0, effectiveScroll / effectiveTotal));
+
+                // Add slight easing to video scrubbing to avoid jitter
+                requestAnimationFrame(() => {
+                    video.currentTime = vProgress * video.duration;
+                    if (vBarFill) vBarFill.style.width = (vProgress * 100) + '%';
+                });
+            }
+        }
+
+        window.addEventListener('scroll', onScroll, { passive: true });
+        // Initial call
+        onScroll();
     })();
 
-
-
+    // ── Gallery and Other External Sliders ────────────────────────
 
     // Slider for What's New
     const newSlider = document.getElementById('new-slider');
@@ -1096,7 +1222,6 @@
             goToStory(storyIndex);
         }, 12000);
     }
-
 
     // ── Gallery Slideshow ───────────────────────────────────────────
     const gallerySlides = document.querySelectorAll('.gallery-slide');
