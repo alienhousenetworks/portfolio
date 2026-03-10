@@ -265,7 +265,8 @@
     <!-- Hero Section -->
     <header class="relative h-[85vh] md:h-screen flex items-center justify-center overflow-hidden">
         {% if about_page.hero_video %}
-        {# --- Uploaded video file (highest priority) --- #} <video id="hero-video" autoplay loop muted playsinline
+        {# --- Uploaded video file (highest priority) --- #}
+        <video id="hero-video" autoplay loop muted playsinline preload="auto"
             class="absolute inset-0 w-full h-full object-cover">
             <source src="{{ about_page.hero_video.url }}" type="video/mp4">
         </video>
@@ -279,9 +280,10 @@
             allow="autoplay; encrypted-media" allowfullscreen loading="lazy" title="Hero background video">
         </iframe>
         {% else %}
-        {# Direct link: CDN, GitHub raw mp4/webm, etc. #} <video id="hero-video" autoplay loop muted playsinline
+        {# Direct link: CDN, GitHub raw mp4/webm, etc. #}
+        <video id="hero-video" autoplay loop muted playsinline preload="auto"
             class="absolute inset-0 w-full h-full object-cover">
-            <source src="{{ embed.url }}">
+            <source src="{{ embed.url }}" type="video/mp4">
         </video>
         {% endif %}
         {% endwith %}
@@ -496,7 +498,7 @@
                                 style="box-shadow:0 0 12px #00ff41; will-change: transform, opacity; opacity:0; transform:translateY(40px)">
                             </div>
                             <!-- Body text -->
-                            <div class="journey-text-4 text-gray-300 text-lg leading-relaxed font-light max-w-2xl prose prose-invert prose-p:mb-4 prose-p:text-gray-300"
+                            <div class="journey-text-4 max-h-[45vh] overflow-y-auto no-scrollbar pr-4 text-gray-300 text-lg md:text-xl leading-relaxed font-light max-w-2xl prose prose-invert prose-p:mb-4 prose-p:text-gray-300"
                                 style="will-change: transform, opacity; opacity:0; transform:translateY(40px)">
                                 {{ section.content|safe }}
                             </div>
@@ -910,6 +912,19 @@
             });
         } else {
             if (loader) { loader.style.opacity = '0'; setTimeout(() => loader && loader.remove(), 900); }
+        }
+
+        /* Safari Hero Video Force Play */
+        const heroVideo = document.getElementById('hero-video');
+        if (heroVideo) {
+            const forcePlay = () => {
+                heroVideo.play().catch(err => {
+                    console.log("Autoplay blocked, waiting for interaction");
+                });
+            };
+            forcePlay();
+            document.addEventListener('touchstart', forcePlay, { once: true });
+            document.addEventListener('mousedown', forcePlay, { once: true });
         }
 
         /* Journey Dot Setup */
