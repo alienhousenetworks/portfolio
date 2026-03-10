@@ -555,22 +555,29 @@
             const total = slides.length;
             if (!root || total === 0) return;
 
-            // Dot markers — one set per slide (we rendered them inside each slide, but let's
-            // use a single shared dot bar instead via JS injection at the right side
-            const dotsContainer = document.createElement('div');
-            dotsContainer.style.cssText = 'position:absolute;right:2rem;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:10px;z-index:30;';
-            slides[0].parentElement.appendChild(dotsContainer);
-            const dots = [];
-            for (let i = 0; i < total; i++) {
+            /* ── Dot nav injected at run-time ─────────────────────────── */
+            const viewport = document.getElementById('journey-viewport');
+            const dotsWrap = document.createElement('div');
+            dotsWrap.style.cssText =
+                'position:absolute;right:1.75rem;top:50%;transform:translateY(-50%);' +
+                'display:flex;flex-direction:column;gap:10px;z-index:40;';
+            viewport.appendChild(dotsWrap);
+
+            const dots = Array.from({ length: total }, (_, i) => {
                 const d = document.createElement('div');
-                d.style.cssText = 'width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);transition:all 0.4s ease;cursor:pointer;';
+                d.style.cssText =
+                    'width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);' +
+                    'transition:all 0.4s ease;cursor:pointer;box-sizing:border-box;';
                 d.addEventListener('click', () => jumpTo(i));
-                dotsContainer.appendChild(d);
-                dots.push(d);
-            }
+                dotsWrap.appendChild(d);
+                return d;
+            });
 
+            /* ── State ────────────────────────────────────────────────── */
             let current = 0;
+            let isAnimating = false;
 
+            /* ── Dot update ───────────────────────────────────────────── */
             function updateDots(idx) {
                 dots.forEach((d, i) => {
                     if (i === idx) {
@@ -585,76 +592,102 @@
                 });
             }
 
+            /* ── Core slide transition ────────────────────────────────── */
+            // dir > 0 → new slide enters from RIGHT (scroll down)
+            // dir < 0 → new slide enters from LEFT  (scroll up)
             function showSlide(idx, dir) {
-                // dir: +1 = scroll down (new comes from right), -1 = scroll up (new from left)
+                if (isAnimating) return;
+                if (idx === current) return;
+                isAnimating = true;
+
                 const incoming = slides[idx];
                 const outgoing = slides[current];
+                const ANIM = 800; // ms — must match CSS transition duration
 
-                // Position incoming off-screen in the correct direction
-                const inStart = dir > 0 ? '100%' : '-100%';
-                const outEnd = dir > 0 ? '-100%' : '100%';
-
+                // Snap incoming off-screen with NO transition, then animate in
                 incoming.style.transition = 'none';
-                incoming.style.transform = `translateX(${inStart})`;
+                incoming.style.transform = dir > 0 ? 'translateX(100%)' : 'translateX(-100%)';
                 incoming.style.opacity = '1';
-                incoming.classList.remove('active');
 
-                // Force reflow
-                incoming.offsetHeight; // eslint-disable-line no-unused-expressions
+                // Force a reflow so the browser registers the snap before animating
+                void incoming.offsetWidth;
 
-                // Animate both
-                incoming.style.transition = 'transform 0.85s cubic-bezier(0.77,0,0.18,1), opacity 0.7s ease';
-                outgoing.style.transition = 'transform 0.85s cubic-bezier(0.77,0,0.18,1), opacity 0.7s ease';
+                const easing = 'transform 0.8s cubic-bezier(0.77,0,0.18,1), opacity 0.6s ease';
+                incoming.style.transition = easing;
+                outgoing.style.transition = easing;
 
                 incoming.style.transform = 'translateX(0%)';
                 incoming.style.opacity = '1';
                 incoming.classList.add('active');
 
-                outgoing.style.transform = `translateX(${outEnd})`;
+                outgoing.style.transform = dir > 0 ? 'translateX(-100%)' : 'translateX(100%)';
                 outgoing.style.opacity = '0';
                 outgoing.classList.remove('active');
 
                 current = idx;
 
-                // Update UI
+                // UI updates
                 if (curEl) curEl.textContent = String(idx + 1).padStart(2, '0');
-                if (bar) bar.style.width = ((idx / (total - 1 || 1)) * 100) + '%';
+                if (bar) bar.style.width = total > 1
+                    ? ((idx / (total - 1)) * 100) + '%'
+                    : '100%';
                 if (hint) hint.style.opacity = idx === 0 ? '0.6' : '0';
                 updateDots(idx);
+
+                // Release lock after animation completes
+                setTimeout(() => { isAnimating = false; }, ANIM + 50);
             }
 
+            /* ── Jump from dot click ──────────────────────────────────── */
             function jumpTo(idx) {
-                if (idx === current) return;
-                const dir = idx > current ? 1 : -1;
-                showSlide(idx, dir);
+                if (idx === current || isAnimating) return;
+                showSlide(idx, idx > current ? 1 : -1);
             }
 
-            // Initialise
+            /* ── Initialise: show slide 0 immediately ─────────────────── */
             slides.forEach((s, i) => {
-                if (i === 0) { s.style.transform = 'translateX(0%)'; s.style.opacity = '1'; s.classList.add('active'); }
-                else { s.style.transform = 'translateX(100%)'; s.style.opacity = '0'; }
+                s.style.transition = 'none';
+                s.style.transform = 'translateX(100%)';
+                s.style.opacity = '0';
+                s.classList.remove('active');
             });
+            slides[0].style.transform = 'translateX(0%)';
+            slides[0].style.opacity = '1';
+            slides[0].classList.add('active');
             updateDots(0);
 
-            // Scroll driver
-            let lastScroll = -1;
+            /* ── Scroll driver ────────────────────────────────────────── */
+            // The root is N×100vh tall; the sticky pane is 100vh.
+            // Divide the scrollable region (rootH - viewH) into N equal
+            // bands. Band 0 = slide 0, band N-1 = slide N-1.
             window.addEventListener('scroll', function () {
                 const rect = root.getBoundingClientRect();
                 const rootH = root.offsetHeight;
                 const viewH = window.innerHeight;
-                // progress within the root: 0 = top of root at viewport top, 1 = bottom of root leaving viewport
-                const scrolled = -rect.top;
+                const scrolled = -rect.top;          // px scrolled past root top
                 const maxScroll = rootH - viewH;
+
+                // Not yet entered the journey section
+                if (scrolled < 0) return;
+                // Scrolled past the journey section
+                if (scrolled > maxScroll) return;
+                // Can't scroll (only 1 slide)
                 if (maxScroll <= 0) return;
 
-                const progress = Math.max(0, Math.min(1, scrolled / maxScroll));
-                const targetIdx = Math.round(progress * (total - 1));
+                // Which band are we in? (each slide gets an equal slice)
+                const progress = scrolled / maxScroll;         // 0 → 1
+                const targetIdx = Math.min(
+                    total - 1,
+                    Math.floor(progress * total)               // floor gives cleaner bands
+                );
 
-                if (targetIdx === current) return;
+                if (targetIdx === current || isAnimating) return;
+
+                // Advance one step at a time to prevent skipping
                 const dir = targetIdx > current ? 1 : -1;
-                showSlide(targetIdx, dir);
-                lastScroll = scrolled;
+                showSlide(current + dir, dir);
             }, { passive: true });
+
         })();
     </script>
     {% endif %}
