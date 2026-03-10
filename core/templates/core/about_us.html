@@ -103,6 +103,17 @@
             object-fit: cover;
             z-index: -2;
             pointer-events: none;
+
+            /* Safari compositor isolation */
+            transform: translate3d(0, 0, 0);
+            backface-visibility: hidden;
+        }
+
+        #hero-video {
+            transform: translate3d(0, 0, 0);
+            will-change: opacity, transform;
+            backface-visibility: hidden;
+            contain: layout paint size style;
         }
 
         #scroll-video-tint {
@@ -242,7 +253,9 @@
             video&hellip;</span>
     </div>
     <!-- ── Fixed Scroll-Driven Background Video ──────────────── -->
-    <video id="scroll-video-bg" muted playsinline preload="auto" src="{{ scroll_url }}"></video>
+    <video id="scroll-video-bg" muted playsinline preload="metadata">
+        <source src="{{ scroll_url }}" type="video/mp4">
+    </video>
     <!-- Dark tint so content on top stays readable -->
     <div id="scroll-video-tint"></div>
     <!-- Subtle scanline overlay -->
@@ -264,35 +277,13 @@
 
     <!-- Hero Section -->
     <header class="relative h-[85vh] md:h-screen flex items-center justify-center overflow-hidden">
-        {% if about_page.hero_video %}
-        {# --- Uploaded video file (highest priority) --- #}
-        <video autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover">
-            <source src="{{ about_page.hero_video.url }}" type="video/mp4">
+        <video id="hero-video" class="absolute inset-0 w-full h-full object-cover" autoplay muted loop playsinline
+            webkit-playsinline preload="metadata"
+            poster="https://ik.imagekit.io/s1dw3k80p/AlienHouse_Networks.mp4/ik-thumbnail.jpg">
+
+            <source src="https://ik.imagekit.io/s1dw3k80p/AlienHouse_Networks.mp4" type="video/mp4">
+
         </video>
-        {% elif about_page.hero_video_url %}
-        {# --- External video URL: YouTube or direct CDN/GitHub link --- #}
-        {% with embed=about_page.get_hero_video_embed %}
-        {% if embed.type == 'youtube' %}
-        {# YouTube embed: muted, autoplay, loop, no controls #}
-        <iframe src="{{ embed.url }}" class="absolute inset-0 w-full h-full pointer-events-none"
-            style="width:100%;height:100%;object-fit:cover;border:0;transform:scale(1.1);"
-            allow="autoplay; encrypted-media" allowfullscreen loading="lazy" title="Hero background video">
-        </iframe>
-        {% else %}
-        {# Direct link: CDN, GitHub raw mp4/webm, etc. #}
-        <video autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover">
-            <source src="{{ embed.url }}">
-        </video>
-        {% endif %}
-        {% endwith %}
-        {% elif about_page.hero_image %}
-        <div class="absolute inset-0 bg-cover bg-center"
-            style="background-image: url('{{ about_page.hero_image.url }}');"></div>
-        {% else %}
-        <div class="absolute inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-900">
-            <div class="absolute inset-0 bg-grid-pattern opacity-10"></div>
-        </div>
-        {% endif %}
 
         <div class="absolute inset-0 bg-gradient-to-b from-black/70 via-black/30 to-black z-10"></div>
 
@@ -346,6 +337,10 @@
 
             <!-- Scroll indicator -->
             <div class="absolute bottom-8 right-10 hidden md:flex flex-col items-center gap-3">
+                <button onclick="toggleHeroAudio()" id="audio-toggle"
+                    class="w-10 h-10 flex items-center justify-center border border-alien/30 bg-black/40 text-alien rounded-full hover:border-alien transition-all mb-4 backdrop-blur-md">
+                    <i data-lucide="volume-x" class="w-5 h-5"></i>
+                </button>
                 <span class="text-white/20 text-[9px] font-mono tracking-[0.4em] uppercase"
                     style="writing-mode:vertical-rl;">Scroll</span>
                 <div class="w-px h-16 bg-gradient-to-b from-alien/50 to-transparent"></div>
@@ -448,7 +443,8 @@
                     {% if section.image %}
                     <div class="absolute inset-0 w-full h-full overflow-hidden">
                         <img src="{{ section.image.url }}" alt="{{ section.heading }}"
-                            class="w-full h-full object-cover scale-105" style="filter:brightness(0.35) saturate(1.1);">
+                            class="journey-bg w-full h-full object-cover origin-center"
+                            style="filter:brightness(0.35) saturate(1.1); transform:scale(1); will-change:transform;">
                     </div>
                     {% else %}
                     <div class="absolute inset-0 bg-black/80"></div>
@@ -469,27 +465,30 @@
                     <div class="absolute inset-0 flex items-center z-10">
                         <div class="px-10 md:px-24 lg:px-40 max-w-4xl">
                             <!-- Archive badge -->
-                            <div class="flex items-center gap-4 mb-8">
+                            <div class="journey-text-0 flex items-center gap-4 mb-8"
+                                style="will-change: transform, opacity; opacity:0; transform:translateY(40px)">
                                 <span class="h-px w-16 bg-alien inline-block"></span>
                                 <span class="text-alien text-[10px] font-mono tracking-[0.5em] uppercase font-black">
                                     ARCHIVE_FILE_{{ forloop.counter|stringformat:"03d" }}
                                 </span>
                             </div>
                             <!-- Index / counter -->
-                            <div class="text-white/10 font-orbitron font-black leading-none mb-4 select-none"
-                                style="font-size: clamp(5rem,15vw,14rem); line-height:1;">
+                            <div class="journey-text-1 text-white/10 font-orbitron font-black leading-none mb-4 select-none"
+                                style="font-size: clamp(5rem,15vw,14rem); line-height:1; will-change: transform, opacity; opacity:0; transform:translateY(40px)">
                                 {{ forloop.counter|stringformat:"02d" }}
                             </div>
                             <!-- Heading -->
-                            <h3 class="font-orbitron font-black text-white leading-tight mb-8"
-                                style="font-size: clamp(2rem, 5vw, 4.5rem);">
+                            <h3 class="journey-text-2 font-orbitron font-black text-white leading-tight mb-8"
+                                style="font-size: clamp(2rem, 5vw, 4.5rem); will-change: transform, opacity; opacity:0; transform:translateY(40px)">
                                 {{ section.heading }}
                             </h3>
                             <!-- Divider -->
-                            <div class="w-24 h-px bg-alien mb-8" style="box-shadow:0 0 12px #00ff41;"></div>
+                            <div class="journey-text-3 w-24 h-px bg-alien mb-8"
+                                style="box-shadow:0 0 12px #00ff41; will-change: transform, opacity; opacity:0; transform:translateY(40px)">
+                            </div>
                             <!-- Body text -->
-                            <div
-                                class="text-gray-300 text-lg leading-relaxed font-light max-w-2xl prose prose-invert prose-p:mb-4 prose-p:text-gray-300">
+                            <div class="journey-text-4 max-h-[45vh] overflow-y-auto no-scrollbar pr-4 text-gray-300 text-lg md:text-xl leading-relaxed font-light max-w-2xl prose prose-invert prose-p:mb-4 prose-p:text-gray-300"
+                                style="will-change: transform, opacity; opacity:0; transform:translateY(40px)">
                                 {{ section.content|safe }}
                             </div>
                         </div>
@@ -503,8 +502,8 @@
                 <div class="absolute bottom-10 left-10 md:left-24 lg:left-40 z-20 flex items-end gap-4">
                     <span id="journey-current" class="font-orbitron font-black text-white"
                         style="font-size:clamp(1.5rem,4vw,3rem);">01</span>
-                    <span class="text-white/20 font-mono text-xs mb-2">/ <span id="journey-total">{{
-                            sections|length|stringformat:"02d" }}</span></span>
+                    <span class="text-white/20 font-mono text-xs mb-2">/ <span id="journey-total">
+                            {{ sections|length|stringformat:"02d" }}</span></span>
                 </div>
 
                 <!-- Progress bar (bottom) -->
@@ -887,6 +886,12 @@
         const jHint = document.getElementById('journey-scroll-hint');
         const numSlides = jSlides ? jSlides.length : 0;
 
+        // Isolation fix for scroll-video background
+        if (video) {
+            video.muted = true;
+            video.playsInline = true;
+        }
+
         /* Video Loader Setup */
         if (video) {
             function hideLoader() {
@@ -902,6 +907,37 @@
             });
         } else {
             if (loader) { loader.style.opacity = '0'; setTimeout(() => loader && loader.remove(), 900); }
+        }
+
+        /* Safari Hero Video Force Play */
+        const heroVideo = document.getElementById("hero-video");
+
+        if (heroVideo) {
+
+            heroVideo.muted = true;
+            heroVideo.playsInline = true;
+            heroVideo.setAttribute("playsinline", "");
+            heroVideo.setAttribute("webkit-playsinline", "");
+
+            // Force hardware decoding start
+            heroVideo.load();
+            heroVideo.play().catch(() => { });
+
+            function startHeroVideo() {
+                const promise = heroVideo.play();
+                if (promise !== undefined) {
+                    promise.catch(() => { });
+                }
+            }
+
+            // Start once metadata exists
+            heroVideo.addEventListener("loadedmetadata", startHeroVideo);
+
+            // Backup triggers for Safari autoplay policy
+            window.addEventListener("load", startHeroVideo);
+            document.addEventListener("touchstart", startHeroVideo, { once: true });
+            document.addEventListener("click", startHeroVideo, { once: true });
+
         }
 
         /* Journey Dot Setup */
@@ -964,6 +1000,47 @@
             updateJourneyDots(0);
         }
 
+        let targetVideoTime = 0;
+        let currentVideoTime = 0;
+        let lastSeekedTime = -1;
+
+        // Force Chrome to buffer early
+        if (video) {
+            video.load();
+        }
+
+        function smoothScrollLoop() {
+            if (video && video.duration > 0 && video.readyState >= 2) {
+                // Lerp factor
+                currentVideoTime += (targetVideoTime - currentVideoTime) * 0.1;
+
+                // Chrome/Safari optimization
+                const delta = Math.abs(currentVideoTime - lastSeekedTime);
+                if (delta > 0.04) {
+                    video.currentTime = currentVideoTime;
+                    lastSeekedTime = currentVideoTime;
+                }
+
+                // ── [NEW] Safari Optimization: Pause Hero Video on Scroll ──
+                // When user scrolls down significantly, pause hero video to save GPU
+                if (heroVideo) {
+                    if (window.scrollY > window.innerHeight * 0.8) {
+                        if (!heroVideo.paused) heroVideo.pause();
+                    } else {
+                        if (heroVideo.paused) heroVideo.play().catch(() => { });
+                    }
+                }
+
+                // Update bar
+                if (vBarFill) {
+                    const prog = (currentVideoTime / video.duration) * 100;
+                    vBarFill.style.width = prog + '%';
+                }
+            }
+            requestAnimationFrame(smoothScrollLoop);
+        }
+        smoothScrollLoop();
+
         /* Unified Scroll Engine */
         function onScroll() {
             const scrollY = window.scrollY;
@@ -973,82 +1050,146 @@
             let jStart = 0;
             let jEnd = 0;
             let jScrollDist = 0;
+            let jProgress = 0;
+            let activeSlide = 0;
 
-            // 1. Calculate Journey Section Metrics
+            /* Journey calculations */
             if (numSlides > 0 && jRoot) {
-                // We use offsetTop because getBoundingClientRect changes with scroll
                 const rect = jRoot.getBoundingClientRect();
                 jStart = rect.top + window.scrollY;
                 jEnd = jStart + jRoot.offsetHeight;
                 jScrollDist = jRoot.offsetHeight - viewH;
 
-                // How far are we through the Journey section? (0.0 to 1.0)
-                let jProgress = 0;
                 if (scrollY >= jStart && scrollY <= jEnd - viewH) {
                     jProgress = (scrollY - jStart) / Math.max(1, jScrollDist);
                 } else if (scrollY > jEnd - viewH) {
                     jProgress = 1;
                 }
 
-                const localScroll = jProgress * (numSlides - 1);
-                const activeSlide = Math.min(numSlides - 1, Math.round(localScroll));
+                const localScroll = jProgress * (numSlides * 2 - 1);
+                activeSlide = Math.floor(localScroll / 2);
 
-                // Update Slide Positions (Continuous Transform)
                 jSlides.forEach((s, i) => {
-                    const offset = i - localScroll;
-                    s.style.transform = `translateX(${offset * 100}%)`;
+                    const lp = localScroll - (i * 2);
+                    const bg = s.querySelector('.journey-bg');
+                    const texts = [0, 1, 2, 3, 4].map(idx => s.querySelector('.journey-text-' + idx));
 
-                    if (Math.abs(offset) > 0.99) {
-                        s.style.opacity = '0';
-                        s.classList.remove('active');
-                    } else {
-                        s.style.opacity = '1';
-                        if (Math.abs(offset) < 0.5) {
-                            s.classList.add('active');
-                        } else {
-                            s.classList.remove('active');
-                        }
+                    if (lp < -1 || lp > 2) {
+                        s.style.opacity = 0;
+                        s.style.pointerEvents = 'none';
+                        return;
                     }
+
+                    s.style.pointerEvents = 'auto';
+                    let slideX = 0;
+                    let slideOpacity = 1;
+
+                    /* ENTRY */
+                    if (lp < 0) {
+                        const p = lp + 1;
+                        const ease = 1 - Math.pow(1 - p, 3);
+                        slideX = (1 - ease) * 100;
+                        slideOpacity = p;
+                    }
+                    /* HOLD */
+                    else if (lp <= 1) {
+                        slideX = 0;
+                        slideOpacity = 1;
+                    }
+                    /* EXIT */
+                    else {
+                        const p = lp - 1;
+                        slideX = -40 * p;
+                        slideOpacity = 1 - p;
+                    }
+
+                    s.style.transform = `translateX(${slideX}%)`;
+                    s.style.opacity = slideOpacity;
+
+                    if (Math.abs(slideX) < 40 && slideOpacity > 0.5) {
+                        s.classList.add('active');
+                    } else {
+                        s.classList.remove('active');
+                    }
+
+                    /* Background cinematic zoom */
+                    if (bg) {
+                        const scale = 1 + ((lp + 1) / 3) * 0.12;
+                        bg.style.transform = `scale(${scale})`;
+                    }
+
+                    /* Text stagger animation */
+                    texts.forEach((el, tIdx) => {
+                        if (!el) return;
+
+                        const start = -0.1 + (tIdx * 0.08);
+                        const end = start + 0.25;
+
+                        let opacity = 0;
+                        let y = 40;
+
+                        if (lp > start && lp < end) {
+                            const p = (lp - start) / (end - start);
+                            const ease = 1 - Math.pow(1 - p, 2);
+                            opacity = ease;
+                            y = 40 * (1 - ease);
+                        }
+                        else if (lp >= end && lp < 1.1) {
+                            opacity = 1;
+                            y = 0;
+                        }
+                        else if (lp >= 1.1 && lp < 1.4) {
+                            const p = (lp - 1.1) / 0.3;
+                            opacity = 1 - p;
+                            y = -20 * p;
+                        }
+
+                        el.style.opacity = opacity;
+                        el.style.transform = `translateY(${y}px)`;
+                    });
                 });
 
-                // Update UI
-                if (jCurEl) jCurEl.textContent = String(activeSlide + 1).padStart(2, '0');
-                if (jBar) jBar.style.width = (jProgress * 100) + '%';
-                if (jHint) jHint.style.opacity = activeSlide === 0 ? Math.max(0, 0.6 - (jProgress * 5)) : '0';
+                if (jCurEl) {
+                    jCurEl.textContent = String(activeSlide + 1).padStart(2, '0');
+                }
+                if (jBar) {
+                    jBar.style.width = (jProgress * 100) + '%';
+                }
+                if (jHint) {
+                    jHint.style.opacity = activeSlide === 0
+                        ? Math.max(0, 0.6 - (jProgress * 5))
+                        : '0';
+                }
                 updateJourneyDots(activeSlide);
             }
 
-            // 2. Calculate Video Background Metrics (Pausing during Journey)
+            /* Continuous Background Scroll (Fixed: video progress is absolute to page scroll) */
             if (video && video.duration > 0) {
                 const totalScrollable = docH - viewH;
-
-                // Effective scroll removes the vertical height consumed INSIDE the journey section
-                let effectiveScroll = scrollY;
-                if (numSlides > 0 && jRoot) {
-                    if (scrollY > jStart && scrollY <= jEnd - viewH) {
-                        // While inside journey, video pauses at the state exactly when journey started
-                        effectiveScroll = jStart;
-                    } else if (scrollY > jEnd - viewH) {
-                        // After journey, subtract the entire journey scroll distance so it resumes perfectly
-                        effectiveScroll = scrollY - jScrollDist;
-                    }
-                }
-
-                const effectiveTotal = Math.max(1, totalScrollable - jScrollDist);
-                const vProgress = Math.min(1, Math.max(0, effectiveScroll / effectiveTotal));
-
-                // Add slight easing to video scrubbing to avoid jitter
-                requestAnimationFrame(() => {
-                    video.currentTime = vProgress * video.duration;
-                    if (vBarFill) vBarFill.style.width = (vProgress * 100) + '%';
-                });
+                const vProgress = Math.min(1, Math.max(0, scrollY / totalScrollable));
+                targetVideoTime = vProgress * video.duration;
             }
         }
 
         window.addEventListener('scroll', onScroll, { passive: true });
-        // Initial call
         onScroll();
     })();
+
+    function toggleHeroAudio() {
+        const v = document.getElementById('hero-video');
+        const btn = document.getElementById('audio-toggle');
+        if (!v || !btn) return;
+
+        if (v.muted) {
+            v.muted = false;
+            v.volume = 0.5;
+            btn.innerHTML = '<i data-lucide="volume-2" class="w-5 h-5"></i>';
+        } else {
+            v.muted = true;
+            btn.innerHTML = '<i data-lucide="volume-x" class="w-5 h-5"></i>';
+        }
+        if (window.lucide) window.lucide.createIcons();
+    }
 
     // ── Gallery and Other External Sliders ────────────────────────
 
