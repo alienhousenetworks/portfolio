@@ -281,7 +281,13 @@
             webkit-playsinline preload="metadata"
             poster="https://ik.imagekit.io/s1dw3k80p/AlienHouse_Networks.mp4/ik-thumbnail.jpg">
 
+            {% if about_page.hero_video %}
+            <source src="{{ about_page.hero_video.url }}" type="video/mp4">
+            {% elif about_page.hero_video_url %}
+            <source src="{{ about_page.hero_video_url }}" type="video/mp4">
+            {% else %}
             <source src="https://ik.imagekit.io/s1dw3k80p/AlienHouse_Networks.mp4" type="video/mp4">
+            {% endif %}
 
         </video>
 
