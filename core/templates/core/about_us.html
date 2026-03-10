@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block content %}
-<div class="text-white selection:bg-alien/30 selection:text-alien font-sans min-h-screen overflow-x-hidden relative"
+<div class="text-white selection:bg-alien/30 selection:text-alien font-sans min-h-screen overflow-clip relative"
     style="background:transparent;">
 
     <!-- Global Styling for HUD card system -->
@@ -436,7 +436,7 @@
     </div>
 
     <!-- Sticky scroll-highjack wrapper -->
-    <div id="journey-scroll-root" class="relative z-10" style="height: calc({{ sections|length }} * 100vh);">
+    <div id="journey-scroll-root" class="relative z-10" style="height: calc({{ sections|length }} * 200vh);">
         <div id="journey-sticky" class="sticky top-0 w-full overflow-hidden" style="height: 100vh;">
             <!-- Shared slide viewport -->
             <div id="journey-viewport" class="relative w-full h-full">
@@ -919,9 +919,18 @@
                 d.style.cssText = 'width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);transition:all 0.3s ease;cursor:pointer;';
                 d.addEventListener('click', () => {
                     if (jRoot) {
-                        let targetTop = jRoot.offsetTop;
+                        const rect = jRoot.getBoundingClientRect();
+                        let targetTop = rect.top + window.scrollY;
                         if (numSlides > 1) {
-                            targetTop += (i / (numSlides - 1)) * (jRoot.offsetHeight - window.innerHeight);
+                            // If localScroll goes from 0 to 2N-1
+                            // Slide i is centered exactly at localScroll = i * 2
+                            // progress = localScroll / (2N - 1)
+                            // jScrollDist = jRoot.offsetHeight - viewH
+                            // top = jStart + progress * jScrollDist
+                            const viewH = window.innerHeight;
+                            const jScrollDist = Math.max(0, jRoot.offsetHeight - viewH);
+                            const progress = (i * 2) / (numSlides * 2 - 1);
+                            targetTop += progress * jScrollDist;
                         }
                         window.scrollTo({ top: targetTop, behavior: 'smooth' });
                     }
@@ -968,7 +977,8 @@
             // 1. Calculate Journey Section Metrics
             if (numSlides > 0 && jRoot) {
                 // We use offsetTop because getBoundingClientRect changes with scroll
-                jStart = jRoot.offsetTop;
+                const rect = jRoot.getBoundingClientRect();
+                jStart = rect.top + window.scrollY;
                 jEnd = jStart + jRoot.offsetHeight;
                 jScrollDist = jRoot.offsetHeight - viewH;
 
