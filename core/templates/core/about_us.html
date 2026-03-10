@@ -511,8 +511,8 @@
                 <div class="absolute bottom-10 left-10 md:left-24 lg:left-40 z-20 flex items-end gap-4">
                     <span id="journey-current" class="font-orbitron font-black text-white"
                         style="font-size:clamp(1.5rem,4vw,3rem);">01</span>
-                    <span class="text-white/20 font-mono text-xs mb-2">/ <span id="journey-total">{{
-                            sections|length|stringformat:"02d" }}</span></span>
+                    <span class="text-white/20 font-mono text-xs mb-2">/ <span id="journey-total">
+                            {{ sections|length|stringformat:"02d" }}</span></span>
                 </div>
 
                 <!-- Progress bar (bottom) -->
@@ -974,14 +974,24 @@
 
         let targetVideoTime = 0;
         let currentVideoTime = 0;
+        let lastSeekedTime = -1;
+
+        // Force Chrome to buffer early
+        if (video) {
+            video.load();
+        }
 
         function smoothScrollLoop() {
-            if (video && video.duration > 0) {
+            if (video && video.duration > 0 && video.readyState >= 2) {
                 // Lerp factor
                 currentVideoTime += (targetVideoTime - currentVideoTime) * 0.1;
 
-                // Set the video time
-                video.currentTime = currentVideoTime;
+                // Chrome optimization
+                const delta = Math.abs(currentVideoTime - lastSeekedTime);
+                if (delta > 0.015) {
+                    video.currentTime = currentVideoTime;
+                    lastSeekedTime = currentVideoTime;
+                }
 
                 // Update bar
                 if (vBarFill) {
@@ -1115,23 +1125,10 @@
                 updateJourneyDots(activeSlide);
             }
 
-            /* Scroll Video Sync (Lerp for smoothness) */
+            /* Continuous Background Scroll (Fixed: video progress is absolute to page scroll) */
             if (video && video.duration > 0) {
                 const totalScrollable = docH - viewH;
-                let effectiveScroll = scrollY;
-
-                if (numSlides > 0 && jRoot) {
-                    if (scrollY > jStart && scrollY <= jEnd - viewH) {
-                        effectiveScroll = jStart;
-                    }
-                    else if (scrollY > jEnd - viewH) {
-                        effectiveScroll = scrollY - jScrollDist;
-                    }
-                }
-
-                const effectiveTotal = Math.max(1, totalScrollable - jScrollDist);
-                const vProgress = Math.min(1, Math.max(0, effectiveScroll / effectiveTotal));
-
+                const vProgress = Math.min(1, Math.max(0, scrollY / totalScrollable));
                 targetVideoTime = vProgress * video.duration;
             }
         }
