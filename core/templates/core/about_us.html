@@ -314,6 +314,29 @@
 
         <div class="absolute inset-0 bg-gradient-to-b from-black/70 via-black/30 to-black z-10"></div>
 
+        <!-- Click to Start Overlay — shows if autoplay is blocked -->
+        <div id="video-start-overlay"
+            class="absolute inset-0 z-30 flex items-center justify-center bg-black/40 backdrop-blur-[2px] opacity-0 pointer-events-none transition-all duration-1000">
+            <button onclick="manualStartHero()"
+                class="group relative flex flex-col items-center gap-6 p-10 rounded-3xl border border-alien/20 bg-black/60 hover:border-alien hover:bg-alien/10 transition-all duration-500 backdrop-blur-md">
+                <div class="hud-corner hud-tl !border-alien"></div>
+                <div class="hud-corner hud-tr !border-alien"></div>
+                <div class="hud-corner hud-bl !border-alien"></div>
+                <div class="hud-corner hud-br !border-alien"></div>
+
+                <div
+                    class="w-24 h-24 flex items-center justify-center rounded-full border border-alien/40 group-hover:scale-110 group-hover:border-alien transition-all duration-700 shadow-[0_0_50px_rgba(0,255,65,0.2)]">
+                    <i data-lucide="play" class="w-10 h-10 text-alien fill-alien/20 translate-x-1"></i>
+                </div>
+                <div class="flex flex-col items-center gap-1">
+                    <span class="text-alien text-xs font-mono tracking-[0.5em] uppercase font-black">Click to
+                        Start</span>
+                    <span class="text-white/30 text-[9px] font-mono tracking-widest uppercase mt-2 font-black">//
+                        System_Intake_Required</span>
+                </div>
+            </button>
+        </div>
+
         <!-- Premium editorial hero text layout -->
         <div class="absolute inset-0 z-20 flex flex-col justify-end pb-20 md:pb-28">
             <div class="container mx-auto px-8 md:px-16">
@@ -953,7 +976,16 @@
             function startHeroVideo() {
                 const promise = heroVideo.play();
                 if (promise !== undefined) {
-                    promise.catch(() => { });
+                    promise.then(() => {
+                        const overlay = document.getElementById('video-start-overlay');
+                        if (overlay) overlay.classList.add('opacity-0', 'pointer-events-none');
+                    }).catch(() => {
+                        const overlay = document.getElementById('video-start-overlay');
+                        if (overlay) {
+                            overlay.classList.remove('opacity-0', 'pointer-events-none');
+                            overlay.classList.add('opacity-100', 'pointer-events-auto');
+                        }
+                    });
                 }
             }
 
@@ -1229,6 +1261,22 @@
         }
         if (window.lucide) window.lucide.createIcons();
     }
+
+    window.manualStartHero = function () {
+        const hv = document.getElementById('hero-video');
+        const overlay = document.getElementById('video-start-overlay');
+        if (!hv) return;
+
+        hv.muted = false;
+        hv.play().then(() => {
+            if (overlay) {
+                overlay.classList.add('opacity-0', 'pointer-events-none');
+            }
+            const btn = document.getElementById('audio-toggle');
+            if (btn) btn.innerHTML = '<i data-lucide="volume-2" class="w-5 h-5"></i>';
+            if (window.lucide) window.lucide.createIcons();
+        }).catch(e => console.error("Manual start error:", e));
+    };
 
     // ── Gallery and Other External Sliders ────────────────────────
 
