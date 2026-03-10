@@ -265,8 +265,8 @@
     <!-- Hero Section -->
     <header class="relative h-[85vh] md:h-screen flex items-center justify-center overflow-hidden">
         {% if about_page.hero_video %}
-        {# --- Uploaded video file (highest priority) --- #}
-        <video autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover">
+        {# --- Uploaded video file (highest priority) --- #} <video autoplay loop playsinline
+            class="absolute inset-0 w-full h-full object-cover">
             <source src="{{ about_page.hero_video.url }}" type="video/mp4">
         </video>
         {% elif about_page.hero_video_url %}
@@ -279,8 +279,8 @@
             allow="autoplay; encrypted-media" allowfullscreen loading="lazy" title="Hero background video">
         </iframe>
         {% else %}
-        {# Direct link: CDN, GitHub raw mp4/webm, etc. #}
-        <video autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover">
+        {# Direct link: CDN, GitHub raw mp4/webm, etc. #} <video autoplay loop playsinline
+            class="absolute inset-0 w-full h-full object-cover">
             <source src="{{ embed.url }}">
         </video>
         {% endif %}
@@ -448,7 +448,8 @@
                     {% if section.image %}
                     <div class="absolute inset-0 w-full h-full overflow-hidden">
                         <img src="{{ section.image.url }}" alt="{{ section.heading }}"
-                            class="w-full h-full object-cover scale-105" style="filter:brightness(0.35) saturate(1.1);">
+                            class="journey-bg w-full h-full object-cover origin-center"
+                            style="filter:brightness(0.35) saturate(1.1); transform:scale(1); will-change:transform;">
                     </div>
                     {% else %}
                     <div class="absolute inset-0 bg-black/80"></div>
@@ -469,27 +470,30 @@
                     <div class="absolute inset-0 flex items-center z-10">
                         <div class="px-10 md:px-24 lg:px-40 max-w-4xl">
                             <!-- Archive badge -->
-                            <div class="flex items-center gap-4 mb-8">
+                            <div class="journey-text-0 flex items-center gap-4 mb-8"
+                                style="will-change: transform, opacity; opacity:0; transform:translateY(40px)">
                                 <span class="h-px w-16 bg-alien inline-block"></span>
                                 <span class="text-alien text-[10px] font-mono tracking-[0.5em] uppercase font-black">
                                     ARCHIVE_FILE_{{ forloop.counter|stringformat:"03d" }}
                                 </span>
                             </div>
                             <!-- Index / counter -->
-                            <div class="text-white/10 font-orbitron font-black leading-none mb-4 select-none"
-                                style="font-size: clamp(5rem,15vw,14rem); line-height:1;">
+                            <div class="journey-text-1 text-white/10 font-orbitron font-black leading-none mb-4 select-none"
+                                style="font-size: clamp(5rem,15vw,14rem); line-height:1; will-change: transform, opacity; opacity:0; transform:translateY(40px)">
                                 {{ forloop.counter|stringformat:"02d" }}
                             </div>
                             <!-- Heading -->
-                            <h3 class="font-orbitron font-black text-white leading-tight mb-8"
-                                style="font-size: clamp(2rem, 5vw, 4.5rem);">
+                            <h3 class="journey-text-2 font-orbitron font-black text-white leading-tight mb-8"
+                                style="font-size: clamp(2rem, 5vw, 4.5rem); will-change: transform, opacity; opacity:0; transform:translateY(40px)">
                                 {{ section.heading }}
                             </h3>
                             <!-- Divider -->
-                            <div class="w-24 h-px bg-alien mb-8" style="box-shadow:0 0 12px #00ff41;"></div>
+                            <div class="journey-text-3 w-24 h-px bg-alien mb-8"
+                                style="box-shadow:0 0 12px #00ff41; will-change: transform, opacity; opacity:0; transform:translateY(40px)">
+                            </div>
                             <!-- Body text -->
-                            <div
-                                class="text-gray-300 text-lg leading-relaxed font-light max-w-2xl prose prose-invert prose-p:mb-4 prose-p:text-gray-300">
+                            <div class="journey-text-4 text-gray-300 text-lg leading-relaxed font-light max-w-2xl prose prose-invert prose-p:mb-4 prose-p:text-gray-300"
+                                style="will-change: transform, opacity; opacity:0; transform:translateY(40px)">
                                 {{ section.content|safe }}
                             </div>
                         </div>
@@ -987,68 +991,113 @@
                 if (scrollY >= jStart && scrollY <= jEnd - viewH) {
                     jProgress = (scrollY - jStart) / Math.max(1, jScrollDist);
                 } else if (scrollY > jEnd - viewH) {
-                    jProgress = 1;
-                }
+                    s.style.pointerEvents = 'none';
+                    s.classList.remove('active');
+                } else {
+                    s.style.pointerEvents = 'auto';
+                    let slideX = 0;
+                    let slideOpacity = 1;
 
-                const localScroll = jProgress * (numSlides - 1);
-                const activeSlide = Math.min(numSlides - 1, Math.round(localScroll));
-
-                // Update Slide Positions (Continuous Transform)
-                jSlides.forEach((s, i) => {
-                    const offset = i - localScroll;
-                    s.style.transform = `translateX(${offset * 100}%)`;
-
-                    if (Math.abs(offset) > 0.99) {
-                        s.style.opacity = '0';
-                        s.classList.remove('active');
+                    if (lp < 0) {
+                        // Entry (100% to 0%)
+                        let prg = lp + 1; // 0 to 1
+                        let ease = 1 - Math.pow(1 - prg, 3);
+                        slideX = (1 - ease) * 100;
+                        slideOpacity = prg;
+                    } else if (lp <= 1) {
+                        // Hold
+                        slideX = 0;
+                        slideOpacity = 1;
                     } else {
-                        s.style.opacity = '1';
-                        if (Math.abs(offset) < 0.5) {
-                            s.classList.add('active');
+                        // Exit
+                        let prg = lp - 1; // 0 to 1
+                        slideX = prg * -40; // Parallax shift left
+                        slideOpacity = 1 - prg;
+                    }
+
+                    s.style.transform = `translateX(${slideX}%)`;
+                    s.style.opacity = slideOpacity;
+
+                    if (Math.abs(slideX) < 50 && slideOpacity > 0.5) s.classList.add('active');
+                    else s.classList.remove('active');
+
+                    // Background Zoom (scale from 1.0 to 1.12 across its visible lifetime)
+                    if (bg) {
+                        let scale = 1 + ((lp + 1) / 3) * 0.12;
+                        bg.style.transform = `scale(${scale})`;
+                    }
+
+                    // Text sequence reveals
+                    texts.forEach((el, tIdx) => {
+                        if (!el) return;
+                        // Each text staggers in during the hold entry
+                        let startIn = -0.2 + (tIdx * 0.1);
+                        let endIn = startIn + 0.3;
+                        let startOut = 1.0;
+                        let endOut = 1.3;
+
+                        let op = 1;
+                        let y = 0;
+
+                        if (lp < startIn) {
+                            op = 0; y = 40;
+                        } else if (lp < endIn) {
+                            let p = (lp - startIn) / (endIn - startIn);
+                            let easeSq = 1 - Math.pow(1 - p, 2);
+                            op = Math.max(0, easeSq); y = 40 * (1 - easeSq);
+                        } else if (lp < startOut) {
+                            op = 1; y = 0;
+                        } else if (lp < endOut) {
+                            let p = (lp - startOut) / (endOut - startOut);
+                            op = Math.max(0, 1 - p); y = -20 * p;
                         } else {
-                            s.classList.remove('active');
+                            op = 0; y = -20;
                         }
-                    }
-                });
 
-                // Update UI
-                if (jCurEl) jCurEl.textContent = String(activeSlide + 1).padStart(2, '0');
-                if (jBar) jBar.style.width = (jProgress * 100) + '%';
-                if (jHint) jHint.style.opacity = activeSlide === 0 ? Math.max(0, 0.6 - (jProgress * 5)) : '0';
-                updateJourneyDots(activeSlide);
-            }
-
-            // 2. Calculate Video Background Metrics (Pausing during Journey)
-            if (video && video.duration > 0) {
-                const totalScrollable = docH - viewH;
-
-                // Effective scroll removes the vertical height consumed INSIDE the journey section
-                let effectiveScroll = scrollY;
-                if (numSlides > 0 && jRoot) {
-                    if (scrollY > jStart && scrollY <= jEnd - viewH) {
-                        // While inside journey, video pauses at the state exactly when journey started
-                        effectiveScroll = jStart;
-                    } else if (scrollY > jEnd - viewH) {
-                        // After journey, subtract the entire journey scroll distance so it resumes perfectly
-                        effectiveScroll = scrollY - jScrollDist;
-                    }
+                        el.style.opacity = op;
+                        el.style.transform = `translateY(${y}px)`;
+                    });
                 }
+            });
 
-                const effectiveTotal = Math.max(1, totalScrollable - jScrollDist);
-                const vProgress = Math.min(1, Math.max(0, effectiveScroll / effectiveTotal));
-
-                // Add slight easing to video scrubbing to avoid jitter
-                requestAnimationFrame(() => {
-                    video.currentTime = vProgress * video.duration;
-                    if (vBarFill) vBarFill.style.width = (vProgress * 100) + '%';
-                });
-            }
+            // Update UI
+            if (jCurEl) jCurEl.textContent = String(activeSlide + 1).padStart(2, '0');
+            if (jBar) jBar.style.width = (jProgress * 100) + '%';
+            if (jHint) jHint.style.opacity = activeSlide === 0 ? Math.max(0, 0.6 - (jProgress * 5)) : '0';
+            updateJourneyDots(activeSlide);
         }
 
-        window.addEventListener('scroll', onScroll, { passive: true });
-        // Initial call
-        onScroll();
-    })();
+        // 2. Calculate Video Background Metrics (Pausing during Journey)
+        if (video && video.duration > 0) {
+            const totalScrollable = docH - viewH;
+
+            // Effective scroll removes the vertical height consumed INSIDE the journey section
+            let effectiveScroll = scrollY;
+            if (numSlides > 0 && jRoot) {
+                if (scrollY > jStart && scrollY <= jEnd - viewH) {
+                    // While inside journey, video pauses at the state exactly when journey started
+                    effectiveScroll = jStart;
+                } else if (scrollY > jEnd - viewH) {
+                    // After journey, subtract the entire journey scroll distance so it resumes perfectly
+                    effectiveScroll = scrollY - jScrollDist;
+                }
+            }
+
+            const effectiveTotal = Math.max(1, totalScrollable - jScrollDist);
+            const vProgress = Math.min(1, Math.max(0, effectiveScroll / effectiveTotal));
+
+            // Add slight easing to video scrubbing to avoid jitter
+            requestAnimationFrame(() => {
+                video.currentTime = vProgress * video.duration;
+                if (vBarFill) vBarFill.style.width = (vProgress * 100) + '%';
+            });
+        }
+    }
+
+            window.addEventListener('scroll', onScroll, { passive: true });
+    // Initial call
+    onScroll();
+        }) ();
 
     // ── Gallery and Other External Sliders ────────────────────────
 
