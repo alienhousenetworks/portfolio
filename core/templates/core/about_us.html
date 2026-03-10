@@ -422,80 +422,242 @@
     </section>
     {% endif %}
 
-    <!-- Journey Sections (Alternating Full-Width Design) -->
+    <!-- Journey Sections — Fullscreen Scroll-Snap Slide Experience -->
     {% if sections %}
-    <section class="py-32 bg-transparent relative z-10 border-t border-white/5">
-        <div class="container mx-auto px-6">
-            <div class="text-center mb-24">
-                <div
-                    class="inline-block px-4 py-1.5 border border-alien/30 bg-alien/5 text-alien text-[10px] font-mono tracking-[0.4em] uppercase mb-6 rounded-sm backdrop-blur-md">
-                    // Historical_Archive
-                </div>
-                <h2 class="text-5xl md:text-8xl font-orbitron font-black text-white leading-none">THE <span
-                        class="text-alien">JOURNEY</span></h2>
-            </div>
+    <!-- Section intro title (above the sticky container) -->
+    <div
+        class="journey-intro relative z-10 flex flex-col items-center justify-center py-40 pointer-events-none select-none">
+        <div
+            class="inline-block px-4 py-1.5 border border-alien/30 bg-alien/5 text-alien text-[10px] font-mono tracking-[0.4em] uppercase mb-8 rounded-sm backdrop-blur-md">
+            // Historical_Archive
+        </div>
+        <h2 class="text-5xl md:text-8xl font-orbitron font-black text-white leading-none tracking-tight">THE <span
+                class="text-alien">JOURNEY</span></h2>
+    </div>
 
-            <!-- Alternating vertical sections, one per row -->
-            <div class="flex flex-col gap-24">
+    <!-- Sticky scroll-highjack wrapper -->
+    <div id="journey-scroll-root" class="relative z-10" style="height: calc({{ sections|length }} * 100vh);">
+        <div id="journey-sticky" class="sticky top-0 w-full overflow-hidden" style="height: 100vh;">
+            <!-- Shared slide viewport -->
+            <div id="journey-viewport" class="relative w-full h-full">
                 {% for section in sections %}
-                <div class="hud-card rounded-2xl overflow-hidden group relative
-                    {% if forloop.counter|divisibleby:2 %}md:flex-row-reverse{% else %}md:flex-row{% endif %}
-                    flex flex-col md:flex-row">
-                    <!-- HUD Corners -->
-                    <div class="hud-corner hud-tl"></div>
-                    <div class="hud-corner hud-tr"></div>
-                    <div class="hud-corner hud-bl"></div>
-                    <div class="hud-corner hud-br"></div>
+                <div class="journey-slide absolute inset-0 w-full h-full" data-index="{{ forloop.counter0 }}" {% if
+                    forloop.first %}style="transform:translateX(0%);opacity:1;" {% else
+                    %}style="transform:translateX(100%);opacity:0;" {% endif %}>
 
-                    <!-- Image Side -->
+                    <!-- Full-bleed background image -->
                     {% if section.image %}
-                    <div class="md:w-1/2 w-full flex-shrink-0 relative overflow-hidden min-h-[360px] md:min-h-[480px]">
+                    <div class="absolute inset-0 w-full h-full overflow-hidden">
                         <img src="{{ section.image.url }}" alt="{{ section.heading }}"
-                            class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000">
-                        <div class="absolute inset-0 bg-gradient-to-br from-black/60 via-transparent to-black/20"></div>
-                        <!-- HUD badge over image -->
-                        <div
-                            class="absolute top-6 left-6 px-4 py-2 bg-black/70 backdrop-blur-md border border-alien/20 rounded-sm">
-                            <span class="text-alien text-[10px] font-mono tracking-widest font-black">
-                                ARCHIVE_FILE_{{forloop.counter|stringformat:"03d" }}</span>
-
-                        </div>
+                            class="w-full h-full object-cover scale-105" style="filter:brightness(0.35) saturate(1.1);">
                     </div>
                     {% else %}
-                    <!-- Decorative placeholder when no image -->
-                    <div
-                        class="md:w-1/2 w-full flex-shrink-0 relative overflow-hidden min-h-[300px] bg-black/40 flex items-center justify-center border-r border-white/5">
-                        <div class="flex flex-col items-center gap-6 opacity-20">
-                            <i data-lucide="terminal" class="w-24 h-24 text-alien"></i>
-                            <span class="text-alien font-mono text-xs tracking-[0.4em] uppercase">
-                                ARCHIVE_FILE_{{forloop.counter|stringformat:"03d" }}</span>
-
-                        </div>
-                        <!-- Animated scan line -->
-                        <div class="absolute inset-0 pointer-events-none scanline-overlay"></div>
-                    </div>
+                    <div class="absolute inset-0 bg-black/80"></div>
                     {% endif %}
 
-                    <!-- Text Side -->
-                    <div class="md:w-1/2 w-full p-12 md:p-16 flex flex-col justify-center">
-                        <div
-                            class="text-alien font-mono text-[10px] mb-5 tracking-[0.4em] font-black uppercase opacity-60 group-hover:opacity-100 transition-opacity">
-                            ARCHIVE_FILE_{{ forloop.counter }}
-                        </div>
-                        <h3
-                            class="text-3xl md:text-5xl font-orbitron font-bold text-white mb-8 leading-tight group-hover:text-alien transition-colors duration-500">
-                            {{ section.heading }}
-                        </h3>
-                        <div
-                            class="text-gray-300 text-base leading-relaxed prose prose-invert max-w-none prose-p:mb-4 prose-p:text-gray-300">
-                            {{ section.content|safe }}
+                    <!-- Gradient overlays — blend with scroll video underneath -->
+                    <div
+                        class="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-transparent pointer-events-none">
+                    </div>
+                    <div
+                        class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/40 pointer-events-none">
+                    </div>
+
+                    <!-- Scanline texture -->
+                    <div class="absolute inset-0 scanline-overlay pointer-events-none" style="opacity:0.3;"></div>
+
+                    <!-- Content -->
+                    <div class="absolute inset-0 flex items-center z-10">
+                        <div class="px-10 md:px-24 lg:px-40 max-w-4xl">
+                            <!-- Archive badge -->
+                            <div class="flex items-center gap-4 mb-8">
+                                <span class="h-px w-16 bg-alien inline-block"></span>
+                                <span class="text-alien text-[10px] font-mono tracking-[0.5em] uppercase font-black">
+                                    ARCHIVE_FILE_{{ forloop.counter|stringformat:"03d" }}
+                                </span>
+                            </div>
+                            <!-- Index / counter -->
+                            <div class="text-white/10 font-orbitron font-black leading-none mb-4 select-none"
+                                style="font-size: clamp(5rem,15vw,14rem); line-height:1;">
+                                {{ forloop.counter|stringformat:"02d" }}
+                            </div>
+                            <!-- Heading -->
+                            <h3 class="font-orbitron font-black text-white leading-tight mb-8"
+                                style="font-size: clamp(2rem, 5vw, 4.5rem);">
+                                {{ section.heading }}
+                            </h3>
+                            <!-- Divider -->
+                            <div class="w-24 h-px bg-alien mb-8" style="box-shadow:0 0 12px #00ff41;"></div>
+                            <!-- Body text -->
+                            <div
+                                class="text-gray-300 text-lg leading-relaxed font-light max-w-2xl prose prose-invert prose-p:mb-4 prose-p:text-gray-300">
+                                {{ section.content|safe }}
+                            </div>
                         </div>
                     </div>
+
+
                 </div>
                 {% endfor %}
+
+                <!-- Slide counter (bottom left) -->
+                <div class="absolute bottom-10 left-10 md:left-24 lg:left-40 z-20 flex items-end gap-4">
+                    <span id="journey-current" class="font-orbitron font-black text-white"
+                        style="font-size:clamp(1.5rem,4vw,3rem);">01</span>
+                    <span class="text-white/20 font-mono text-xs mb-2">/ <span id="journey-total">{{
+                            sections|length|stringformat:"02d" }}</span></span>
+                </div>
+
+                <!-- Progress bar (bottom) -->
+                <div class="absolute bottom-0 left-0 right-0 h-[2px] bg-white/5 z-20">
+                    <div id="journey-progress-bar" class="h-full bg-alien transition-all duration-300 ease-out"
+                        style="width:0%;box-shadow:0 0 10px #00ff41;"></div>
+                </div>
+
+                <!-- Scroll hint (first slide only) -->
+                <div id="journey-scroll-hint"
+                    class="absolute bottom-16 right-10 md:right-24 z-20 flex flex-col items-center gap-2 opacity-60">
+                    <span class="text-white/40 text-[9px] font-mono tracking-[0.4em] uppercase"
+                        style="writing-mode:vertical-rl;">Scroll</span>
+                    <div class="w-px h-12 bg-gradient-to-b from-alien/60 to-transparent"></div>
+                </div>
             </div>
         </div>
-    </section>
+    </div>
+
+    <style>
+        .journey-intro {
+            background: transparent;
+        }
+
+        .journey-slide {
+            will-change: transform, opacity;
+            transition: transform 0.85s cubic-bezier(0.77, 0, 0.18, 1), opacity 0.7s ease;
+            pointer-events: none;
+        }
+
+        .journey-slide.active {
+            pointer-events: auto;
+        }
+
+        /* Step dots override — we'll manage via JS */
+        .journey-step-dot {
+            transition: all 0.4s ease;
+        }
+    </style>
+
+    <script>
+        (function () {
+            const root = document.getElementById('journey-scroll-root');
+            const slides = document.querySelectorAll('.journey-slide');
+            const curEl = document.getElementById('journey-current');
+            const bar = document.getElementById('journey-progress-bar');
+            const hint = document.getElementById('journey-scroll-hint');
+            const total = slides.length;
+            if (!root || total === 0) return;
+
+            // Dot markers — one set per slide (we rendered them inside each slide, but let's
+            // use a single shared dot bar instead via JS injection at the right side
+            const dotsContainer = document.createElement('div');
+            dotsContainer.style.cssText = 'position:absolute;right:2rem;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:10px;z-index:30;';
+            slides[0].parentElement.appendChild(dotsContainer);
+            const dots = [];
+            for (let i = 0; i < total; i++) {
+                const d = document.createElement('div');
+                d.style.cssText = 'width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);transition:all 0.4s ease;cursor:pointer;';
+                d.addEventListener('click', () => jumpTo(i));
+                dotsContainer.appendChild(d);
+                dots.push(d);
+            }
+
+            let current = 0;
+
+            function updateDots(idx) {
+                dots.forEach((d, i) => {
+                    if (i === idx) {
+                        d.style.background = '#00ff41';
+                        d.style.boxShadow = '0 0 8px #00ff41';
+                        d.style.width = d.style.height = '8px';
+                    } else {
+                        d.style.background = 'rgba(255,255,255,0.2)';
+                        d.style.boxShadow = 'none';
+                        d.style.width = d.style.height = '6px';
+                    }
+                });
+            }
+
+            function showSlide(idx, dir) {
+                // dir: +1 = scroll down (new comes from right), -1 = scroll up (new from left)
+                const incoming = slides[idx];
+                const outgoing = slides[current];
+
+                // Position incoming off-screen in the correct direction
+                const inStart = dir > 0 ? '100%' : '-100%';
+                const outEnd = dir > 0 ? '-100%' : '100%';
+
+                incoming.style.transition = 'none';
+                incoming.style.transform = `translateX(${inStart})`;
+                incoming.style.opacity = '1';
+                incoming.classList.remove('active');
+
+                // Force reflow
+                incoming.offsetHeight; // eslint-disable-line no-unused-expressions
+
+                // Animate both
+                incoming.style.transition = 'transform 0.85s cubic-bezier(0.77,0,0.18,1), opacity 0.7s ease';
+                outgoing.style.transition = 'transform 0.85s cubic-bezier(0.77,0,0.18,1), opacity 0.7s ease';
+
+                incoming.style.transform = 'translateX(0%)';
+                incoming.style.opacity = '1';
+                incoming.classList.add('active');
+
+                outgoing.style.transform = `translateX(${outEnd})`;
+                outgoing.style.opacity = '0';
+                outgoing.classList.remove('active');
+
+                current = idx;
+
+                // Update UI
+                if (curEl) curEl.textContent = String(idx + 1).padStart(2, '0');
+                if (bar) bar.style.width = ((idx / (total - 1 || 1)) * 100) + '%';
+                if (hint) hint.style.opacity = idx === 0 ? '0.6' : '0';
+                updateDots(idx);
+            }
+
+            function jumpTo(idx) {
+                if (idx === current) return;
+                const dir = idx > current ? 1 : -1;
+                showSlide(idx, dir);
+            }
+
+            // Initialise
+            slides.forEach((s, i) => {
+                if (i === 0) { s.style.transform = 'translateX(0%)'; s.style.opacity = '1'; s.classList.add('active'); }
+                else { s.style.transform = 'translateX(100%)'; s.style.opacity = '0'; }
+            });
+            updateDots(0);
+
+            // Scroll driver
+            let lastScroll = -1;
+            window.addEventListener('scroll', function () {
+                const rect = root.getBoundingClientRect();
+                const rootH = root.offsetHeight;
+                const viewH = window.innerHeight;
+                // progress within the root: 0 = top of root at viewport top, 1 = bottom of root leaving viewport
+                const scrolled = -rect.top;
+                const maxScroll = rootH - viewH;
+                if (maxScroll <= 0) return;
+
+                const progress = Math.max(0, Math.min(1, scrolled / maxScroll));
+                const targetIdx = Math.round(progress * (total - 1));
+
+                if (targetIdx === current) return;
+                const dir = targetIdx > current ? 1 : -1;
+                showSlide(targetIdx, dir);
+                lastScroll = scrolled;
+            }, { passive: true });
+        })();
+    </script>
     {% endif %}
 
     <!-- Industries / Services / Platforms Grid -->
