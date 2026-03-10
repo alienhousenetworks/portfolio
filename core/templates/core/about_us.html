@@ -441,9 +441,8 @@
             <!-- Shared slide viewport -->
             <div id="journey-viewport" class="relative w-full h-full">
                 {% for section in sections %}
-                <div class="journey-slide absolute inset-0 w-full h-full" data-index="{{ forloop.counter0 }}" {% if
-                    forloop.first %}style="transform:translateX(0%);opacity:1;" {% else
-                    %}style="transform:translateX(100%);opacity:0;" {% endif %}>
+                <div class="journey-slide absolute inset-0 w-full h-full" data-index="{{ forloop.counter0 }}"
+                    style="transform:translateX(100%);opacity:0;">
 
                     <!-- Full-bleed background image -->
                     {% if section.image %}
