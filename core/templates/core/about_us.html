@@ -267,7 +267,8 @@
     <!-- Hero Section -->
     <header class="relative h-[85vh] md:h-screen flex items-center justify-center overflow-hidden">
         <video id="hero-video" class="absolute inset-0 w-full h-full object-cover" autoplay muted loop playsinline
-            webkit-playsinline preload="auto">
+            webkit-playsinline preload="metadata"
+            poster="https://ik.imagekit.io/s1dw3k80p/AlienHouse_Networks.mp4/ik-thumbnail.jpg">
 
             <source src="https://ik.imagekit.io/s1dw3k80p/AlienHouse_Networks.mp4" type="video/mp4">
 
@@ -874,6 +875,12 @@
         const jHint = document.getElementById('journey-scroll-hint');
         const numSlides = jSlides ? jSlides.length : 0;
 
+        // Isolation fix for scroll-video background
+        if (video) {
+            video.muted = true;
+            video.playsInline = true;
+        }
+
         /* Video Loader Setup */
         if (video) {
             function hideLoader() {
@@ -893,20 +900,29 @@
 
         /* Safari Hero Video Force Play */
         const heroVideo = document.getElementById("hero-video");
+
         if (heroVideo) {
+
             heroVideo.muted = true;
             heroVideo.playsInline = true;
+            heroVideo.setAttribute("playsinline", "");
+            heroVideo.setAttribute("webkit-playsinline", "");
 
-            const startHeroVideo = () => {
-                heroVideo.play().catch(() => { });
-            };
+            function startHeroVideo() {
+                const promise = heroVideo.play();
+                if (promise !== undefined) {
+                    promise.catch(() => { });
+                }
+            }
 
-            // When video can actually render frames
-            heroVideo.addEventListener("canplay", startHeroVideo, { once: true });
+            // Start once metadata exists
+            heroVideo.addEventListener("loadedmetadata", startHeroVideo);
 
-            // Fallback for Safari autoplay restrictions
+            // Backup triggers for Safari autoplay policy
+            window.addEventListener("load", startHeroVideo);
             document.addEventListener("touchstart", startHeroVideo, { once: true });
             document.addEventListener("click", startHeroVideo, { once: true });
+
         }
 
         /* Journey Dot Setup */
