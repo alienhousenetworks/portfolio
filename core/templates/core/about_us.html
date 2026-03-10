@@ -265,7 +265,7 @@
     <!-- Hero Section -->
     <header class="relative h-[85vh] md:h-screen flex items-center justify-center overflow-hidden">
         {% if about_page.hero_video %}
-        {# --- Uploaded video file (highest priority) --- #} <video autoplay loop playsinline
+        {# --- Uploaded video file (highest priority) --- #} <video id="hero-video" autoplay loop muted playsinline
             class="absolute inset-0 w-full h-full object-cover">
             <source src="{{ about_page.hero_video.url }}" type="video/mp4">
         </video>
@@ -279,7 +279,7 @@
             allow="autoplay; encrypted-media" allowfullscreen loading="lazy" title="Hero background video">
         </iframe>
         {% else %}
-        {# Direct link: CDN, GitHub raw mp4/webm, etc. #} <video autoplay loop playsinline
+        {# Direct link: CDN, GitHub raw mp4/webm, etc. #} <video id="hero-video" autoplay loop muted playsinline
             class="absolute inset-0 w-full h-full object-cover">
             <source src="{{ embed.url }}">
         </video>
@@ -346,6 +346,10 @@
 
             <!-- Scroll indicator -->
             <div class="absolute bottom-8 right-10 hidden md:flex flex-col items-center gap-3">
+                <button onclick="toggleHeroAudio()" id="audio-toggle"
+                    class="w-10 h-10 flex items-center justify-center border border-alien/30 bg-black/40 text-alien rounded-full hover:border-alien transition-all mb-4 backdrop-blur-md">
+                    <i data-lucide="volume-x" class="w-5 h-5"></i>
+                </button>
                 <span class="text-white/20 text-[9px] font-mono tracking-[0.4em] uppercase"
                     style="writing-mode:vertical-rl;">Scroll</span>
                 <div class="w-px h-16 bg-gradient-to-b from-alien/50 to-transparent"></div>
@@ -968,10 +972,28 @@
             updateJourneyDots(0);
         }
 
+        let targetVideoTime = 0;
+        let currentVideoTime = 0;
+
+        function smoothScrollLoop() {
+            if (video && video.duration > 0) {
+                // Lerp factor
+                currentVideoTime += (targetVideoTime - currentVideoTime) * 0.1;
+
+                // Set the video time
+                video.currentTime = currentVideoTime;
+
+                // Update bar
+                if (vBarFill) {
+                    const prog = (currentVideoTime / video.duration) * 100;
+                    vBarFill.style.width = prog + '%';
+                }
+            }
+            requestAnimationFrame(smoothScrollLoop);
+        }
+        smoothScrollLoop();
+
         /* Unified Scroll Engine */
-        /* ─────────────────────────────────────────────
-           CINEMATIC JOURNEY SCROLL ENGINE
-        ───────────────────────────────────────────── */
         function onScroll() {
             const scrollY = window.scrollY;
             const viewH = window.innerHeight;
@@ -1001,15 +1023,8 @@
 
                 jSlides.forEach((s, i) => {
                     const lp = localScroll - (i * 2);
-
                     const bg = s.querySelector('.journey-bg');
-                    const texts = [
-                        s.querySelector('.journey-text-0'),
-                        s.querySelector('.journey-text-1'),
-                        s.querySelector('.journey-text-2'),
-                        s.querySelector('.journey-text-3'),
-                        s.querySelector('.journey-text-4')
-                    ];
+                    const texts = [0, 1, 2, 3, 4].map(idx => s.querySelector('.journey-text-' + idx));
 
                     if (lp < -1 || lp > 2) {
                         s.style.opacity = 0;
@@ -1018,7 +1033,6 @@
                     }
 
                     s.style.pointerEvents = 'auto';
-
                     let slideX = 0;
                     let slideOpacity = 1;
 
@@ -1101,7 +1115,7 @@
                 updateJourneyDots(activeSlide);
             }
 
-            /* Scroll Video Sync */
+            /* Scroll Video Sync (Lerp for smoothness) */
             if (video && video.duration > 0) {
                 const totalScrollable = docH - viewH;
                 let effectiveScroll = scrollY;
@@ -1118,18 +1132,29 @@
                 const effectiveTotal = Math.max(1, totalScrollable - jScrollDist);
                 const vProgress = Math.min(1, Math.max(0, effectiveScroll / effectiveTotal));
 
-                requestAnimationFrame(() => {
-                    video.currentTime = vProgress * video.duration;
-                    if (vBarFill) vBarFill.style.width = (vProgress * 100) + '%';
-                });
+                targetVideoTime = vProgress * video.duration;
             }
         }
 
-
         window.addEventListener('scroll', onScroll, { passive: true });
-        // Initial call
         onScroll();
     })();
+
+    function toggleHeroAudio() {
+        const v = document.getElementById('hero-video');
+        const btn = document.getElementById('audio-toggle');
+        if (!v || !btn) return;
+
+        if (v.muted) {
+            v.muted = false;
+            v.volume = 0.5;
+            btn.innerHTML = '<i data-lucide="volume-2" class="w-5 h-5"></i>';
+        } else {
+            v.muted = true;
+            btn.innerHTML = '<i data-lucide="volume-x" class="w-5 h-5"></i>';
+        }
+        if (window.lucide) window.lucide.createIcons();
+    }
 
     // ── Gallery and Other External Sliders ────────────────────────
 
