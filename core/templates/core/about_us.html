@@ -996,6 +996,10 @@
             // First interaction will unmute to fulfill "unmuted by default" request
             const unmuteOnInteraction = () => {
                 heroVideo.muted = false;
+                const overlay = document.getElementById('video-start-overlay');
+                if (overlay) {
+                    overlay.classList.add('opacity-0', 'pointer-events-none');
+                }
                 const btn = document.getElementById('audio-toggle');
                 if (btn) btn.innerHTML = '<i data-lucide="volume-2" class="w-5 h-5"></i>';
                 if (window.lucide) window.lucide.createIcons();
@@ -1270,12 +1274,21 @@
         hv.muted = false;
         hv.play().then(() => {
             if (overlay) {
+                overlay.style.opacity = '0';
+                overlay.style.pointerEvents = 'none';
                 overlay.classList.add('opacity-0', 'pointer-events-none');
             }
             const btn = document.getElementById('audio-toggle');
             if (btn) btn.innerHTML = '<i data-lucide="volume-2" class="w-5 h-5"></i>';
             if (window.lucide) window.lucide.createIcons();
-        }).catch(e => console.error("Manual start error:", e));
+        }).catch(e => {
+            console.error("Manual start error:", e);
+            // Even if play() fails (extremely unlikely for a manual click),
+            // hide the overlay to fulfill user expectation
+            if (overlay) {
+                overlay.classList.add('opacity-0', 'pointer-events-none');
+            }
+        });
     };
 
     // ── Gallery and Other External Sliders ────────────────────────
