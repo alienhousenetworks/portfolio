@@ -264,37 +264,12 @@
 
     <!-- Hero Section -->
     <header class="relative h-[85vh] md:h-screen flex items-center justify-center overflow-hidden">
-        {% if about_page.hero_video %}
-        {# --- Uploaded video file (highest priority) --- #}
-        <video id="hero-video" autoplay loop muted playsinline preload="auto"
-            class="absolute inset-0 w-full h-full object-cover">
-            <source src="{{ about_page.hero_video.url }}" type="video/mp4">
+        <video id="hero-video" class="absolute inset-0 w-full h-full object-cover" autoplay muted loop playsinline
+            webkit-playsinline preload="auto" crossorigin="anonymous">
+
+            <source src="https://ik.imagekit.io/s1dw3k80p/AlienHouse_Networks.mp4" type="video/mp4">
+
         </video>
-        {% elif about_page.hero_video_url %}
-        {# --- External video URL: YouTube or direct CDN/GitHub link --- #}
-        {% with embed=about_page.get_hero_video_embed %}
-        {% if embed.type == 'youtube' %}
-        {# YouTube embed: muted, autoplay, loop, no controls #}
-        <iframe src="{{ embed.url }}" class="absolute inset-0 w-full h-full pointer-events-none"
-            style="width:100%;height:100%;object-fit:cover;border:0;transform:scale(1.1);"
-            allow="autoplay; encrypted-media" allowfullscreen loading="lazy" title="Hero background video">
-        </iframe>
-        {% else %}
-        {# Direct link: CDN, GitHub raw mp4/webm, etc. #}
-        <video id="hero-video" autoplay loop muted playsinline preload="auto"
-            class="absolute inset-0 w-full h-full object-cover">
-            <source src="{{ embed.url }}" type="video/mp4">
-        </video>
-        {% endif %}
-        {% endwith %}
-        {% elif about_page.hero_image %}
-        <div class="absolute inset-0 bg-cover bg-center"
-            style="background-image: url('{{ about_page.hero_image.url }}');"></div>
-        {% else %}
-        <div class="absolute inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-900">
-            <div class="absolute inset-0 bg-grid-pattern opacity-10"></div>
-        </div>
-        {% endif %}
 
         <div class="absolute inset-0 bg-gradient-to-b from-black/70 via-black/30 to-black z-10"></div>
 
@@ -915,17 +890,14 @@
         }
 
         /* Safari Hero Video Force Play */
-        const heroVideo = document.getElementById('hero-video');
-        if (heroVideo) {
-            const forcePlay = () => {
-                heroVideo.play().catch(err => {
-                    console.log("Autoplay blocked, waiting for interaction");
-                });
-            };
-            forcePlay();
-            document.addEventListener('touchstart', forcePlay, { once: true });
-            document.addEventListener('mousedown', forcePlay, { once: true });
-        }
+        document.addEventListener("DOMContentLoaded", () => {
+            const heroVideo = document.getElementById("hero-video");
+            if (!heroVideo) return;
+            heroVideo.muted = true;
+            heroVideo.addEventListener("loadedmetadata", () => {
+                heroVideo.play().catch(() => { });
+            });
+        });
 
         /* Journey Dot Setup */
         let jDots = [];
