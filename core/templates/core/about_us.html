@@ -298,7 +298,7 @@
 
     <!-- Hero Section -->
     <header class="relative h-[85vh] md:h-screen flex items-center justify-center overflow-hidden">
-        <video id="hero-video" class="absolute inset-0 w-full h-full object-cover" autoplay muted loop playsinline
+        <video id="hero-video" class="absolute inset-0 w-full h-full object-cover" autoplay loop playsinline
             webkit-playsinline preload="metadata"
             poster="https://ik.imagekit.io/s1dw3k80p/AlienHouse_Networks.mp4/ik-thumbnail.jpg">
 
@@ -366,7 +366,7 @@
             <div class="absolute bottom-8 right-10 hidden md:flex flex-col items-center gap-3">
                 <button onclick="toggleHeroAudio()" id="audio-toggle"
                     class="w-10 h-10 flex items-center justify-center border border-alien/30 bg-black/40 text-alien rounded-full hover:border-alien transition-all mb-4 backdrop-blur-md">
-                    <i data-lucide="volume-x" class="w-5 h-5"></i>
+                    <i data-lucide="volume-2" class="w-5 h-5"></i>
                 </button>
                 <span class="text-white/20 text-[9px] font-mono tracking-[0.4em] uppercase"
                     style="writing-mode:vertical-rl;">Scroll</span>
@@ -941,7 +941,7 @@
 
         if (heroVideo) {
 
-            heroVideo.muted = true;
+            heroVideo.muted = false;
             heroVideo.playsInline = true;
             heroVideo.setAttribute("playsinline", "");
             heroVideo.setAttribute("webkit-playsinline", "");
