@@ -242,7 +242,9 @@
             video&hellip;</span>
     </div>
     <!-- ── Fixed Scroll-Driven Background Video ──────────────── -->
-    <video id="scroll-video-bg" muted playsinline preload="auto" src="{{ scroll_url }}"></video>
+    <video id="scroll-video-bg" muted playsinline preload="auto">
+        <source src="{{ scroll_url }}" type="video/mp4">
+    </video>
     <!-- Dark tint so content on top stays readable -->
     <div id="scroll-video-tint"></div>
     <!-- Subtle scanline overlay -->
@@ -265,7 +267,7 @@
     <!-- Hero Section -->
     <header class="relative h-[85vh] md:h-screen flex items-center justify-center overflow-hidden">
         <video id="hero-video" class="absolute inset-0 w-full h-full object-cover" autoplay muted loop playsinline
-            webkit-playsinline preload="auto" crossorigin="anonymous">
+            webkit-playsinline preload="metadata" crossorigin="anonymous">
 
             <source src="https://ik.imagekit.io/s1dw3k80p/AlienHouse_Networks.mp4" type="video/mp4">
 
@@ -890,14 +892,22 @@
         }
 
         /* Safari Hero Video Force Play */
-        document.addEventListener("DOMContentLoaded", () => {
-            const heroVideo = document.getElementById("hero-video");
-            if (!heroVideo) return;
+        const heroVideo = document.getElementById("hero-video");
+        if (heroVideo) {
             heroVideo.muted = true;
-            heroVideo.addEventListener("loadedmetadata", () => {
+            heroVideo.playsInline = true;
+
+            const startHeroVideo = () => {
                 heroVideo.play().catch(() => { });
-            });
-        });
+            };
+
+            // When video can actually render frames
+            heroVideo.addEventListener("canplay", startHeroVideo, { once: true });
+
+            // Fallback for Safari autoplay restrictions
+            document.addEventListener("touchstart", startHeroVideo, { once: true });
+            document.addEventListener("click", startHeroVideo, { once: true });
+        }
 
         /* Journey Dot Setup */
         let jDots = [];
