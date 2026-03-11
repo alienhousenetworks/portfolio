@@ -298,15 +298,14 @@
 
     <!-- Hero Section -->
     <header class="relative h-[85vh] md:h-screen flex items-center justify-center overflow-hidden">
+        <video>
+            {% if about_page.hero_video %}
+            <source src="{{ about_page.hero_video.url }}" type="video/mp4">
+            {% elif about_page.hero_video_url %}
+            <source src="{{ about_page.hero_video_url }}" type="video/mp4">
 
 
-        {% if about_page.hero_video %}
-        <source src="{{ about_page.hero_video.url }}" type="video/mp4">
-        {% elif about_page.hero_video_url %}
-        <source src="{{ about_page.hero_video_url }}" type="video/mp4">
-
-
-        {% endif %}
+            {% endif %}
 
         </video>
 
