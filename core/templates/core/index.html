@@ -432,9 +432,9 @@
                         <!-- Collapsed State / Vertical Strip (Visible mainly on Desktop default) -->
                         <div
                             class="p-6 flex lg:flex-col items-center justify-between lg:w-16 lg:min-w-[4rem] border-b lg:border-b-0 lg:border-r border-white/5 bg-black/20 z-20">
-                            <span
-                                class="font-mono text-[10px] text-gray-500 rotate-0 lg:-rotate-90 whitespace-nowrap">EXP_{{
-                                forloop.counter|stringformat:"02d" }}</span>
+                            <span class="font-mono text-[10px] text-gray-500 rotate-0 lg:-rotate-90 whitespace-nowrap">
+                                EXP_{{forloop.counter|stringformat:"02d" }}</span>
+
                             <div class="my-4 text-purple-500 group-hover:text-white transition-colors">
                                 <i data-lucide="{{ exp.icon_name|default:'flask-conical' }}" class="w-6 h-6"></i>
                             </div>
