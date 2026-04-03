@@ -355,6 +355,11 @@
                             </div>
                         </div>
 
+                        <a href="{% url 'training_list' %}"
+                            class="group h-full flex items-center px-6 cursor-pointer border-l border-alien/5 hover:bg-alien/5 transition-colors text-gray-300 hover:text-alien font-orbitron text-sm tracking-widest">
+                            TRAINING
+                        </a>
+
                         <a href="#rnd"
                             class="group h-full flex items-center px-6 cursor-pointer border-l border-alien/5 hover:bg-alien/5 transition-colors text-gray-300 hover:text-alien font-orbitron text-sm tracking-widest">
                             LABS / R&D
@@ -420,6 +425,10 @@
                     {% endfor %}
                 </div>
             </div>
+
+            <a href="{% url 'training_list' %}" class="text-white font-orbitron text-lg tracking-widest border-b border-alien/20 pb-4 block">
+                TRAINING
+            </a>
 
             <a href="#rnd" class="text-white font-orbitron text-lg tracking-widest border-b border-alien/20 pb-4 block">
                 LABS / R&D

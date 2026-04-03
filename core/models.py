@@ -903,3 +903,124 @@ class JobApplication(models.Model):
 
     def __str__(self):
         return f"{self.full_name} -> {self.job.title}"
+
+
+# ============================================================
+# 10. INDUSTRY TRAINING SYSTEM
+# ============================================================
+
+class TrainingField(BaseModel):
+    """
+    High-level training category, e.g., 'Computer Science Engineering', 'Marketing', 'Human Resources'.
+    """
+    icon = models.CharField(max_length=50, blank=True, help_text="Lucide icon name (e.g. 'cpu', 'users', 'trending-up').")
+    description = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name = "Training Field"
+        verbose_name_plural = "Training Fields"
+
+    def __str__(self):
+        return self.name
+
+
+class TrainingSubField(BaseModel):
+    """
+    Specific niche within a training field, e.g., 'Backend Development', 'Performance Marketing'.
+    """
+    field = models.ForeignKey(TrainingField, on_delete=models.CASCADE, related_name="sub_fields")
+    description = models.TextField(blank=True)
+    image = models.ImageField(upload_to="training/subfields/", blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Training Sub-field"
+        verbose_name_plural = "Training Sub-fields"
+
+    def __str__(self):
+        return f"{self.field.name} -> {self.name}"
+
+    def save(self, *args, **kwargs):
+        if self.image:
+            from .utils import compress_image_to_webp
+            compress_image_to_webp(self.image)
+        super().save(*args, **kwargs)
+
+
+class TrainingPackage(models.Model):
+    """
+    Tiered pricing packages for a specific sub-field.
+    """
+    sub_field = models.ForeignKey(TrainingSubField, on_delete=models.CASCADE, related_name="packages")
+    name = models.CharField(max_length=100, help_text="e.g. 'Basic', 'Pro', 'Premium'")
+    price = models.DecimalField(max_digits=10, decimal_places=2, help_text="Base price in INR.")
+    duration = models.CharField(max_length=100, help_text="e.g. '6 Months', '4 Weeks'")
+    features = models.TextField(help_text="Enter features, one per line.")
+
+    def get_features(self):
+        return self.features.split("\n")
+
+    def __str__(self):
+        return f"{self.sub_field.name} - {self.name}"
+
+
+class ReferralCode(models.Model):
+    """
+    System for tracking student discounts and referrer commissions.
+    """
+    code = models.CharField(max_length=50, unique=True, help_text="Unique referral string (e.g. 'ALIENTRAINING').")
+    discount_percentage = models.DecimalField(max_digits=5, decimal_places=2, help_text="Discount percentage (e.g. 10.00 for 10%)", default=0)
+    commission_percentage = models.DecimalField(max_digits=5, decimal_places=2, help_text="Referrer commission (e.g. 5.00 for 5%)", default=0)
+    is_active = models.BooleanField(default=True)
+    usage_count = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return self.code
+
+
+class TrainingEnrollment(models.Model):
+    """
+    Captures complete student enrollment data, including snapshot of selection and pricing at time of submission.
+    """
+    # 👤 Personal Information
+    full_name = models.CharField(max_length=255)
+    email = models.EmailField()
+    phone = models.CharField(max_length=20)
+    date_of_birth = models.DateField(null=True, blank=True)
+
+    # 🎓 Academic Information
+    college_name = models.CharField(max_length=255, default="")
+    degree = models.CharField(max_length=100, default="")
+    branch = models.CharField(max_length=100, default="")
+    year_of_study = models.CharField(max_length=50, default="")
+
+    # 💼 Professional/Profile Info
+    skills = models.TextField(blank=True, null=True)
+    linkedin_url = models.URLField(blank=True, null=True)
+    github_url = models.URLField(blank=True, null=True)
+
+    # 📦 Enrollment Selection
+    field = models.ForeignKey(TrainingField, on_delete=models.SET_NULL, null=True, blank=True)
+    sub_field = models.ForeignKey(TrainingSubField, on_delete=models.SET_NULL, null=True, blank=True)
+    package = models.ForeignKey(TrainingPackage, on_delete=models.SET_NULL, null=True, blank=True)
+
+    # 💰 Pricing Logic Storage
+    referral_code = models.ForeignKey(ReferralCode, on_delete=models.SET_NULL, null=True, blank=True)
+    original_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    discount_applied = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    final_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
+    # 💳 Payment Status
+    PAYMENT_STATUS_CHOICES = [
+        ('PENDING', 'Pending'),
+        ('COMPLETED', 'Completed'),
+        ('FAILED', 'Failed'),
+    ]
+    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='PENDING')
+
+    enrollment_date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-enrollment_date']
+
+    def __str__(self):
+        return f"{self.full_name} | {self.package.name if self.package else 'N/A'}"

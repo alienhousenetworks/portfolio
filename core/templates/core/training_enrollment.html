@@ -1,0 +1,217 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Enrollment | {{ package.name }} | {{ config.site_name }}{% endblock %}
+
+{% block content %}
+<div class="pt-32 pb-20 px-6">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="mb-12 text-center">
+            <h1 class="font-orbitron font-black text-4xl lg:text-6xl text-white mb-4 tracking-tighter">
+                ENROLLMENT <span class="text-alien">PROTOCOL</span>
+            </h1>
+            <p class="font-mono text-alien opacity-70 tracking-widest uppercase">
+                // SECURE DATA TRANSMISSION CHANNEL INITIATED
+            </p>
+        </div>
+
+        <!-- Enrollment Form -->
+        <form method="post" class="space-y-12">
+            {% csrf_token %}
+            {{ form.field }}
+            {{ form.sub_field }}
+            {{ form.package }}
+
+            <!-- Section 1: Selected Package Info -->
+            <div class="bg-alien/5 border border-alien/20 p-6 flex flex-col md:flex-row justify-between items-center gap-6">
+                <div class="flex items-center gap-4">
+                    <div class="p-3 bg-alien text-black">
+                        <i data-lucide="package" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <p class="font-mono text-[10px] text-alien opacity-50 uppercase tracking-widest">SELECTED_MISSION</p>
+                        <h3 class="font-orbitron font-bold text-xl text-white uppercase">{{ package.sub_field.name }} : {{ package.name }}</h3>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="font-mono text-[10px] text-alien opacity-50 uppercase tracking-widest">BASE_PRICE</p>
+                    <p class="font-orbitron font-black text-2xl text-white" id="base-price">₹{{ package.price|floatformat:2 }}</p>
+                </div>
+            </div>
+
+            <!-- Section 2: Personal Information -->
+            <div class="relative p-8 border border-white/10 bg-alien-dark/40 overflow-hidden">
+                <div class="hud-corner hud-tl opacity-30"></div>
+                <div class="hud-corner hud-tr opacity-30"></div>
+                <h3 class="font-orbitron text-xl text-alien mb-8 uppercase tracking-widest flex items-center gap-2">
+                    <i data-lucide="user" class="w-5 h-5"></i> PERSONAL_IDENTIFICATION
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-mono text-gray-500 ml-1 uppercase">Full Name*</label>
+                        {{ form.full_name }}
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-mono text-gray-500 ml-1 uppercase">Email Address*</label>
+                        {{ form.email }}
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-mono text-gray-500 ml-1 uppercase">Phone Number*</label>
+                        {{ form.phone }}
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-mono text-gray-500 ml-1 uppercase">Date of Birth</label>
+                        {{ form.date_of_birth }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 3: Academic Information -->
+            <div class="relative p-8 border border-white/10 bg-alien-dark/40 overflow-hidden">
+                <div class="hud-corner hud-tl opacity-30"></div>
+                <div class="hud-corner hud-tr opacity-30"></div>
+                <h3 class="font-orbitron text-xl text-alien mb-8 uppercase tracking-widest flex items-center gap-2">
+                    <i data-lucide="graduation-cap" class="w-5 h-5"></i> ACADEMIC_CREDENTIALS
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+                    <div class="col-span-1 md:col-span-2 space-y-1">
+                        <label class="text-[10px] font-mono text-gray-500 ml-1 uppercase">College Name*</label>
+                        {{ form.college_name }}
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-mono text-gray-500 ml-1 uppercase">Degree*</label>
+                        {{ form.degree }}
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-mono text-gray-500 ml-1 uppercase">Branch / Stream*</label>
+                        {{ form.branch }}
+                    </div>
+                    <div class="space-y-1 col-span-1 md:col-span-2">
+                        <label class="text-[10px] font-mono text-gray-500 ml-1 uppercase">Year of Study*</label>
+                        {{ form.year_of_study }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 4: Professional Info -->
+            <div class="relative p-8 border border-white/10 bg-alien-dark/40 overflow-hidden">
+                <div class="hud-corner hud-tl opacity-30"></div>
+                <div class="hud-corner hud-tr opacity-30"></div>
+                <h3 class="font-orbitron text-xl text-alien mb-8 uppercase tracking-widest flex items-center gap-2">
+                    <i data-lucide="briefcase" class="w-5 h-5"></i> PROFESSIONAL_PROFILE
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+                    <div class="col-span-1 md:col-span-2 space-y-1">
+                        <label class="text-[10px] font-mono text-gray-500 ml-1 uppercase">Skills Overview</label>
+                        {{ form.skills }}
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-mono text-gray-500 ml-1 uppercase">LinkedIn Profile URL</label>
+                        {{ form.linkedin_url }}
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-mono text-gray-500 ml-1 uppercase">GitHub Profile URL</label>
+                        {{ form.github_url }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 5: Referral & Checkout -->
+            <div class="relative p-8 border border-alien/40 bg-alien/5 overflow-hidden">
+                <div class="hud-corner hud-tl"></div>
+                <div class="hud-corner hud-tr"></div>
+                <h3 class="font-orbitron text-xl text-alien mb-8 uppercase tracking-widest flex items-center gap-2">
+                    <i data-lucide="ticket" class="w-5 h-5"></i> REFERRAL_AND_PAYMENT
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+                    <div class="md:col-span-2 space-y-4">
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-mono text-alien ml-1 uppercase tracking-widest">Referral Code*</label>
+                            <div class="relative group">
+                                {{ form.referral_code_text }}
+                                <button type="button" id="apply-code" class="absolute right-2 top-2 bottom-2 px-4 bg-alien text-black font-orbitron font-bold text-xs uppercase hover:bg-white transition-colors">
+                                    APPLY
+                                </button>
+                            </div>
+                            <div id="referral-status" class="font-mono text-[10px] mt-2 h-4"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-black/80 border border-alien/20 p-6 space-y-4">
+                        <div class="flex justify-between items-center text-xs text-gray-500 font-mono">
+                            <span>BASE_COST</span>
+                            <span>₹{{ package.price|floatformat:2 }}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-xs text-alien font-mono">
+                            <span>DISCOUNT</span>
+                            <span id="discount-amount">₹0.00</span>
+                        </div>
+                        <div class="h-px bg-alien/20"></div>
+                        <div class="flex justify-between items-end font-orbitron">
+                            <span class="text-xs text-white opacity-50 mb-1 tracking-widest">PAYABLE</span>
+                            <span class="text-2xl text-white font-black" id="final-price">₹{{ package.price|floatformat:2 }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit -->
+            <div class="text-center pt-8">
+                <button type="submit" class="group/btn relative px-12 py-5 font-orbitron font-black text-lg tracking-[0.3em] uppercase overflow-hidden border-2 border-alien transition-all duration-500 hover:text-black hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(0,255,65,0.2)]">
+                    <div class="absolute inset-0 bg-alien translate-x-[-101%] group-hover/btn:translate-x-0 transition-transform duration-500 ease-out"></div>
+                    <span class="relative z-10">CONFIRM_MISSION_ENROLLMENT</span>
+                </button>
+                <p class="mt-6 font-mono text-[10px] text-gray-600 uppercase tracking-widest">By confirming, you agree to alienhouse training protocols.</p>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const applyBtn = document.getElementById('apply-code');
+        const codeInput = document.querySelector('input[name="referral_code_text"]');
+        const statusDiv = document.getElementById('referral-status');
+        const discountSpan = document.getElementById('discount-amount');
+        const finalPriceSpan = document.getElementById('final-price');
+        const packageId = {{ package.id }};
+
+        applyBtn.addEventListener('click', async function() {
+            const code = codeInput.value.trim();
+            if (!code) {
+                statusDiv.innerText = '// ERROR: CODE_REQUIRED';
+                statusDiv.className = 'font-mono text-[10px] mt-2 text-red-500';
+                return;
+            }
+
+            statusDiv.innerText = '// PROCESSING...';
+            statusDiv.className = 'font-mono text-[10px] mt-2 text-alien animate-pulse';
+
+            try {
+                const response = await fetch(`/api/training/validate-referral/?code=${code}&package_id=${packageId}`);
+                const data = await response.json();
+
+                if (data.valid) {
+                    statusDiv.innerText = `// SUCCESS: DISCOUNT_${data.discount_percent}%_APPLIED`;
+                    statusDiv.className = 'font-mono text-[10px] mt-2 text-alien';
+                    discountSpan.innerText = `₹${data.discount_amount.toFixed(2)}`;
+                    finalPriceSpan.innerText = `₹${data.final_price.toFixed(2)}`;
+                    
+                    // Subtle UI feedback
+                    gsap.to(finalPriceSpan, { scale: 1.2, duration: 0.2, yoyo: true, repeat: 1 });
+                } else {
+                    statusDiv.innerText = `// ERROR: ${data.message.toUpperCase()}`;
+                    statusDiv.className = 'font-mono text-[10px] mt-2 text-red-500';
+                    discountSpan.innerText = '₹0.00';
+                    finalPriceSpan.innerText = '₹{{ package.price|floatformat:2 }}';
+                }
+            } catch (error) {
+                statusDiv.innerText = '// ERROR: UPLINK_FAILURE';
+                statusDiv.className = 'font-mono text-[10px] mt-2 text-red-500';
+            }
+        });
+    });
+</script>
+{% endblock %}

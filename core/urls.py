@@ -12,4 +12,10 @@ urlpatterns = [
     path('careers/<slug:slug>/', views.job_detail, name='job_detail'),
     path('company/<slug:slug>/', views.company_page_detail, name='company_page_detail'),
     path('api/contact/submit/', views.contact_submit, name='contact_submit'),
+    
+    # Industry Training System
+    path('training/', views.training_list, name='training_list'),
+    path('training/subfield/<slug:slug>/', views.training_subfield_detail, name='training_subfield_detail'),
+    path('training/enroll/<int:package_id>/', views.training_enroll, name='training_enroll'),
+    path('api/training/validate-referral/', views.validate_referral, name='validate_referral'),
 ]

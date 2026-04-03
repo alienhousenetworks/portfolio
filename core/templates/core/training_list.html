@@ -1,0 +1,70 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Industry Training | {{ config.site_name }}{% endblock %}
+
+{% block content %}
+<div class="pt-32 pb-20 px-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="mb-16 text-center lg:text-left">
+            <h1 class="font-orbitron font-black text-5xl lg:text-7xl text-white mb-6 tracking-tighter">
+                TRAINING <span class="text-alien">PROTOCOLS</span>
+            </h1>
+            <p class="font-mono text-alien opacity-70 tracking-widest uppercase">
+                // Select Field of Operation to Begin Specialization
+            </p>
+        </div>
+
+        <!-- Fields Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            {% for field in fields %}
+            <div class="group relative bg-alien-dark/40 border border-alien/10 p-8 hover:border-alien/40 transition-all duration-500 overflow-hidden">
+                <!-- Decorative Grid Background for Card -->
+                <div class="absolute inset-0 bg-grid-pattern opacity-5 pointer-events-none"></div>
+                
+                <!-- HUD Corners -->
+                <div class="hud-corner hud-tl"></div>
+                <div class="hud-corner hud-tr"></div>
+                <div class="hud-corner hud-bl"></div>
+                <div class="hud-corner hud-br"></div>
+
+                <div class="relative z-10">
+                    <div class="flex items-start justify-between mb-8">
+                        <div class="p-4 bg-alien/5 text-alien group-hover:bg-alien group-hover:text-black transition-all duration-500">
+                            <i data-lucide="{{ field.icon|default:'zap' }}" class="w-8 h-8"></i>
+                        </div>
+                        <span class="font-mono text-[10px] text-alien/30 tracking-[0.3em] uppercase">Sector: {{ forloop.counter|stringformat:"02d" }}</span>
+                    </div>
+
+                    <h2 class="font-orbitron font-bold text-3xl text-white mb-4 tracking-tight group-hover:text-alien transition-colors">
+                        {{ field.name|upper }}
+                    </h2>
+                    
+                    <p class="text-gray-400 font-rajdhani text-lg leading-relaxed mb-8 border-l-2 border-alien/20 pl-4">
+                        {{ field.description }}
+                    </p>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {% for sub in field.sub_fields.all %}
+                        {% if sub.is_active %}
+                        <a href="{% url 'training_subfield_detail' sub.slug %}" class="flex items-center justify-between p-4 bg-white/5 border border-white/5 hover:border-alien/50 hover:bg-alien/5 group/sub transition-all">
+                            <span class="font-rajdhani font-semibold text-gray-300 group-hover/sub:text-white">{{ sub.name }}</span>
+                            <i data-lucide="arrow-right" class="w-4 h-4 text-alien opacity-0 group-hover/sub:opacity-100 transition-all translate-x-[-10px] group-hover/sub:translate-x-0"></i>
+                        </a>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-span-full border border-red-500/20 bg-red-500/5 p-12 text-center">
+                <i data-lucide="alert-triangle" class="w-12 h-12 text-red-500 mx-auto mb-4"></i>
+                <p class="font-orbitron text-white text-xl uppercase tracking-widest">No Training Sectors Found</p>
+                <p class="font-mono text-red-400 mt-2">// SYSTEM MALFUNCTION: DATA_NOT_FOUND</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
