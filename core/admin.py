@@ -12,7 +12,7 @@ from .models import (
     AboutUsPage, AboutUsSection, AboutUsGalleryImage,
     WhatsNewItem, CustomerStory, EventItem,
     JobPost, JobApplication,
-    # TrainingField, TrainingSubField, TrainingPackage, ReferralCode, TrainingEnrollment
+    TrainingField, TrainingSubField, TrainingPackage, ReferralCode, TrainingEnrollment
 )
 
 # ============================================================
