@@ -909,19 +909,19 @@ class JobApplication(models.Model):
 # 10. INDUSTRY TRAINING SYSTEM
 # ============================================================
 
-# class TrainingField(BaseModel):
-#     """
-#     High-level training category, e.g., 'Computer Science Engineering', 'Marketing', 'Human Resources'.
-#     """
-#     icon = models.CharField(max_length=50, blank=True, help_text="Lucide icon name (e.g. 'cpu', 'users', 'trending-up').")
-#     description = models.TextField(blank=True)
+class TrainingField(BaseModel):
+    """
+    High-level training category, e.g., 'Computer Science Engineering', 'Marketing', 'Human Resources'.
+    """
+    icon = models.CharField(max_length=50, blank=True, help_text="Lucide icon name (e.g. 'cpu', 'users', 'trending-up').")
+    description = models.TextField(blank=True)
 
-#     class Meta:
-#         verbose_name = "Training Field"
-#         verbose_name_plural = "Training Fields"
+    class Meta:
+        verbose_name = "Training Field"
+        verbose_name_plural = "Training Fields"
 
-#     def __str__(self):
-#         return self.name
+    def __str__(self):
+        return self.name
 
 
 class TrainingSubField(BaseModel):
