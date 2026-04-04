@@ -905,9 +905,9 @@ class JobApplication(models.Model):
         return f"{self.full_name} -> {self.job.title}"
 
 
-============================================================
-10. INDUSTRY TRAINING SYSTEM
-============================================================
+# ============================================================
+# 10. INDUSTRY TRAINING SYSTEM
+# ============================================================
 
 class TrainingField(BaseModel):
     """
