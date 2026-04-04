@@ -12,7 +12,8 @@ from .models import (
     AboutUsPage, AboutUsSection, AboutUsGalleryImage,
     WhatsNewItem, CustomerStory, EventItem,
     JobPost, JobApplication,
-    TrainingField, TrainingSubField, TrainingPackage, ReferralCode, TrainingEnrollment
+    TrainingField, TrainingSubField, TrainingPackage, ReferralCode, TrainingEnrollment,
+    TrainingIntroSection
 )
 
 # ============================================================
@@ -667,4 +668,29 @@ class TrainingEnrollmentAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request):
         return False # Enrollments should come from the frontend
+
+
+@admin.register(TrainingIntroSection)
+class TrainingIntroSectionAdmin(admin.ModelAdmin, ImagePreviewMixin):
+    list_display = ('heading_main', 'heading_highlight', 'badge_text')
+    
+    fieldsets = (
+        ("Text Content", {
+            'fields': ('badge_text', 'heading_main', 'heading_highlight', 'description', 'cta_text'),
+            'description': "<strong>Impacts:</strong> The 'Industry Training' introduction section on the Home Page."
+        }),
+        ("Feature 1", {
+            'fields': ('feature_1_title', 'feature_1_desc', 'feature_1_icon'),
+        }),
+        ("Feature 2", {
+            'fields': ('feature_2_title', 'feature_2_desc', 'feature_2_icon'),
+        }),
+        ("Media & Status", {
+            'fields': ('image', 'video', 'status_text', 'status_icon'),
+            'description': "<strong>Impacts:</strong> The visual block next to the text. Status text is shown on the pulse overlay."
+        }),
+    )
+
+    def has_add_permission(self, request):
+        return not TrainingIntroSection.objects.exists()
 

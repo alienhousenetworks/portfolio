@@ -909,6 +909,38 @@ class JobApplication(models.Model):
 # 10. INDUSTRY TRAINING SYSTEM
 # ============================================================
 
+class TrainingIntroSection(models.Model):
+    """
+    Manages the 'Industry Training' section on the homepage.
+    """
+    badge_text = models.CharField(max_length=100, default="// SKILL_UPGRADE_PROTOCOL", help_text="Small text badge at the top (e.g. // SKILL_UPGRADE_PROTOCOL)")
+    heading_main = models.CharField(max_length=100, default="INDUSTRY", help_text="Main heading (e.g. INDUSTRY)")
+    heading_highlight = models.CharField(max_length=100, default="TRAINING", help_text="Highlighted heading text (e.g. TRAINING)")
+    description = models.TextField(default="Bridge the gap between academia and the post-human enterprise. Our intensive training programs are designed to transform students into industry-ready sentient assets.")
+    
+    feature_1_title = models.CharField(max_length=100, default="REAL_WORLD_PROJECTS")
+    feature_1_desc = models.CharField(max_length=255, default="Hands-on experience with production systems.")
+    feature_1_icon = models.CharField(max_length=50, default="layout-dashboard", help_text="Lucide icon name")
+
+    feature_2_title = models.CharField(max_length=100, default="CERTIFIED_SPECIALIZATION")
+    feature_2_desc = models.CharField(max_length=255, default="Industry-recognized validation of your expertise.")
+    feature_2_icon = models.CharField(max_length=50, default="shield-check", help_text="Lucide icon name")
+
+    image = models.ImageField(upload_to="training/intro/", blank=True, null=True, help_text="Main image for the training section. If left blank, a fallback icon is shown.")
+    video = models.FileField(upload_to="training/intro_video/", blank=True, null=True, help_text="Optional background video for the training section.")
+    
+    status_text = models.CharField(max_length=100, default="SYSTEM_ONLINE // WAITING_FOR_UPLINK", help_text="Text shown on the image/video overlay.")
+    status_icon = models.CharField(max_length=50, default="zap", help_text="Lucide icon shown on overlay.")
+    
+    cta_text = models.CharField(max_length=100, default="EXPLORE_TRAINING_PROGRAMS")
+    
+    def __str__(self):
+        return f"Training Intro Section: {self.heading_main} {self.heading_highlight}"
+
+    class Meta:
+        verbose_name = "Training Intro Section"
+        verbose_name_plural = "Training Intro Section"
+
 class TrainingField(BaseModel):
     """
     High-level training category, e.g., 'Computer Science Engineering', 'Marketing', 'Human Resources'.

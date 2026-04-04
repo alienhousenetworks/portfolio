@@ -3,7 +3,8 @@ import json
 from .models import (
     SiteConfiguration, HeroSection, ServiceModule, 
     BusinessTeamMember, ClientTicker, TacticalAdvantage, 
-    Project, LabExperiment, AboutUs, ClientLogo, Testimonial
+    Project, LabExperiment, AboutUs, ClientLogo, Testimonial,
+    TrainingIntroSection
 )
 
 
@@ -30,6 +31,7 @@ def index(request):
     experiments = LabExperiment.objects.all()
     clients_logo = ClientLogo.objects.all()
     testimonials = Testimonial.objects.all()
+    training_section = TrainingIntroSection.objects.first()
     contact_form = ContactForm()
 
     context = {
@@ -44,6 +46,7 @@ def index(request):
         "about_us" : about_us,
         "client_logos" : clients_logo,
         "testimonials": testimonials,
+        "training_section": training_section,
         "contact_form": contact_form,
     }
     
