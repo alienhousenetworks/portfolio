@@ -915,6 +915,7 @@ class TrainingField(BaseModel):
     """
     icon = models.CharField(max_length=50, blank=True, help_text="Lucide icon name (e.g. 'cpu', 'users', 'trending-up').")
     description = models.TextField(blank=True)
+    image = models.ImageField(upload_to="training/fields/", blank=True, null=True)
 
     class Meta:
         verbose_name = "Training Field"
