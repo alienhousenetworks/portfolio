@@ -996,10 +996,32 @@ class TrainingPackage(models.Model):
         return f"{self.sub_field.name} - {self.name}"
 
 
+class SalesPerson(models.Model):
+    """
+    Standard details for a person assigned to a referral code.
+    """
+    name = models.CharField(max_length=255)
+    email = models.EmailField(unique=True)
+    phone = models.CharField(max_length=20, blank=True)
+    address = models.TextField(blank=True, help_text="Physical or correspondence address.")
+    is_active = models.BooleanField(default=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.email})"
+
+    class Meta:
+        verbose_name = "Sales Person"
+        verbose_name_plural = "Sales Persons"
+
+
 class ReferralCode(models.Model):
     """
     System for tracking student discounts and referrer commissions.
     """
+    sales_person = models.ForeignKey(SalesPerson, on_delete=models.SET_NULL, null=True, blank=True, related_name="referral_codes", help_text="The person assigned to this referral code.")
     code = models.CharField(max_length=50, unique=True, help_text="Unique referral string (e.g. 'ALIENTRAINING').")
     discount_percentage = models.DecimalField(max_digits=5, decimal_places=2, help_text="Discount percentage (e.g. 10.00 for 10%)", default=0)
     commission_percentage = models.DecimalField(max_digits=5, decimal_places=2, help_text="Referrer commission (e.g. 5.00 for 5%)", default=0)

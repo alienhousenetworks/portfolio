@@ -13,7 +13,7 @@ from .models import (
     WhatsNewItem, CustomerStory, EventItem,
     JobPost, JobApplication,
     TrainingField, TrainingSubField, TrainingPackage, ReferralCode, TrainingEnrollment,
-    TrainingIntroSection
+    TrainingIntroSection, SalesPerson
 )
 
 # ============================================================
@@ -632,11 +632,39 @@ class TrainingPackageAdmin(admin.ModelAdmin):
     list_filter = ('sub_field', 'sub_field__field')
     search_fields = ('name', 'sub_field__name', 'features')
     
+@admin.register(SalesPerson)
+class SalesPersonAdmin(admin.ModelAdmin):
+    list_display = ('name', 'email', 'phone', 'is_active', 'created_at')
+    list_filter = ('is_active',)
+    search_fields = ('name', 'email', 'phone', 'address')
+    fieldsets = (
+        ("Personal Details", {
+            'fields': ('name', 'email', 'phone', 'address', 'is_active'),
+            'description': "Standard details for the sales person assigned to referral codes."
+        }),
+    )
+
 @admin.register(ReferralCode)
 class ReferralCodeAdmin(admin.ModelAdmin):
-    list_display = ('code', 'discount_percentage', 'commission_percentage', 'is_active', 'usage_count')
+    list_display = ('code', 'sales_person', 'discount_percentage', 'commission_percentage', 'is_active', 'usage_count')
+    list_filter = ('is_active', 'sales_person')
+    search_fields = ('code', 'sales_person__name', 'sales_person__email')
     list_editable = ('is_active',)
-    search_fields = ('code',)
+
+    fieldsets = (
+        ("Code Assignment", {
+            'fields': ('code', 'sales_person', 'is_active'),
+            'description': "Each referral code is assigned to a specific sales person."
+        }),
+        ("Financials", {
+            'fields': ('discount_percentage', 'commission_percentage'),
+            'description': "Configure discount for students and commission for the referrer."
+        }),
+        ("Stats", {
+            'fields': ('usage_count',),
+            'description': "Total number of times this code has been used."
+        }),
+    )
     
 @admin.register(TrainingEnrollment)
 class TrainingEnrollmentAdmin(admin.ModelAdmin):
