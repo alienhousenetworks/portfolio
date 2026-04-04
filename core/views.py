@@ -248,104 +248,104 @@ def contact_submit(request):
 # 11. INDUSTRY TRAINING VIEWS
 # ============================================================
 
-# from .models import TrainingField, TrainingSubField, TrainingPackage, ReferralCode, TrainingEnrollment
-# from .forms import TrainingEnrollmentForm
+from .models import TrainingField, TrainingSubField, TrainingPackage, ReferralCode, TrainingEnrollment
+from .forms import TrainingEnrollmentForm
 
-# def training_list(request):
-#     """
-#     Displays all training fields and their associated sub-fields.
-#     """
-#     fields = TrainingField.objects.filter(is_active=True).prefetch_related('sub_fields')
-#     context = {
-#         'fields': fields,
-#         'config': SiteConfiguration.objects.first(),
-#     }
-#     return render(request, 'core/training_list.html', context)
+def training_list(request):
+    """
+    Displays all training fields and their associated sub-fields.
+    """
+    fields = TrainingField.objects.filter(is_active=True).prefetch_related('sub_fields')
+    context = {
+        'fields': fields,
+        'config': SiteConfiguration.objects.first(),
+    }
+    return render(request, 'core/training_list.html', context)
 
-# def training_subfield_detail(request, slug):
-#     """
-#     Displays tiered packages for a selected sub-field.
-#     """
-#     sub_field = get_object_or_404(TrainingSubField, slug=slug, is_active=True)
-#     packages = sub_field.packages.all().order_by('price')
-#     context = {
-#         'sub_field': sub_field,
-#         'packages': packages,
-#         'config': SiteConfiguration.objects.first(),
-#     }
-#     return render(request, 'core/training_packages.html', context)
+def training_subfield_detail(request, slug):
+    """
+    Displays tiered packages for a selected sub-field.
+    """
+    sub_field = get_object_or_404(TrainingSubField, slug=slug, is_active=True)
+    packages = sub_field.packages.all().order_by('price')
+    context = {
+        'sub_field': sub_field,
+        'packages': packages,
+        'config': SiteConfiguration.objects.first(),
+    }
+    return render(request, 'core/training_packages.html', context)
 
-# def training_enroll(request, package_id):
-#     """
-#     Handles student enrollment with referral logic.
-#     """
-#     package = get_object_or_404(TrainingPackage, id=package_id)
-#     sub_field = package.sub_field
-#     field = sub_field.field
+def training_enroll(request, package_id):
+    """
+    Handles student enrollment with referral logic.
+    """
+    package = get_object_or_404(TrainingPackage, id=package_id)
+    sub_field = package.sub_field
+    field = sub_field.field
     
-#     if request.method == 'POST':
-#         form = TrainingEnrollmentForm(request.POST)
-#         if form.is_valid():
-#             enrollment = form.save(commit=False)
+    if request.method == 'POST':
+        form = TrainingEnrollmentForm(request.POST)
+        if form.is_valid():
+            enrollment = form.save(commit=False)
             
-#             # Logic for referral and price calculation
-#             referral = form.cleaned_data['referral_code_text'] # This is a ReferralCode object due to clean_ method
+            # Logic for referral and price calculation
+            referral = form.cleaned_data['referral_code_text'] # This is a ReferralCode object due to clean_ method
             
-#             enrollment.package = package
-#             enrollment.sub_field = sub_field
-#             enrollment.field = field
-#             enrollment.referral_code = referral
+            enrollment.package = package
+            enrollment.sub_field = sub_field
+            enrollment.field = field
+            enrollment.referral_code = referral
             
-#             # Snapshots of prices
-#             enrollment.original_price = package.price
-#             discount = (package.price * referral.discount_percentage) / 100
-#             enrollment.discount_applied = discount
-#             enrollment.final_price = package.price - discount
+            # Snapshots of prices
+            enrollment.original_price = package.price
+            discount = (package.price * referral.discount_percentage) / 100
+            enrollment.discount_applied = discount
+            enrollment.final_price = package.price - discount
             
-#             enrollment.save()
+            enrollment.save()
             
-#             # Track usage
-#             referral.usage_count += 1
-#             referral.save()
+            # Track usage
+            referral.usage_count += 1
+            referral.save()
             
-#             messages.success(request, f"CONGRATULATIONS {enrollment.full_name.upper()}! YOUR ENROLLMENT PROTOCOL IS INITIATED.")
-#             return render(request, 'core/training_success.html', {'enrollment': enrollment})
-#         else:
-#             messages.error(request, "SYSTEM ERROR: DATA CORRUPTION IN FORM SUBMISSION. PLEASE VERIFY DETAILS.")
-#     else:
-#         # Pre-fill hidden fields
-#         form = TrainingEnrollmentForm(initial={
-#             'field': field,
-#             'sub_field': sub_field,
-#             'package': package
-#         })
+            messages.success(request, f"CONGRATULATIONS {enrollment.full_name.upper()}! YOUR ENROLLMENT PROTOCOL IS INITIATED.")
+            return render(request, 'core/training_success.html', {'enrollment': enrollment})
+        else:
+            messages.error(request, "SYSTEM ERROR: DATA CORRUPTION IN FORM SUBMISSION. PLEASE VERIFY DETAILS.")
+    else:
+        # Pre-fill hidden fields
+        form = TrainingEnrollmentForm(initial={
+            'field': field,
+            'sub_field': sub_field,
+            'package': package
+        })
     
-#     context = {
-#         'form': form,
-#         'package': package,
-#         'config': SiteConfiguration.objects.first(),
-#     }
-#     return render(request, 'core/training_enrollment.html', context)
+    context = {
+        'form': form,
+        'package': package,
+        'config': SiteConfiguration.objects.first(),
+    }
+    return render(request, 'core/training_enrollment.html', context)
 
-# def validate_referral(request):
-#     """
-#     AJAX view to validate referral code and return calculated discount.
-#     """
-#     code_text = request.GET.get('code')
-#     package_id = request.GET.get('package_id')
+def validate_referral(request):
+    """
+    AJAX view to validate referral code and return calculated discount.
+    """
+    code_text = request.GET.get('code')
+    package_id = request.GET.get('package_id')
     
-#     try:
-#         code_obj = ReferralCode.objects.get(code=code_text, is_active=True)
-#         package = TrainingPackage.objects.get(id=package_id)
+    try:
+        code_obj = ReferralCode.objects.get(code=code_text, is_active=True)
+        package = TrainingPackage.objects.get(id=package_id)
         
-#         discount = (package.price * code_obj.discount_percentage) / 100
-#         final_price = package.price - discount
+        discount = (package.price * code_obj.discount_percentage) / 100
+        final_price = package.price - discount
         
-#         return JsonResponse({
-#             'valid': True,
-#             'discount_percent': float(code_obj.discount_percentage),
-#             'discount_amount': float(discount),
-#             'final_price': float(final_price)
-#         })
-#     except (ReferralCode.DoesNotExist, TrainingPackage.DoesNotExist):
-#         return JsonResponse({'valid': False, 'message': 'Invalid or inactive referral code.'})
+        return JsonResponse({
+            'valid': True,
+            'discount_percent': float(code_obj.discount_percentage),
+            'discount_amount': float(discount),
+            'final_price': float(final_price)
+        })
+    except (ReferralCode.DoesNotExist, TrainingPackage.DoesNotExist):
+        return JsonResponse({'valid': False, 'message': 'Invalid or inactive referral code.'})

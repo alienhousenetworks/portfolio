@@ -594,77 +594,77 @@ class JobApplicationAdmin(admin.ModelAdmin):
 # 10. INDUSTRY TRAINING SYSTEM ADMIN
 # ============================================================
 
-# @admin.register(TrainingField)
-# class TrainingFieldAdmin(admin.ModelAdmin):
-#     list_display = ('name', 'icon', 'is_active')
-#     list_editable = ('is_active',)
-#     search_fields = ('name', 'description')
-#     prepopulated_fields = {"slug": ("name",)}
-#     fieldsets = (
-#         ("Field Info", {
-#             'fields': ('name', 'slug', 'icon', 'is_active', 'description'),
-#             'description': "High-level training category (e.g. CSE, HR)."
-#         }),
-#     )
+@admin.register(TrainingField)
+class TrainingFieldAdmin(admin.ModelAdmin):
+    list_display = ('name', 'icon', 'is_active')
+    list_editable = ('is_active',)
+    search_fields = ('name', 'description')
+    prepopulated_fields = {"slug": ("name",)}
+    fieldsets = (
+        ("Field Info", {
+            'fields': ('name', 'slug', 'icon', 'is_active', 'description'),
+            'description': "High-level training category (e.g. CSE, HR)."
+        }),
+    )
 
-# @admin.register(TrainingSubField)
-# class TrainingSubFieldAdmin(admin.ModelAdmin, ImagePreviewMixin):
-#     list_display = ('name', 'field', 'image_preview', 'is_active')
-#     list_filter = ('field', 'is_active')
-#     list_editable = ('is_active',)
-#     search_fields = ('name', 'description', 'field__name')
-#     prepopulated_fields = {"slug": ("name",)}
-#     fieldsets = (
-#         ("Sub-field Info", {
-#             'fields': ('field', 'name', 'slug', 'image', 'is_active', 'description'),
-#             'description': "Specific niche within a field (e.g. Backend Development)."
-#         }),
-#     )
+@admin.register(TrainingSubField)
+class TrainingSubFieldAdmin(admin.ModelAdmin, ImagePreviewMixin):
+    list_display = ('name', 'field', 'image_preview', 'is_active')
+    list_filter = ('field', 'is_active')
+    list_editable = ('is_active',)
+    search_fields = ('name', 'description', 'field__name')
+    prepopulated_fields = {"slug": ("name",)}
+    fieldsets = (
+        ("Sub-field Info", {
+            'fields': ('field', 'name', 'slug', 'image', 'is_active', 'description'),
+            'description': "Specific niche within a field (e.g. Backend Development)."
+        }),
+    )
 
-# class TrainingPackageInline(admin.TabularInline):
-#     model = TrainingPackage
-#     extra = 1
+class TrainingPackageInline(admin.TabularInline):
+    model = TrainingPackage
+    extra = 1
 
-# @admin.register(TrainingPackage)
-# class TrainingPackageAdmin(admin.ModelAdmin):
-#     list_display = ('name', 'sub_field', 'price', 'duration')
-#     list_filter = ('sub_field', 'sub_field__field')
-#     search_fields = ('name', 'sub_field__name', 'features')
+@admin.register(TrainingPackage)
+class TrainingPackageAdmin(admin.ModelAdmin):
+    list_display = ('name', 'sub_field', 'price', 'duration')
+    list_filter = ('sub_field', 'sub_field__field')
+    search_fields = ('name', 'sub_field__name', 'features')
     
-# @admin.register(ReferralCode)
-# class ReferralCodeAdmin(admin.ModelAdmin):
-#     list_display = ('code', 'discount_percentage', 'commission_percentage', 'is_active', 'usage_count')
-#     list_editable = ('is_active',)
-#     search_fields = ('code',)
+@admin.register(ReferralCode)
+class ReferralCodeAdmin(admin.ModelAdmin):
+    list_display = ('code', 'discount_percentage', 'commission_percentage', 'is_active', 'usage_count')
+    list_editable = ('is_active',)
+    search_fields = ('code',)
     
-# @admin.register(TrainingEnrollment)
-# class TrainingEnrollmentAdmin(admin.ModelAdmin):
-#     list_display = ('full_name', 'email', 'package', 'referral_code', 'final_price', 'payment_status', 'enrollment_date')
-#     list_filter = ('payment_status', 'field', 'sub_field', 'package', 'enrollment_date')
-#     search_fields = ('full_name', 'email', 'phone', 'college_name', 'referral_code__code')
-#     readonly_fields = ('enrollment_date', 'original_price', 'discount_applied', 'final_price')
+@admin.register(TrainingEnrollment)
+class TrainingEnrollmentAdmin(admin.ModelAdmin):
+    list_display = ('full_name', 'email', 'package', 'referral_code', 'final_price', 'payment_status', 'enrollment_date')
+    list_filter = ('payment_status', 'field', 'sub_field', 'package', 'enrollment_date')
+    search_fields = ('full_name', 'email', 'phone', 'college_name', 'referral_code__code')
+    readonly_fields = ('enrollment_date', 'original_price', 'discount_applied', 'final_price')
     
-#     fieldsets = (
-#         ("👤 Student Personal Information", {
-#             'fields': ('full_name', 'email', 'phone', 'date_of_birth')
-#         }),
-#         ("🎓 Academic Information", {
-#             'fields': ('college_name', 'degree', 'branch', 'year_of_study')
-#         }),
-#         ("💼 Professional Info", {
-#             'fields': ('skills', 'linkedin_url', 'github_url')
-#         }),
-#         ("📦 Enrollment Details", {
-#             'fields': ('field', 'sub_field', 'package', 'enrollment_date')
-#         }),
-#         ("💰 Pricing & Referral", {
-#             'fields': ('referral_code', 'original_price', 'discount_applied', 'final_price')
-#         }),
-#         ("💳 Status", {
-#             'fields': ('payment_status',)
-#         }),
-#     )
+    fieldsets = (
+        ("👤 Student Personal Information", {
+            'fields': ('full_name', 'email', 'phone', 'date_of_birth')
+        }),
+        ("🎓 Academic Information", {
+            'fields': ('college_name', 'degree', 'branch', 'year_of_study')
+        }),
+        ("💼 Professional Info", {
+            'fields': ('skills', 'linkedin_url', 'github_url')
+        }),
+        ("📦 Enrollment Details", {
+            'fields': ('field', 'sub_field', 'package', 'enrollment_date')
+        }),
+        ("💰 Pricing & Referral", {
+            'fields': ('referral_code', 'original_price', 'discount_applied', 'final_price')
+        }),
+        ("💳 Status", {
+            'fields': ('payment_status',)
+        }),
+    )
 
-#     def has_add_permission(self, request):
-#         return False # Enrollments should come from the frontend
+    def has_add_permission(self, request):
+        return False # Enrollments should come from the frontend
 

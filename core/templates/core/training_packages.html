@@ -1,0 +1,79 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}{{ sub_field.name }} Packages | {{ config.site_name }}{% endblock %}
+
+{% block content %}
+<div class="pt-32 pb-20 px-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="mb-16 text-center">
+            <!-- <a href="{% url 'training_list' %}" class="inline-flex items-center gap-2 text-alien font-mono text-xs mb-8 hover:tracking-widest transition-all">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i> BACK_TO_FIELDS
+            </a> -->
+            <h1 class="font-orbitron font-black text-4xl lg:text-7xl text-white mb-6 tracking-tighter">
+                {{ sub_field.name|upper }} <span class="text-alien">PACKAGES</span>
+            </h1>
+            <p class="font-mono text-alien opacity-70 tracking-widest uppercase">
+                // Select Tier to Initiate Enrollment
+            </p>
+        </div>
+
+        <!-- Tier Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {% for package in packages %}
+            <div
+                class="relative group bg-alien-dark/50 border border-alien/20 p-8 flex flex-col h-full hover:border-alien/60 transition-all duration-500 overflow-hidden shadow-[0_0_20px_rgba(0,255,65,0.05)]">
+                <!-- Decorative Grid Background -->
+                <div class="absolute inset-0 bg-grid-pattern opacity-5 pointer-events-none"></div>
+
+                <!-- Package Badge -->
+                <div
+                    class="absolute top-0 right-0 px-4 py-1 bg-alien text-black font-mono text-[10px] uppercase font-black tracking-widest">
+                    {{ package.name }}
+                </div>
+
+                <div class="mb-12">
+                    <h2
+                        class="font-orbitron font-bold text-2xl text-white mb-4 group-hover:text-alien transition-colors uppercase tracking-tight">
+                        {{ package.name }}
+                    </h2>
+                    <div class="flex items-baseline gap-2 mb-4">
+                        <span class="font-orbitron text-4xl font-extrabold text-white">₹{{ package.price|floatformat:0
+                            }}</span>
+                        <span class="text-gray-500 font-mono text-xs uppercase tracking-widest">/ {{ package.duration
+                            }}</span>
+                    </div>
+                </div>
+
+                <!-- Features List -->
+                <div class="flex-grow space-y-4 mb-10">
+                    {% for feature in package.get_features %}
+                    {% if feature %}
+                    <div class="flex items-start gap-3">
+                        <i data-lucide="check-circle-2" class="w-5 h-5 text-alien shrink-0 mt-0.5"></i>
+                        <span class="text-gray-300 font-rajdhani text-lg leading-tight">{{ feature }}</span>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+
+                <!-- CTA -->
+                <a href="{% url 'training_enroll' package.id %}"
+                    class="group/btn relative w-full py-4 text-center font-orbitron font-bold text-sm tracking-[0.2em] uppercase overflow-hidden border border-alien transition-all duration-500 hover:text-black">
+                    <div
+                        class="absolute inset-0 bg-alien translate-x-[-101%] group-hover/btn:translate-x-0 transition-transform duration-500 ease-out">
+                    </div>
+                    <span class="relative z-10">INITIATE_ENROLLMENT</span>
+                </a>
+            </div>
+            {% empty %}
+            <div class="col-span-full text-center py-20 border border-dashed border-alien/20">
+                <i data-lucide="package-search" class="w-12 h-12 text-alien opacity-30 mx-auto mb-4"></i>
+                <p class="font-mono text-alien/40">// NO_ACTIVE_PACKAGES_FOUND_FOR_SUB_SECTOR</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
