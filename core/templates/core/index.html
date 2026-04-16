@@ -771,18 +771,6 @@
             <!-- Dynamic Map Placeholder -->
             <a href="{% if location.google_map_link %}{{ location.google_map_link }}{% elif location.latitude and location.longitude %}https://www.google.com/maps/search/?api=1&query={{ location.latitude }},{{ location.longitude }}{% else %}https://www.google.com/maps/search/?api=1&query={{ location.address|urlencode }}{% endif %}" target="_blank"
                 class="block w-full h-full relative">
-                
-                <div class="absolute inset-0 bg-gray-900 flex items-center justify-center">
-                    <div class="text-center relative z-10 px-4 py-6 bg-black/60 backdrop-blur-sm border border-alien/30 rounded-lg shadow-[0_0_30px_rgba(0,255,65,0.1)]">
-                        <i data-lucide="map-pin" class="w-12 h-12 text-alien mx-auto mb-4 animate-bounce drop-shadow-[0_0_10px_rgba(0,255,65,0.8)]"></i>
-                        <h3 class="text-2xl font-orbitron text-white tracking-widest">{{ location.name|default:"LOCATE HQ" }}</h3>
-                        <p class="text-alien font-mono text-sm mt-3 uppercase tracking-wider font-bold"><span class="animate-pulse">●</span> CLICK TO ESTABLISH SAT-LINK</p>
-                        <p class="text-gray-400 font-mono text-xs mt-2">{{ location.address }}</p>
-                        {% if location.latitude and location.longitude %}
-                        <p class="text-gray-600 font-mono text-xs mt-1">COORD: {{ location.latitude|floatformat:4 }}, {{ location.longitude|floatformat:4 }}</p>
-                        {% endif %}
-                    </div>
-                </div>
 
                 <!-- Interactive Google Map Background (No API Key Required) -->
                 {% if location.google_map_link and 'embed' in location.google_map_link %}
