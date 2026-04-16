@@ -765,29 +765,44 @@
             </div>
         </div>
 
-        <!-- ========================= MAP SECTION (RESTORED) ======================== -->
+        <!-- ========================= MAP SECTION ======================== -->
+        {% if location %}
         <section class="h-[400px] w-full relative border-t border-alien/20 group overflow-hidden">
-            <!-- Static Map Placeholder -->
-            <a href="https://www.google.com/maps/search/?api=1&query=Gurugram+Haryana" target="_blank"
+            <!-- Dynamic Map Placeholder -->
+            <a href="{% if location.google_map_link %}{{ location.google_map_link }}{% elif location.latitude and location.longitude %}https://www.google.com/maps/search/?api=1&query={{ location.latitude }},{{ location.longitude }}{% else %}https://www.google.com/maps/search/?api=1&query={{ location.address|urlencode }}{% endif %}" target="_blank"
                 class="block w-full h-full relative">
+                
                 <div class="absolute inset-0 bg-gray-900 flex items-center justify-center">
-                    <div class="text-center">
-                        <i data-lucide="map-pin" class="w-12 h-12 text-alien mx-auto mb-4 animate-bounce"></i>
-                        <h3 class="text-2xl font-orbitron text-white">LOCATE HQ</h3>
-                        <p class="text-gray-400 font-mono text-sm mt-2">CLICK TO ESTABLISH SAT-LINK</p>
+                    <div class="text-center relative z-10 px-4 py-6 bg-black/60 backdrop-blur-sm border border-alien/30 rounded-lg shadow-[0_0_30px_rgba(0,255,65,0.1)]">
+                        <i data-lucide="map-pin" class="w-12 h-12 text-alien mx-auto mb-4 animate-bounce drop-shadow-[0_0_10px_rgba(0,255,65,0.8)]"></i>
+                        <h3 class="text-2xl font-orbitron text-white tracking-widest">{{ location.name|default:"LOCATE HQ" }}</h3>
+                        <p class="text-alien font-mono text-sm mt-3 uppercase tracking-wider font-bold"><span class="animate-pulse">●</span> CLICK TO ESTABLISH SAT-LINK</p>
+                        <p class="text-gray-400 font-mono text-xs mt-2">{{ location.address }}</p>
+                        {% if location.latitude and location.longitude %}
+                        <p class="text-gray-600 font-mono text-xs mt-1">COORD: {{ location.latitude|floatformat:4 }}, {{ location.longitude|floatformat:4 }}</p>
+                        {% endif %}
                     </div>
                 </div>
 
-                <!-- Use a static image if available, else this dark bg is fine -->
-                <div
-                    class="absolute inset-0 bg-[url('https://maps.googleapis.com/maps/api/staticmap?center=Gurugram,Haryana&zoom=12&size=600x300&maptype=roadmap&style=feature:all|element:all|saturation:-100|lightness:-60|invert_lightness:true&key=YOUR_API_KEY')] bg-cover bg-center opacity-30 group-hover:opacity-50 transition-opacity duration-500">
-                </div>
+                <!-- Dark Map Background Overlay -->
+                {% if location.google_map_link and 'embed' in location.google_map_link %}
+                    <iframe src="{{ location.google_map_link }}" class="absolute inset-0 w-full h-full opacity-40 group-hover:opacity-70 transition-opacity duration-500 border-0 pointer-events-none filter grayscale sepia-[0.3] hue-rotate-90" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                {% else %}
+                    <img src="https://maps.googleapis.com/maps/api/staticmap?center={% if location.latitude and location.longitude %}{{ location.latitude|stringformat:'f' }},{{ location.longitude|stringformat:'f' }}{% else %}{{ location.address|urlencode }}{% endif %}&zoom=12&size=1000x500&maptype=satellite&style=feature:all|element:all|saturation:-100|lightness:-60|invert_lightness:true&key=YOUR_API_KEY"
+                        class="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:opacity-50 transition-opacity duration-500 saturate-[0.1] mix-blend-screen" alt="Static Map">
+                {% endif %}
 
-                <div
-                    class="absolute inset-0 bg-alien/5 group-hover:bg-alien/10 transition-colors pointer-events-none mix-blend-overlay">
-                </div>
+                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/80 pointer-events-none"></div>
+                <div class="absolute inset-0 bg-alien/5 group-hover:bg-alien/10 transition-colors pointer-events-none mix-blend-overlay"></div>
+                
+                <!-- Corner HUD -->
+                <div class="hud-corner hud-tl opacity-50 m-4"></div>
+                <div class="hud-corner hud-tr opacity-50 m-4"></div>
+                <div class="hud-corner hud-bl opacity-50 m-4"></div>
+                <div class="hud-corner hud-br opacity-50 m-4"></div>
             </a>
         </section>
+        {% endif %}
 
         <script>
             // Trigger cookie banner

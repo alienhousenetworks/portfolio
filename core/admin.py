@@ -11,7 +11,7 @@ from .models import (
     CompanyPage, PageSection, CTA,
     AboutUsPage, AboutUsSection, AboutUsGalleryImage,
     WhatsNewItem, CustomerStory, EventItem,
-    JobPost, JobApplication,
+    JobPost, JobApplication, JobField,
     TrainingField, TrainingSubField, TrainingPackage, ReferralCode, TrainingEnrollment,
     TrainingIntroSection, SalesPerson
 )
@@ -198,30 +198,24 @@ class CompanyProfileAdmin(admin.ModelAdmin):
 
 @admin.register(Location)
 class LocationAdmin(admin.ModelAdmin):
-    list_display = ('name', 'address', 'is_active', 'map_link')
+    list_display = ('name', 'address', 'is_active')
     search_fields = ('name', 'address')
     list_filter = ('is_active',)
-    readonly_fields = ('latitude', 'longitude', 'slug', 'map_link')
+    readonly_fields = ('slug',)
     
     fieldsets = (
         ("Location Details", {
             'fields': ('name', 'address', 'is_active')
         }),
-        ("Auto-Generated Geography", {
-            'description': "These coordinates are automatically calculated from the address.",
-            'fields': (('latitude', 'longitude'), 'map_link')
+        ("Geography", {
+            'description': "Coordinates run via API or you can manually enter them. Set Google Maps URL.",
+            'fields': ('latitude', 'longitude', 'google_map_link')
         }),
         ("Advanced", {
              'classes': ('collapse',),
              'fields': ('slug',),
         }),
     )
-
-    def map_link(self, obj):
-        if obj.latitude and obj.longitude:
-            url = f"https://www.google.com/maps/search/?api=1&query={obj.latitude},{obj.longitude}"
-            return format_html('<a href="{}" target="_blank">View on Google Maps</a>', url)
-        return "N/A"
 
 @admin.register(ContactMessage)
 class ContactMessageAdmin(admin.ModelAdmin):
@@ -537,17 +531,22 @@ class CTAAdmin(admin.ModelAdmin):
 import csv
 from django.http import HttpResponse
 
+@admin.register(JobField)
+class JobFieldAdmin(admin.ModelAdmin):
+    list_display = ('name', 'is_active')
+    search_fields = ('name',)
+
 @admin.register(JobPost)
 class JobPostAdmin(admin.ModelAdmin):
-    list_display = ('title', 'location', 'job_type', 'posted_at', 'is_active')
-    list_filter = ('job_type', 'is_active', 'location')
+    list_display = ('title', 'field', 'location', 'job_type', 'posted_at', 'is_active')
+    list_filter = ('job_type', 'field', 'is_active', 'location')
     search_fields = ('title', 'description', 'location')
     prepopulated_fields = {'slug': ('title',)}
     list_editable = ('is_active',)
 
     fieldsets = (
         ("Job Details", {
-            'fields': ('title', 'slug', 'location', 'job_type', 'salary_range', 'is_active'),
+            'fields': ('title', 'slug', 'field', 'location', 'job_type', 'salary_range', 'is_active'),
             'description': "Basic info about the opening."
         }),
         ("Application Setup", {

@@ -4,7 +4,7 @@ from .models import (
     SiteConfiguration, HeroSection, ServiceModule, 
     BusinessTeamMember, ClientTicker, TacticalAdvantage, 
     Project, LabExperiment, AboutUs, ClientLogo, Testimonial,
-    TrainingIntroSection
+    TrainingIntroSection, Location, JobField
 )
 
 
@@ -33,6 +33,7 @@ def index(request):
     testimonials = Testimonial.objects.all()
     training_section = TrainingIntroSection.objects.first()
     contact_form = ContactForm()
+    location = Location.objects.filter(is_active=True).first()
 
     context = {
         'hero': hero,
@@ -48,6 +49,7 @@ def index(request):
         "testimonials": testimonials,
         "training_section": training_section,
         "contact_form": contact_form,
+        "location": location,
     }
     
     return render(request, 'core/index.html', context)
@@ -195,17 +197,39 @@ def company_page_detail(request, slug):
 # 10. CAREER VIEWS
 # ============================================================
 
-from .models import JobPost
+from .models import JobPost, JobField
 from .forms import JobApplicationForm
 from django.contrib import messages
+from django.db.models import Q
 
 def career_list(request):
     jobs = JobPost.objects.filter(is_active=True).order_by('-posted_at')
     config = SiteConfiguration.objects.first()
-    
+
+    q = request.GET.get('q')
+    job_type = request.GET.get('type')
+    field_id = request.GET.get('field')
+
+    if q:
+        jobs = jobs.filter(Q(title__icontains=q) | Q(description__icontains=q))
+    if job_type:
+        jobs = jobs.filter(job_type=job_type)
+    if field_id:
+        try:
+            jobs = jobs.filter(field_id=int(field_id))
+        except ValueError:
+            pass
+            
+    fields = JobField.objects.all()
+
     context = {
         'jobs': jobs,
         'config': config,
+        'fields': fields,
+        'job_types': JobPost.JOB_TYPES,
+        'current_q': q or '',
+        'current_type': job_type or '',
+        'current_field': field_id or '',
     }
     return render(request, 'core/career.html', context)
 

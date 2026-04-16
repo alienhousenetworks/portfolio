@@ -245,6 +245,7 @@ class Location(BaseModel):
 
     latitude = models.FloatField(blank=True, null=True, help_text="Auto-detected from address. Leave blank to update.")
     longitude = models.FloatField(blank=True, null=True, help_text="Auto-detected from address. Leave blank to update.")
+    google_map_link = models.URLField(blank=True, null=True, help_text="Google Maps URL. If provided, overrides the auto-generated link.")
     # The PointField is removed as it required GeoDjango/GDAL
 
     geo_api = "https://nominatim.openstreetmap.org/search"
@@ -854,6 +855,12 @@ class CTA(models.Model):
 # 9. CAREERS & JOBS
 # ============================================================
 
+class JobField(BaseModel):
+    name = models.CharField(max_length=100)
+    
+    def __str__(self):
+        return self.name
+
 class JobPost(BaseModel):
     JOB_TYPES = [
         ('FULL_TIME', 'Full Time'),
@@ -864,6 +871,7 @@ class JobPost(BaseModel):
     ]
 
     title = models.CharField(max_length=255)
+    field = models.ForeignKey(JobField, null=True, blank=True, on_delete=models.SET_NULL, related_name="jobs")
     location = models.CharField(max_length=100, default="Remote", help_text="e.g. 'San Francisco', 'Remote', 'Hybrid'")
     job_type = models.CharField(max_length=50, choices=JOB_TYPES, default='FULL_TIME')
     salary_range = models.CharField(max_length=100, blank=True, help_text="e.g. '$100k - $120k', 'Competitive'")

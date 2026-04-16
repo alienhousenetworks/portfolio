@@ -472,7 +472,7 @@
                         {% for contact in contacts %}
                         <a href="{{ contact.get_link }}" target="_blank"
                             class="w-10 h-10 rounded border border-gray-700 flex items-center justify-center text-gray-400 hover:border-alien hover:text-alien hover:bg-alien/10 transition-all">
-                            <i data-lucide="{{ contact.contact_type }}"></i>
+                            <i data-lucide="{{ contact.contact_type|lower }}"></i>
                         </a>
                         {% endfor %}
                     </div>
