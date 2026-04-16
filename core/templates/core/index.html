@@ -784,12 +784,13 @@
                     </div>
                 </div>
 
-                <!-- Dark Map Background Overlay -->
+                <!-- Interactive Google Map Background (No API Key Required) -->
                 {% if location.google_map_link and 'embed' in location.google_map_link %}
-                    <iframe src="{{ location.google_map_link }}" class="absolute inset-0 w-full h-full opacity-40 group-hover:opacity-70 transition-opacity duration-500 border-0 pointer-events-none filter grayscale sepia-[0.3] hue-rotate-90" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                    <iframe src="{{ location.google_map_link }}" class="absolute inset-0 w-full h-full opacity-40 group-hover:opacity-70 transition-opacity duration-500 border-0 pointer-events-none filter grayscale sepia-[0.3] hue-rotate-90" allowfullscreen="" loading="lazy"></iframe>
                 {% else %}
-                    <img src="https://maps.googleapis.com/maps/api/staticmap?center={% if location.latitude and location.longitude %}{{ location.latitude|stringformat:'f' }},{{ location.longitude|stringformat:'f' }}{% else %}{{ location.address|urlencode }}{% endif %}&zoom=12&size=1000x500&maptype=satellite&style=feature:all|element:all|saturation:-100|lightness:-60|invert_lightness:true&key=YOUR_API_KEY"
-                        class="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:opacity-50 transition-opacity duration-500 saturate-[0.1] mix-blend-screen" alt="Static Map">
+                    <iframe src="https://maps.google.com/maps?q={% if location.latitude and location.longitude %}{{ location.latitude|stringformat:'f' }},{{ location.longitude|stringformat:'f' }}{% else %}{{ location.address|urlencode }}{% endif %}&z=13&ie=UTF8&iwloc=&output=embed" 
+                        class="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-80 transition-opacity duration-500 border-0 pointer-events-none filter grayscale-[0.8] invert-[0.9] hue-rotate-180 mix-blend-screen" 
+                        allowfullscreen="" loading="lazy"></iframe>
                 {% endif %}
 
                 <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/80 pointer-events-none"></div>
