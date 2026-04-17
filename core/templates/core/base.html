@@ -452,17 +452,42 @@
 
     <footer class="bg-[#050505] border-t border-alien/20 pt-20 pb-10 font-rajdhani text-sm relative z-10">
         <div class="max-w-[1920px] mx-auto px-8">
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12 mb-16">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-12 mb-16">
+                <div>
+                    <h4 class="text-white font-bold mb-6 text-lg">Company</h4>
+                    <ul class="space-y-3 text-gray-500 font-mono">
+                        {% for page in company_pages %}
+                        <li class="hover:text-alien cursor-pointer transition-colors">
+                            <a href="{{ page.get_absolute_url }}">{{ page.title }}</a>
+                        </li>
+                        {% empty %}
+                        <li class="text-gray-600">No company pages found</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
                 <div>
                     <h4 class="text-white font-bold mb-6 text-lg">Capabilities</h4>
                     <ul class="space-y-3 text-gray-500 font-mono">
                         {% for cap in all_services %}
-                        <li class="hover:text-alien cursor-pointer">
+                        <li class="hover:text-alien cursor-pointer transition-colors">
                             <a href="{% url 'service_detail' cap.slug %}">{{ cap.name }}</a>
                         </li>
                         {% empty %}
                         <li class="text-gray-600">No capabilities listed</li>
                         {% endfor %}
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-white font-bold mb-6 text-lg">Resources</h4>
+                    <ul class="space-y-3 text-gray-500 font-mono">
+                        <li class="hover:text-alien cursor-pointer transition-colors">
+                            <a href="{% url 'training_list' %}">Training</a>
+                        </li>
+                        <li class="hover:text-alien cursor-pointer transition-colors">
+                            <a href="#rnd">Labs / R&D</a>
+                        </li>
                     </ul>
                 </div>
 
