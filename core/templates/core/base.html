@@ -7,11 +7,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{{ config.site_name }} | Hyper-Advanced Digital Ecosystems{% endblock %}</title>
 
+    <!-- SEO & Metadata -->
+    <meta name="description" content="{{ config.meta_description|default:'AlienHouse Networks is a professionally managed technology solutions company delivering secure, scalable, and high-performance digital systems for enterprises.' }}">
+    <meta name="keywords" content="{{ config.meta_keywords|default:'AI, Technology, Software, Digital Transformation' }}">
+    <link rel="canonical" href="{{ request.build_absolute_uri }}">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    <meta property="og:title" content="{% block og_title %}{{ config.site_name }} | Hyper-Advanced Digital Ecosystems{% endblock %}">
+    <meta property="og:description" content="{{ config.meta_description|default:'AlienHouse Networks is a professionally managed technology solutions company delivering secure, scalable, and high-performance digital systems for enterprises.' }}">
+    {% if config.logo %}<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ config.logo.url }}">{% endif %}
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="{{ request.build_absolute_uri }}">
+    <meta property="twitter:title" content="{% block twitter_title %}{{ config.site_name }} | Hyper-Advanced Digital Ecosystems{% endblock %}">
+    <meta property="twitter:description" content="{{ config.meta_description|default:'AlienHouse Networks is a professionally managed technology solutions company delivering secure, scalable, and high-performance digital systems for enterprises.' }}">
+    {% if config.logo %}<meta property="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{{ config.logo.url }}">{% endif %}
+
+    <!-- Favicon & Site Icon (Google Search) -->
     {% if config.favicon %}
-    <link rel="icon" type="image/png" href="{{ config.favicon.url }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ config.favicon.url }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ config.favicon.url }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ config.favicon.url }}">
+    <link rel="shortcut icon" href="{{ config.favicon.url }}">
     {% else %}
     <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
+    <link rel="apple-touch-icon" href="{% static 'favicon.ico' %}">
     {% endif %}
+
+    <!-- Schema.org JSON-LD for Google Site Icon & Organization -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "{{ config.site_name|default:'ALIENHOUSE' }}",
+      "url": "{{ request.scheme }}://{{ request.get_host }}",
+      "logo": "{% if config.logo %}{{ request.scheme }}://{{ request.get_host }}{{ config.logo.url }}{% endif %}"
+    }
+    </script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

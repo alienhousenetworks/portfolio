@@ -107,6 +107,11 @@ class SiteConfigurationAdmin(admin.ModelAdmin):
             'fields': ('address', 'email', 'phone'),
             'description': "<strong>Impacts:</strong> These details appear in the footer and on the Contact section/page."
         }),
+        ("Search Engine Optimization (SEO)", {
+            'classes': ('collapse',),
+            'fields': ('meta_description', 'meta_keywords'),
+            'description': "<strong>Impacts:</strong> Controls how your site appears in Google Search results."
+        }),
     )
     
     def has_add_permission(self, request):

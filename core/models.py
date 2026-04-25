@@ -43,6 +43,10 @@ class SiteConfiguration(models.Model):
     phone = models.CharField(max_length=50, default="+91 999-999-9999", help_text="Contact phone number.")
     footer_text = models.CharField(max_length=200, default="Galactic Rights Reserved.", help_text="Text displayed at the very bottom of the page.")
 
+    # SEO Fields
+    meta_description = models.TextField(blank=True, null=True, help_text="A brief summary of your site (150-160 characters) for Google search results.")
+    meta_keywords = models.CharField(max_length=255, blank=True, null=True, help_text="Comma-separated keywords (e.g., AI, Technology, Software).")
+
     def save(self, *args, **kwargs):
         try:
             if self.logo:
