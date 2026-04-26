@@ -27,99 +27,99 @@
                         {{ service.short_description }}
                     </p>
                 </div>
-                <!-- <div class="hidden lg:block border-l border-white/10 pl-8">
-                    <div class="text-[10px] font-mono text-gray-500 uppercase mb-2">Operational Status</div>
+                <div class="hidden lg:block border-l border-white/10 pl-8">
+                    <!-- <div class="text-[10px] font-mono text-gray-500 uppercase mb-2">Operational Status</div> -->
                     <div class="flex items-center gap-2 text-[#00ff41]">
                         <span class="relative flex h-2 w-2">
                             <span
                                 class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00ff41] opacity-75"></span>
                             <span class="relative inline-flex rounded-full h-2 w-2 bg-[#00ff41]"></span>
                         </span>
-                        <span class="font-bold tracking-widest">ENCRYPTED_UPLINK_STABLE</span>
-                    </div> -->
+                        <!-- <span class="font-bold tracking-widest">ENCRYPTED_UPLINK_STABLE</span> -->
+                    </div>
+                </div>
             </div>
         </div>
-</div>
-</section>
+    </section>
 
-<main class="w-full mx-auto px-6 py-12 lg:py-20">
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-start">
+    <main class="w-full mx-auto px-6 py-12 lg:py-20">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-start">
 
-        <div class="lg:col-span-7">
-            <div class="space-y-12">
-                <section class="relative">
-                    <h3 class="text-xs font-orbitron text-[#00ff41] mb-6 tracking-[0.3em] uppercase">>>
-                        System_Overview</h3>
-                    <div class="prose prose-invert prose-lg max-w-none text-gray-400 leading-relaxed">
-                        {{ service.description|linebreaks }}
-                    </div>
+            <div class="lg:col-span-7">
+                <div class="space-y-12">
+                    <section class="relative">
+                        <h3 class="text-xs font-orbitron text-[#00ff41] mb-6 tracking-[0.3em] uppercase">>>
+                            System_Overview</h3>
+                        <div class="prose prose-invert prose-lg max-w-none text-gray-400 leading-relaxed">
+                            {{ service.description|linebreaks }}
+                        </div>
 
 
-                </section>
+                    </section>
 
-                <section class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {% if service.advantage_1 %}
-                    <div
-                        class="p-4 bg-white/5 border border-white/10 rounded hover:bg-[#00ff41]/5 hover:border-[#00ff41]/20 transition-all">
-                        <div class="text-[#00ff41] text-xs font-orbitron mb-1">01_CORE</div>
-                        <div class="text-white font-bold">{{ service.advantage_1 }}</div>
-                    </div>
-                    {% endif %}
-                    {% if service.advantage_2 %}
-                    <div
-                        class="p-4 bg-white/5 border border-white/10 rounded hover:bg-[#00ff41]/5 hover:border-[#00ff41]/20 transition-all">
-                        <div class="text-[#00ff41] text-xs font-orbitron mb-1">02_SYNC</div>
-                        <div class="text-white font-bold">{{ service.advantage_2 }}</div>
-                    </div>
-                    {% endif %}
-                </section>
+                    <section class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {% if service.advantage_1 %}
+                        <div
+                            class="p-4 bg-white/5 border border-white/10 rounded hover:bg-[#00ff41]/5 hover:border-[#00ff41]/20 transition-all">
+                            <div class="text-[#00ff41] text-xs font-orbitron mb-1">01_CORE</div>
+                            <div class="text-white font-bold">{{ service.advantage_1 }}</div>
+                        </div>
+                        {% endif %}
+                        {% if service.advantage_2 %}
+                        <div
+                            class="p-4 bg-white/5 border border-white/10 rounded hover:bg-[#00ff41]/5 hover:border-[#00ff41]/20 transition-all">
+                            <div class="text-[#00ff41] text-xs font-orbitron mb-1">02_SYNC</div>
+                            <div class="text-white font-bold">{{ service.advantage_2 }}</div>
+                        </div>
+                        {% endif %}
+                    </section>
+                </div>
             </div>
+
+            <aside class="lg:col-span-5 sticky top-24">
+                <div class="bg-black/40 border border-white/10 rounded-lg p-6 backdrop-blur-md">
+                    <div class="flex items-center justify-between mb-8">
+                        <h3 class="text-lg font-orbitron text-white uppercase tracking-widest">Available Protocols</h3>
+                        <i data-lucide="layers" class="w-4 h-4 text-[#00ff41]"></i>
+                    </div>
+
+                    <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar focus:outline-none focus:border-[#00ff41]/30 transition-colors"
+                        data-lenis-prevent tabindex="0" style="touch-action: pan-y;">
+                        {% for sub in sub_services %}
+                        <div
+                            class="group p-5 bg-white/5 border border-transparent hover:border-[#00ff41]/40 transition-all duration-300">
+                            <div class="flex justify-between items-start mb-2">
+                                <h4
+                                    class="font-bold text-white group-hover:text-[#00ff41] transition-colors uppercase tracking-wide">
+                                    {{ sub.name }}</h4>
+                                <span class="text-[10px] text-gray-500 font-mono">{{ sub.delivery_time }}</span>
+                            </div>
+                            <p class="text-sm text-gray-500 mb-4 line-clamp-2">{{ sub.description }}</p>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-mono text-[#00ff41]">{{ sub.price_range }}</span>
+                                <button
+                                    class="text-[10px] font-orbitron py-2 px-4 border border-[#00ff41] text-[#00ff41] hover:bg-[#00ff41] hover:text-black transition-all">
+                                    DEPLOY
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mt-8 pt-6 border-t border-white/10">
+                        <a href="#contact" class="flex items-center justify-between group">
+                            <span
+                                class="text-xs font-orbitron text-gray-400 group-hover:text-white transition-colors">REQUEST
+                                CUSTOM BUILD</span>
+                            <i data-lucide="arrow-right"
+                                class="w-4 h-4 text-[#00ff41] group-hover:translate-x-1 transition-transform"></i>
+                        </a>
+                    </div>
+                </div>
+            </aside>
+
         </div>
-
-        <aside class="lg:col-span-5 sticky top-24">
-            <div class="bg-black/40 border border-white/10 rounded-lg p-6 backdrop-blur-md">
-                <div class="flex items-center justify-between mb-8">
-                    <h3 class="text-lg font-orbitron text-white uppercase tracking-widest">Available Protocols</h3>
-                    <i data-lucide="layers" class="w-4 h-4 text-[#00ff41]"></i>
-                </div>
-
-                <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar focus:outline-none focus:border-[#00ff41]/30 transition-colors"
-                    data-lenis-prevent tabindex="0" style="touch-action: pan-y;">
-                    {% for sub in sub_services %}
-                    <div
-                        class="group p-5 bg-white/5 border border-transparent hover:border-[#00ff41]/40 transition-all duration-300">
-                        <div class="flex justify-between items-start mb-2">
-                            <h4
-                                class="font-bold text-white group-hover:text-[#00ff41] transition-colors uppercase tracking-wide">
-                                {{ sub.name }}</h4>
-                            <span class="text-[10px] text-gray-500 font-mono">{{ sub.delivery_time }}</span>
-                        </div>
-                        <p class="text-sm text-gray-500 mb-4 line-clamp-2">{{ sub.description }}</p>
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs font-mono text-[#00ff41]">{{ sub.price_range }}</span>
-                            <button
-                                class="text-[10px] font-orbitron py-2 px-4 border border-[#00ff41] text-[#00ff41] hover:bg-[#00ff41] hover:text-black transition-all">
-                                DEPLOY
-                            </button>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-
-                <div class="mt-8 pt-6 border-t border-white/10">
-                    <a href="javascript:void(0)" onclick="toggleContactModal(true)" class="flex items-center justify-between group">
-                        <span
-                            class="text-xs font-orbitron text-gray-400 group-hover:text-white transition-colors">REQUEST
-                            CUSTOM BUILD</span>
-                        <i data-lucide="arrow-right"
-                            class="w-4 h-4 text-[#00ff41] group-hover:translate-x-1 transition-transform"></i>
-                    </a>
-                </div>
-            </div>
-        </aside>
-
-    </div>
-</main>
+    </main>
 </div>
 
 <style>
