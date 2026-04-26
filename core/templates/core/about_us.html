@@ -513,32 +513,32 @@
                     <div class="absolute inset-0 scanline-overlay pointer-events-none" style="opacity:0.3;"></div>
 
                     <!-- Content -->
-                    <div class="absolute inset-0 flex items-center z-10">
-                        <div class="px-10 md:px-24 lg:px-40 w-full">
+                    <div class="absolute inset-0 flex items-start pt-24 md:pt-32 lg:pt-48 z-10">
+                        <div class="px-10 md:px-24 lg:px-40 w-full relative">
                             <!-- Archive badge -->
-                            <div class="journey-text-0 flex items-center gap-4 mb-8"
+                            <div class="journey-text-0 flex items-center gap-4 mb-4"
                                 style="will-change: transform, opacity; opacity:0; transform:translateY(40px)">
                                 <span class="h-px w-16 bg-alien inline-block"></span>
                                 <span class="text-alien text-[10px] font-mono tracking-[0.5em] uppercase font-black">
                                     ARCHIVE_FILE_{{ forloop.counter|stringformat:"03d" }}
                                 </span>
                             </div>
-                            <!-- Index / counter -->
-                            <div class="journey-text-1 text-white/10 font-orbitron font-black leading-none mb-4 select-none"
-                                style="font-size: clamp(5rem,15vw,14rem); line-height:1; will-change: transform, opacity; opacity:0; transform:translateY(40px)">
+                            <!-- Index / counter (Background Watermark) -->
+                            <div class="journey-text-1 font-orbitron font-black select-none"
+                                style="will-change: transform, opacity; opacity:0; transform:translateY(40px)">
                                 {{ forloop.counter|stringformat:"02d" }}
                             </div>
                             <!-- Heading -->
-                            <h3 class="journey-text-2 font-orbitron font-black text-white leading-tight mb-8"
+                            <h3 class="journey-text-2 font-orbitron font-black text-white leading-tight mb-4"
                                 style="font-size: clamp(2rem, 5vw, 4.5rem); will-change: transform, opacity; opacity:0; transform:translateY(40px)">
                                 {{ section.heading }}
                             </h3>
                             <!-- Divider -->
-                            <div class="journey-text-3 w-24 h-px bg-alien mb-8"
+                            <div class="journey-text-3 w-24 h-px bg-alien mb-6"
                                 style="box-shadow:0 0 12px #00ff41; will-change: transform, opacity; opacity:0; transform:translateY(40px)">
                             </div>
                             <!-- Body text -->
-                            <div class="journey-text-4 max-h-[60vh] overflow-y-auto cyber-scrollbar pr-6 text-gray-300 text-lg md:text-xl leading-relaxed font-light w-full prose prose-invert prose-p:mb-4 prose-p:text-gray-300"
+                            <div class="journey-text-4 max-h-[55vh] overflow-y-auto cyber-scrollbar pr-6 text-gray-300 text-lg md:text-xl leading-relaxed font-light w-full prose prose-invert prose-p:mb-4 prose-p:text-gray-300"
                                 style="will-change: transform, opacity; opacity:0; transform:translateY(40px)">
                                 {{ section.content|safe }}
                             </div>
@@ -591,25 +591,29 @@
         /* Ensure the text container is always above the big background numbers */
         .journey-text-4 {
             position: relative;
-            z-index: 20;
-            /* Higher than the background numbers */
-            max-height: 50vh;
-            /* Prevents content from overflowing off-screen */
+            z-index: 20; /* Higher than the background numbers */
+            max-height: 55vh; /* Prevents content from overflowing off-screen */
             overflow-y: auto;
             padding-bottom: 2rem;
-            mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
-            -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+            mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
         }
 
-        /* Ensure the big numbers stay in the background and don't block clicks */
+        /* Large Background Watermark Numbering */
         .journey-text-1 {
             position: absolute !important;
-            z-index: 0;
-            pointer-events: none;
-            /* Crucial: allows clicks to pass through to the form */
-            opacity: 0.1 !important;
-            /* Keep it subtle */
-            user-select: none;
+            inset: 0 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            z-index: 0 !important;
+            font-size: 55vh !important;
+            color: rgba(0, 255, 65, 0.08) !important; /* Suble Alien Green */
+            pointer-events: none !important;
+            user-select: none !important;
+            margin: 0 !important;
+            line-height: 1 !important;
+            filter: blur(2px);
         }
     </style>
     {% endif %}
