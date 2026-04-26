@@ -103,6 +103,7 @@ class HeroSection(models.Model):
     sub_text = models.TextField(default="We engineer the post-human enterprise...", verbose_name="Subheading Text")
 
     btn_primary_text = models.CharField(max_length=50, default="INITIATE PROTOCOL", verbose_name="Primary Button Label")
+    btn_primary_url = models.CharField(max_length=255, default="#", verbose_name="Primary Button URL", help_text="Link for the primary button.")
     btn_secondary_text = models.CharField(max_length=50, default="VIEW CAPABILITIES", verbose_name="Secondary Button Label")
 
     coord_text = models.CharField(max_length=100, default="COORD: 23.0225° N, 72.5714° E", verbose_name="Coordinates Text", help_text="Decorative coordinates shown on screen.")

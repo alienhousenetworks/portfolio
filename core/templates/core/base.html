@@ -227,7 +227,7 @@
             scroll-behavior: auto !important;
         }
 
-        .lenis.lenis-smooth [data-lenis-prevent] {
+        [data-lenis-prevent] {
             overscroll-behavior: contain;
         }
 
@@ -253,6 +253,32 @@
 
         .text-balance {
             text-wrap: balance;
+        }
+
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(0, 255, 65, 0.2);
+            border-radius: 10px;
+            border: 2px solid transparent;
+            background-clip: content-box;
+        }
+
+        .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+            background: rgba(0, 255, 65, 0.5);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #00ff41 !important;
         }
     </style>
     {% block extra_head %}{% endblock %}
@@ -346,7 +372,7 @@
                                     class="h-1 w-full bg-gradient-to-r from-transparent via-alien to-transparent opacity-50">
                                 </div>
 
-                                <div class="max-h-[60vh] overflow-y-auto p-8">
+                                <div class="max-h-[70vh] overflow-y-auto p-8 custom-scrollbar" data-lenis-prevent>
 
                                     <div class="grid grid-cols-3 gap-6">
                                         {% for svc in all_services %}

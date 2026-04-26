@@ -44,16 +44,12 @@
             {{ hero.sub_text|default:"Advanced AI & Software Consultancy" }}
         </p>
 
-        <div class="flex flex-col sm:flex-row justify-center gap-6 pointer-events-auto">
-            <button
-                class="px-8 py-4 border border-alien bg-alien/10 text-alien hover:bg-alien hover:text-black font-orbitron font-bold tracking-widest transition-all duration-300 transform hover:scale-105"
+        <div class="flex justify-center pointer-events-auto">
+            <a href="{{ hero.btn_primary_url|default:'#' }}"
+                class="px-12 py-4 border border-alien bg-alien/10 text-alien hover:bg-alien hover:text-black font-orbitron font-bold tracking-widest transition-all duration-300 transform hover:scale-105 inline-block text-center"
                 style="clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);">
-                INITIATE PROTOCOL
-            </button>
-            <button
-                class="px-8 py-4 border border-gray-700 text-gray-300 hover:border-white hover:text-white font-orbitron tracking-widest transition-all">
-                VIEW DOCUMENTATION
-            </button>
+                {{ hero.btn_primary_text|default:"INITIATE PROTOCOL" }}
+            </a>
         </div>
     </div>
 </header>

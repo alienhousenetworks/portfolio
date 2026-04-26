@@ -82,7 +82,7 @@
                         <i data-lucide="layers" class="w-4 h-4 text-[#00ff41]"></i>
                     </div>
 
-                    <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar" data-lenis-prevent>
+                    <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar focus:outline-none focus:border-[#00ff41]/30 transition-colors" data-lenis-prevent tabindex="0" style="touch-action: pan-y;">
                         {% for sub in sub_services %}
                         <div class="group p-5 bg-white/5 border border-transparent hover:border-[#00ff41]/40 transition-all duration-300">
                             <div class="flex justify-between items-start mb-2">
@@ -114,11 +114,6 @@
 </div>
 
 <style>
-    /* Custom Scrollbar for the Protocol List */
-    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.02); }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #00ff41; border-radius: 10px; }
-    
     /* Responsive Text handling */
     .prose { max-width: 100% !important; }
 </style>

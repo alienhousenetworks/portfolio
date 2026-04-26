@@ -128,7 +128,7 @@ class HeroSectionAdmin(admin.ModelAdmin):
             'description': "<strong>Impacts:</strong> The content above the fold on the Home Page. 'Main Heading' is the big impact text."
         }),
         ("Action Buttons", {
-            'fields': ('btn_primary_text', 'btn_secondary_text'),
+            'fields': ('btn_primary_text', 'btn_primary_url', 'btn_secondary_text'),
             'description': "<strong>Impacts:</strong> The two main buttons on the Home Page hero section."
         }),
         ("Visual Decorations", {
