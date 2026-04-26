@@ -5,8 +5,10 @@
 
 {% block content %}
 <div class="bg-[#080808] text-gray-300 min-h-screen font-rajdhani relative overflow-hidden">
-    
-    <div class="absolute top-0 left-0 w-full h-screen bg-[radial-gradient(circle_at_20%_30%,#00ff410a_0%,transparent_50%)] pointer-events-none"></div>
+
+    <div
+        class="absolute top-0 left-0 w-full h-screen bg-[radial-gradient(circle_at_20%_30%,#00ff410a_0%,transparent_50%)] pointer-events-none">
+    </div>
 
     <section class="relative pt-32 pb-16 border-b border-white/5 bg-black/50 backdrop-blur-sm">
         <div class="w-full mx-auto px-6">
@@ -14,9 +16,11 @@
                 <div class="max-w-3xl">
                     <div class="flex items-center gap-3 text-[#00ff41] mb-4">
                         <span class="h-[1px] w-8 bg-[#00ff41]"></span>
-                        <span class="text-xs font-mono tracking-[0.5em] uppercase">System Module // {{ service.icon|default:"Active" }}</span>
+                        <span class="text-xs font-mono tracking-[0.5em] uppercase">System Module // {{
+                            service.icon|default:"Active" }}</span>
                     </div>
-                    <h1 class="text-5xl md:text-7xl font-orbitron font-black text-white uppercase tracking-tighter mb-4">
+                    <h1
+                        class="text-5xl md:text-7xl font-orbitron font-black text-white uppercase tracking-tighter mb-4">
                         {{ service.name }}
                     </h1>
                     <p class="text-xl text-gray-400 font-light max-w-2xl">
@@ -27,7 +31,8 @@
                     <div class="text-[10px] font-mono text-gray-500 uppercase mb-2">Operational Status</div>
                     <div class="flex items-center gap-2 text-[#00ff41]">
                         <span class="relative flex h-2 w-2">
-                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00ff41] opacity-75"></span>
+                            <span
+                                class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00ff41] opacity-75"></span>
                             <span class="relative inline-flex rounded-full h-2 w-2 bg-[#00ff41]"></span>
                         </span>
                         <span class="font-bold tracking-widest">ENCRYPTED_UPLINK_STABLE</span>
@@ -39,34 +44,30 @@
 
     <main class="w-full mx-auto px-6 py-12 lg:py-20">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-start">
-            
+
             <div class="lg:col-span-7">
                 <div class="space-y-12">
                     <section class="relative">
-                        <h3 class="text-xs font-orbitron text-[#00ff41] mb-6 tracking-[0.3em] uppercase">>> System_Overview</h3>
+                        <h3 class="text-xs font-orbitron text-[#00ff41] mb-6 tracking-[0.3em] uppercase">>>
+                            System_Overview</h3>
                         <div class="prose prose-invert prose-lg max-w-none text-gray-400 leading-relaxed">
                             {{ service.description|linebreaks }}
                         </div>
-                        
-                        <div class="mt-12 pt-12 border-t border-white/5 opacity-30">
-                            <div class="grid grid-cols-2 gap-4 font-mono text-[10px]">
-                                <div>[ AUTH_LEVEL: ALPHA ]</div>
-                                <div>[ ENCODING: UTF-8 ]</div>
-                                <div>[ PROTOCOL: SECURE ]</div>
-                                <div>[ TRACE: DISABLED ]</div>
-                            </div>
-                        </div>
+
+
                     </section>
 
                     <section class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {% if service.advantage_1 %}
-                        <div class="p-4 bg-white/5 border border-white/10 rounded hover:bg-[#00ff41]/5 hover:border-[#00ff41]/20 transition-all">
+                        <div
+                            class="p-4 bg-white/5 border border-white/10 rounded hover:bg-[#00ff41]/5 hover:border-[#00ff41]/20 transition-all">
                             <div class="text-[#00ff41] text-xs font-orbitron mb-1">01_CORE</div>
                             <div class="text-white font-bold">{{ service.advantage_1 }}</div>
                         </div>
                         {% endif %}
                         {% if service.advantage_2 %}
-                        <div class="p-4 bg-white/5 border border-white/10 rounded hover:bg-[#00ff41]/5 hover:border-[#00ff41]/20 transition-all">
+                        <div
+                            class="p-4 bg-white/5 border border-white/10 rounded hover:bg-[#00ff41]/5 hover:border-[#00ff41]/20 transition-all">
                             <div class="text-[#00ff41] text-xs font-orbitron mb-1">02_SYNC</div>
                             <div class="text-white font-bold">{{ service.advantage_2 }}</div>
                         </div>
@@ -82,17 +83,22 @@
                         <i data-lucide="layers" class="w-4 h-4 text-[#00ff41]"></i>
                     </div>
 
-                    <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar focus:outline-none focus:border-[#00ff41]/30 transition-colors" data-lenis-prevent tabindex="0" style="touch-action: pan-y;">
+                    <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar focus:outline-none focus:border-[#00ff41]/30 transition-colors"
+                        data-lenis-prevent tabindex="0" style="touch-action: pan-y;">
                         {% for sub in sub_services %}
-                        <div class="group p-5 bg-white/5 border border-transparent hover:border-[#00ff41]/40 transition-all duration-300">
+                        <div
+                            class="group p-5 bg-white/5 border border-transparent hover:border-[#00ff41]/40 transition-all duration-300">
                             <div class="flex justify-between items-start mb-2">
-                                <h4 class="font-bold text-white group-hover:text-[#00ff41] transition-colors uppercase tracking-wide">{{ sub.name }}</h4>
+                                <h4
+                                    class="font-bold text-white group-hover:text-[#00ff41] transition-colors uppercase tracking-wide">
+                                    {{ sub.name }}</h4>
                                 <span class="text-[10px] text-gray-500 font-mono">{{ sub.delivery_time }}</span>
                             </div>
                             <p class="text-sm text-gray-500 mb-4 line-clamp-2">{{ sub.description }}</p>
                             <div class="flex items-center justify-between">
                                 <span class="text-xs font-mono text-[#00ff41]">{{ sub.price_range }}</span>
-                                <button class="text-[10px] font-orbitron py-2 px-4 border border-[#00ff41] text-[#00ff41] hover:bg-[#00ff41] hover:text-black transition-all">
+                                <button
+                                    class="text-[10px] font-orbitron py-2 px-4 border border-[#00ff41] text-[#00ff41] hover:bg-[#00ff41] hover:text-black transition-all">
                                     DEPLOY
                                 </button>
                             </div>
@@ -102,8 +108,11 @@
 
                     <div class="mt-8 pt-6 border-t border-white/10">
                         <a href="#contact" class="flex items-center justify-between group">
-                            <span class="text-xs font-orbitron text-gray-400 group-hover:text-white transition-colors">REQUEST CUSTOM BUILD</span>
-                            <i data-lucide="arrow-right" class="w-4 h-4 text-[#00ff41] group-hover:translate-x-1 transition-transform"></i>
+                            <span
+                                class="text-xs font-orbitron text-gray-400 group-hover:text-white transition-colors">REQUEST
+                                CUSTOM BUILD</span>
+                            <i data-lucide="arrow-right"
+                                class="w-4 h-4 text-[#00ff41] group-hover:translate-x-1 transition-transform"></i>
                         </a>
                     </div>
                 </div>
@@ -115,6 +124,8 @@
 
 <style>
     /* Responsive Text handling */
-    .prose { max-width: 100% !important; }
+    .prose {
+        max-width: 100% !important;
+    }
 </style>
 {% endblock %}
