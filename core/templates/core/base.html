@@ -427,7 +427,8 @@
                         </a>
 
                         <div class="flex items-center ml-6">
-                            <a href="#contact"
+                            <a href="{% if request.path == '/' %}#contact{% else %}javascript:void(0){% endif %}"
+                                {% if request.path != '/' %}onclick="toggleContactModal(true)"{% endif %}
                                 class="relative px-6 py-2 bg-alien text-black font-orbitron font-bold text-sm tracking-widest hover:bg-white transition-colors">
                                 CONTACT
                             </a>
@@ -496,7 +497,8 @@
                 LABS / R&D
             </a>
 
-            <a href="#contact"
+            <a href="{% if request.path == '/' %}#contact{% else %}javascript:void(0){% endif %}"
+                {% if request.path != '/' %}onclick="toggleContactModal(true)"{% endif %}
                 class="block text-center w-full py-3 bg-alien text-black font-orbitron font-bold tracking-widest mt-4">
                 INITIATE CONTACT
             </a>
@@ -968,6 +970,116 @@
 
 
     {% block extra_scripts %}{% endblock %}
+    <div id="contact-modal" class="fixed inset-0 z-[100] hidden">
+        <div class="absolute inset-0 bg-black/90 backdrop-blur-md" onclick="toggleContactModal(false)"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl px-6">
+            <div class="bg-gray-900/40 backdrop-blur-xl border border-white/10 p-8 md:p-10 rounded-2xl relative overflow-hidden shadow-[0_0_50px_rgba(0,255,65,0.15)]">
+                <button onclick="toggleContactModal(false)" class="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors z-[60]">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+
+                <!-- Success Overlay -->
+                <div id="modal-success-overlay"
+                    class="absolute inset-0 bg-black/95 z-50 flex flex-col items-center justify-center text-center p-8 transition-opacity duration-500 opacity-0 pointer-events-none">
+                    <div class="w-20 h-20 bg-alien/10 rounded-full flex items-center justify-center mb-6 border border-alien animate-pulse">
+                        <i data-lucide="check" class="w-10 h-10 text-alien"></i>
+                    </div>
+                    <h3 class="text-2xl font-orbitron text-white mb-2">TRANSMISSION RECEIVED</h3>
+                    <p class="text-gray-400 text-sm">Our team is decoding your message.<br>Stand by for response.</p>
+                    <button onclick="resetModalForm()" class="mt-8 text-alien text-xs font-bold tracking-widest hover:text-white transition-colors">SEND ANOTHER</button>
+                </div>
+
+                <div class="mb-8">
+                    <span class="text-alien text-xs font-mono tracking-[0.2em] uppercase mb-2 block">/// Initialize Handshake</span>
+                    <h2 class="text-2xl md:text-4xl font-orbitron font-bold text-white uppercase">Establish <span class="text-alien">Connection</span></h2>
+                </div>
+
+                <form id="modal-contact-form" method="post" action="{% url 'contact_submit' %}" class="space-y-4 relative z-10">
+                    {% csrf_token %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-[10px] font-mono text-gray-500 mb-1 block uppercase tracking-widest">Name</label>
+                            {{ global_contact_form.name }}
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-mono text-gray-500 mb-1 block uppercase tracking-widest">Phone</label>
+                            {{ global_contact_form.phone }}
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-mono text-gray-500 mb-1 block uppercase tracking-widest">Email</label>
+                        {{ global_contact_form.email }}
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-mono text-gray-500 mb-1 block uppercase tracking-widest">Company (Optional)</label>
+                        {{ global_contact_form.company }}
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-mono text-gray-500 mb-1 block uppercase tracking-widest">Message</label>
+                        {{ global_contact_form.message }}
+                    </div>
+
+                    <button type="submit" id="modal-submit-btn"
+                        class="w-full bg-alien text-black font-bold font-orbitron py-4 px-8 hover:bg-white transition-all duration-300 tracking-widest flex items-center justify-center gap-2 group mt-4">
+                        <span>SEND MESSAGE</span>
+                        <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleContactModal(show) {
+            const modal = document.getElementById('contact-modal');
+            if (show) {
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+                lucide.createIcons(); // Ensure icons in modal are rendered
+            } else {
+                modal.classList.add('hidden');
+                document.body.style.overflow = '';
+            }
+        }
+
+        function resetModalForm() {
+            document.getElementById('modal-success-overlay').classList.add('opacity-0', 'pointer-events-none');
+            document.getElementById('modal-contact-form').reset();
+        }
+
+        document.getElementById('modal-contact-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const form = this;
+            const btn = document.getElementById('modal-submit-btn');
+            const originalText = btn.innerHTML;
+            const overlay = document.getElementById('modal-success-overlay');
+
+            btn.innerHTML = '<span class="animate-pulse">TRANSMITTING...</span>';
+            btn.disabled = true;
+
+            fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    overlay.classList.remove('opacity-0', 'pointer-events-none');
+                } else {
+                    alert('Transmission Failed: ' + JSON.stringify(data.errors));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Connection Error. Signal Lost.');
+            })
+            .finally(() => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
+        });
+    </script>
 </body>
 
 </html>

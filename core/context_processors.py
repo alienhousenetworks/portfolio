@@ -1,4 +1,5 @@
 from .models import Service, SiteConfiguration,SiteSettings,FooterLink,ContactInfo,CompanyPage
+from .forms import ContactForm
 
 def global_site_data(request):
     config = SiteConfiguration.objects.first()
@@ -22,4 +23,5 @@ def global_site_data(request):
         'social_links': social_links,
         'contacts': contacts,
         'company_pages': company_pages,
+        'global_contact_form': ContactForm(),
     }
