@@ -587,6 +587,30 @@
         .journey-slide.active {
             pointer-events: auto;
         }
+
+        /* Ensure the text container is always above the big background numbers */
+        .journey-text-4 {
+            position: relative;
+            z-index: 20;
+            /* Higher than the background numbers */
+            max-height: 50vh;
+            /* Prevents content from overflowing off-screen */
+            overflow-y: auto;
+            padding-bottom: 2rem;
+            mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+        }
+
+        /* Ensure the big numbers stay in the background and don't block clicks */
+        .journey-text-1 {
+            position: absolute !important;
+            z-index: 0;
+            pointer-events: none;
+            /* Crucial: allows clicks to pass through to the form */
+            opacity: 0.1 !important;
+            /* Keep it subtle */
+            user-select: none;
+        }
     </style>
     {% endif %}
 
