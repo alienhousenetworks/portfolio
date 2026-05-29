@@ -71,7 +71,7 @@
             <dialog id="dialog-{{ field.id }}" 
                     aria-labelledby="dialog-title-{{ field.id }}"
                     closedby="any"
-                    class="fixed inset-0 m-auto bg-[#020202] border border-alien/30 p-6 sm:p-10 w-[95%] max-w-3xl h-fit max-h-[85vh] overflow-y-auto text-white shadow-[0_0_50px_rgba(0,255,65,0.15)] outline-none opacity-0 backdrop:bg-black/85 backdrop:backdrop-blur-md">
+                    class="fixed inset-0 m-auto bg-[#020202] border border-alien/30 p-6 sm:p-10 w-[90%] max-w-2xl h-fit max-h-[80vh] overflow-y-auto text-white shadow-[0_0_50px_rgba(0,255,65,0.2)] outline-none opacity-0 backdrop:bg-black/85 backdrop:backdrop-blur-md">
                 
                 <!-- HUD Corners -->
                 <div class="hud-corner hud-tl"></div>
@@ -86,37 +86,30 @@
                 </button>
 
                 <!-- Modal Content -->
-                <div class="relative z-10">
-                    <div class="mb-6">
-                        <span class="font-mono text-[10px] text-alien/50 tracking-[0.3em] uppercase block mb-2">// SECTOR: {{ forloop.counter|stringformat:"02d" }}</span>
-                        <h2 id="dialog-title-{{ field.id }}" class="font-orbitron font-black text-2xl sm:text-4xl text-white uppercase tracking-tight">
-                            {{ field.name }}
+                <div class="relative z-10 pt-4">
+                    <div class="mb-6 border-b border-alien/10 pb-4">
+                        <span id="dialog-title-{{ field.id }}" class="font-mono text-[10px] text-alien/50 tracking-[0.3em] uppercase block mb-1">// {{ field.name }}</span>
+                        <h2 class="font-orbitron font-bold text-xl sm:text-2xl text-white uppercase tracking-wider">
+                            SELECT SPECIALIZATION
                         </h2>
                     </div>
 
-                    <div class="text-gray-300 font-rajdhani text-base sm:text-lg leading-relaxed mb-8 border-l-2 border-alien/30 pl-4 bg-alien/5 p-4">
-                        {{ field.description|safe }}
-                    </div>
-
-                    <div>
-                        <p class="font-mono text-xs text-alien/60 tracking-wider uppercase mb-4">// SELECT_SPECIALIZATION_PROGRAM</p>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {% for sub in field.sub_fields.all %}
-                            {% if sub.is_active %}
-                            <a id="modal-subfield-link-{{ sub.id }}" 
-                               href="{% url 'training_subfield_detail' sub.slug %}" 
-                               class="flex items-center justify-between p-4 bg-alien-dark/50 border border-alien/20 border-l-4 border-l-alien/40 hover:border-alien hover:bg-alien/10 group/sub transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.5)]">
-                                <div class="flex items-center gap-3">
-                                    <span class="font-mono text-xs text-alien/50 group-hover/sub:text-alien transition-colors select-none">></span>
-                                    <span class="font-rajdhani font-semibold text-sm sm:text-base text-gray-200 group-hover/sub:text-white transition-colors">
-                                        {{ sub.name }}
-                                    </span>
-                                </div>
-                                <i data-lucide="arrow-right" class="w-4 h-4 text-alien opacity-50 group-hover/sub:opacity-100 transition-all translate-x-0 group-hover/sub:translate-x-1 duration-300"></i>
-                            </a>
-                            {% endif %}
-                            {% endfor %}
-                        </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {% for sub in field.sub_fields.all %}
+                        {% if sub.is_active %}
+                        <a id="modal-subfield-link-{{ sub.id }}" 
+                           href="{% url 'training_subfield_detail' sub.slug %}" 
+                           class="flex items-center justify-between p-5 bg-alien/5 border border-alien/30 border-l-4 border-l-alien hover:border-alien hover:bg-alien/20 group/sub transition-all duration-300 shadow-[0_4px_12px_rgba(0,255,65,0.05)]">
+                            <div class="flex items-center gap-3">
+                                <span class="font-mono text-sm text-alien group-hover/sub:scale-110 transition-transform select-none">></span>
+                                <span class="font-orbitron font-bold text-sm sm:text-base text-white group-hover/sub:text-alien transition-colors tracking-wide">
+                                    {{ sub.name }}
+                                </span>
+                            </div>
+                            <i data-lucide="arrow-right" class="w-5 h-5 text-alien opacity-85 group-hover/sub:opacity-100 transition-all translate-x-0 group-hover/sub:translate-x-1.5 duration-300"></i>
+                        </a>
+                        {% endif %}
+                        {% endfor %}
                     </div>
                 </div>
             </dialog>
