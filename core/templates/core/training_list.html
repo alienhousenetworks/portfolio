@@ -17,7 +17,7 @@
         </div>
 
         <!-- Fields Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+        <div class="grid grid-cols-1 gap-8 lg:gap-12">
             {% for field in fields %}
             <div id="field-card-{{ field.id }}" 
                  class="alien-card group relative bg-alien-dark/40 border border-alien/10 p-6 sm:p-8 hover:border-alien/40 transition-all duration-500 overflow-hidden">
@@ -54,7 +54,7 @@
                     </div>
 
                     <!-- Subfields (Specializations) -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                         {% for sub in field.sub_fields.all %}
                         {% if sub.is_active %}
                         <a id="subfield-link-{{ sub.id }}" 
