@@ -19,8 +19,10 @@
         <!-- Fields Grid -->
         <div class="grid grid-cols-1 gap-8 lg:gap-12">
             {% for field in fields %}
+            <!-- Interactive Field Card -->
             <div id="field-card-{{ field.id }}" 
-                 class="alien-card group relative bg-alien-dark/40 border border-alien/10 p-6 sm:p-8 hover:border-alien/40 transition-all duration-500 overflow-hidden">
+                 onclick="openModal('dialog-{{ field.id }}')"
+                 class="alien-card group relative bg-alien-dark/40 border border-alien/10 p-6 sm:p-8 hover:border-alien/40 hover:bg-alien/5 cursor-pointer transition-all duration-500 overflow-hidden">
                 
                 <!-- Decorative Grid Background for Card -->
                 <div class="absolute inset-0 bg-grid-pattern opacity-5 pointer-events-none"></div>
@@ -49,30 +51,75 @@
                     </h2>
                     
                     <!-- Field Description -->
-                    <div class="text-gray-400 font-rajdhani text-base sm:text-lg leading-relaxed mb-8 border-l-2 border-alien/20 group-hover:border-alien/50 transition-colors duration-500 pl-4">
+                    <div class="text-gray-400 font-rajdhani text-base sm:text-lg leading-relaxed border-l-2 border-alien/20 group-hover:border-alien/50 transition-colors duration-500 pl-4 mb-4">
                         {{ field.description|safe }}
                     </div>
 
-                    <!-- Subfields (Specializations) -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {% for sub in field.sub_fields.all %}
-                        {% if sub.is_active %}
-                        <a id="subfield-link-{{ sub.id }}" 
-                           href="{% url 'training_subfield_detail' sub.slug %}" 
-                           class="flex items-center justify-between p-4 bg-alien-dark/50 border border-alien/20 border-l-4 border-l-alien/40 hover:border-alien/50 hover:border-l-alien hover:bg-alien/10 group/sub transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.5)]">
-                            <div class="flex items-center gap-3">
-                                <span class="font-mono text-xs text-alien/50 group-hover/sub:text-alien transition-colors select-none">></span>
-                                <span class="font-rajdhani font-semibold text-sm sm:text-base text-gray-200 group-hover/sub:text-white transition-colors">
-                                    {{ sub.name }}
-                                </span>
-                            </div>
-                            <i data-lucide="arrow-right" class="w-4 h-4 text-alien opacity-50 group-hover/sub:opacity-100 transition-all translate-x-0 group-hover/sub:translate-x-1 duration-300"></i>
-                        </a>
-                        {% endif %}
-                        {% endfor %}
+                    <!-- Action Trigger Button -->
+                    <div class="mt-8 flex items-center justify-between pt-5 border-t border-alien/10 group-hover:border-alien/30 transition-colors">
+                        <span class="font-orbitron font-bold text-xs sm:text-sm text-alien tracking-widest uppercase">
+                            // VIEW_SPECIALIZATIONS
+                        </span>
+                        <div class="p-2 bg-alien/5 text-alien group-hover:bg-alien group-hover:text-black border border-alien/20 group-hover:border-transparent transition-all duration-300">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                        </div>
                     </div>
                 </div>
             </div>
+
+            <!-- Dialogue Popup Modal -->
+            <dialog id="dialog-{{ field.id }}" 
+                    aria-labelledby="dialog-title-{{ field.id }}"
+                    closedby="any"
+                    class="fixed inset-0 m-auto bg-[#020202] border border-alien/30 p-6 sm:p-10 w-[95%] max-w-3xl h-fit max-h-[85vh] overflow-y-auto text-white shadow-[0_0_50px_rgba(0,255,65,0.15)] outline-none opacity-0 backdrop:bg-black/85 backdrop:backdrop-blur-md">
+                
+                <!-- HUD Corners -->
+                <div class="hud-corner hud-tl"></div>
+                <div class="hud-corner hud-tr"></div>
+                <div class="hud-corner hud-bl"></div>
+                <div class="hud-corner hud-br"></div>
+
+                <!-- Close button -->
+                <button onclick="event.stopPropagation(); closeModal('dialog-{{ field.id }}')" 
+                        class="absolute top-4 right-4 p-2 text-alien/60 hover:text-alien hover:bg-alien/10 border border-transparent hover:border-alien/30 transition-all duration-300">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+
+                <!-- Modal Content -->
+                <div class="relative z-10">
+                    <div class="mb-6">
+                        <span class="font-mono text-[10px] text-alien/50 tracking-[0.3em] uppercase block mb-2">// SECTOR: {{ forloop.counter|stringformat:"02d" }}</span>
+                        <h2 id="dialog-title-{{ field.id }}" class="font-orbitron font-black text-2xl sm:text-4xl text-white uppercase tracking-tight">
+                            {{ field.name }}
+                        </h2>
+                    </div>
+
+                    <div class="text-gray-300 font-rajdhani text-base sm:text-lg leading-relaxed mb-8 border-l-2 border-alien/30 pl-4 bg-alien/5 p-4">
+                        {{ field.description|safe }}
+                    </div>
+
+                    <div>
+                        <p class="font-mono text-xs text-alien/60 tracking-wider uppercase mb-4">// SELECT_SPECIALIZATION_PROGRAM</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {% for sub in field.sub_fields.all %}
+                            {% if sub.is_active %}
+                            <a id="modal-subfield-link-{{ sub.id }}" 
+                               href="{% url 'training_subfield_detail' sub.slug %}" 
+                               class="flex items-center justify-between p-4 bg-alien-dark/50 border border-alien/20 border-l-4 border-l-alien/40 hover:border-alien hover:bg-alien/10 group/sub transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.5)]">
+                                <div class="flex items-center gap-3">
+                                    <span class="font-mono text-xs text-alien/50 group-hover/sub:text-alien transition-colors select-none">></span>
+                                    <span class="font-rajdhani font-semibold text-sm sm:text-base text-gray-200 group-hover/sub:text-white transition-colors">
+                                        {{ sub.name }}
+                                    </span>
+                                </div>
+                                <i data-lucide="arrow-right" class="w-4 h-4 text-alien opacity-50 group-hover/sub:opacity-100 transition-all translate-x-0 group-hover/sub:translate-x-1 duration-300"></i>
+                            </a>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </dialog>
             {% empty %}
             <!-- Fallback Empty State -->
             <div class="col-span-full border border-red-500/20 bg-red-500/5 p-12 text-center">
@@ -84,5 +131,68 @@
         </div>
     </div>
 </div>
+
+<script>
+    function openModal(dialogId) {
+        const dialog = document.getElementById(dialogId);
+        if (!dialog) return;
+        
+        dialog.showModal();
+        
+        // GSAP animate in
+        gsap.killTweensOf(dialog);
+        gsap.fromTo(dialog, 
+            { scale: 0.9, opacity: 0, y: 30 },
+            { scale: 1, opacity: 1, y: 0, duration: 0.4, ease: "power3.out" }
+        );
+    }
+
+    function closeModal(dialogId) {
+        const dialog = document.getElementById(dialogId);
+        if (!dialog) return;
+        
+        // GSAP animate out
+        gsap.killTweensOf(dialog);
+        gsap.to(dialog, {
+            scale: 0.9,
+            opacity: 0,
+            y: 30,
+            duration: 0.3,
+            ease: "power3.in",
+            onComplete: () => {
+                dialog.close();
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // Handle close/cancel animations and click outside fallback
+        document.querySelectorAll('dialog').forEach(dialog => {
+            // Handle cancel event (Esc key) to animate out nicely
+            dialog.addEventListener('cancel', (e) => {
+                e.preventDefault();
+                closeModal(dialog.id);
+            });
+
+            // Prevent event bubbling when clicking inside the dialog
+            dialog.addEventListener('click', (event) => {
+                // If the target is the dialog tag itself, it's the backdrop
+                if (event.target !== dialog) return;
+                
+                // Fallback for browsers without closedby support (like Safari)
+                const rect = dialog.getBoundingClientRect();
+                const isDialogContent = (
+                    rect.top <= event.clientY &&
+                    event.clientY <= rect.top + rect.height &&
+                    rect.left <= event.clientX &&
+                    event.clientX <= rect.left + rect.width
+                );
+                if (!isDialogContent) {
+                    closeModal(dialog.id);
+                }
+            });
+        });
+    });
+</script>
 {% endblock %}
 
