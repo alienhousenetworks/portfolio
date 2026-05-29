@@ -29,9 +29,9 @@
             <!-- Subfield Specialization Description -->
             <div class="text-left bg-alien-dark/30 border-l-2 border-alien/20 hover:border-alien/60 p-5 sm:p-6 mb-12 transition-colors duration-500">
                 <p class="font-mono text-[10px] text-alien opacity-50 uppercase tracking-widest mb-2">// SPECIALIZATION_PROTOCOL_OVERVIEW</p>
-                <p class="text-gray-300 font-rajdhani text-base sm:text-lg leading-relaxed">
-                    {{ sub_field.description|linebreaksbr }}
-                </p>
+                <div class="text-gray-300 font-rajdhani text-base sm:text-lg leading-relaxed">
+                    {{ sub_field.description|safe }}
+                </div>
             </div>
             {% endif %}
         </div>

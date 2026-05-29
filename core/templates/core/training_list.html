@@ -49,9 +49,9 @@
                     </h2>
                     
                     <!-- Field Description -->
-                    <p class="text-gray-400 font-rajdhani text-base sm:text-lg leading-relaxed mb-8 border-l-2 border-alien/20 group-hover:border-alien/50 transition-colors duration-500 pl-4">
-                        {{ field.description|linebreaksbr }}
-                    </p>
+                    <div class="text-gray-400 font-rajdhani text-base sm:text-lg leading-relaxed mb-8 border-l-2 border-alien/20 group-hover:border-alien/50 transition-colors duration-500 pl-4">
+                        {{ field.description|safe }}
+                    </div>
 
                     <!-- Subfields (Specializations) -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
