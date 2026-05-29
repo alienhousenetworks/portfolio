@@ -59,11 +59,14 @@
                         {% if sub.is_active %}
                         <a id="subfield-link-{{ sub.id }}" 
                            href="{% url 'training_subfield_detail' sub.slug %}" 
-                           class="flex items-center justify-between p-4 bg-white/5 border border-white/5 hover:border-alien/50 hover:bg-alien/5 group/sub transition-all">
-                            <span class="font-rajdhani font-semibold text-sm sm:text-base text-gray-300 group-hover/sub:text-white">
-                                {{ sub.name }}
-                            </span>
-                            <i data-lucide="arrow-right" class="w-4 h-4 text-alien opacity-0 group-hover/sub:opacity-100 transition-all translate-x-[-10px] group-hover/sub:translate-x-0"></i>
+                           class="flex items-center justify-between p-4 bg-alien-dark/50 border border-alien/20 border-l-4 border-l-alien/40 hover:border-alien/50 hover:border-l-alien hover:bg-alien/10 group/sub transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.5)]">
+                            <div class="flex items-center gap-3">
+                                <span class="font-mono text-xs text-alien/50 group-hover/sub:text-alien transition-colors select-none">></span>
+                                <span class="font-rajdhani font-semibold text-sm sm:text-base text-gray-200 group-hover/sub:text-white transition-colors">
+                                    {{ sub.name }}
+                                </span>
+                            </div>
+                            <i data-lucide="arrow-right" class="w-4 h-4 text-alien opacity-50 group-hover/sub:opacity-100 transition-all translate-x-0 group-hover/sub:translate-x-1 duration-300"></i>
                         </a>
                         {% endif %}
                         {% endfor %}
