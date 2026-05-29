@@ -9,7 +9,7 @@
         <!-- Header -->
         <div class="mb-12 text-center">
             <h1 class="font-orbitron font-black text-4xl lg:text-6xl text-white mb-4 tracking-tighter">
-                ENROLLMENT <span class="text-alien">PROTOCOL</span>
+                ENROLLMENT <span class="text-alien">PROGRAMS</span>
             </h1>
             <p class="font-mono text-alien opacity-70 tracking-widest uppercase">
                 // SECURE DATA TRANSMISSION CHANNEL INITIATED
@@ -24,19 +24,23 @@
             {{ form.package }}
 
             <!-- Section 1: Selected Package Info -->
-            <div class="bg-alien/5 border border-alien/20 p-6 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div
+                class="bg-alien/5 border border-alien/20 p-6 flex flex-col md:flex-row justify-between items-center gap-6">
                 <div class="flex items-center gap-4">
                     <div class="p-3 bg-alien text-black">
                         <i data-lucide="package" class="w-6 h-6"></i>
                     </div>
                     <div>
-                        <p class="font-mono text-[10px] text-alien opacity-50 uppercase tracking-widest">SELECTED_MISSION</p>
-                        <h3 class="font-orbitron font-bold text-xl text-white uppercase">{{ package.sub_field.name }} : {{ package.name }}</h3>
+                        <p class="font-mono text-[10px] text-alien opacity-50 uppercase tracking-widest">
+                            SELECTED_MISSION</p>
+                        <h3 class="font-orbitron font-bold text-xl text-white uppercase">{{ package.sub_field.name }} :
+                            {{ package.name }}</h3>
                     </div>
                 </div>
                 <div class="text-right">
                     <p class="font-mono text-[10px] text-alien opacity-50 uppercase tracking-widest">BASE_PRICE</p>
-                    <p class="font-orbitron font-black text-2xl text-white" id="base-price">₹{{ package.price|floatformat:2 }}</p>
+                    <p class="font-orbitron font-black text-2xl text-white" id="base-price">₹{{
+                        package.price|floatformat:2 }}</p>
                 </div>
             </div>
 
@@ -124,21 +128,23 @@
                 <h3 class="font-orbitron text-xl text-alien mb-8 uppercase tracking-widest flex items-center gap-2">
                     <i data-lucide="ticket" class="w-5 h-5"></i> REFERRAL_AND_PAYMENT
                 </h3>
-                
+
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
                     <div class="md:col-span-2 space-y-4">
                         <div class="space-y-2">
-                            <label class="text-[10px] font-mono text-alien ml-1 uppercase tracking-widest">Referral Code*</label>
+                            <label class="text-[10px] font-mono text-alien ml-1 uppercase tracking-widest">Referral
+                                Code*</label>
                             <div class="relative group">
                                 {{ form.referral_code_text }}
-                                <button type="button" id="apply-code" class="absolute right-2 top-2 bottom-2 px-4 bg-alien text-black font-orbitron font-bold text-xs uppercase hover:bg-white transition-colors">
+                                <button type="button" id="apply-code"
+                                    class="absolute right-2 top-2 bottom-2 px-4 bg-alien text-black font-orbitron font-bold text-xs uppercase hover:bg-white transition-colors">
                                     APPLY
                                 </button>
                             </div>
                             <div id="referral-status" class="font-mono text-[10px] mt-2 h-4"></div>
                         </div>
                     </div>
-                    
+
                     <div class="bg-black/80 border border-alien/20 p-6 space-y-4">
                         <div class="flex justify-between items-center text-xs text-gray-500 font-mono">
                             <span>BASE_COST</span>
@@ -151,7 +157,8 @@
                         <div class="h-px bg-alien/20"></div>
                         <div class="flex justify-between items-end font-orbitron">
                             <span class="text-xs text-white opacity-50 mb-1 tracking-widest">PAYABLE</span>
-                            <span class="text-2xl text-white font-black" id="final-price">₹{{ package.price|floatformat:2 }}</span>
+                            <span class="text-2xl text-white font-black" id="final-price">₹{{
+                                package.price|floatformat:2 }}</span>
                         </div>
                     </div>
                 </div>
@@ -159,26 +166,31 @@
 
             <!-- Submit -->
             <div class="text-center pt-8">
-                <button type="submit" class="group/btn relative px-12 py-5 font-orbitron font-black text-lg tracking-[0.3em] uppercase overflow-hidden border-2 border-alien transition-all duration-500 hover:text-black hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(0,255,65,0.2)]">
-                    <div class="absolute inset-0 bg-alien translate-x-[-101%] group-hover/btn:translate-x-0 transition-transform duration-500 ease-out"></div>
+                <button type="submit"
+                    class="group/btn relative px-12 py-5 font-orbitron font-black text-lg tracking-[0.3em] uppercase overflow-hidden border-2 border-alien transition-all duration-500 hover:text-black hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(0,255,65,0.2)]">
+                    <div
+                        class="absolute inset-0 bg-alien translate-x-[-101%] group-hover/btn:translate-x-0 transition-transform duration-500 ease-out">
+                    </div>
                     <span class="relative z-10">CONFIRM_MISSION_ENROLLMENT</span>
                 </button>
-                <p class="mt-6 font-mono text-[10px] text-gray-600 uppercase tracking-widest">By confirming, you agree to alienhouse training protocols.</p>
+                <p class="mt-6 font-mono text-[10px] text-gray-600 uppercase tracking-widest">By confirming, you agree
+                    to alienhouse training protocols.</p>
             </div>
         </form>
     </div>
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         const applyBtn = document.getElementById('apply-code');
         const codeInput = document.querySelector('input[name="referral_code_text"]');
         const statusDiv = document.getElementById('referral-status');
         const discountSpan = document.getElementById('discount-amount');
         const finalPriceSpan = document.getElementById('final-price');
-        const packageId = {{ package.id }};
+        const packageId = parseInt("{{ package.id }}", 10);
 
-        applyBtn.addEventListener('click', async function() {
+
+        applyBtn.addEventListener('click', async function () {
             const code = codeInput.value.trim();
             if (!code) {
                 statusDiv.innerText = '// ERROR: CODE_REQUIRED';
@@ -198,7 +210,7 @@
                     statusDiv.className = 'font-mono text-[10px] mt-2 text-alien';
                     discountSpan.innerText = `₹${data.discount_amount.toFixed(2)}`;
                     finalPriceSpan.innerText = `₹${data.final_price.toFixed(2)}`;
-                    
+
                     // Subtle UI feedback
                     gsap.to(finalPriceSpan, { scale: 1.2, duration: 0.2, yoyo: true, repeat: 1 });
                 } else {
