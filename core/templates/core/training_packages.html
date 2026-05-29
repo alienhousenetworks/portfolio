@@ -21,20 +21,20 @@
             <h1 class="font-orbitron font-black text-3xl sm:text-4xl lg:text-7xl text-white mb-6 tracking-tighter uppercase">
                 {{ sub_field.name }} <span class="text-alien">PACKAGES</span>
             </h1>
-            <p class="font-mono text-alien opacity-70 tracking-widest text-xs sm:text-sm uppercase mb-8">
+            <p class="font-mono text-alien opacity-70 tracking-widest text-xs sm:text-sm uppercase">
                 // Select Tier to Initiate Enrollment
             </p>
-            
-            {% if sub_field.description %}
-            <!-- Subfield Specialization Description -->
-            <div class="text-left bg-alien-dark/30 border-l-2 border-alien/20 hover:border-alien/60 p-5 sm:p-6 mb-12 transition-colors duration-500">
-                <p class="font-mono text-[10px] text-alien opacity-50 uppercase tracking-widest mb-2">// SPECIALIZATION_PROTOCOL_OVERVIEW</p>
-                <div class="text-gray-300 font-rajdhani text-base sm:text-lg leading-relaxed">
-                    {{ sub_field.description|safe }}
-                </div>
-            </div>
-            {% endif %}
         </div>
+
+        {% if sub_field.description %}
+        <!-- Subfield Specialization Description -->
+        <div class="text-left bg-alien-dark/30 border-l-2 border-alien/20 hover:border-alien/60 p-5 sm:p-6 mb-16 transition-colors duration-500 max-w-7xl mx-auto">
+            <p class="font-mono text-[10px] text-alien opacity-50 uppercase tracking-widest mb-4">// SPECIALIZATION_PROTOCOL_OVERVIEW</p>
+            <div class="text-gray-300 font-rajdhani text-base sm:text-lg leading-relaxed">
+                {{ sub_field.description|safe }}
+            </div>
+        </div>
+        {% endif %}
 
         <!-- Tier Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
