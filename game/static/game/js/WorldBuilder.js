@@ -1,7 +1,5 @@
 import * as THREE from 'three';
 import { WORLD, PALETTE, POI_TYPES } from './config.js';
-import { createAlienAvatar } from './AvatarFactory.js';
-
 export class WorldBuilder {
     constructor(scene, gameData) {
         this.scene = scene;

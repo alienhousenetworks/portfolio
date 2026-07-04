@@ -5,11 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ config.site_name|default:"ALIENHOUSE" }} | City Explorer</title>
-    <link rel="stylesheet" href="{% static 'game/css/world.css' %}">
+    <link rel="stylesheet" href="{% static 'game/css/world.css' %}?v=5">
     <script type="importmap">
     {
         "imports": {
-            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
         }
     }
     </script>
@@ -54,6 +55,6 @@
     </div>
 
     {{ game_data|json_script:"game-data" }}
-    <script type="module" src="{% static 'game/js/main.js' %}"></script>
+    <script type="module" src="{% static 'game/js/app.js' %}?v=5"></script>
 </body>
 </html>
