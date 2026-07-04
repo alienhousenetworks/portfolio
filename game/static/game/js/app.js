@@ -178,7 +178,13 @@ class Game {
             onArriveDest: () => {
                 this.citizens.spawnCrowdAt(dest.x, dest.z, dest.district || 'downtown', 12);
             },
-            onComplete: () => {
+            onComplete: (arrival) => {
+                const d = arrival?.dest || dest;
+                this.playerCtrl.setPosition(
+                    d.x, d.z,
+                    d.arrivalX ?? d.x + 8,
+                    d.arrivalZ ?? d.z + 18
+                );
                 this.state = 'playing';
                 this.playerCtrl.enable();
             },

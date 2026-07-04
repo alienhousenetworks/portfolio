@@ -226,6 +226,17 @@ def _build_game_buildings(services, projects, team, site_name):
     return buildings
 
 
+def _arrival_from_building(b):
+    return {
+        'arrivalX': b.get('hostX', b['x'] + 8),
+        'arrivalZ': b.get('hostZ', b['z'] + 14) + 4,
+    }
+
+
+def _arrival_open(x, z, offset_z=20):
+    return {'arrivalX': x, 'arrivalZ': z + offset_z}
+
+
 def _build_transit_destinations(buildings, about_us, site_name):
     destinations = [
         {
@@ -234,6 +245,8 @@ def _build_transit_destinations(buildings, about_us, site_name):
             'category': 'about',
             'x': 0,
             'z': -115,
+            'arrivalX': 0,
+            'arrivalZ': -95,
             'description': 'Headquarters, company story, and contact',
             'district': 'hq',
         },
@@ -243,6 +256,8 @@ def _build_transit_destinations(buildings, about_us, site_name):
             'category': 'about',
             'x': 0,
             'z': -60,
+            'arrivalX': 0,
+            'arrivalZ': -45,
             'description': 'Reach AlienHouse Networks',
             'district': 'hq',
         },
@@ -252,6 +267,8 @@ def _build_transit_destinations(buildings, about_us, site_name):
             'category': 'about',
             'x': 0,
             'z': 80,
+            'arrivalX': 0,
+            'arrivalZ': 65,
             'description': 'Main park and team meetup area',
             'district': 'park',
         },
@@ -261,6 +278,8 @@ def _build_transit_destinations(buildings, about_us, site_name):
             'category': 'district',
             'x': -170,
             'z': -90,
+            'arrivalX': -170,
+            'arrivalZ': -65,
             'description': 'Tech campuses and engineering offices',
             'district': 'software',
         },
@@ -270,6 +289,8 @@ def _build_transit_destinations(buildings, about_us, site_name):
             'category': 'district',
             'x': 170,
             'z': -90,
+            'arrivalX': 170,
+            'arrivalZ': -65,
             'description': 'Branding, media, and design studios',
             'district': 'marketing',
         },
@@ -279,12 +300,15 @@ def _build_transit_destinations(buildings, about_us, site_name):
             'category': 'district',
             'x': -130,
             'z': 165,
+            'arrivalX': -130,
+            'arrivalZ': 145,
             'description': 'Project showcases and R&D',
             'district': 'innovation',
         },
     ]
 
     for i, about in enumerate(about_us[:4]):
+        arr = _arrival_open(0, -115 - i * 5, 22)
         destinations.append({
             'id': f'about-{i}',
             'name': f'About Us — {about.heading}',
@@ -293,9 +317,11 @@ def _build_transit_destinations(buildings, about_us, site_name):
             'z': -115 - i * 5,
             'description': about.subheading or 'Learn about our company',
             'district': 'hq',
+            **arr,
         })
 
     for b in buildings:
+        arr = _arrival_from_building(b)
         if b['type'] == 'service':
             destinations.append({
                 'id': b['id'],
@@ -305,6 +331,7 @@ def _build_transit_destinations(buildings, about_us, site_name):
                 'z': b['z'],
                 'description': b.get('shortDescription') or b['subtitle'],
                 'district': b.get('district'),
+                **arr,
             })
         elif b['type'] == 'project':
             destinations.append({
@@ -315,6 +342,7 @@ def _build_transit_destinations(buildings, about_us, site_name):
                 'z': b['z'],
                 'description': b.get('shortDescription') or 'Project city',
                 'district': 'innovation',
+                **arr,
             })
 
     return destinations

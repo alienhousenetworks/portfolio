@@ -72,12 +72,20 @@ export class PlayerController {
 
     enable() {
         this.enabled = true;
+        this._clearKeys();
         this.canvas?.focus();
+        this._updateCamera();
     }
 
     disable() {
         this.enabled = false;
         this.velocity.set(0, 0, 0);
+        this._clearKeys();
+    }
+
+    _clearKeys() {
+        this.keys = {};
+        this.isRunning = false;
     }
 
     _updateCamera() {
@@ -112,7 +120,6 @@ export class PlayerController {
         if (dir.lengthSq() > 0) {
             dir.normalize();
             this.velocity.set(dir.x * speed, 0, dir.z * speed);
-            this.avatar.rotation.y = Math.atan2(dir.x, dir.z);
             this.walkCycle += dt * 10;
         } else {
             this.velocity.set(0, 0, 0);
@@ -126,6 +133,10 @@ export class PlayerController {
         if (this._blocked(nx, oz)) nx = ox;
         if (this._blocked(ox, nz)) nz = oz;
         if (this._blocked(nx, nz)) { nx = ox; nz = oz; }
+
+        if (dir.lengthSq() > 0) {
+            this.avatar.rotation.y = Math.atan2(dir.x, dir.z);
+        }
 
         this.avatar.position.x = THREE.MathUtils.clamp(nx, -WORLD.bound, WORLD.bound);
         this.avatar.position.z = THREE.MathUtils.clamp(nz, -WORLD.bound, WORLD.bound);
@@ -153,17 +164,30 @@ export class PlayerController {
         return false;
     }
 
-    setPosition(x, z) {
-        this.avatar.position.set(x, WORLD.groundY, z);
-        if (this._blocked(x, z)) {
-            for (let i = 0; i < 20; i++) {
-                const tx = x + (i % 4) * 3;
-                const tz = z + Math.floor(i / 4) * 3;
-                if (!this._blocked(tx, tz)) {
-                    this.avatar.position.set(tx, WORLD.groundY, tz);
-                    break;
-                }
-            }
+    findSafePosition(x, z, preferredX = null, preferredZ = null) {
+        const candidates = [];
+        if (preferredX != null && preferredZ != null) {
+            candidates.push([preferredX, preferredZ]);
         }
+        candidates.push([x, z]);
+        for (let ring = 1; ring <= 12; ring++) {
+            const step = ring * 3;
+            candidates.push(
+                [x + step, z], [x - step, z], [x, z + step], [x, z - step],
+                [x + step, z + step], [x - step, z + step],
+                [x + step, z - step], [x - step, z - step],
+                [x + step * 0.5, z + step], [x, z + step * 1.5]
+            );
+        }
+        for (const [tx, tz] of candidates) {
+            if (!this._blocked(tx, tz)) return { x: tx, z: tz };
+        }
+        return { x, z };
+    }
+
+    setPosition(x, z, preferredX = null, preferredZ = null) {
+        const safe = this.findSafePosition(x, z, preferredX, preferredZ);
+        this.avatar.position.set(safe.x, WORLD.groundY, safe.z);
+        this.velocity.set(0, 0, 0);
     }
 }

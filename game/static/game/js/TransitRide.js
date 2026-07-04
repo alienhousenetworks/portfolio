@@ -61,6 +61,7 @@ export class TransitRideController {
 
     startJourney({ fromX, fromZ, dest, stop, mode, onComplete, onArriveDest }) {
         this.legs = this._planLegs(fromX, fromZ, dest, stop, mode);
+        this._dest = dest;
         this.legIdx = 0;
         this.active = true;
         this.onComplete = onComplete;
@@ -374,11 +375,14 @@ export class TransitRideController {
 
     _endRide() {
         const lastLeg = this.legs[this.legs.length - 1];
-        const exitX = lastLeg?.toX ?? this.player.position.x;
-        const exitZ = lastLeg?.toZ ?? this.player.position.z;
+        const dest = this._dest;
+        const exitX = dest?.arrivalX ?? lastLeg?.toX ?? this.player.position.x;
+        const exitZ = dest?.arrivalZ ?? (lastLeg?.toZ != null ? lastLeg.toZ + 16 : this.player.position.z);
 
         this._disposeVehicle();
-        this.scene.add(this.player);
+        if (this.player.parent !== this.scene) {
+            this.scene.add(this.player);
+        }
         this.player.position.set(exitX, WORLD.groundY, exitZ);
         this.player.visible = true;
 
@@ -391,8 +395,9 @@ export class TransitRideController {
         this.onComplete = null;
         this.onArriveDest = null;
         this.legs = [];
+        this._dest = null;
         arriveDest?.();
-        cb?.({ x: exitX, z: exitZ });
+        cb?.({ x: exitX, z: exitZ, dest });
     }
 
     _showHud(transitType) {

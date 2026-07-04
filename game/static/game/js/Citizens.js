@@ -135,9 +135,10 @@ export class CitizenManager {
     spawnCrowdAt(x, z, district = 'downtown', count = 10) {
         const humans = Math.ceil(count * 0.55);
         const aliens = count - humans;
+        const baseR = 14;
         for (let i = 0; i < humans; i++) {
             const angle = (i / humans) * Math.PI * 2;
-            const r = 6 + (i % 3) * 3;
+            const r = baseR + (i % 3) * 4;
             const mesh = createHumanAvatar({
                 shirtColor: SHIRT_COLORS[i % SHIRT_COLORS.length],
                 skinTone: [0xe0b090, 0xc49a7a, 0xf0d0b0][i % 3],
@@ -154,7 +155,7 @@ export class CitizenManager {
         }
         for (let i = 0; i < aliens; i++) {
             const angle = (i / aliens) * Math.PI * 2 + 0.5;
-            const r = 8 + (i % 3) * 2;
+            const r = baseR + 4 + (i % 3) * 3;
             const mesh = createAlienAvatar({ variant: i % 4 });
             const ax = x + Math.cos(angle) * r;
             const az = z + Math.sin(angle) * r;
