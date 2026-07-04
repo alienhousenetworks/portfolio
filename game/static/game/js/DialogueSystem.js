@@ -32,7 +32,7 @@ export class DialogueSystem {
             },
         ];
 
-        if (this.data.team.length > 0) {
+        if ((this.data.team || []).length > 0) {
             const lead = this.data.team[0];
             lines.push({
                 speaker: lead.name.toUpperCase(),
@@ -40,7 +40,7 @@ export class DialogueSystem {
             });
         }
 
-        if (this.data.team.length > 1) {
+        if ((this.data.team || []).length > 1) {
             const second = this.data.team[1];
             lines.push({
                 speaker: second.name.toUpperCase(),

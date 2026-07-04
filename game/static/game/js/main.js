@@ -94,7 +94,7 @@ class AlienWorldGame {
     }
 
     _initNPCs() {
-        const team = this.data.team.slice(0, 5);
+        const team = (this.data.team || []).slice(0, 5);
         const positions = [
             { x: -4, z: 20 },
             { x: 0, z: 18 },
@@ -317,7 +317,8 @@ class AlienWorldGame {
 
 window.addEventListener('DOMContentLoaded', () => {
     const dataEl = document.getElementById('game-data');
-    const gameData = JSON.parse(dataEl.textContent);
+    let gameData = JSON.parse(dataEl.textContent);
+    if (typeof gameData === 'string') gameData = JSON.parse(gameData);
     const textureBase = JSON.parse(document.getElementById('texture-base').textContent);
     new AlienWorldGame(gameData, textureBase);
 });

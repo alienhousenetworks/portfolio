@@ -262,8 +262,8 @@ export class WorldBuilder {
             content: this._formatAbout(),
         });
 
-        this.data.services.forEach((svc, i) => {
-            const angle = (i / Math.max(this.data.services.length, 1)) * Math.PI * 1.5 - Math.PI * 0.75;
+        (this.data.services || []).forEach((svc, i) => {
+            const angle = (i / Math.max((this.data.services || []).length, 1)) * Math.PI * 1.5 - Math.PI * 0.75;
             const dist = 45 + (i % 3) * 10;
             this._addPOI({
                 id: `service-${i}`,
@@ -276,7 +276,7 @@ export class WorldBuilder {
             });
         });
 
-        this.data.team.forEach((member, i) => {
+        (this.data.team || []).forEach((member, i) => {
             const x = -30 + i * 15;
             this._addPOI({
                 id: `team-${i}`,
@@ -290,7 +290,7 @@ export class WorldBuilder {
             });
         });
 
-        this.data.projects.forEach((proj, i) => {
+        (this.data.projects || []).forEach((proj, i) => {
             const x = -50 + i * 25;
             this._addPOI({
                 id: `project-${i}`,
@@ -303,7 +303,7 @@ export class WorldBuilder {
             });
         });
 
-        this.data.tactics.forEach((tactic, i) => {
+        (this.data.tactics || []).forEach((tactic, i) => {
             this._addPOI({
                 id: `tactic-${i}`,
                 type: POI_TYPES.TACTIC,
@@ -445,10 +445,12 @@ export class WorldBuilder {
     }
 
     _formatAbout() {
-        if (!this.data.about.length) {
-            return this.data.hero.subtext;
+        const about = this.data.about || [];
+        const hero = this.data.hero || {};
+        if (!about.length) {
+            return hero.subtext || 'Welcome to AlienHouse Networks.';
         }
-        return this.data.about.map(a => `${a.heading}: ${a.subheading}`).join('\n\n');
+        return about.map(a => `${a.heading}: ${a.subheading}`).join('\n\n');
     }
 
     getTerrainHeight(x, z) {

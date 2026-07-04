@@ -92,7 +92,7 @@
         </div>
     </div>
 
-    {{ game_data_json|json_script:"game-data" }}
+    {{ game_data|json_script:"game-data" }}
     <script id="texture-base" type="application/json">"{% static 'core/textures/' %}"</script>
 
     <script type="module" src="{% static 'game/js/main.js' %}"></script>

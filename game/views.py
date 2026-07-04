@@ -1,5 +1,3 @@
-import json
-
 from django.shortcuts import render
 
 from core.models import (
@@ -68,6 +66,6 @@ def world(request):
 
     context = {
         'config': site_config,
-        'game_data_json': json.dumps(game_data),
+        'game_data': game_data,
     }
     return render(request, 'game/world.html', context)
