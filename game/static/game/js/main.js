@@ -7,6 +7,7 @@ import { DialogueSystem } from './DialogueSystem.js';
 import { CinematicIntro } from './CinematicIntro.js';
 import { TransitSystem } from './Vehicles.js';
 import { CitizenManager } from './Citizens.js';
+import { TransitRideController } from './TransitRide.js';
 
 class Game {
     constructor(data) {
@@ -40,6 +41,7 @@ class Game {
         this.scene.add(this.ufo);
 
         this.playerCtrl = new PlayerController(this.camera, this.player, this.colliders, this.renderer.domElement);
+        this.ride = new TransitRideController(this.scene, this.camera, this.player, this.transit);
         this.dialogue = new DialogueSystem(data);
         this.cinematic = new CinematicIntro(
             this.scene, this.camera, this.ufo, this.player,
@@ -113,29 +115,39 @@ class Game {
             return;
         }
         if (target.type === 'bus_stop') {
-            this.playerCtrl.disable();
-            this.playerCtrl.setPosition(target.destX, target.destZ);
-            this.dialogue.start(
-                [{ speaker: 'CITY BUS', text: 'Bus arriving! Hop on — we\'ll drop you off across town in no time.' }],
-                () => this.playerCtrl.enable()
-            );
+            this._startBusRide(target);
             return;
         }
         if (target.type === 'train_station') {
             const boarding = this.transit.getNearestTrainStation(this.player.position);
             if (boarding && boarding.stop.id === target.id) {
-                this.playerCtrl.disable();
-                this.playerCtrl.setPosition(target.trackX + 3, target.destZ);
-                this.dialogue.start(
-                    [{ speaker: 'METRO', text: `Train doors closing. Next stop: ${target.destZ > 0 ? 'North' : 'South'} Terminal.` }],
-                    () => this.playerCtrl.enable()
-                );
+                this._startTrainRide(boarding);
             } else {
                 this._openPOI(target);
             }
             return;
         }
         this._openPOI(target);
+    }
+
+    _startBusRide(stop) {
+        this.state = 'riding';
+        this.playerCtrl.disable();
+        document.getElementById('interact-prompt')?.classList.remove('visible');
+        this.ride.startBusRide(stop, () => {
+            this.state = 'playing';
+            this.playerCtrl.enable();
+        });
+    }
+
+    _startTrainRide(boarding) {
+        this.state = 'riding';
+        this.playerCtrl.disable();
+        document.getElementById('interact-prompt')?.classList.remove('visible');
+        this.ride.startTrainRide(boarding, () => {
+            this.state = 'playing';
+            this.playerCtrl.enable();
+        });
     }
 
     _openPOI(poi) {
@@ -148,7 +160,7 @@ class Game {
     }
 
     _proximity() {
-        if (this.state !== 'playing' || this.dialogue.active) {
+        if (this.state === 'riding' || this.state !== 'playing' || this.dialogue.active) {
             this.nearestTarget = null;
             document.getElementById('interact-prompt')?.classList.remove('visible');
             return;
@@ -180,6 +192,12 @@ class Game {
     }
 
     _hud() {
+        if (this.state === 'riding') {
+            const p = this.player.position;
+            document.getElementById('coord-display').textContent = `${p.x.toFixed(0)}, ${p.z.toFixed(0)}`;
+            document.getElementById('zone-display').textContent = 'IN TRANSIT';
+            return;
+        }
         if (this.state !== 'playing') return;
         const p = this.player.position;
         document.getElementById('coord-display').textContent = `${p.x.toFixed(0)}, ${p.z.toFixed(0)}`;
@@ -217,6 +235,10 @@ class Game {
 
         if (this.cinematic.isActive()) {
             this.cinematic.update(dt);
+        } else if (this.ride.isActive()) {
+            this.ride.update(dt);
+            this.transit.update(dt);
+            this.citizens.update(dt);
         } else if (this.state === 'playing') {
             this.playerCtrl.update(dt);
             this.transit.update(dt);

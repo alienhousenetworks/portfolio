@@ -256,6 +256,7 @@ export class TransitSystem {
         });
 
         this.trains.forEach(t => {
+            if (t.riding) return;
             t.mesh.position.z += t.speed * dt;
             if (t.speed > 0 && t.mesh.position.z > t.max) t.mesh.position.z = t.min;
             if (t.speed < 0 && t.mesh.position.z < t.max) t.mesh.position.z = t.min;

@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ config.site_name|default:"ALIENHOUSE" }} | City Explorer</title>
-    <link rel="stylesheet" href="{% static 'game/css/world.css' %}?v=5">
+    <link rel="stylesheet" href="{% static 'game/css/world.css' %}?v=6">
     <script type="importmap">
     {
         "imports": {
@@ -26,7 +26,7 @@
         <h1 class="start-title">{{ config.site_name|default:"ALIENHOUSE" }}<span>City Explorer</span></h1>
         <p class="start-subtitle">Meet humans &amp; aliens, ride buses &amp; trains, explore downtown</p>
         <button id="btn-start" class="btn-engage">START</button>
-        <p class="controls-hint"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move · Mouse drag Look · <kbd>Shift</kbd> Run · <kbd>E</kbd> Interact</p>
+        <p class="controls-hint"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move · Mouse drag Look · <kbd>Shift</kbd> Run · <kbd>E</kbd> Interact · <kbd>V</kbd> Camera (on transit)</p>
     </div>
 
     <div id="game-canvas"></div>
@@ -40,6 +40,17 @@
     </div>
 
     <div id="interact-prompt"><kbd>E</kbd> Interact</div>
+
+    <div id="ride-hud">
+        <div class="ride-hud-top">
+            <span id="ride-type">TRANSIT</span>
+            <span id="ride-camera">Chase Cam</span>
+        </div>
+        <div id="ride-line">Boarding...</div>
+        <div class="ride-dest-row">Destination: <span id="ride-dest">—</span></div>
+        <div class="ride-progress"><div id="ride-progress-fill"></div></div>
+        <div class="ride-hint"><kbd>V</kbd> Switch camera view</div>
+    </div>
 
     <div id="dialogue-box">
         <div class="dialogue-speaker"></div>
@@ -55,6 +66,6 @@
     </div>
 
     {{ game_data|json_script:"game-data" }}
-    <script type="module" src="{% static 'game/js/main.js' %}?v=9"></script>
+    <script type="module" src="{% static 'game/js/main.js' %}?v=10"></script>
 </body>
 </html>

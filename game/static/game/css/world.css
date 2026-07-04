@@ -95,3 +95,70 @@ html, body {
 .start-badge { color: #666; font-size: 0.7rem; letter-spacing: 0.15em; margin-bottom: 12px; }
 
 #watercolor-overlay { display: none; }
+
+body.riding::before,
+body.riding::after {
+    content: '';
+    position: fixed;
+    left: 0; right: 0;
+    height: 8vh;
+    background: #000;
+    z-index: 60;
+    pointer-events: none;
+}
+body.riding::before { top: 0; }
+body.riding::after { bottom: 0; }
+
+#ride-hud {
+    position: fixed;
+    bottom: 10vh;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(420px, 92vw);
+    background: rgba(0, 0, 0, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    padding: 14px 18px;
+    z-index: 55;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, visibility 0.3s;
+    pointer-events: none;
+}
+#ride-hud.visible { opacity: 1; visibility: visible; }
+
+.ride-hud-top {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #8c8;
+    margin-bottom: 6px;
+}
+#ride-line { font-size: 0.95rem; font-weight: 600; margin-bottom: 4px; }
+.ride-dest-row { font-size: 0.8rem; color: #aaa; margin-bottom: 10px; }
+#ride-dest { color: #fff; }
+
+.ride-progress {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+#ride-progress-fill {
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, #00cc44, #44aacc);
+    transition: width 0.15s linear;
+}
+
+.ride-hint { font-size: 0.72rem; color: #666; text-align: center; }
+.ride-hint kbd {
+    background: #333;
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: #ccc;
+    margin-right: 4px;
+}
