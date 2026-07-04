@@ -32,7 +32,7 @@ export class CitizenManager {
     spawn(teamMembers = [], buildings = []) {
         const spots = this._walkSpots();
 
-        for (let i = 0; i < 14; i++) {
+        for (let i = 0; i < 20; i++) {
             const spot = spots[i % spots.length];
             const name = HUMAN_NAMES[i % HUMAN_NAMES.length];
             const mesh = createHumanAvatar({
@@ -42,7 +42,7 @@ export class CitizenManager {
             this._placeCitizen(mesh, spot, name, 'human', HUMAN_LINES[i % HUMAN_LINES.length], i * 0.7);
         }
 
-        for (let i = 0; i < 16; i++) {
+        for (let i = 0; i < 24; i++) {
             const spot = spots[(i + 5) % spots.length];
             const name = ALIEN_NAMES[i % ALIEN_NAMES.length];
             const mesh = createAlienAvatar({ variant: i % 4 });
@@ -130,6 +130,40 @@ export class CitizenManager {
             phase, walkT: 0,
             goingToTarget: true,
         });
+    }
+
+    spawnCrowdAt(x, z, district = 'downtown', count = 10) {
+        const humans = Math.ceil(count * 0.55);
+        const aliens = count - humans;
+        for (let i = 0; i < humans; i++) {
+            const angle = (i / humans) * Math.PI * 2;
+            const r = 6 + (i % 3) * 3;
+            const mesh = createHumanAvatar({
+                shirtColor: SHIRT_COLORS[i % SHIRT_COLORS.length],
+                skinTone: [0xe0b090, 0xc49a7a, 0xf0d0b0][i % 3],
+            });
+            const hx = x + Math.cos(angle) * r;
+            const hz = z + Math.sin(angle) * r;
+            const line = district === 'software'
+                ? 'Welcome to the software district! Great tech companies here.'
+                : district === 'marketing'
+                    ? 'Love the creative energy in this marketing city!'
+                    : `Just arrived in ${district} — busy day in the city!`;
+            this._placeCitizen(mesh, { x: hx, z: hz, rx: hx + 4, rz: hz + 4 },
+                HUMAN_NAMES[i % HUMAN_NAMES.length], 'human', line, 10 + i);
+        }
+        for (let i = 0; i < aliens; i++) {
+            const angle = (i / aliens) * Math.PI * 2 + 0.5;
+            const r = 8 + (i % 3) * 2;
+            const mesh = createAlienAvatar({ variant: i % 4 });
+            const ax = x + Math.cos(angle) * r;
+            const az = z + Math.sin(angle) * r;
+            const line = district === 'innovation'
+                ? 'This innovation park showcases AlienHouse projects — impressive!'
+                : 'Greetings! Our alien community welcomes visitors from all worlds.';
+            this._placeCitizen(mesh, { x: ax, z: az, rx: ax - 3, rz: az + 3 },
+                ALIEN_NAMES[i % ALIEN_NAMES.length], 'alien', line, 20 + i);
+        }
     }
 
     getTeamMeshes() {

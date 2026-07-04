@@ -226,6 +226,100 @@ def _build_game_buildings(services, projects, team, site_name):
     return buildings
 
 
+def _build_transit_destinations(buildings, about_us, site_name):
+    destinations = [
+        {
+            'id': 'hq',
+            'name': f'{site_name} HQ — About Us City',
+            'category': 'about',
+            'x': 0,
+            'z': -115,
+            'description': 'Headquarters, company story, and contact',
+            'district': 'hq',
+        },
+        {
+            'id': 'contact',
+            'name': 'Contact & Uplink Plaza',
+            'category': 'about',
+            'x': 0,
+            'z': -60,
+            'description': 'Reach AlienHouse Networks',
+            'district': 'hq',
+        },
+        {
+            'id': 'park',
+            'name': 'Central Park — Landing Zone',
+            'category': 'about',
+            'x': 0,
+            'z': 80,
+            'description': 'Main park and team meetup area',
+            'district': 'park',
+        },
+        {
+            'id': 'software-hub',
+            'name': 'Software Development City',
+            'category': 'district',
+            'x': -170,
+            'z': -90,
+            'description': 'Tech campuses and engineering offices',
+            'district': 'software',
+        },
+        {
+            'id': 'marketing-hub',
+            'name': 'Marketing & Creative City',
+            'category': 'district',
+            'x': 170,
+            'z': -90,
+            'description': 'Branding, media, and design studios',
+            'district': 'marketing',
+        },
+        {
+            'id': 'innovation-hub',
+            'name': 'Innovation & Projects Park',
+            'category': 'district',
+            'x': -130,
+            'z': 165,
+            'description': 'Project showcases and R&D',
+            'district': 'innovation',
+        },
+    ]
+
+    for i, about in enumerate(about_us[:4]):
+        destinations.append({
+            'id': f'about-{i}',
+            'name': f'About Us — {about.heading}',
+            'category': 'about',
+            'x': 0,
+            'z': -115 - i * 5,
+            'description': about.subheading or 'Learn about our company',
+            'district': 'hq',
+        })
+
+    for b in buildings:
+        if b['type'] == 'service':
+            destinations.append({
+                'id': b['id'],
+                'name': f"{b['title']} City",
+                'category': 'service',
+                'x': b['x'],
+                'z': b['z'],
+                'description': b.get('shortDescription') or b['subtitle'],
+                'district': b.get('district'),
+            })
+        elif b['type'] == 'project':
+            destinations.append({
+                'id': b['id'],
+                'name': f"{b['title']} Showcase",
+                'category': 'project',
+                'x': b['x'],
+                'z': b['z'],
+                'description': b.get('shortDescription') or 'Project city',
+                'district': 'innovation',
+            })
+
+    return destinations
+
+
 def world(request):
     site_config = SiteConfiguration.objects.first()
     hero = HeroSection.objects.first()
@@ -238,6 +332,12 @@ def world(request):
     site_name = site_config.site_name if site_config else 'ALIENHOUSE'
     hq_content = _hq_panel(site_config, hero, about_us, tactics, site_name)
     contact_content = _contact_panel(site_config, hero, site_name)
+    buildings = _build_game_buildings(services, projects, team, site_name)
+    team_list = list(team)
+
+    human_name = team_list[0].name if team_list else 'Alex Chen'
+    alien_name = team_list[1].name if len(team_list) > 1 else 'Ambassador Zyx'
+    hero_sub = hero.sub_text if hero else 'Advanced AI & Software Consultancy'
 
     game_data = {
         'siteName': site_name,
@@ -296,7 +396,21 @@ def world(request):
             {'id': 'hq', 'label': 'HQ Tower', 'x': 0, 'z': -120, 'color': '#00cc44'},
             {'id': 'park', 'label': 'Central Park', 'x': 0, 'z': 80, 'color': '#6b8e4e'},
         ],
-        'buildings': _build_game_buildings(services, projects, team, site_name),
+        'buildings': buildings,
+        'transitDestinations': _build_transit_destinations(buildings, about_us, site_name),
+        'welcome': {
+            'humanName': human_name,
+            'alienName': alien_name,
+            'humanLine': (
+                f"Welcome to our planet! I'm {human_name}, human ambassador for "
+                f"{site_name}. We're thrilled you landed safely — let us show you our cities!"
+            ),
+            'alienLine': (
+                f"Greetings, traveler! I am {alien_name}, speaking on behalf of "
+                f"{site_name}. Our world is open to all — software cities, marketing "
+                f"districts, and innovation parks await you. {hero_sub}"
+            ),
+        },
     }
 
     context = {

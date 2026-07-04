@@ -17,19 +17,38 @@ export class DialogueSystem {
     }
 
     getIntroDialogue() {
-        const site = this.data.siteName || 'AlienHouse';
+        const site = this.data.siteName || 'AlienHouse Networks';
         const hero = this.data.hero || {};
+        const welcome = this.data.welcome || {};
         const lines = [
-            { speaker: 'SYSTEM', text: 'Landing complete. Earth-like city detected. Alien population confirmed.' },
+            { speaker: 'SYSTEM', text: `Landing complete. Welcome to ${site} planetary city.` },
         ];
+
+        if (welcome.humanLine) {
+            lines.push({
+                speaker: `${welcome.humanName || 'Human Ambassador'} · ${site}`,
+                text: welcome.humanLine,
+            });
+        }
+        if (welcome.alienLine) {
+            lines.push({
+                speaker: `${welcome.alienName || 'Alien Ambassador'} · ${site}`,
+                text: welcome.alienLine,
+            });
+        }
+
         const team = this.data.team || [];
-        if (team[0]) {
-            lines.push({ speaker: team[0].name, text: `Welcome, human. I'm ${team[0].name}, ${team[0].role} at ${site}. This is our city — we built it here on this planet.` });
+        if (team[0] && !welcome.humanLine) {
+            lines.push({
+                speaker: team[0].name,
+                text: `Welcome! I'm ${team[0].name}, ${team[0].role} at ${site}.`,
+            });
         }
-        if (team[1]) {
-            lines.push({ speaker: team[1].name, text: `${hero.subtext || 'We build advanced technology.'} Walk around downtown, visit buildings marked with beacons, press E to learn about us.` });
-        }
-        lines.push({ speaker: 'SYSTEM', text: 'WASD to move. Mouse drag to look. Shift to run. Explore the city.' });
+
+        lines.push({
+            speaker: 'SYSTEM',
+            text: `${hero.subtext || 'Explore our districts.'} Visit bus & metro stops to travel to service cities. WASD move, drag to look 360°, E for details.`,
+        });
         return lines;
     }
 

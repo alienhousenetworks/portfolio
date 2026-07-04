@@ -188,3 +188,85 @@ body.riding::after { bottom: 0; }
     color: #ccc;
     margin-right: 4px;
 }
+
+#transit-picker {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(480px, 92vw);
+    max-height: 75vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    background: rgba(0, 0, 0, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    padding: 20px;
+    z-index: 120;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s, visibility 0.25s;
+    pointer-events: auto;
+}
+#transit-picker.active { opacity: 1; visibility: visible; }
+
+#transit-search {
+    width: 100%;
+    padding: 10px 12px;
+    margin: 12px 0;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    color: #fff;
+    font-size: 0.9rem;
+}
+#transit-search::placeholder { color: #666; }
+
+#transit-dest-list {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 12px;
+    padding-right: 4px;
+}
+
+.transit-group { margin-bottom: 14px; }
+.transit-group-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #8c8;
+    margin-bottom: 6px;
+}
+
+.transit-dest-btn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 10px 12px;
+    margin-bottom: 6px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    color: #eee;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+.transit-dest-btn:hover {
+    background: rgba(0, 204, 68, 0.15);
+    border-color: rgba(0, 204, 68, 0.4);
+}
+.transit-dest-name { display: block; font-weight: 600; font-size: 0.9rem; }
+.transit-dest-desc { display: block; font-size: 0.75rem; color: #999; margin-top: 2px; }
+
+.transit-empty { color: #666; font-size: 0.85rem; padding: 12px 0; }
+.transit-cancel-btn {
+    padding: 10px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #aaa;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+.transit-cancel-btn:hover { color: #fff; border-color: #fff; }

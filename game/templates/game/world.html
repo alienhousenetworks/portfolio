@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ config.site_name|default:"ALIENHOUSE" }} | City Explorer</title>
-    <link rel="stylesheet" href="{% static 'game/css/world.css' %}?v=7">
+    <link rel="stylesheet" href="{% static 'game/css/world.css' %}?v=8">
     <script type="importmap">
     {
         "imports": {
@@ -24,7 +24,7 @@
 
     <div id="start-screen" class="hidden">
         <h1 class="start-title">{{ config.site_name|default:"ALIENHOUSE" }}<span>City Explorer</span></h1>
-        <p class="start-subtitle">Explore software, marketing &amp; project districts — talk to hosts outside each building</p>
+        <p class="start-subtitle">Land to a human &amp; alien welcome, then ride buses &amp; metro to any service city</p>
         <button id="btn-start" class="btn-engage">START</button>
         <p class="controls-hint"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move · Drag 360° look · Scroll zoom · <kbd>Shift</kbd> Run · <kbd>E</kbd> Details</p>
     </div>
@@ -62,6 +62,15 @@
         <div class="dialogue-continue">Click or E to continue</div>
     </div>
 
+    <div id="transit-picker">
+        <button id="transit-picker-close" class="info-panel-close">✕</button>
+        <div id="transit-picker-title" class="info-panel-title">Choose Destination City</div>
+        <div id="transit-picker-sub" class="info-panel-subtitle">Transit stop</div>
+        <input id="transit-search" type="text" placeholder="Search cities, services, about us..." autocomplete="off" />
+        <div id="transit-dest-list"></div>
+        <button id="transit-picker-cancel" class="transit-cancel-btn">Cancel</button>
+    </div>
+
     <div id="info-panel">
         <button id="info-close" class="info-panel-close">✕</button>
         <div class="info-panel-title"></div>
@@ -70,6 +79,6 @@
     </div>
 
     {{ game_data|json_script:"game-data" }}
-    <script type="module" src="{% static 'game/js/main.js' %}?v=12"></script>
+    <script type="module" src="{% static 'game/js/main.js' %}?v=13"></script>
 </body>
 </html>

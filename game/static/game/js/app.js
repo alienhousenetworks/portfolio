@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { WORLD } from './config.js';
-import { createHumanAvatar, createUFO } from './AvatarFactory.js';
+import { createHumanAvatar, createAlienAvatar, createUFO, createNameTag } from './AvatarFactory.js';
 import { WorldBuilder } from './WorldBuilder.js';
 import { PlayerController } from './PlayerController.js';
 import { DialogueSystem } from './DialogueSystem.js';
@@ -9,6 +9,7 @@ import { TransitSystem } from './Vehicles.js';
 import { CitizenManager } from './Citizens.js';
 import { TransitRideController } from './TransitRide.js';
 import { DISTRICT_DEFS, MAP_LEGEND, POI_MAP_COLORS, getDistrictAt } from './Districts.js';
+import { TransitPicker } from './TransitPicker.js';
 
 class Game {
     constructor(data) {
@@ -38,16 +39,33 @@ class Game {
         this.player.visible = false;
         this.scene.add(this.player);
 
+        const welcome = this.data.welcome || {};
+        this.welcomeHuman = createHumanAvatar({ shirtColor: 0x2a5a8a, skinTone: 0xe0b090 });
+        this.welcomeHuman.visible = false;
+        this.welcomeHuman.add(createNameTag(welcome.humanName || 'Human Ambassador'));
+        this.scene.add(this.welcomeHuman);
+
+        this.welcomeAlien = createAlienAvatar({ variant: 1 });
+        this.welcomeAlien.visible = false;
+        this.welcomeAlien.add(createNameTag(welcome.alienName || 'Alien Ambassador'));
+        this.scene.add(this.welcomeAlien);
+
         this.ufo = createUFO();
         this.ufo.position.set(0, 60, 90);
         this.scene.add(this.ufo);
 
         this.playerCtrl = new PlayerController(this.camera, this.player, this.colliders, this.renderer.domElement);
         this.ride = new TransitRideController(this.scene, this.camera, this.player, this.transit);
+        this.transitPicker = new TransitPicker(
+            this.data.transitDestinations || [],
+            (dest, stop, mode) => this._startJourney(dest, stop, mode),
+            () => this.playerCtrl.enable()
+        );
         this.dialogue = new DialogueSystem(data);
         this.cinematic = new CinematicIntro(
             this.scene, this.camera, this.ufo, this.player,
             this.citizens.getTeamMeshes(),
+            { human: this.welcomeHuman, alien: this.welcomeAlien },
             () => this._afterCinematic()
         );
         this._ui();
@@ -127,16 +145,11 @@ class Game {
             return;
         }
         if (target.type === 'bus_stop') {
-            this._startBusRide(target);
+            this._openTransitPicker(target, 'bus');
             return;
         }
         if (target.type === 'train_station') {
-            const boarding = this.transit.getNearestTrainStation(this.player.position);
-            if (boarding && boarding.stop.id === target.id) {
-                this._startTrainRide(boarding);
-            } else {
-                this._openPOI(target);
-            }
+            this._openTransitPicker(target, 'metro');
             return;
         }
         this._openDetailPanel({
@@ -146,23 +159,29 @@ class Game {
         });
     }
 
-    _startBusRide(stop) {
-        this.state = 'riding';
+    _openTransitPicker(stop, mode) {
         this.playerCtrl.disable();
         document.getElementById('interact-prompt')?.classList.remove('visible');
-        this.ride.startBusRide(stop, () => {
-            this.state = 'playing';
-            this.playerCtrl.enable();
-        });
+        this.transitPicker.open(stop, mode);
     }
 
-    _startTrainRide(boarding) {
+    _startJourney(dest, stop, mode) {
         this.state = 'riding';
         this.playerCtrl.disable();
-        document.getElementById('interact-prompt')?.classList.remove('visible');
-        this.ride.startTrainRide(boarding, () => {
-            this.state = 'playing';
-            this.playerCtrl.enable();
+        const pos = this.player.position;
+        this.ride.startJourney({
+            fromX: pos.x,
+            fromZ: pos.z,
+            dest,
+            stop,
+            mode,
+            onArriveDest: () => {
+                this.citizens.spawnCrowdAt(dest.x, dest.z, dest.district || 'downtown', 12);
+            },
+            onComplete: () => {
+                this.state = 'playing';
+                this.playerCtrl.enable();
+            },
         });
     }
 
@@ -190,7 +209,8 @@ class Game {
     }
 
     _proximity() {
-        if (this.state === 'riding' || this.state !== 'playing' || this.dialogue.active) {
+        if (this.state === 'riding' || this.state !== 'playing' || this.dialogue.active
+            || document.getElementById('transit-picker')?.classList.contains('active')) {
             this.nearestTarget = null;
             document.getElementById('interact-prompt')?.classList.remove('visible');
             return;
@@ -219,8 +239,7 @@ class Game {
             if (best.type === 'citizen') {
                 verb = best.isHost ? 'Learn about' : 'Talk to';
                 label = best.isHost ? (best.hostBuilding || best.panelTitle) : best.title;
-            } else if (best.type === 'train_station') verb = 'Board';
-            else if (best.type === 'bus_stop') verb = 'Ride bus at';
+            } else if (best.type === 'train_station' || best.type === 'bus_stop') verb = 'Travel to city from';
             prompt.innerHTML = `<kbd>E</kbd> ${verb} ${label}`;
         } else {
             prompt.classList.remove('visible');
@@ -339,7 +358,10 @@ function loadGameData() {
     const el = document.getElementById('game-data');
     if (!el || !el.textContent) {
         console.error('[game] #game-data missing — using defaults');
-        return { siteName: 'ALIENHOUSE', email: '', team: [], services: [], projects: [], about: [], hero: {} };
+        return {
+            siteName: 'ALIENHOUSE', email: '', team: [], services: [], projects: [],
+            about: [], hero: {}, transitDestinations: [], welcome: {},
+        };
     }
     let data = JSON.parse(el.textContent);
     if (typeof data === 'string') data = JSON.parse(data);
