@@ -1,15 +1,19 @@
 export const WORLD = {
-    size: 320,
+    size: 700,
     groundY: 0,
-    roadWidth: 10,
-    blockSize: 36,
+    roadWidth: 12,
+    roadSpacing: 50,
+    bound: 320,
+    parkX: 0,
+    parkZ: 80,
+    parkRadius: 30,
 };
 
 export const PLAYER = {
     height: 1.75,
     radius: 0.35,
-    walkSpeed: 5,
-    runSpeed: 9,
+    walkSpeed: 7,
+    runSpeed: 13,
 };
 
 export const PALETTE = {

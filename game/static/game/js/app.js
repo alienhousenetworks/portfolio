@@ -30,7 +30,7 @@ class Game {
         this.ufo.position.set(0, 60, 90);
         this.scene.add(this.ufo);
 
-        this.playerCtrl = new PlayerController(this.camera, this.player, this.colliders);
+        this.playerCtrl = new PlayerController(this.camera, this.player, this.colliders, this.renderer.domElement);
         this._npcs();
         this.dialogue = new DialogueSystem(data);
         this.cinematic = new CinematicIntro(
@@ -57,7 +57,7 @@ class Game {
         this.renderer.outputColorSpace = THREE.SRGBColorSpace;
         el.appendChild(this.renderer.domElement);
 
-        this.camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.5, 300);
+        this.camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.5, 800);
         this.camera.position.set(0, 8, 60);
 
         addEventListener('resize', () => {
@@ -71,7 +71,7 @@ class Game {
         const team = (this.data.team || []).slice(0, 4);
         team.forEach((m, i) => {
             const mesh = createAlienAvatar();
-            mesh.position.set(-4 + i * 2.5, WORLD.groundY, 50);
+            mesh.position.set(-8 + i * 5, WORLD.groundY, WORLD.parkZ - 10);
             mesh.visible = false;
             mesh.add(createNameTag(m.name));
             this.scene.add(mesh);
@@ -98,6 +98,7 @@ class Game {
 
     _afterCinematic() {
         this.state = 'dialogue';
+        this.playerCtrl.setPosition(WORLD.parkX, WORLD.parkZ - 6);
         this.dialogue.start(this.dialogue.getIntroDialogue(), () => {
             this.state = 'playing';
             this.playerCtrl.enable();
@@ -149,7 +150,7 @@ class Game {
         const c = document.getElementById('minimap-canvas');
         if (!c || this.state !== 'playing') return;
         const ctx = c.getContext('2d');
-        const w = c.width, h = c.height, sc = w / 200;
+        const w = c.width, h = c.height, sc = w / 400;
         ctx.fillStyle = '#2a3a2a';
         ctx.fillRect(0, 0, w, h);
         this.pois.forEach(poi => {

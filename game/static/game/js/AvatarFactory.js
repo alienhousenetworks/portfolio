@@ -2,11 +2,18 @@ import * as THREE from 'three';
 import { PALETTE } from './config.js';
 
 function std(color, opts = {}) {
-    return new THREE.MeshStandardMaterial({
-        color, roughness: opts.roughness ?? 0.8, metalness: opts.metalness ?? 0,
-        emissive: opts.emissive, emissiveIntensity: opts.emissiveIntensity ?? 0,
-        transparent: opts.transparent ?? false, opacity: opts.opacity ?? 1,
-    });
+    const params = {
+        color,
+        roughness: opts.roughness ?? 0.8,
+        metalness: opts.metalness ?? 0,
+        transparent: opts.transparent ?? false,
+        opacity: opts.opacity ?? 1,
+    };
+    if (opts.emissive != null) {
+        params.emissive = opts.emissive;
+        params.emissiveIntensity = opts.emissiveIntensity ?? 0.1;
+    }
+    return new THREE.MeshStandardMaterial(params);
 }
 
 export function createHumanAvatar() {
@@ -18,7 +25,6 @@ export function createHumanAvatar() {
 
     const torso = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.6, 0.28), shirt);
     torso.position.y = 1.25;
-    torso.name = 'torso';
     g.add(torso);
 
     const head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 12), skin);
@@ -54,24 +60,21 @@ export function createHumanAvatar() {
     return g;
 }
 
-export function createAlienAvatar(opts = {}) {
+export function createAlienAvatar() {
     const g = new THREE.Group();
     const skin = std(PALETTE.alienSkin, { roughness: 0.6 });
     const robe = std(0x2a4a3a);
 
     const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.25, 0.6, 4, 8), skin);
     body.position.y = 1.0;
-    body.scale.set(1, 1.1, 0.9);
     g.add(body);
 
     const head = new THREE.Mesh(new THREE.SphereGeometry(0.24, 12, 12), skin);
     head.position.y = 1.65;
-    head.scale.set(1.1, 1.15, 0.95);
     g.add(head);
 
     const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), std(0x111122));
     eyeL.position.set(-0.09, 1.68, 0.18);
-    eyeL.scale.set(1.2, 1.6, 0.5);
     g.add(eyeL);
     const eyeR = eyeL.clone();
     eyeR.position.x = 0.09;
@@ -88,8 +91,7 @@ export function createUFO() {
     const ufo = new THREE.Group();
     const metal = std(0xb0b8c0, { metalness: 0.7, roughness: 0.3 });
 
-    const disc = new THREE.Mesh(new THREE.CylinderGeometry(3.5, 4, 0.5, 32), metal);
-    ufo.add(disc);
+    ufo.add(new THREE.Mesh(new THREE.CylinderGeometry(3.5, 4, 0.5, 32), metal));
 
     const dome = new THREE.Mesh(
         new THREE.SphereGeometry(1.3, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2),
@@ -125,8 +127,7 @@ export function createNameTag(name) {
     ctx.fillStyle = '#fff';
     ctx.textAlign = 'center';
     ctx.fillText(name, 128, 30);
-    const tex = new THREE.CanvasTexture(c);
-    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true }));
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true }));
     sp.scale.set(2, 0.45, 1);
     sp.position.y = 2.2;
     return sp;

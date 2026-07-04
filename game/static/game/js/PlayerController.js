@@ -1,13 +1,14 @@
 import * as THREE from 'three';
 import { PLAYER, WORLD } from './config.js';
 
-const BOUND = 140;
+const MOVE_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
 
 export class PlayerController {
-    constructor(camera, avatar, colliders) {
+    constructor(camera, avatar, colliders, canvas) {
         this.camera = camera;
         this.avatar = avatar;
         this.colliders = colliders;
+        this.canvas = canvas;
         this.velocity = new THREE.Vector3();
         this.camAngle = 0;
         this.keys = {};
@@ -19,6 +20,8 @@ export class PlayerController {
 
     _input() {
         addEventListener('keydown', e => {
+            if (!this.enabled) return;
+            if (MOVE_KEYS.has(e.code)) e.preventDefault();
             this.keys[e.code] = true;
             if (e.code.startsWith('Shift')) this.isRunning = true;
         });
@@ -26,21 +29,44 @@ export class PlayerController {
             this.keys[e.code] = false;
             if (e.code.startsWith('Shift')) this.isRunning = false;
         });
+
         let drag = false, lx = 0;
-        addEventListener('mousedown', e => { if (this.enabled) { drag = true; lx = e.clientX; } });
-        addEventListener('mouseup', () => { drag = false; });
-        addEventListener('mousemove', e => {
+        const onDown = (e) => {
+            if (!this.enabled) return;
+            this.canvas?.focus();
+            drag = true;
+            lx = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
+        };
+        const onUp = () => { drag = false; };
+        const onMove = (e) => {
             if (!this.enabled || !drag) return;
-            this.camAngle -= (e.clientX - lx) * 0.004;
-            lx = e.clientX;
-        });
+            const cx = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
+            this.camAngle -= (cx - lx) * 0.004;
+            lx = cx;
+        };
+
+        this.canvas?.setAttribute('tabindex', '0');
+        this.canvas?.addEventListener('mousedown', onDown);
+        this.canvas?.addEventListener('mouseup', onUp);
+        this.canvas?.addEventListener('mousemove', onMove);
+        this.canvas?.addEventListener('touchstart', onDown, { passive: false });
+        this.canvas?.addEventListener('touchend', onUp);
+        this.canvas?.addEventListener('touchmove', onMove, { passive: false });
     }
 
-    enable() { this.enabled = true; }
-    disable() { this.enabled = false; this.velocity.set(0, 0, 0); }
+    enable() {
+        this.enabled = true;
+        this.canvas?.focus();
+    }
+
+    disable() {
+        this.enabled = false;
+        this.velocity.set(0, 0, 0);
+    }
 
     update(dt) {
         if (!this.enabled) return;
+
         const speed = this.isRunning ? PLAYER.runSpeed : PLAYER.walkSpeed;
         const fwd = new THREE.Vector3(-Math.sin(this.camAngle), 0, -Math.cos(this.camAngle));
         const right = new THREE.Vector3(Math.cos(this.camAngle), 0, -Math.sin(this.camAngle));
@@ -55,24 +81,28 @@ export class PlayerController {
             dir.normalize();
             this.velocity.set(dir.x * speed, 0, dir.z * speed);
             this.avatar.rotation.y = Math.atan2(dir.x, dir.z);
-            this.walkCycle += dt * 8;
+            this.walkCycle += dt * 10;
         } else {
-            this.velocity.lerp(new THREE.Vector3(), 8 * dt);
+            this.velocity.set(0, 0, 0);
         }
 
-        let nx = this.avatar.position.x + this.velocity.x * dt;
-        let nz = this.avatar.position.z + this.velocity.z * dt;
-        if (this._hit(nx, this.avatar.position.z)) nx = this.avatar.position.x;
-        if (this._hit(this.avatar.position.x, nz)) nz = this.avatar.position.z;
+        const ox = this.avatar.position.x;
+        const oz = this.avatar.position.z;
+        let nx = ox + this.velocity.x * dt;
+        let nz = oz + this.velocity.z * dt;
 
-        this.avatar.position.x = THREE.MathUtils.clamp(nx, -BOUND, BOUND);
-        this.avatar.position.z = THREE.MathUtils.clamp(nz, -BOUND, BOUND);
+        if (this._blocked(nx, oz)) nx = ox;
+        if (this._blocked(ox, nz)) nz = oz;
+        if (this._blocked(nx, nz)) { nx = ox; nz = oz; }
+
+        this.avatar.position.x = THREE.MathUtils.clamp(nx, -WORLD.bound, WORLD.bound);
+        this.avatar.position.z = THREE.MathUtils.clamp(nz, -WORLD.bound, WORLD.bound);
         this.avatar.position.y = WORLD.groundY;
 
         (this.avatar.userData.walkParts || []).forEach((name, i) => {
             const p = this.avatar.getObjectByName(name);
             if (p && this.velocity.lengthSq() > 0.5) {
-                const s = Math.sin(this.walkCycle + i) * 0.3;
+                const s = Math.sin(this.walkCycle + i) * 0.35;
                 if (name.includes('leg')) p.rotation.x = s;
                 if (name.includes('arm')) p.rotation.x = -s * 0.5;
             }
@@ -80,16 +110,32 @@ export class PlayerController {
 
         const target = this.avatar.position.clone();
         target.y += 1.5;
-        const off = new THREE.Vector3(Math.sin(this.camAngle) * 7, 5, Math.cos(this.camAngle) * 7);
-        this.camera.position.lerp(target.clone().add(off), 0.1);
+        const off = new THREE.Vector3(Math.sin(this.camAngle) * 8, 5.5, Math.cos(this.camAngle) * 8);
+        this.camera.position.lerp(target.clone().add(off), 0.12);
         this.camera.lookAt(target);
     }
 
-    _hit(x, z) {
+    _blocked(x, z) {
+        const r = PLAYER.radius;
         for (const c of this.colliders) {
-            if (Math.abs(x - c.x) < c.w / 2 + PLAYER.radius && Math.abs(z - c.z) < c.d / 2 + PLAYER.radius)
-                return true;
+            const hw = c.w / 2 + r;
+            const hd = c.d / 2 + r;
+            if (Math.abs(x - c.x) < hw && Math.abs(z - c.z) < hd) return true;
         }
         return false;
+    }
+
+    setPosition(x, z) {
+        this.avatar.position.set(x, WORLD.groundY, z);
+        if (this._blocked(x, z)) {
+            for (let i = 0; i < 20; i++) {
+                const tx = x + (i % 4) * 3;
+                const tz = z + Math.floor(i / 4) * 3;
+                if (!this._blocked(tx, tz)) {
+                    this.avatar.position.set(tx, WORLD.groundY, tz);
+                    break;
+                }
+            }
+        }
     }
 }
