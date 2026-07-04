@@ -24,7 +24,7 @@
 
     <div id="start-screen" class="hidden">
         <h1 class="start-title">{{ config.site_name|default:"ALIENHOUSE" }}<span>City Explorer</span></h1>
-        <p class="start-subtitle">Land in the city, meet the alien crew, explore downtown</p>
+        <p class="start-subtitle">Meet humans &amp; aliens, ride buses &amp; trains, explore downtown</p>
         <button id="btn-start" class="btn-engage">START</button>
         <p class="controls-hint"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move · Mouse drag Look · <kbd>Shift</kbd> Run · <kbd>E</kbd> Interact</p>
     </div>
@@ -55,6 +55,6 @@
     </div>
 
     {{ game_data|json_script:"game-data" }}
-    <script type="module" src="{% static 'game/js/main.js' %}?v=8"></script>
+    <script type="module" src="{% static 'game/js/main.js' %}?v=9"></script>
 </body>
 </html>

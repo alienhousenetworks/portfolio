@@ -16,11 +16,11 @@ function std(color, opts = {}) {
     return new THREE.MeshStandardMaterial(params);
 }
 
-export function createHumanAvatar() {
+export function createHumanAvatar(opts = {}) {
     const g = new THREE.Group();
-    const skin = std(PALETTE.humanSkin);
-    const shirt = std(0x3a5a8a);
-    const pants = std(0x3a3a48);
+    const skin = std(opts.skinTone ?? PALETTE.humanSkin);
+    const shirt = std(opts.shirtColor ?? 0x3a5a8a);
+    const pants = std(opts.pantsColor ?? 0x3a3a48);
     const shoe = std(0x2a2a30);
 
     const torso = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.6, 0.28), shirt);
@@ -60,10 +60,10 @@ export function createHumanAvatar() {
     return g;
 }
 
-export function createAlienAvatar() {
+export function createAlienAvatar(opts = {}) {
     const g = new THREE.Group();
-    const skin = std(PALETTE.alienSkin, { roughness: 0.6 });
-    const robe = std(0x2a4a3a);
+    const skin = std(opts.skinTone ?? PALETTE.alienSkin, { roughness: 0.6 });
+    const robe = std([0x2a4a3a, 0x3a2a4a, 0x2a3a4a, 0x4a3a2a][(opts.variant ?? 0) % 4]);
 
     const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.25, 0.6, 4, 8), skin);
     body.position.y = 1.0;
@@ -84,6 +84,7 @@ export function createAlienAvatar() {
     robeMesh.position.y = 0.7;
     g.add(robeMesh);
 
+    g.userData.walkParts = [];
     return g;
 }
 

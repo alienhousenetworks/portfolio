@@ -1,10 +1,12 @@
 import * as THREE from 'three';
 import { WORLD } from './config.js';
-import { createHumanAvatar, createAlienAvatar, createUFO, createNameTag } from './AvatarFactory.js';
+import { createHumanAvatar, createUFO } from './AvatarFactory.js';
 import { WorldBuilder } from './WorldBuilder.js';
 import { PlayerController } from './PlayerController.js';
 import { DialogueSystem } from './DialogueSystem.js';
 import { CinematicIntro } from './CinematicIntro.js';
+import { TransitSystem } from './Vehicles.js';
+import { CitizenManager } from './Citizens.js';
 
 class Game {
     constructor(data) {
@@ -12,8 +14,8 @@ class Game {
         this.clock = new THREE.Clock();
         this.state = 'loading';
         this.pois = [];
-        this.npcs = [];
-        this.nearestPOI = null;
+        this.interactables = [];
+        this.nearestTarget = null;
 
         this._renderer();
         this.scene = new THREE.Scene();
@@ -21,6 +23,13 @@ class Game {
         this.world = built;
         this.pois = built.pois;
         this.colliders = built.colliders;
+
+        this.transit = new TransitSystem(this.scene);
+        const stops = this.transit.build();
+        this.interactables = [...this.pois, ...stops];
+
+        this.citizens = new CitizenManager(this.scene);
+        this.citizens.spawn(this.data.team || []);
 
         this.player = createHumanAvatar();
         this.player.visible = false;
@@ -31,11 +40,10 @@ class Game {
         this.scene.add(this.ufo);
 
         this.playerCtrl = new PlayerController(this.camera, this.player, this.colliders, this.renderer.domElement);
-        this._npcs();
         this.dialogue = new DialogueSystem(data);
         this.cinematic = new CinematicIntro(
             this.scene, this.camera, this.ufo, this.player,
-            this.npcs.map(n => n.mesh),
+            this.citizens.getTeamMeshes(),
             () => this._afterCinematic()
         );
         this._ui();
@@ -67,18 +75,6 @@ class Game {
         });
     }
 
-    _npcs() {
-        const team = (this.data.team || []).slice(0, 4);
-        team.forEach((m, i) => {
-            const mesh = createAlienAvatar();
-            mesh.position.set(-8 + i * 5, WORLD.groundY, WORLD.parkZ - 10);
-            mesh.visible = false;
-            mesh.add(createNameTag(m.name));
-            this.scene.add(mesh);
-            this.npcs.push({ mesh, data: m });
-        });
-    }
-
     _ui() {
         document.getElementById('btn-start')?.addEventListener('click', () => {
             document.getElementById('start-screen')?.classList.add('hidden');
@@ -90,8 +86,8 @@ class Game {
             this.playerCtrl.enable();
         });
         addEventListener('keydown', e => {
-            if (e.code === 'KeyE' && this.state === 'playing' && !this.dialogue.active && this.nearestPOI) {
-                this._openPOI(this.nearestPOI);
+            if (e.code === 'KeyE' && this.state === 'playing' && !this.dialogue.active && this.nearestTarget) {
+                this._interact(this.nearestTarget);
             }
         });
     }
@@ -107,6 +103,41 @@ class Game {
         });
     }
 
+    _interact(target) {
+        if (target.type === 'citizen') {
+            this.playerCtrl.disable();
+            this.dialogue.start(
+                [{ speaker: target.title, text: target.content }],
+                () => this.playerCtrl.enable()
+            );
+            return;
+        }
+        if (target.type === 'bus_stop') {
+            this.playerCtrl.disable();
+            this.playerCtrl.setPosition(target.destX, target.destZ);
+            this.dialogue.start(
+                [{ speaker: 'CITY BUS', text: 'Bus arriving! Hop on — we\'ll drop you off across town in no time.' }],
+                () => this.playerCtrl.enable()
+            );
+            return;
+        }
+        if (target.type === 'train_station') {
+            const boarding = this.transit.getNearestTrainStation(this.player.position);
+            if (boarding && boarding.stop.id === target.id) {
+                this.playerCtrl.disable();
+                this.playerCtrl.setPosition(target.trackX + 3, target.destZ);
+                this.dialogue.start(
+                    [{ speaker: 'METRO', text: `Train doors closing. Next stop: ${target.destZ > 0 ? 'North' : 'South'} Terminal.` }],
+                    () => this.playerCtrl.enable()
+                );
+            } else {
+                this._openPOI(target);
+            }
+            return;
+        }
+        this._openPOI(target);
+    }
+
     _openPOI(poi) {
         this.playerCtrl.disable();
         const p = document.getElementById('info-panel');
@@ -118,21 +149,31 @@ class Game {
 
     _proximity() {
         if (this.state !== 'playing' || this.dialogue.active) {
-            this.nearestPOI = null;
+            this.nearestTarget = null;
             document.getElementById('interact-prompt')?.classList.remove('visible');
             return;
         }
         let best = null, dist = Infinity;
         const pos = this.player.position;
-        this.pois.forEach(poi => {
-            const d = pos.distanceTo(poi.position);
-            if (d < poi.radius && d < dist) { best = poi; dist = d; }
+
+        this.interactables.forEach(item => {
+            const d = pos.distanceTo(item.position);
+            if (d < item.radius && d < dist) { best = item; dist = d; }
         });
-        this.nearestPOI = best;
+
+        const citizen = this.citizens.getNearby(pos);
+        if (citizen) {
+            const c = this.citizens.toInteractable(citizen);
+            const d = pos.distanceTo(c.position);
+            if (d < dist) { best = c; dist = d; }
+        }
+
+        this.nearestTarget = best;
         const prompt = document.getElementById('interact-prompt');
         if (best) {
             prompt.classList.add('visible');
-            prompt.innerHTML = `<kbd>E</kbd> ${best.title}`;
+            const verb = best.type === 'citizen' ? 'Talk to' : best.type === 'train_station' ? 'Board' : 'Visit';
+            prompt.innerHTML = `<kbd>E</kbd> ${verb} ${best.title}`;
         } else {
             prompt.classList.remove('visible');
         }
@@ -142,7 +183,7 @@ class Game {
         if (this.state !== 'playing') return;
         const p = this.player.position;
         document.getElementById('coord-display').textContent = `${p.x.toFixed(0)}, ${p.z.toFixed(0)}`;
-        document.getElementById('zone-display').textContent = this.nearestPOI?.subtitle || 'DOWNTOWN';
+        document.getElementById('zone-display').textContent = this.nearestTarget?.subtitle || 'DOWNTOWN';
         document.getElementById('site-display').textContent = this.data.siteName;
     }
 
@@ -153,12 +194,15 @@ class Game {
         const w = c.width, h = c.height, sc = w / 400;
         ctx.fillStyle = '#2a3a2a';
         ctx.fillRect(0, 0, w, h);
-        this.pois.forEach(poi => {
-            ctx.fillStyle = '#4a8';
+
+        this.interactables.forEach(item => {
+            ctx.fillStyle = item.type === 'bus_stop' ? '#d4a020'
+                : item.type === 'train_station' ? '#4488cc' : '#4a8';
             ctx.beginPath();
-            ctx.arc(w / 2 + poi.position.x * sc, h / 2 + poi.position.z * sc, 3, 0, 6.28);
+            ctx.arc(w / 2 + item.position.x * sc, h / 2 + item.position.z * sc, 3, 0, 6.28);
             ctx.fill();
         });
+
         const px = w / 2 + this.player.position.x * sc;
         const py = h / 2 + this.player.position.z * sc;
         ctx.fillStyle = '#fff';
@@ -171,8 +215,13 @@ class Game {
         requestAnimationFrame(() => this._loop());
         const dt = Math.min(this.clock.getDelta(), 0.05);
 
-        if (this.cinematic.isActive()) this.cinematic.update(dt);
-        else if (this.state === 'playing') this.playerCtrl.update(dt);
+        if (this.cinematic.isActive()) {
+            this.cinematic.update(dt);
+        } else if (this.state === 'playing') {
+            this.playerCtrl.update(dt);
+            this.transit.update(dt);
+            this.citizens.update(dt);
+        }
 
         this._proximity();
         this._hud();
