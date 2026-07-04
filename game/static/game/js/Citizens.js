@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { WORLD } from './config.js';
-import { createHumanAvatar, createAlienAvatar, createNameTag } from './AvatarFactory.js';
+import { createHumanAvatar, createAlienAvatar, createNameTag, animateHumanWalk } from './AvatarFactory.js';
 
 const HUMAN_NAMES = ['Alex', 'Jordan', 'Sam', 'Riley', 'Casey', 'Morgan', 'Taylor', 'Jamie', 'Quinn', 'Avery'];
 const ALIEN_NAMES = ['Zyx', 'Nara', 'Kov', 'Eli', 'Pax', 'Ryn', 'Oma', 'Dex', 'Vex', 'Luma', 'Kira', 'Zeno'];
@@ -196,14 +196,18 @@ export class CitizenManager {
                 c.mesh.rotation.y = Math.atan2(dx, dz);
                 c.walkT += dt * 9;
 
-                (c.mesh.userData.walkParts || []).forEach((partName, i) => {
-                    const p = c.mesh.getObjectByName(partName);
-                    if (p) {
-                        const s = Math.sin(c.walkT + i) * 0.3;
-                        if (partName.includes('leg')) p.rotation.x = s;
-                        if (partName.includes('arm')) p.rotation.x = -s * 0.4;
-                    }
-                });
+                if (c.mesh.userData.isHuman) {
+                    animateHumanWalk(c.mesh, c.walkT, 0.85);
+                } else {
+                    (c.mesh.userData.walkParts || []).forEach((partName, i) => {
+                        const p = c.mesh.getObjectByName(partName);
+                        if (p) {
+                            const s = Math.sin(c.walkT + i) * 0.3;
+                            if (partName.includes('leg')) p.rotation.x = s;
+                            if (partName.includes('arm')) p.rotation.x = -s * 0.4;
+                        }
+                    });
+                }
             }
         });
     }

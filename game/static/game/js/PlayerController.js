@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { PLAYER, WORLD, CAMERA } from './config.js';
+import { animateHumanWalk } from './AvatarFactory.js';
 
 const MOVE_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
 
@@ -17,6 +18,7 @@ export class PlayerController {
         this.enabled = false;
         this.isRunning = false;
         this.walkCycle = 0;
+        this.isMoving = false;
         this._lookTarget = new THREE.Vector3();
         this._offset = new THREE.Vector3();
         this._input();
@@ -74,13 +76,19 @@ export class PlayerController {
         this.enabled = true;
         this._clearKeys();
         this.canvas?.focus();
+        this.syncCameraToPlayer();
         this._updateCamera();
     }
 
     disable() {
         this.enabled = false;
         this.velocity.set(0, 0, 0);
+        this.isMoving = false;
         this._clearKeys();
+    }
+
+    syncCameraToPlayer() {
+        this.camYaw = this.avatar.rotation.y;
     }
 
     _clearKeys() {
@@ -117,10 +125,19 @@ export class PlayerController {
         if (this.keys.KeyA || this.keys.ArrowLeft) dir.sub(right);
         if (this.keys.KeyD || this.keys.ArrowRight) dir.add(right);
 
-        if (dir.lengthSq() > 0) {
+        this.isMoving = dir.lengthSq() > 0;
+
+        if (this.isMoving) {
             dir.normalize();
             this.velocity.set(dir.x * speed, 0, dir.z * speed);
-            this.walkCycle += dt * 10;
+            const moveYaw = Math.atan2(dir.x, dir.z);
+            this.avatar.rotation.y = moveYaw;
+            this.camYaw = THREE.MathUtils.lerp(
+                this.camYaw,
+                moveYaw,
+                1 - Math.pow(1 - CAMERA.followSpeed, dt * 60)
+            );
+            this.walkCycle += dt * (this.isRunning ? 12 : 9);
         } else {
             this.velocity.set(0, 0, 0);
         }
@@ -134,22 +151,18 @@ export class PlayerController {
         if (this._blocked(ox, nz)) nz = oz;
         if (this._blocked(nx, nz)) { nx = ox; nz = oz; }
 
-        if (dir.lengthSq() > 0) {
-            this.avatar.rotation.y = Math.atan2(dir.x, dir.z);
-        }
-
         this.avatar.position.x = THREE.MathUtils.clamp(nx, -WORLD.bound, WORLD.bound);
         this.avatar.position.z = THREE.MathUtils.clamp(nz, -WORLD.bound, WORLD.bound);
         this.avatar.position.y = WORLD.groundY;
 
-        (this.avatar.userData.walkParts || []).forEach((name, i) => {
-            const p = this.avatar.getObjectByName(name);
-            if (p && this.velocity.lengthSq() > 0.5) {
-                const s = Math.sin(this.walkCycle + i) * 0.35;
-                if (name.includes('leg')) p.rotation.x = s;
-                if (name.includes('arm')) p.rotation.x = -s * 0.5;
-            }
-        });
+        if (this.avatar.userData.isHuman && this.velocity.lengthSq() > 0.5) {
+            animateHumanWalk(this.avatar, this.walkCycle, this.isRunning ? 1.2 : 1);
+        } else if (this.avatar.userData.walkParts) {
+            (this.avatar.userData.walkParts || []).forEach(name => {
+                const p = this.avatar.getObjectByName(name);
+                if (p) p.rotation.x = THREE.MathUtils.lerp(p.rotation.x, 0, 0.15);
+            });
+        }
 
         this._updateCamera();
     }
@@ -189,5 +202,6 @@ export class PlayerController {
         const safe = this.findSafePosition(x, z, preferredX, preferredZ);
         this.avatar.position.set(safe.x, WORLD.groundY, safe.z);
         this.velocity.set(0, 0, 0);
+        this.syncCameraToPlayer();
     }
 }

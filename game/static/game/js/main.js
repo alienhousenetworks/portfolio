@@ -119,6 +119,7 @@ class Game {
         this.playerCtrl.setPosition(WORLD.parkX, WORLD.parkZ - 6);
         this.dialogue.start(this.dialogue.getIntroDialogue(), () => {
             this.state = 'playing';
+            this.playerCtrl.syncCameraToPlayer();
             this.playerCtrl.enable();
             document.getElementById('hud')?.classList.add('visible');
             document.querySelector('.back-link')?.classList.add('visible');

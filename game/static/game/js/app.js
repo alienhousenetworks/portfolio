@@ -119,6 +119,7 @@ class Game {
         this.playerCtrl.setPosition(WORLD.parkX, WORLD.parkZ - 6);
         this.dialogue.start(this.dialogue.getIntroDialogue(), () => {
             this.state = 'playing';
+            this.playerCtrl.syncCameraToPlayer();
             this.playerCtrl.enable();
             document.getElementById('hud')?.classList.add('visible');
             document.querySelector('.back-link')?.classList.add('visible');
@@ -176,7 +177,12 @@ class Game {
             stop,
             mode,
             onArriveDest: () => {
-                this.citizens.spawnCrowdAt(dest.x, dest.z, dest.district || 'downtown', 12);
+                this.citizens.spawnCrowdAt(
+                    dest.arrivalX ?? dest.x + 8,
+                    dest.arrivalZ ?? dest.z + 18,
+                    dest.district || 'downtown',
+                    12
+                );
             },
             onComplete: (arrival) => {
                 const d = arrival?.dest || dest;

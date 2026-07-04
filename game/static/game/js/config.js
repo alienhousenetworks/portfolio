@@ -29,6 +29,7 @@ export const CAMERA = {
     heightBoost: 1.2,
     smoothing: 0.12,
     lookSmoothing: 0.18,
+    followSpeed: 0.09,
 };
 
 export const PALETTE = {

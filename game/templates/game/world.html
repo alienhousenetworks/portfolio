@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ config.site_name|default:"ALIENHOUSE" }} | City Explorer</title>
-    <link rel="stylesheet" href="{% static 'game/css/world.css' %}?v=8">
+    <link rel="stylesheet" href="{% static 'game/css/world.css' %}?v=9">
     <script type="importmap">
     {
         "imports": {
@@ -26,7 +26,7 @@
         <h1 class="start-title">{{ config.site_name|default:"ALIENHOUSE" }}<span>City Explorer</span></h1>
         <p class="start-subtitle">Land to a human &amp; alien welcome, then ride buses &amp; metro to any service city</p>
         <button id="btn-start" class="btn-engage">START</button>
-        <p class="controls-hint"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move · Drag 360° look · Scroll zoom · <kbd>Shift</kbd> Run · <kbd>E</kbd> Details</p>
+        <p class="controls-hint"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move · Camera follows · Drag to look · <kbd>Shift</kbd> Run · <kbd>E</kbd> Details</p>
     </div>
 
     <div id="game-canvas"></div>
@@ -79,6 +79,6 @@
     </div>
 
     {{ game_data|json_script:"game-data" }}
-    <script type="module" src="{% static 'game/js/main.js' %}?v=14"></script>
+    <script type="module" src="{% static 'game/js/main.js' %}?v=15"></script>
 </body>
 </html>
