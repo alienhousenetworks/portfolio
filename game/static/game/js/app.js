@@ -180,8 +180,17 @@ class Game {
     }
 }
 
-addEventListener('DOMContentLoaded', () => {
-    let data = JSON.parse(document.getElementById('game-data').textContent);
+function loadGameData() {
+    const el = document.getElementById('game-data');
+    if (!el || !el.textContent) {
+        console.error('[game] #game-data missing — using defaults');
+        return { siteName: 'ALIENHOUSE', email: '', team: [], services: [], projects: [], about: [], hero: {} };
+    }
+    let data = JSON.parse(el.textContent);
     if (typeof data === 'string') data = JSON.parse(data);
-    new Game(data);
+    return data;
+}
+
+addEventListener('DOMContentLoaded', () => {
+    new Game(loadGameData());
 });
