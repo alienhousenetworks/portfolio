@@ -17,7 +17,8 @@ class FaviconRedirectView(RedirectView):
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('favicon.ico', FaviconRedirectView.as_view()),
-    path('', include('core.urls')), 
+    path('', include('core.urls')),
+    path('game/', include('game.urls')),
 ]
 
 if settings.DEBUG:

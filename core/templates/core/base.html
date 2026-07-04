@@ -426,6 +426,11 @@
                             LABS / R&D
                         </a>
 
+                        <a href="{% url 'game_world' %}"
+                            class="group h-full flex items-center px-6 cursor-pointer border-l border-alien/5 hover:bg-alien/5 transition-colors text-gray-300 hover:text-alien font-orbitron text-sm tracking-widest">
+                            3D WORLD
+                        </a>
+
                         <div class="flex items-center ml-6">
                             <a href="{% if request.path == '/' %}#contact{% else %}javascript:void(0){% endif %}"
                                 {% if request.path != '/' %}onclick="toggleContactModal(true)"{% endif %}
@@ -495,6 +500,10 @@
 
             <a href="#rnd" class="text-white font-orbitron text-lg tracking-widest border-b border-alien/20 pb-4 block">
                 LABS / R&D
+            </a>
+
+            <a href="{% url 'game_world' %}" class="text-white font-orbitron text-lg tracking-widest border-b border-alien/20 pb-4 block">
+                3D WORLD
             </a>
 
             <a href="{% if request.path == '/' %}#contact{% else %}javascript:void(0){% endif %}"
