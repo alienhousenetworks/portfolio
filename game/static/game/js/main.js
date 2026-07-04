@@ -37,8 +37,9 @@ class AlienWorldGame {
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        this.renderer.toneMappingExposure = 1.2;
+        this.renderer.toneMapping = THREE.ReinhardToneMapping;
+        this.renderer.toneMappingExposure = 1.45;
+        this.renderer.outputColorSpace = THREE.SRGBColorSpace;
         container.appendChild(this.renderer.domElement);
 
         this.camera = new THREE.PerspectiveCamera(
@@ -312,7 +313,7 @@ class AlienWorldGame {
             light.material.emissiveIntensity = 0.8 + Math.sin(elapsed * 3 + i) * 0.4;
         });
 
-        this.watercolor.render(elapsed);
+        this.watercolor.render();
     }
 }
 

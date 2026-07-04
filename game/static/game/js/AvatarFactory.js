@@ -17,9 +17,9 @@ function mat(color, opts = {}) {
 export function createHumanAvatar(options = {}) {
     const {
         skinTone = COLORS.humanSkin,
-        shirtColor = 0x2c4a6e,
-        pantsColor = 0x2a2a35,
-        hairColor = 0x3d2314,
+        shirtColor = 0x4a7ab8,
+        pantsColor = 0x556070,
+        hairColor = 0x5c3a22,
         scale = 1,
         name = 'Explorer',
     } = options;
@@ -31,7 +31,7 @@ export function createHumanAvatar(options = {}) {
     const shirt = mat(shirtColor);
     const pants = mat(pantsColor);
     const hair = mat(hairColor, { roughness: 0.95 });
-    const shoe = mat(0x1a1a1a, { roughness: 0.9 });
+    const shoe = mat(0x444450, { roughness: 0.9 });
 
     const pelvis = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.22, 0.28), pants);
     pelvis.position.y = 0.95;
@@ -138,7 +138,7 @@ export function createAlienAvatar(options = {}) {
     const skin = mat(skinTone, { roughness: 0.6 });
     const robe = mat(
         [0x1a3a2a, 0x2a1a4a, 0x1a2a3a][variant % 3],
-        { emissive: accentColor, emissiveIntensity: 0.05 }
+        { emissive: accentColor, emissiveIntensity: 0.02 }
     );
     const eyeMat = mat(0x0a0a0a, { roughness: 0.2, metalness: 0.1 });
 
@@ -166,7 +166,7 @@ export function createAlienAvatar(options = {}) {
 
     const eyeGlowL = new THREE.Mesh(
         new THREE.SphereGeometry(0.03, 6, 6),
-        mat(accentColor, { emissive: accentColor, emissiveIntensity: 0.8 })
+        mat(accentColor, { emissive: accentColor, emissiveIntensity: 0.35 })
     );
     eyeGlowL.position.set(-0.1, 1.76, 0.26);
     group.add(eyeGlowL);
@@ -181,7 +181,7 @@ export function createAlienAvatar(options = {}) {
 
     const antennaTip = new THREE.Mesh(
         new THREE.SphereGeometry(0.05, 6, 6),
-        mat(accentColor, { emissive: accentColor, emissiveIntensity: 0.6 })
+        mat(accentColor, { emissive: accentColor, emissiveIntensity: 0.3 })
     );
     antennaTip.position.copy(antenna.position);
     antennaTip.position.y = 2.22;

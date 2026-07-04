@@ -18,6 +18,7 @@ export class WorldBuilder {
         this._createSky();
         this._createLighting();
         this._createTerrain();
+        this._createRoads();
         this._createCity();
         this._createLandingZone();
         this._createPOIs();
@@ -27,8 +28,8 @@ export class WorldBuilder {
     }
 
     _createSky() {
-        this.scene.fog = new THREE.Fog(COLORS.fog, 80, 350);
-        this.scene.background = new THREE.Color(COLORS.skyTop);
+        this.scene.fog = new THREE.Fog(COLORS.fog, 180, 450);
+        this.scene.background = new THREE.Color(COLORS.skyBottom);
 
         const skyGeo = new THREE.SphereGeometry(500, 32, 16);
         const skyMat = new THREE.ShaderMaterial({
@@ -36,8 +37,8 @@ export class WorldBuilder {
             uniforms: {
                 topColor: { value: new THREE.Color(COLORS.skyTop) },
                 bottomColor: { value: new THREE.Color(COLORS.skyBottom) },
-                offset: { value: 20 },
-                exponent: { value: 0.5 },
+                offset: { value: 10 },
+                exponent: { value: 0.35 },
             },
             vertexShader: `
                 varying vec3 vWorldPosition;
@@ -63,11 +64,11 @@ export class WorldBuilder {
     }
 
     _createLighting() {
-        const ambient = new THREE.AmbientLight(0xd4e8f0, 0.55);
+        const ambient = new THREE.AmbientLight(0xffffff, 0.75);
         this.scene.add(ambient);
 
-        const sun = new THREE.DirectionalLight(0xfff4d6, 1.4);
-        sun.position.set(80, 120, 60);
+        const sun = new THREE.DirectionalLight(0xfff8e8, 1.8);
+        sun.position.set(60, 100, 40);
         sun.castShadow = true;
         sun.shadow.mapSize.set(2048, 2048);
         sun.shadow.camera.near = 1;
@@ -78,7 +79,7 @@ export class WorldBuilder {
         sun.shadow.camera.bottom = -100;
         this.scene.add(sun);
 
-        const fill = new THREE.HemisphereLight(COLORS.skyBottom, COLORS.grass, 0.45);
+        const fill = new THREE.HemisphereLight(COLORS.skyBottom, COLORS.grassLight, 0.65);
         this.scene.add(fill);
     }
 
@@ -100,14 +101,14 @@ export class WorldBuilder {
         }
         geo.computeVertexNormals();
 
-        const surfaceTex = this.loader.load(`${this.textureBase}alien_earth_like_surface.webp`);
+        const surfaceTex = this.loader.load(`${this.textureBase}earth_daymap.webp`);
         surfaceTex.wrapS = surfaceTex.wrapT = THREE.RepeatWrapping;
-        surfaceTex.repeat.set(16, 16);
+        surfaceTex.repeat.set(12, 12);
 
         const groundMat = new THREE.MeshStandardMaterial({
             map: surfaceTex,
-            color: 0xa8d8a0,
-            roughness: 0.95,
+            color: 0xd8f0b8,
+            roughness: 0.88,
             metalness: 0.0,
         });
 
@@ -118,114 +119,259 @@ export class WorldBuilder {
         this.terrain = ground;
     }
 
+    _createRoads() {
+        const roadGroup = new THREE.Group();
+        roadGroup.name = 'roads';
+
+        const asphaltMat = new THREE.MeshStandardMaterial({
+            color: COLORS.asphalt,
+            roughness: 0.92,
+            metalness: 0.05,
+        });
+        const sidewalkMat = new THREE.MeshStandardMaterial({
+            color: COLORS.sidewalk,
+            roughness: 0.85,
+        });
+        const lineMat = new THREE.MeshBasicMaterial({ color: 0xf0f0e8 });
+
+        const roads = [
+            { x: 0, z: -40, w: 14, d: 200, rot: 0 },
+            { x: -50, z: -40, w: 14, d: 160, rot: 0 },
+            { x: 50, z: -40, w: 14, d: 160, rot: 0 },
+            { x: 0, z: -100, w: 200, d: 14, rot: 0 },
+            { x: 0, z: 20, w: 120, d: 14, rot: 0 },
+            { x: -70, z: 30, w: 100, d: 12, rot: 0 },
+            { x: 70, z: 30, w: 100, d: 12, rot: 0 },
+        ];
+
+        roads.forEach(r => {
+            const road = new THREE.Mesh(new THREE.BoxGeometry(r.w, 0.08, r.d), asphaltMat);
+            road.position.set(r.x, 0.04, r.z);
+            road.receiveShadow = true;
+            roadGroup.add(road);
+
+            const sw1 = new THREE.Mesh(
+                new THREE.BoxGeometry(r.w + 3, 0.06, 1.5),
+                sidewalkMat
+            );
+            sw1.position.set(r.x, 0.05, r.z - r.d / 2 - 1);
+            roadGroup.add(sw1);
+
+            const sw2 = sw1.clone();
+            sw2.position.z = r.z + r.d / 2 + 1;
+            roadGroup.add(sw2);
+
+            const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.09, r.d * 0.8), lineMat);
+            stripe.position.set(r.x, 0.06, r.z);
+            roadGroup.add(stripe);
+        });
+
+        this.scene.add(roadGroup);
+    }
+
     _createCity() {
         const cityGroup = new THREE.Group();
         cityGroup.name = 'city';
 
-        const buildingMat = new THREE.MeshStandardMaterial({
-            color: COLORS.building,
-            roughness: 0.8,
-            metalness: 0.2,
-        });
-        const accentMat = new THREE.MeshStandardMaterial({
-            color: COLORS.buildingAccent,
-            emissive: COLORS.buildingAccent,
-            emissiveIntensity: 0.3,
-        });
-
-        const layouts = [
-            { x: -60, z: -80, count: 8, dir: 1 },
-            { x: 60, z: -80, count: 8, dir: -1 },
-            { x: -80, z: 40, count: 6, dir: 1 },
-            { x: 80, z: 40, count: 6, dir: -1 },
-            { x: 0, z: -120, count: 10, dir: 0 },
+        const blocks = [
+            { x: -35, z: -70, face: 'z' },
+            { x: 35, z: -70, face: 'z' },
+            { x: -35, z: -100, face: 'z' },
+            { x: 35, z: -100, face: 'z' },
+            { x: -70, z: -55, face: 'x' },
+            { x: 70, z: -55, face: 'x' },
+            { x: -55, z: 5, face: 'z' },
+            { x: 55, z: 5, face: 'z' },
+            { x: -75, z: 40, face: 'x' },
+            { x: 75, z: 40, face: 'x' },
+            { x: -30, z: -130, face: 'z' },
+            { x: 30, z: -130, face: 'z' },
+            { x: -90, z: -90, face: 'x' },
+            { x: 90, z: -90, face: 'x' },
         ];
 
-        layouts.forEach(layout => {
-            for (let i = 0; i < layout.count; i++) {
-                const w = 4 + Math.random() * 6;
-                const h = 8 + Math.random() * 25;
-                const d = 4 + Math.random() * 6;
-                const building = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), buildingMat);
-                const bx = layout.x + (layout.dir !== 0 ? layout.dir * i * 12 : (i - 5) * 14);
-                const bz = layout.z + (layout.dir === 0 ? 0 : Math.random() * 8);
-                building.position.set(bx, h / 2, bz);
-                building.castShadow = true;
-                building.receiveShadow = true;
-                cityGroup.add(building);
-                this.colliders.push({ x: bx, z: bz, w: w + 1, d: d + 1 });
-
-                const windowRows = Math.floor(h / 3);
-                for (let row = 0; row < windowRows; row++) {
-                    const winCount = Math.floor(w / 1.5);
-                    for (let wn = 0; wn < winCount; wn++) {
-                        if (Math.random() > 0.6) {
-                            const win = new THREE.Mesh(
-                                new THREE.PlaneGeometry(0.8, 1.2),
-                                accentMat.clone()
-                            );
-                            win.material.emissiveIntensity = 0.1 + Math.random() * 0.4;
-                            win.position.set(
-                                bx - w / 2 + 1 + wn * 1.5,
-                                2 + row * 3,
-                                bz + d / 2 + 0.01
-                            );
-                            cityGroup.add(win);
-                        }
-                    }
-                }
-            }
+        blocks.forEach((block, idx) => {
+            this._createGTABuilding(cityGroup, block.x, block.z, block.face, idx);
         });
 
-        this._createHQBuilding(cityGroup, buildingMat, accentMat);
+        this._createHQBuilding(cityGroup);
+        this._createStreetProps(cityGroup);
         this.scene.add(cityGroup);
     }
 
-    _createHQBuilding(group, buildingMat, accentMat) {
+    _createGTABuilding(group, bx, bz, face, seed) {
+        const w = 8 + (seed % 4) * 2;
+        const d = 7 + (seed % 3) * 2;
+        const h = 10 + (seed % 6) * 5 + Math.floor(seed / 3) * 3;
+        const wallColor = COLORS.buildingPalette[seed % COLORS.buildingPalette.length];
+
+        const wallMat = new THREE.MeshStandardMaterial({
+            color: wallColor,
+            roughness: 0.75,
+            metalness: 0.05,
+        });
+        const roofMat = new THREE.MeshStandardMaterial({
+            color: 0xd0ccc4,
+            roughness: 0.9,
+        });
+        const glassMat = new THREE.MeshStandardMaterial({
+            color: COLORS.windowGlass,
+            roughness: 0.15,
+            metalness: 0.4,
+            transparent: true,
+            opacity: 0.75,
+        });
+
+        const building = new THREE.Group();
+        building.position.set(bx, 0, bz);
+
+        const body = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallMat);
+        body.position.y = h / 2;
+        body.castShadow = true;
+        body.receiveShadow = true;
+        building.add(body);
+
+        const roof = new THREE.Mesh(new THREE.BoxGeometry(w + 0.4, 0.5, d + 0.4), roofMat);
+        roof.position.y = h + 0.25;
+        building.add(roof);
+
+        const faceDir = face === 'z' ? 1 : -1;
+        const faceOffset = face === 'z' ? d / 2 : w / 2;
+        const rows = Math.floor(h / 2.8);
+        const cols = Math.floor((face === 'z' ? w : d) / 2);
+
+        for (let row = 1; row < rows; row++) {
+            for (let col = 0; col < cols; col++) {
+                const win = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.8), glassMat.clone());
+                if (face === 'z') {
+                    win.position.set(-w / 2 + 1.5 + col * 2, 1.5 + row * 2.8, faceDir * (faceOffset + 0.02));
+                } else {
+                    win.position.set(faceDir * (faceOffset + 0.02), 1.5 + row * 2.8, -d / 2 + 1.5 + col * 2);
+                    win.rotation.y = Math.PI / 2;
+                }
+                building.add(win);
+            }
+        }
+
+        const trim = new THREE.Mesh(
+            new THREE.BoxGeometry(face === 'z' ? w : w + 0.2, 0.3, face === 'z' ? d + 0.2 : d),
+            new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.7 })
+        );
+        trim.position.y = 0.15;
+        building.add(trim);
+
+        if (seed % 4 === 0) {
+            const awning = new THREE.Mesh(
+                new THREE.BoxGeometry(face === 'z' ? 3 : 0.2, 0.1, face === 'z' ? 0.2 : 3),
+                new THREE.MeshStandardMaterial({ color: 0xf0a858, roughness: 0.8 })
+            );
+            awning.position.set(0, 2.5, face === 'z' ? faceDir * (faceOffset + 1) : 0);
+            if (face !== 'z') awning.position.x = faceDir * (faceOffset + 1);
+            building.add(awning);
+        }
+
+        group.add(building);
+        this.colliders.push({ x: bx, z: bz, w: w + 1.5, d: d + 1.5 });
+    }
+
+    _createHQBuilding(group) {
         const hq = new THREE.Group();
         hq.position.set(0, 0, -60);
 
-        const main = new THREE.Mesh(new THREE.BoxGeometry(20, 15, 12), buildingMat);
-        main.position.y = 7.5;
+        const baseMat = new THREE.MeshStandardMaterial({ color: 0xf0ece4, roughness: 0.6, metalness: 0.1 });
+        const glassMat = new THREE.MeshStandardMaterial({
+            color: 0x99ccee,
+            roughness: 0.1,
+            metalness: 0.5,
+            transparent: true,
+            opacity: 0.7,
+        });
+        const accentMat = new THREE.MeshStandardMaterial({
+            color: COLORS.alien,
+            emissive: COLORS.alien,
+            emissiveIntensity: 0.15,
+            roughness: 0.5,
+        });
+
+        const podium = new THREE.Mesh(new THREE.BoxGeometry(24, 4, 16), baseMat);
+        podium.position.y = 2;
+        podium.castShadow = true;
+        hq.add(podium);
+
+        const main = new THREE.Mesh(new THREE.BoxGeometry(20, 14, 12), baseMat);
+        main.position.y = 11;
         main.castShadow = true;
         hq.add(main);
-        this.colliders.push({ x: 0, z: -60, w: 22, d: 14 });
 
-        const tower = new THREE.Mesh(new THREE.BoxGeometry(6, 25, 6), buildingMat);
-        tower.position.set(0, 12.5, 0);
+        const tower = new THREE.Mesh(new THREE.BoxGeometry(10, 28, 10), new THREE.MeshStandardMaterial({
+            color: 0xe8eef5,
+            roughness: 0.55,
+            metalness: 0.15,
+        }));
+        tower.position.y = 22;
         tower.castShadow = true;
         hq.add(tower);
 
-        const logo = new THREE.Mesh(
-            new THREE.TorusGeometry(3, 0.3, 8, 24),
-            accentMat
-        );
-        logo.position.set(0, 18, 6.1);
+        for (let row = 1; row < 10; row++) {
+            for (let side = 0; side < 4; side++) {
+                const panel = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 2), glassMat.clone());
+                const angle = (side / 4) * Math.PI * 2;
+                panel.position.set(Math.sin(angle) * 5.05, 6 + row * 2.5, Math.cos(angle) * 5.05);
+                panel.lookAt(0, panel.position.y, 0);
+                hq.add(panel);
+            }
+        }
+
+        const logo = new THREE.Mesh(new THREE.TorusGeometry(2.5, 0.25, 8, 24), accentMat);
+        logo.position.set(0, 32, 5.1);
         hq.add(logo);
 
-        const antenna = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.1, 0.1, 8),
-            accentMat
+        const entrance = new THREE.Mesh(
+            new THREE.BoxGeometry(6, 4, 0.3),
+            new THREE.MeshStandardMaterial({ color: 0x556677, metalness: 0.6, roughness: 0.3 })
         );
-        antenna.position.set(0, 29, 0);
-        hq.add(antenna);
+        entrance.position.set(0, 2, 8.1);
+        hq.add(entrance);
 
-        const beacon = new THREE.PointLight(COLORS.alien, 2, 30);
-        beacon.position.set(0, 33, 0);
-        hq.add(beacon);
-
+        this.colliders.push({ x: 0, z: -60, w: 26, d: 18 });
         group.add(hq);
+    }
+
+    _createStreetProps(group) {
+        const poleMat = new THREE.MeshStandardMaterial({ color: 0x888890, metalness: 0.5, roughness: 0.4 });
+        const lampMat = new THREE.MeshStandardMaterial({
+            color: 0xffffee,
+            emissive: 0xffffcc,
+            emissiveIntensity: 0.3,
+        });
+
+        const polePositions = [
+            [-20, -50], [20, -50], [-20, -90], [20, -90],
+            [-40, -30], [40, -30], [-60, -70], [60, -70],
+        ];
+
+        polePositions.forEach(([px, pz]) => {
+            const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 5, 8), poleMat);
+            pole.position.set(px, 2.5, pz);
+            group.add(pole);
+
+            const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), lampMat);
+            lamp.position.set(px, 5.2, pz);
+            group.add(lamp);
+
+            const light = new THREE.PointLight(0xfff8e0, 0.6, 18);
+            light.position.set(px, 5, pz);
+            group.add(light);
+        });
     }
 
     _createLandingZone() {
         const pad = new THREE.Mesh(
             new THREE.CircleGeometry(12, 32),
             new THREE.MeshStandardMaterial({
-                color: COLORS.alienDim,
-                emissive: COLORS.alien,
-                emissiveIntensity: 0.1,
-                roughness: 0.6,
-                metalness: 0.4,
+                color: COLORS.concrete,
+                roughness: 0.7,
+                metalness: 0.1,
             })
         );
         pad.rotation.x = -Math.PI / 2;
@@ -236,9 +382,9 @@ export class WorldBuilder {
         const ringMat = new THREE.MeshBasicMaterial({
             color: COLORS.alien,
             transparent: true,
-            opacity: 0.6,
+            opacity: 0.35,
         });
-        for (let r = 0; r < 3; r++) {
+        for (let r = 0; r < 2; r++) {
             const ring = new THREE.Mesh(
                 new THREE.RingGeometry(8 + r * 2, 8.3 + r * 2, 32),
                 ringMat
@@ -339,9 +485,9 @@ export class WorldBuilder {
             new THREE.MeshStandardMaterial({
                 color: COLORS.alien,
                 emissive: COLORS.alien,
-                emissiveIntensity: 0.5,
+                emissiveIntensity: 0.2,
                 transparent: true,
-                opacity: 0.7,
+                opacity: 0.85,
             })
         );
         pillar.position.y = 3;
@@ -349,20 +495,20 @@ export class WorldBuilder {
 
         const ring = new THREE.Mesh(
             new THREE.TorusGeometry(1.5, 0.05, 8, 24),
-            new THREE.MeshBasicMaterial({ color: COLORS.alienCyan, transparent: true, opacity: 0.8 })
+            new THREE.MeshBasicMaterial({ color: COLORS.alienCyan, transparent: true, opacity: 0.5 })
         );
         ring.position.y = 0.3;
         ring.rotation.x = Math.PI / 2;
         group.add(ring);
 
-        const light = new THREE.PointLight(COLORS.alien, 1, 12);
+        const light = new THREE.PointLight(COLORS.alien, 0.5, 12);
         light.position.y = 5;
         group.add(light);
 
         if (config.type === POI_TYPES.SERVICE) {
             const platform = new THREE.Mesh(
                 new THREE.BoxGeometry(4, 0.3, 4),
-                new THREE.MeshStandardMaterial({ color: COLORS.building, emissive: COLORS.alienDim, emissiveIntensity: 0.1 })
+                new THREE.MeshStandardMaterial({ color: COLORS.concrete, roughness: 0.8 })
             );
             platform.position.y = 0.15;
             group.add(platform);
@@ -374,7 +520,7 @@ export class WorldBuilder {
                 new THREE.MeshStandardMaterial({
                     color: COLORS.alienCyan,
                     emissive: COLORS.alienCyan,
-                    emissiveIntensity: 0.6,
+                    emissiveIntensity: 0.25,
                     wireframe: true,
                 })
             );
@@ -401,7 +547,7 @@ export class WorldBuilder {
         }
         this.scene.add(treeGroup);
 
-        const flowerColors = [0xff88aa, 0xffcc66, 0xaa88ff, 0x88ddff];
+        const flowerColors = [0xffaacc, 0xffdd77, 0xccaaee, 0xaaddff, 0xffbb88];
         for (let i = 0; i < 80; i++) {
             const flower = new THREE.Mesh(
                 new THREE.SphereGeometry(0.12, 6, 6),
@@ -429,7 +575,7 @@ export class WorldBuilder {
         const foliage = new THREE.Mesh(
             new THREE.SphereGeometry(1.6, 10, 10),
             new THREE.MeshStandardMaterial({
-                color: COLORS.grass,
+                color: COLORS.grassLight,
                 roughness: 0.85,
             })
         );
@@ -476,7 +622,7 @@ export class WorldBuilder {
             alien.rotation.y = alien.userData.wanderAngle + Math.PI;
             alien.children.forEach(child => {
                 if (child.material?.emissive) {
-                    child.material.emissiveIntensity = 0.4 + Math.sin(elapsed * 2 + i) * 0.2;
+                    child.material.emissiveIntensity = 0.15 + Math.sin(elapsed * 2 + i) * 0.1;
                 }
             });
         });
