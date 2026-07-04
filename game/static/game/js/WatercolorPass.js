@@ -15,9 +15,9 @@ export class WatercolorPass {
 
         const bloom = new UnrealBloomPass(
             new THREE.Vector2(window.innerWidth, window.innerHeight),
-            0.35,
-            0.45,
-            0.92
+            0.25,
+            0.4,
+            0.94
         );
         this.composer.addPass(bloom);
 
@@ -25,9 +25,9 @@ export class WatercolorPass {
             uniforms: {
                 tDiffuse: { value: null },
                 uTime: { value: 0 },
-                uPaperStrength: { value: 0.04 },
-                uBleedStrength: { value: 0.015 },
-                uSaturation: { value: 0.85 },
+                    uPaperStrength: { value: 0.03 },
+                    uBleedStrength: { value: 0.012 },
+                    uSaturation: { value: 0.92 },
             },
             vertexShader: `
                 varying vec2 vUv;
@@ -59,8 +59,8 @@ export class WatercolorPass {
                     vec4 color = texture2D(tDiffuse, uv + bleed);
                     float gray = dot(color.rgb, vec3(0.299, 0.587, 0.114));
                     color.rgb = mix(vec3(gray), color.rgb, uSaturation);
-                    color.rgb += vec3(0.0, paper * 0.5, paper * 0.3);
-                    color.rgb = mix(color.rgb, color.rgb * vec3(0.9, 1.05, 0.95), 0.3);
+                        color.rgb += vec3(paper * 0.2, paper * 0.35, paper * 0.15);
+                        color.rgb = mix(color.rgb, color.rgb * vec3(0.95, 1.02, 0.98), 0.25);
 
                     gl_FragColor = color;
                 }

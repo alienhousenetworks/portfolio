@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { COLORS, WORLD_SIZE, POI_TYPES } from './config.js';
-import { createAvatar } from './AvatarFactory.js';
+import { createAlienAvatar } from './AvatarFactory.js';
 
 export class WorldBuilder {
     constructor(scene, textureLoader, gameData, textureBase = '/static/core/textures/') {
@@ -10,6 +10,7 @@ export class WorldBuilder {
         this.textureBase = textureBase;
         this.pois = [];
         this.colliders = [];
+        this.alienResidents = [];
         this.groundY = 0;
     }
 
@@ -21,11 +22,12 @@ export class WorldBuilder {
         this._createLandingZone();
         this._createPOIs();
         this._createDecorations();
-        return { pois: this.pois, colliders: this.colliders };
+        this._spawnAlienResidents();
+        return { pois: this.pois, colliders: this.colliders, alienResidents: this.alienResidents };
     }
 
     _createSky() {
-        this.scene.fog = new THREE.FogExp2(COLORS.fog, 0.008);
+        this.scene.fog = new THREE.Fog(COLORS.fog, 80, 350);
         this.scene.background = new THREE.Color(COLORS.skyTop);
 
         const skyGeo = new THREE.SphereGeometry(500, 32, 16);
@@ -61,10 +63,10 @@ export class WorldBuilder {
     }
 
     _createLighting() {
-        const ambient = new THREE.AmbientLight(0x88aa88, 0.4);
+        const ambient = new THREE.AmbientLight(0xd4e8f0, 0.55);
         this.scene.add(ambient);
 
-        const sun = new THREE.DirectionalLight(0xfff5e0, 1.2);
+        const sun = new THREE.DirectionalLight(0xfff4d6, 1.4);
         sun.position.set(80, 120, 60);
         sun.castShadow = true;
         sun.shadow.mapSize.set(2048, 2048);
@@ -76,12 +78,8 @@ export class WorldBuilder {
         sun.shadow.camera.bottom = -100;
         this.scene.add(sun);
 
-        const fill = new THREE.HemisphereLight(COLORS.alienDim, COLORS.ground, 0.5);
+        const fill = new THREE.HemisphereLight(COLORS.skyBottom, COLORS.grass, 0.45);
         this.scene.add(fill);
-
-        const planetGlow = new THREE.PointLight(COLORS.alien, 0.8, 200);
-        planetGlow.position.set(0, 30, 0);
-        this.scene.add(planetGlow);
     }
 
     _createTerrain() {
@@ -94,23 +92,23 @@ export class WorldBuilder {
             const x = positions.getX(i);
             const z = positions.getZ(i);
             const dist = Math.sqrt(x * x + z * z);
-            let y = Math.sin(x * 0.05) * Math.cos(z * 0.05) * 2;
-            y += Math.sin(x * 0.12 + z * 0.08) * 1.5;
-            y += (Math.random() - 0.5) * 0.3;
-            if (dist < 25) y *= dist / 25;
+            let y = Math.sin(x * 0.04) * Math.cos(z * 0.04) * 1.8;
+            y += Math.sin(x * 0.1 + z * 0.07) * 1.2;
+            y += (Math.random() - 0.5) * 0.2;
+            if (dist < 30) y *= dist / 30;
             positions.setY(i, y);
         }
         geo.computeVertexNormals();
 
-        const surfaceTex = this.loader.load(`${this.textureBase}alien_planet_surface_v2.webp`);
+        const surfaceTex = this.loader.load(`${this.textureBase}alien_earth_like_surface.webp`);
         surfaceTex.wrapS = surfaceTex.wrapT = THREE.RepeatWrapping;
-        surfaceTex.repeat.set(20, 20);
+        surfaceTex.repeat.set(16, 16);
 
         const groundMat = new THREE.MeshStandardMaterial({
             map: surfaceTex,
-            color: 0x88cc88,
-            roughness: 0.9,
-            metalness: 0.05,
+            color: 0xa8d8a0,
+            roughness: 0.95,
+            metalness: 0.0,
         });
 
         const ground = new THREE.Mesh(geo, groundMat);
@@ -285,7 +283,7 @@ export class WorldBuilder {
                 radius: 4,
                 title: member.name,
                 subtitle: member.role,
-                content: `${member.name} is part of the ${this.data.siteName} crew, specializing in ${member.role}.`,
+                content: `${member.name} is an alien inhabitant of this planet and part of the ${this.data.siteName} crew, specializing in ${member.role}.`,
                 npc: member,
             });
         });
@@ -390,58 +388,98 @@ export class WorldBuilder {
     }
 
     _createDecorations() {
-        const crystalGeo = new THREE.OctahedronGeometry(1);
-        const crystalMat = new THREE.MeshStandardMaterial({
-            color: COLORS.alienCyan,
-            emissive: COLORS.alienCyan,
-            emissiveIntensity: 0.4,
-            transparent: true,
-            opacity: 0.8,
-        });
-
-        for (let i = 0; i < 30; i++) {
-            const crystal = new THREE.Mesh(crystalGeo, crystalMat);
-            const angle = Math.random() * Math.PI * 2;
-            const dist = 30 + Math.random() * 150;
-            crystal.position.set(Math.sin(angle) * dist, 1 + Math.random() * 3, Math.cos(angle) * dist);
-            crystal.scale.setScalar(0.5 + Math.random() * 1.5);
-            crystal.rotation.set(Math.random(), Math.random(), Math.random());
-            this.scene.add(crystal);
-        }
-
         const treeGroup = new THREE.Group();
-        for (let i = 0; i < 40; i++) {
-            const tree = this._createAlienTree();
+        for (let i = 0; i < 55; i++) {
+            const tree = this._createEarthTree();
             const angle = Math.random() * Math.PI * 2;
-            const dist = 20 + Math.random() * 170;
-            tree.position.set(Math.sin(angle) * dist, 0, Math.cos(angle) * dist);
+            const dist = 25 + Math.random() * 160;
+            const tx = Math.sin(angle) * dist;
+            const tz = Math.cos(angle) * dist;
+            if (Math.abs(tx) < 15 && Math.abs(tz - 30) < 15) continue;
+            tree.position.set(tx, 0, tz);
             treeGroup.add(tree);
         }
         this.scene.add(treeGroup);
+
+        const flowerColors = [0xff88aa, 0xffcc66, 0xaa88ff, 0x88ddff];
+        for (let i = 0; i < 80; i++) {
+            const flower = new THREE.Mesh(
+                new THREE.SphereGeometry(0.12, 6, 6),
+                new THREE.MeshStandardMaterial({
+                    color: flowerColors[i % flowerColors.length],
+                    roughness: 0.8,
+                })
+            );
+            const angle = Math.random() * Math.PI * 2;
+            const dist = 15 + Math.random() * 120;
+            flower.position.set(Math.sin(angle) * dist, 0.12, Math.cos(angle) * dist);
+            this.scene.add(flower);
+        }
     }
 
-    _createAlienTree() {
+    _createEarthTree() {
         const tree = new THREE.Group();
         const trunk = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.15, 0.3, 3, 6),
-            new THREE.MeshStandardMaterial({ color: 0x3a2a1a, roughness: 0.9 })
+            new THREE.CylinderGeometry(0.12, 0.22, 2.8, 8),
+            new THREE.MeshStandardMaterial({ color: COLORS.earthBrown, roughness: 0.95 })
         );
-        trunk.position.y = 1.5;
+        trunk.position.y = 1.4;
         tree.add(trunk);
 
-        const canopy = new THREE.Mesh(
-            new THREE.SphereGeometry(1.5, 8, 8),
+        const foliage = new THREE.Mesh(
+            new THREE.SphereGeometry(1.6, 10, 10),
             new THREE.MeshStandardMaterial({
-                color: COLORS.alienDim,
-                emissive: COLORS.alien,
-                emissiveIntensity: 0.15,
-                roughness: 0.7,
+                color: COLORS.grass,
+                roughness: 0.85,
             })
         );
-        canopy.position.y = 3.5;
-        canopy.scale.y = 1.5;
-        tree.add(canopy);
+        foliage.position.y = 3.4;
+        foliage.scale.set(1, 1.2, 1);
+        tree.add(foliage);
+
+        const foliage2 = foliage.clone();
+        foliage2.position.y = 4.2;
+        foliage2.scale.set(0.7, 0.8, 0.7);
+        tree.add(foliage2);
+
         return tree;
+    }
+
+    _spawnAlienResidents() {
+        const residentNames = ['Zyx', 'Nara', 'Kov', 'Eli', 'Pax', 'Ryn', 'Oma', 'Dex'];
+        for (let i = 0; i < 12; i++) {
+            const alien = createAlienAvatar({
+                name: residentNames[i % residentNames.length] + (i > 7 ? `-${i}` : ''),
+                variant: i,
+                scale: 0.85 + Math.random() * 0.15,
+            });
+            const angle = Math.random() * Math.PI * 2;
+            const dist = 20 + Math.random() * 100;
+            alien.position.set(Math.sin(angle) * dist, 0, Math.cos(angle) * dist);
+            alien.position.y = this.getTerrainHeight(alien.position.x, alien.position.z);
+            alien.userData.wanderAngle = Math.random() * Math.PI * 2;
+            alien.userData.wanderSpeed = 0.3 + Math.random() * 0.5;
+            alien.userData.homeX = alien.position.x;
+            alien.userData.homeZ = alien.position.z;
+            this.scene.add(alien);
+            this.alienResidents.push(alien);
+        }
+    }
+
+    updateResidents(dt, elapsed) {
+        this.alienResidents.forEach((alien, i) => {
+            alien.userData.wanderAngle += dt * alien.userData.wanderSpeed;
+            const radius = 3 + (i % 4);
+            alien.position.x = alien.userData.homeX + Math.sin(alien.userData.wanderAngle) * radius;
+            alien.position.z = alien.userData.homeZ + Math.cos(alien.userData.wanderAngle) * radius;
+            alien.position.y = this.getTerrainHeight(alien.position.x, alien.position.z);
+            alien.rotation.y = alien.userData.wanderAngle + Math.PI;
+            alien.children.forEach(child => {
+                if (child.material?.emissive) {
+                    child.material.emissiveIntensity = 0.4 + Math.sin(elapsed * 2 + i) * 0.2;
+                }
+            });
+        });
     }
 
     _formatAbout() {

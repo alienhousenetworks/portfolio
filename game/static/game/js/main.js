@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { COLORS } from './config.js';
-import { createAvatar, createUFO, createNameTag } from './AvatarFactory.js';
+import { createHumanAvatar, createAlienAvatar, createUFO, createNameTag } from './AvatarFactory.js';
 import { WorldBuilder } from './WorldBuilder.js';
 import { PlayerController } from './PlayerController.js';
 import { DialogueSystem } from './DialogueSystem.js';
@@ -38,7 +38,7 @@ class AlienWorldGame {
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        this.renderer.toneMappingExposure = 1.1;
+        this.renderer.toneMappingExposure = 1.2;
         container.appendChild(this.renderer.domElement);
 
         this.camera = new THREE.PerspectiveCamera(
@@ -71,14 +71,8 @@ class AlienWorldGame {
     }
 
     _initPlayer() {
-        this.player = createAvatar({
-            suitColor: 0x1a2a3a,
-            accentColor: COLORS.alienCyan,
-            name: 'Visitor',
-        });
-        this.player.position.set(0, 0, 32);
+        this.player = createHumanAvatar({ name: 'Explorer' });
         this.player.visible = false;
-        this.scene.add(this.player);
 
         this.ufo = createUFO();
         this.ufo.position.set(0, 80, 50);
@@ -104,15 +98,15 @@ class AlienWorldGame {
         ];
 
         team.forEach((member, i) => {
-            const npc = createAvatar({
-                suitColor: [COLORS.alienDim, 0x1a3a2a, 0x0a2030][i % 3],
-                accentColor: COLORS.alien,
+            const npc = createAlienAvatar({
                 name: member.name,
+                variant: i,
+                accentColor: COLORS.alien,
             });
             npc.position.set(positions[i].x, 0, positions[i].z + 10);
             npc.visible = false;
 
-            const tag = createNameTag(member.name);
+            const tag = createNameTag(member.name, COLORS.alien, 'ALIEN CREW');
             npc.add(tag);
 
             this.scene.add(npc);
@@ -129,6 +123,7 @@ class AlienWorldGame {
             this.ufo,
             this.player,
             this.npcs.map(n => n.mesh),
+            this.worldBuilder,
             () => this._onCinematicComplete()
         );
         this.watercolor = new WatercolorPass(this.renderer, this.scene, this.camera);
@@ -163,7 +158,10 @@ class AlienWorldGame {
 
     _onCinematicComplete() {
         this.state = 'dialogue';
-        this.playerController.setPosition(0, 28);
+        this.player.position.y = this.worldBuilder.getTerrainHeight(
+            this.player.position.x,
+            this.player.position.z
+        );
         this.dialogue.start(this.dialogue.getIntroDialogue(), () => {
             this.state = 'playing';
             this.playerController.enable();
@@ -301,6 +299,9 @@ class AlienWorldGame {
         }
 
         this._animateNPCs(dt);
+        if (this.state === 'playing') {
+            this.worldBuilder.updateResidents(dt, elapsed);
+        }
         this._updatePOIProximity();
         this._updateHUD();
         this._updateMinimap();

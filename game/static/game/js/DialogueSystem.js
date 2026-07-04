@@ -20,42 +20,43 @@ export class DialogueSystem {
 
     getIntroDialogue() {
         const site = this.data.siteName;
-        const hero = this.data.hero;
+        const hero = this.data.hero || {};
+
         const lines = [
             {
-                speaker: 'MISSION CONTROL',
-                text: `Approaching advanced planet sector. ${site} colony detected below.`,
+                speaker: 'PLANET AI',
+                text: 'Atmospheric entry complete. Earth-like conditions detected. Indigenous alien population active below.',
             },
             {
-                speaker: 'NAVIGATION AI',
-                text: 'Landing sequence initiated. Atmospheric conditions optimal. Welcome to the future.',
+                speaker: 'LANDING SYSTEM',
+                text: 'Touchdown confirmed. Ramp deployed. Human explorer, you may disembark safely.',
             },
         ];
 
         if ((this.data.team || []).length > 0) {
             const lead = this.data.team[0];
             lines.push({
-                speaker: lead.name.toUpperCase(),
-                text: `Greetings, traveler! I'm ${lead.name}, ${lead.role} at ${site}. We've been expecting you.`,
+                speaker: `${lead.name.toUpperCase()} [ALIEN]`,
+                text: `Welcome to our world, human! I am ${lead.name}, ${lead.role} at ${site}. We aliens have built an advanced civilization here — and we're glad you came.`,
             });
         }
 
         if ((this.data.team || []).length > 1) {
             const second = this.data.team[1];
             lines.push({
-                speaker: second.name.toUpperCase(),
-                text: `I'm ${second.name}. Our team engineers ${hero.gradient.toLowerCase()} solutions across the galaxy.`,
+                speaker: `${second.name.toUpperCase()} [ALIEN]`,
+                text: `I'm ${second.name}. You'll see our people everywhere on this planet. We specialize in ${hero.gradient || 'engineering'} the future — ${hero.subtext || 'advanced technology'}.`,
             });
         }
 
         lines.push({
-            speaker: this.data.team[0]?.name?.toUpperCase() || 'GUIDE',
-            text: `${hero.subtext} Explore our planetary campus — visit the HQ, service modules, project labs, and team plaza. Press E near glowing markers to learn more.`,
+            speaker: (this.data.team[0]?.name || 'GUIDE').toUpperCase() + ' [ALIEN]',
+            text: `Walk around our campus freely. Visit the HQ, service towers, project labs, and meet more of our alien crew. Press E near glowing beacons to learn about ${site}.`,
         });
 
         lines.push({
             speaker: 'SYSTEM',
-            text: 'Free roam enabled. Use WASD to move, mouse drag to look around, Shift to run. Good luck, explorer.',
+            text: 'Use WASD to move, mouse drag to look, Shift to run. The planet is yours to explore, human.',
         });
 
         return lines;

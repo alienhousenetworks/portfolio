@@ -146,10 +146,13 @@ export class PlayerController {
         const moving = this.velocity.lengthSq() > 0.1;
         if (!moving) return;
 
-        const children = this.avatar.children;
-        children.forEach((child, i) => {
-            if (child.geometry?.type === 'CapsuleGeometry' && child.position.y < 1.5) {
-                child.rotation.x = Math.sin(this.walkCycle + i) * 0.3;
+        const parts = this.avatar.userData.walkParts || [];
+        parts.forEach((name, i) => {
+            const part = this.avatar.getObjectByName(name);
+            if (part) {
+                const swing = Math.sin(this.walkCycle + i * 1.2) * 0.35;
+                if (name.includes('leg')) part.rotation.x = swing;
+                if (name.includes('arm') || name.includes('forearm')) part.rotation.x = -swing * 0.6;
             }
         });
     }
