@@ -108,6 +108,16 @@ class Game {
     }
 
     _interact(target) {
+        if (target.type === 'citizen' && target.isHost) {
+            this._openDetailPanel({
+                title: target.panelTitle || target.hostBuilding,
+                subtitle: `${target.title} · ${target.subtitle}`,
+                body: target.panelContent || target.content,
+                greeting: target.content,
+                speaker: target.title,
+            });
+            return;
+        }
         if (target.type === 'citizen') {
             this.playerCtrl.disable();
             this.dialogue.start(
@@ -129,7 +139,11 @@ class Game {
             }
             return;
         }
-        this._openPOI(target);
+        this._openDetailPanel({
+            title: target.title,
+            subtitle: target.subtitle,
+            body: target.content || target.panelContent,
+        });
     }
 
     _startBusRide(stop) {
@@ -153,11 +167,25 @@ class Game {
     }
 
     _openPOI(poi) {
+        this._openDetailPanel({
+            title: poi.title,
+            subtitle: poi.subtitle,
+            body: poi.content || poi.panelContent,
+        });
+    }
+
+    _openDetailPanel({ title, subtitle, body, greeting, speaker }) {
         this.playerCtrl.disable();
         const p = document.getElementById('info-panel');
-        p.querySelector('.info-panel-title').textContent = poi.title;
-        p.querySelector('.info-panel-subtitle').textContent = poi.subtitle;
-        p.querySelector('.info-panel-body').textContent = poi.content;
+        p.querySelector('.info-panel-title').textContent = title || 'Details';
+        p.querySelector('.info-panel-subtitle').textContent = subtitle || '';
+
+        const bodyEl = p.querySelector('.info-panel-body');
+        let text = body || 'No details available.';
+        if (greeting && speaker) {
+            text = `${speaker} says: "${greeting}"\n\n${text}`;
+        }
+        bodyEl.textContent = text;
         p.classList.add('active');
     }
 
@@ -189,8 +217,8 @@ class Game {
             let verb = 'Visit';
             let label = best.title;
             if (best.type === 'citizen') {
-                verb = 'Talk to';
-                label = best.isHost ? `${best.title} about ${best.hostBuilding}` : best.title;
+                verb = best.isHost ? 'Learn about' : 'Talk to';
+                label = best.isHost ? (best.hostBuilding || best.panelTitle) : best.title;
             } else if (best.type === 'train_station') verb = 'Board';
             else if (best.type === 'bus_stop') verb = 'Ride bus at';
             prompt.innerHTML = `<kbd>E</kbd> ${verb} ${label}`;

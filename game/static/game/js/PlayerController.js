@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { PLAYER, WORLD } from './config.js';
+import { PLAYER, WORLD, CAMERA } from './config.js';
 
 const MOVE_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
 
@@ -10,11 +10,15 @@ export class PlayerController {
         this.colliders = colliders;
         this.canvas = canvas;
         this.velocity = new THREE.Vector3();
-        this.camAngle = 0;
+        this.camYaw = 0;
+        this.camPitch = CAMERA.defaultPitch;
+        this.camDistance = CAMERA.defaultDistance;
         this.keys = {};
         this.enabled = false;
         this.isRunning = false;
         this.walkCycle = 0;
+        this._lookTarget = new THREE.Vector3();
+        this._offset = new THREE.Vector3();
         this._input();
     }
 
@@ -30,25 +34,37 @@ export class PlayerController {
             if (e.code.startsWith('Shift')) this.isRunning = false;
         });
 
-        let drag = false, lx = 0;
+        let drag = false, lx = 0, ly = 0;
         const onDown = (e) => {
             if (!this.enabled) return;
             this.canvas?.focus();
             drag = true;
             lx = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
+            ly = e.clientY ?? e.touches?.[0]?.clientY ?? 0;
         };
         const onUp = () => { drag = false; };
         const onMove = (e) => {
             if (!this.enabled || !drag) return;
             const cx = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
-            this.camAngle -= (cx - lx) * 0.004;
+            const cy = e.clientY ?? e.touches?.[0]?.clientY ?? 0;
+            this.camYaw -= (cx - lx) * CAMERA.yawSpeed;
+            this.camPitch += (cy - ly) * CAMERA.pitchSpeed;
+            this.camPitch = THREE.MathUtils.clamp(this.camPitch, CAMERA.minPitch, CAMERA.maxPitch);
             lx = cx;
+            ly = cy;
+        };
+        const onWheel = (e) => {
+            if (!this.enabled) return;
+            e.preventDefault();
+            this.camDistance += e.deltaY * 0.01;
+            this.camDistance = THREE.MathUtils.clamp(this.camDistance, CAMERA.minDistance, CAMERA.maxDistance);
         };
 
         this.canvas?.setAttribute('tabindex', '0');
         this.canvas?.addEventListener('mousedown', onDown);
         this.canvas?.addEventListener('mouseup', onUp);
         this.canvas?.addEventListener('mousemove', onMove);
+        this.canvas?.addEventListener('wheel', onWheel, { passive: false });
         this.canvas?.addEventListener('touchstart', onDown, { passive: false });
         this.canvas?.addEventListener('touchend', onUp);
         this.canvas?.addEventListener('touchmove', onMove, { passive: false });
@@ -64,12 +80,28 @@ export class PlayerController {
         this.velocity.set(0, 0, 0);
     }
 
+    _updateCamera() {
+        const target = this.avatar.position.clone();
+        target.y += CAMERA.lookHeight;
+
+        const cosP = Math.cos(this.camPitch);
+        this._offset.set(
+            Math.sin(this.camYaw) * cosP * this.camDistance,
+            Math.sin(this.camPitch) * this.camDistance + CAMERA.heightBoost,
+            Math.cos(this.camYaw) * cosP * this.camDistance
+        );
+
+        this.camera.position.lerp(target.clone().add(this._offset), CAMERA.smoothing);
+        this._lookTarget.lerp(target, CAMERA.lookSmoothing);
+        this.camera.lookAt(this._lookTarget);
+    }
+
     update(dt) {
         if (!this.enabled) return;
 
         const speed = this.isRunning ? PLAYER.runSpeed : PLAYER.walkSpeed;
-        const fwd = new THREE.Vector3(-Math.sin(this.camAngle), 0, -Math.cos(this.camAngle));
-        const right = new THREE.Vector3(Math.cos(this.camAngle), 0, -Math.sin(this.camAngle));
+        const fwd = new THREE.Vector3(-Math.sin(this.camYaw), 0, -Math.cos(this.camYaw));
+        const right = new THREE.Vector3(Math.cos(this.camYaw), 0, -Math.sin(this.camYaw));
         const dir = new THREE.Vector3();
 
         if (this.keys.KeyW || this.keys.ArrowUp) dir.add(fwd);
@@ -108,11 +140,7 @@ export class PlayerController {
             }
         });
 
-        const target = this.avatar.position.clone();
-        target.y += 1.5;
-        const off = new THREE.Vector3(Math.sin(this.camAngle) * 8, 5.5, Math.cos(this.camAngle) * 8);
-        this.camera.position.lerp(target.clone().add(off), 0.12);
-        this.camera.lookAt(target);
+        this._updateCamera();
     }
 
     _blocked(x, z) {

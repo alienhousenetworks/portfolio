@@ -16,6 +16,21 @@ export const PLAYER = {
     runSpeed: 13,
 };
 
+export const CAMERA = {
+    defaultDistance: 9,
+    minDistance: 4,
+    maxDistance: 22,
+    defaultPitch: 0.4,
+    minPitch: -1.2,
+    maxPitch: 1.35,
+    yawSpeed: 0.004,
+    pitchSpeed: 0.003,
+    lookHeight: 1.5,
+    heightBoost: 1.2,
+    smoothing: 0.12,
+    lookSmoothing: 0.18,
+};
+
 export const PALETTE = {
     sky: 0x87ceeb,
     ground: 0x5a7a42,

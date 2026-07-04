@@ -176,8 +176,8 @@ export class WorldBuilder {
 
             this._addPOI(
                 b.id, b.type === 'project' ? POI_TYPES.PROJECT : POI_TYPES.SERVICE,
-                b.x, b.z, 14,
-                b.title, b.subtitle, b.content || b.description,
+                b.x, b.z, 18,
+                b.title, b.subtitle, b.panelContent || b.content || b.description,
                 b.district
             );
         });
@@ -261,15 +261,18 @@ export class WorldBuilder {
     _pois() {
         const site = this.data.siteName || 'ALIENHOUSE';
 
-        this._addPOI('hq', POI_TYPES.HQ, 0, -115, 12, `${site} HQ`, 'HEADQUARTERS', this._aboutText(), 'hq');
+        const hqBody = this.data.company?.hqContent || this._aboutText();
+        this._addPOI('hq', POI_TYPES.HQ, 0, -115, 14, `${site} HQ`, 'HEADQUARTERS', hqBody, 'hq');
 
         (this.data.team || []).slice(0, 4).forEach((m, i) => {
-            this._addPOI(`team-${i}`, POI_TYPES.TEAM, -10 + i * 7, WORLD.parkZ - 18, 6,
-                m.name, m.role, `${m.name} — ${m.role} at ${site}.`, 'park');
+            this._addPOI(`team-${i}`, POI_TYPES.TEAM, -10 + i * 7, WORLD.parkZ - 18, 7,
+                m.name, m.role, m.panelContent || `${m.name} — ${m.role} at ${site}.`, 'park');
         });
 
-        this._addPOI('contact', POI_TYPES.CONTACT, 0, -60, 10,
-            'Contact', 'UPLINK', `Reach us at ${this.data.email || 'signal@alienhouse.net'}`, 'hq');
+        const contactBody = this.data.company?.contactContent
+            || `Email: ${this.data.email || 'signal@alienhouse.net'}`;
+        this._addPOI('contact', POI_TYPES.CONTACT, 0, -60, 12,
+            'Contact', 'UPLINK', contactBody, 'hq');
     }
 
     _aboutText() {

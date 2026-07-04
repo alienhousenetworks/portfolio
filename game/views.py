@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.utils.html import strip_tags
 
 from core.models import (
     AboutUs,
@@ -40,18 +41,105 @@ def _district_subtitle(district):
     }.get(district, 'OFFICE')
 
 
+def _join_lines(*parts):
+    return '\n'.join(p.strip() for p in parts if p and str(p).strip())
+
+
+def _service_panel(service, site_name):
+    lines = [
+        service.short_description,
+        '',
+        service.description,
+    ]
+    advantages = [a for a in (service.advantage_1, service.advantage_2, service.advantage_3) if a]
+    if advantages:
+        lines.append('')
+        lines.append('Key advantages:')
+        lines.extend(f'• {a}' for a in advantages)
+    if service.technical_specs:
+        lines.append('')
+        lines.append('Technical specs:')
+        lines.append(strip_tags(service.technical_specs))
+    lines.append('')
+    lines.append(f'— {site_name}')
+    return _join_lines(*lines)
+
+
+def _project_panel(project, site_name):
+    return _join_lines(
+        f'Tech stack: {project.tech_stack}',
+        '',
+        project.description,
+        '',
+        f'— {site_name}',
+    )
+
+
+def _hq_panel(site_config, hero, about_us, tactics, site_name):
+    lines = []
+    if hero and hero.sub_text:
+        lines.extend([hero.sub_text, ''])
+    if hero:
+        lines.append(f'{hero.main_heading_line_1} {hero.main_heading_gradient_text}')
+        lines.append('')
+    for a in about_us:
+        lines.append(f'{a.heading}')
+        if a.subheading:
+            lines.append(a.subheading)
+        lines.append('')
+    if tactics:
+        lines.append('Our advantages:')
+        for t in tactics:
+            lines.append(f'• {t.title}: {t.description}')
+        lines.append('')
+    if site_config:
+        lines.append(f'Email: {site_config.email}')
+        lines.append(f'Phone: {site_config.phone}')
+        lines.append(f'Address: {site_config.address}')
+    lines.append('')
+    lines.append(f'— {site_name}')
+    return _join_lines(*lines)
+
+
+def _contact_panel(site_config, hero, site_name):
+    lines = [f'Contact {site_name}', '']
+    if hero and hero.sub_text:
+        lines.append(hero.sub_text)
+        lines.append('')
+    if site_config:
+        lines.extend([
+            f'Email: {site_config.email}',
+            f'Phone: {site_config.phone}',
+            f'Address: {site_config.address}',
+        ])
+        if site_config.footer_text:
+            lines.append('')
+            lines.append(site_config.footer_text)
+    return _join_lines(*lines)
+
+
+def _team_panel(member, site_name):
+    return _join_lines(
+        f'{member.name} — {member.role}',
+        '',
+        f'Team member at {site_name}. Visit our HQ or service districts to learn more about what we build.',
+        '',
+        f'— {site_name}',
+    )
+
+
 def _host_line(building, site_name):
     title = building['title']
-    desc = building.get('description') or building.get('shortDescription') or ''
+    short = building.get('shortDescription') or ''
     role = building.get('hostRole') or 'representative'
     if building['hostType'] == 'alien':
         return (
-            f"Greetings! I'm {building['hostName']}, alien {role} here at {title}. "
-            f"We at {site_name} offer: {desc}"
+            f"Greetings! I'm {building['hostName']}, alien {role} at {title}. "
+            f"Press E brought you the full briefing — here's what {site_name} offers: {short}"
         )
     return (
-        f"Hi there! I'm {building['hostName']}, human {role} at {title}. "
-        f"Let me tell you what we do — {desc}"
+        f"Hi! I'm {building['hostName']}, {role} at {title}. "
+        f"Let me walk you through our services — {short}"
     )
 
 
@@ -64,7 +152,6 @@ def _build_game_buildings(services, projects, team, site_name):
         'consulting': [(-60, -150), (60, -150), (-60, 130), (60, 130)],
     }
     slot_idx = {'software': 0, 'marketing': 0, 'consulting': 0, 'innovation': 0}
-
     innovation_slots = [(-155, 145), (-130, 145), (-105, 145), (-155, 175), (-130, 175), (-105, 175)]
 
     for i, service in enumerate(services):
@@ -79,9 +166,7 @@ def _build_game_buildings(services, projects, team, site_name):
         host_name = member.name if member else ('Zara' if host_type == 'alien' else 'Alex')
         host_role = member.role if member else 'specialist'
 
-        desc = service.description or service.short_description
-        short = service.short_description
-
+        panel = _service_panel(service, site_name)
         b = {
             'id': f'svc-{service.slug}',
             'type': 'service',
@@ -91,9 +176,10 @@ def _build_game_buildings(services, projects, team, site_name):
             'z': z,
             'title': service.name,
             'subtitle': _district_subtitle(district),
-            'shortDescription': short,
-            'description': desc,
-            'content': desc,
+            'shortDescription': service.short_description,
+            'description': service.description,
+            'content': panel,
+            'panelContent': panel,
             'icon': service.icon or 'cpu',
             'hostType': host_type,
             'hostName': host_name,
@@ -110,6 +196,7 @@ def _build_game_buildings(services, projects, team, site_name):
         x, z = innovation_slots[si]
         host_type = 'human' if i % 2 else 'alien'
         host_name = team_list[(i + 1) % len(team_list)].name if team_list else ('Jordan' if host_type == 'human' else 'Kov')
+        panel = _project_panel(project, site_name)
 
         b = {
             'id': f'proj-{i}',
@@ -122,7 +209,8 @@ def _build_game_buildings(services, projects, team, site_name):
             'subtitle': 'PROJECT SHOWCASE',
             'shortDescription': project.tech_stack,
             'description': project.description,
-            'content': f"{project.title} — {project.tech_stack}\n\n{project.description}",
+            'content': panel,
+            'panelContent': panel,
             'hostType': host_type,
             'hostName': host_name,
             'hostRole': 'project lead',
@@ -130,8 +218,8 @@ def _build_game_buildings(services, projects, team, site_name):
             'hostZ': z + 12,
         }
         b['hostLine'] = (
-            f"I'm {host_name}. This building showcases our project {project.title} "
-            f"built with {project.tech_stack}. {project.description}"
+            f"I'm {host_name}, project lead. This showcase is {project.title} "
+            f"— built with {project.tech_stack}. Step inside for the full case study."
         )
         buildings.append(b)
 
@@ -148,10 +236,14 @@ def world(request):
     tactics = TacticalAdvantage.objects.all()
 
     site_name = site_config.site_name if site_config else 'ALIENHOUSE'
+    hq_content = _hq_panel(site_config, hero, about_us, tactics, site_name)
+    contact_content = _contact_panel(site_config, hero, site_name)
 
     game_data = {
         'siteName': site_name,
         'email': site_config.email if site_config else 'signal@alienhouse.net',
+        'phone': site_config.phone if site_config else '',
+        'address': site_config.address if site_config else '',
         'hero': {
             'status': hero.status_text if hero else 'Welcome to AlienHouse Networks',
             'heading': hero.main_heading_line_1 if hero else 'FUTURE',
@@ -166,7 +258,8 @@ def world(request):
             {
                 'name': s.name,
                 'slug': s.slug,
-                'description': s.short_description,
+                'shortDescription': s.short_description,
+                'description': s.description,
                 'icon': s.icon or 'cpu',
             }
             for s in services
@@ -176,6 +269,7 @@ def world(request):
                 'name': m.name,
                 'role': m.role,
                 'image': m.image.url if m.image else None,
+                'panelContent': _team_panel(m, site_name),
             }
             for m in team
         ],
@@ -191,6 +285,10 @@ def world(request):
             {'title': t.title, 'description': t.description}
             for t in tactics
         ],
+        'company': {
+            'hqContent': hq_content,
+            'contactContent': contact_content,
+        },
         'districts': [
             {'id': 'software', 'label': 'Software Dev City', 'x': -170, 'z': -90, 'color': '#4488cc'},
             {'id': 'marketing', 'label': 'Marketing District', 'x': 170, 'z': -90, 'color': '#cc6644'},
