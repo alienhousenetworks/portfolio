@@ -29,10 +29,10 @@ export class CitizenManager {
         this.citizens = [];
     }
 
-    spawn(teamMembers = []) {
+    spawn(teamMembers = [], buildings = []) {
         const spots = this._walkSpots();
 
-        for (let i = 0; i < 18; i++) {
+        for (let i = 0; i < 14; i++) {
             const spot = spots[i % spots.length];
             const name = HUMAN_NAMES[i % HUMAN_NAMES.length];
             const mesh = createHumanAvatar({
@@ -42,7 +42,7 @@ export class CitizenManager {
             this._placeCitizen(mesh, spot, name, 'human', HUMAN_LINES[i % HUMAN_LINES.length], i * 0.7);
         }
 
-        for (let i = 0; i < 22; i++) {
+        for (let i = 0; i < 16; i++) {
             const spot = spots[(i + 5) % spots.length];
             const name = ALIEN_NAMES[i % ALIEN_NAMES.length];
             const mesh = createAlienAvatar({ variant: i % 4 });
@@ -60,6 +60,42 @@ export class CitizenManager {
                 subtitle: 'ALIENHOUSE CREW',
                 line: `I'm ${m.name}, ${m.role}. Proud to represent AlienHouse on this planet!`,
                 speed: 0, phase: i, visible: false, isTeam: true,
+            });
+        });
+
+        this.spawnBuildingHosts(buildings);
+    }
+
+    spawnBuildingHosts(buildings = []) {
+        buildings.forEach((b, i) => {
+            const isAlien = b.hostType === 'alien';
+            const mesh = isAlien
+                ? createAlienAvatar({ variant: i % 4 })
+                : createHumanAvatar({
+                    shirtColor: SHIRT_COLORS[i % SHIRT_COLORS.length],
+                    skinTone: [0xe0b090, 0xc49a7a][i % 2],
+                });
+
+            mesh.position.set(b.hostX, WORLD.groundY, b.hostZ);
+            mesh.rotation.y = Math.atan2(b.x - b.hostX, b.z - b.hostZ);
+            mesh.add(createNameTag(b.hostName));
+            this.scene.add(mesh);
+
+            this.citizens.push({
+                mesh,
+                name: b.hostName,
+                type: isAlien ? 'alien' : 'human',
+                subtitle: b.subtitle || 'BUILDING HOST',
+                line: b.hostLine || b.content || b.description,
+                isHost: true,
+                buildingId: b.id,
+                buildingTitle: b.title,
+                speed: 0,
+                homeX: b.hostX,
+                homeZ: b.hostZ,
+                targetX: b.hostX,
+                targetZ: b.hostZ,
+                phase: i,
             });
         });
     }
@@ -104,7 +140,7 @@ export class CitizenManager {
 
     update(dt) {
         this.citizens.filter(c => !c.isTeam || c.mesh.visible).forEach(c => {
-            if (c.isTeam || c.speed === 0) return;
+            if (c.isTeam || c.isHost || c.speed === 0) return;
 
             const target = c.goingToTarget
                 ? { x: c.targetX, z: c.targetZ }
@@ -147,15 +183,19 @@ export class CitizenManager {
 
     toInteractable(c) {
         if (!c) return null;
+        const verb = c.isHost ? c.buildingTitle : c.name;
         return {
-            id: `citizen-${c.name}`,
+            id: c.isHost ? `host-${c.buildingId}` : `citizen-${c.name}`,
             type: 'citizen',
             position: c.mesh.position.clone(),
-            radius: 4,
+            radius: c.isHost ? 5 : 4,
             title: c.name,
             subtitle: c.subtitle,
             content: c.line,
+            mapLabel: c.isHost ? (c.buildingTitle?.slice(0, 8) || c.name) : null,
             citizen: c,
+            isHost: c.isHost,
+            hostBuilding: c.buildingTitle,
         };
     }
 }

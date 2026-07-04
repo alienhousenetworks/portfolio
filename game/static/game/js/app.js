@@ -8,6 +8,7 @@ import { CinematicIntro } from './CinematicIntro.js';
 import { TransitSystem } from './Vehicles.js';
 import { CitizenManager } from './Citizens.js';
 import { TransitRideController } from './TransitRide.js';
+import { DISTRICT_DEFS, MAP_LEGEND, POI_MAP_COLORS, getDistrictAt } from './Districts.js';
 
 class Game {
     constructor(data) {
@@ -30,7 +31,8 @@ class Game {
         this.interactables = [...this.pois, ...stops];
 
         this.citizens = new CitizenManager(this.scene);
-        this.citizens.spawn(this.data.team || []);
+        this.citizens.spawn(this.data.team || [], built.buildings || this.data.buildings || []);
+        this._buildMapLegend();
 
         this.player = createHumanAvatar();
         this.player.visible = false;
@@ -184,8 +186,14 @@ class Game {
         const prompt = document.getElementById('interact-prompt');
         if (best) {
             prompt.classList.add('visible');
-            const verb = best.type === 'citizen' ? 'Talk to' : best.type === 'train_station' ? 'Board' : 'Visit';
-            prompt.innerHTML = `<kbd>E</kbd> ${verb} ${best.title}`;
+            let verb = 'Visit';
+            let label = best.title;
+            if (best.type === 'citizen') {
+                verb = 'Talk to';
+                label = best.isHost ? `${best.title} about ${best.hostBuilding}` : best.title;
+            } else if (best.type === 'train_station') verb = 'Board';
+            else if (best.type === 'bus_stop') verb = 'Ride bus at';
+            prompt.innerHTML = `<kbd>E</kbd> ${verb} ${label}`;
         } else {
             prompt.classList.remove('visible');
         }
@@ -201,32 +209,79 @@ class Game {
         if (this.state !== 'playing') return;
         const p = this.player.position;
         document.getElementById('coord-display').textContent = `${p.x.toFixed(0)}, ${p.z.toFixed(0)}`;
-        document.getElementById('zone-display').textContent = this.nearestTarget?.subtitle || 'DOWNTOWN';
+        const district = getDistrictAt(p.x, p.z);
+        document.getElementById('zone-display').textContent =
+            this.nearestTarget?.subtitle || district.label.toUpperCase();
         document.getElementById('site-display').textContent = this.data.siteName;
+    }
+
+    _buildMapLegend() {
+        const el = document.getElementById('map-legend');
+        if (!el) return;
+        el.innerHTML = MAP_LEGEND.map(item =>
+            `<span class="legend-item"><i style="background:${item.color}"></i>${item.label}</span>`
+        ).join('');
     }
 
     _minimap() {
         const c = document.getElementById('minimap-canvas');
-        if (!c || this.state !== 'playing') return;
+        if (!c || (this.state !== 'playing' && this.state !== 'riding')) return;
         const ctx = c.getContext('2d');
         const w = c.width, h = c.height, sc = w / 400;
-        ctx.fillStyle = '#2a3a2a';
+        const cx = w / 2, cy = h / 2;
+
+        ctx.fillStyle = '#1e2a1e';
         ctx.fillRect(0, 0, w, h);
 
-        this.interactables.forEach(item => {
-            ctx.fillStyle = item.type === 'bus_stop' ? '#d4a020'
-                : item.type === 'train_station' ? '#4488cc' : '#4a8';
+        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+        ctx.lineWidth = 1;
+        for (let i = -3; i <= 3; i++) {
+            const off = i * WORLD.roadSpacing * sc;
+            ctx.beginPath(); ctx.moveTo(cx + off, 0); ctx.lineTo(cx + off, h); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, cy + off); ctx.lineTo(w, cy + off); ctx.stroke();
+        }
+
+        Object.values(DISTRICT_DEFS).forEach(d => {
+            if (d.id === 'downtown') return;
+            const dx = cx + d.x * sc, dy = cy + d.z * sc, r = d.radius * sc;
+            ctx.fillStyle = d.color + '33';
             ctx.beginPath();
-            ctx.arc(w / 2 + item.position.x * sc, h / 2 + item.position.z * sc, 3, 0, 6.28);
+            ctx.arc(dx, dy, r, 0, 6.28);
             ctx.fill();
+            ctx.strokeStyle = d.color + '88';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            ctx.fillStyle = d.color;
+            ctx.font = 'bold 8px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(d.shortLabel, dx, dy + 3);
         });
 
-        const px = w / 2 + this.player.position.x * sc;
-        const py = h / 2 + this.player.position.z * sc;
+        this.interactables.forEach(item => {
+            const mx = cx + item.position.x * sc;
+            const my = cy + item.position.z * sc;
+            const col = POI_MAP_COLORS[item.type] || '#4a8';
+            ctx.fillStyle = col;
+            ctx.beginPath();
+            ctx.arc(mx, my, item.type === 'hq' ? 5 : 3.5, 0, 6.28);
+            ctx.fill();
+            if (item.mapLabel && ['hq', 'service', 'project', 'contact'].includes(item.type)) {
+                ctx.fillStyle = 'rgba(255,255,255,0.85)';
+                ctx.font = '7px sans-serif';
+                ctx.textAlign = 'left';
+                ctx.fillText(item.mapLabel, mx + 5, my + 2);
+            }
+        });
+
+        const px = cx + this.player.position.x * sc;
+        const py = cy + this.player.position.z * sc;
         ctx.fillStyle = '#fff';
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.arc(px, py, 4, 0, 6.28);
         ctx.fill();
+        ctx.stroke();
     }
 
     _loop() {

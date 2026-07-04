@@ -54,7 +54,33 @@ html, body {
 .hud-bottom-right { bottom: 16px; right: 16px; }
 .hud-label { color: #888; font-size: 0.65rem; text-transform: uppercase; margin-bottom: 2px; }
 
-#minimap canvas { border-radius: 4px; }
+#minimap-canvas { border-radius: 4px; display: block; border: 1px solid rgba(255,255,255,0.1); }
+
+.hud-map-panel { min-width: 210px; }
+
+#map-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    margin-top: 8px;
+    max-width: 200px;
+}
+.legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.58rem;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.legend-item i {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
 
 #interact-prompt {
     position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
