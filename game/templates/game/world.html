@@ -4,97 +4,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ config.site_name|default:"ALIENHOUSE" }} | Planetary Visit</title>
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-
+    <title>{{ config.site_name|default:"ALIENHOUSE" }} | City Explorer</title>
     <link rel="stylesheet" href="{% static 'game/css/world.css' %}">
-
     <script type="importmap">
     {
         "imports": {
-            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
         }
     }
     </script>
 </head>
 <body>
-    <div id="game-root">
-        <div id="loading-screen">
-            <div class="start-badge">INITIALIZING WORLD</div>
-            <div class="start-title" style="font-size: 1.5rem;">LOADING PLANET</div>
-            <div class="loading-bar-track">
-                <div class="loading-bar-fill"></div>
-            </div>
-        </div>
+    <div id="loading-screen">
+        <div class="start-badge">LOADING</div>
+        <div class="start-title">Building City</div>
+        <div class="loading-bar-track"><div class="loading-bar-fill" style="width:100%"></div></div>
+    </div>
 
-        <div id="start-screen">
-            <div class="start-badge">INTERACTIVE EXPERIENCE</div>
-            <h1 class="start-title">
-                {{ config.site_name|default:"ALIENHOUSE" }}
-                <span>PLANETARY VISIT</span>
-            </h1>
-            <p class="start-subtitle">Your UFO lands on an Earth-like planet where aliens live — step out, meet the crew, explore their world</p>
-            <button id="btn-start" class="btn-engage">BEGIN LANDING</button>
-            <p class="controls-hint">
-                <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move &nbsp;|&nbsp;
-                <kbd>SHIFT</kbd> Run &nbsp;|&nbsp;
-                <kbd>E</kbd> Interact &nbsp;|&nbsp;
-                Mouse drag to look
-            </p>
-        </div>
+    <div id="start-screen" class="hidden">
+        <h1 class="start-title">{{ config.site_name|default:"ALIENHOUSE" }}<span>City Explorer</span></h1>
+        <p class="start-subtitle">Land in the city, meet the alien crew, explore downtown</p>
+        <button id="btn-start" class="btn-engage">START</button>
+        <p class="controls-hint"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move · Mouse drag Look · <kbd>Shift</kbd> Run · <kbd>E</kbd> Interact</p>
+    </div>
 
-        <div class="cinematic-bar top"></div>
-        <div class="cinematic-bar bottom"></div>
+    <div id="game-canvas"></div>
+    <a href="{% url 'index' %}" class="back-link">&larr; Back to site</a>
 
-        <div id="game-canvas"></div>
-        <div id="watercolor-overlay"></div>
+    <div id="hud">
+        <div class="hud-panel hud-top-left"><div class="hud-label">Position</div><div id="coord-display">0, 0</div></div>
+        <div class="hud-panel hud-top-right"><div class="hud-label">Area</div><div id="zone-display">—</div></div>
+        <div class="hud-panel hud-bottom-left"><div class="hud-label">Map</div><canvas id="minimap-canvas" width="120" height="120"></canvas></div>
+        <div class="hud-panel hud-bottom-right"><div class="hud-label">City</div><div id="site-display">{{ config.site_name|default:"ALIENHOUSE" }}</div></div>
+    </div>
 
-        <a href="{% url 'index' %}" class="back-link">&larr; RETURN TO MAIN SITE</a>
+    <div id="interact-prompt"><kbd>E</kbd> Interact</div>
 
-        <div id="hud">
-            <div class="hud-panel hud-top-left">
-                <div class="hud-label">COORDINATES</div>
-                <div id="coord-display">0.0, 0.0</div>
-            </div>
-            <div class="hud-panel hud-top-right">
-                <div class="hud-label">SECTOR</div>
-                <div id="zone-display">APPROACH</div>
-            </div>
-            <div class="hud-panel hud-bottom-left">
-                <div class="hud-label">PLANET MAP</div>
-                <div id="minimap">
-                    <canvas id="minimap-canvas" width="140" height="140"></canvas>
-                </div>
-            </div>
-            <div class="hud-panel hud-bottom-right">
-                <div class="hud-label">COLONY</div>
-                <div id="site-display">{{ config.site_name|default:"ALIENHOUSE" }}</div>
-            </div>
-        </div>
+    <div id="dialogue-box">
+        <div class="dialogue-speaker"></div>
+        <div class="dialogue-text"></div>
+        <div class="dialogue-continue">Click or E to continue</div>
+    </div>
 
-        <div id="interact-prompt"><kbd>E</kbd> Interact</div>
-
-        <div id="dialogue-box">
-            <div class="dialogue-speaker">SYSTEM</div>
-            <div class="dialogue-text"></div>
-            <div class="dialogue-continue">Click or press E to continue ▶</div>
-        </div>
-
-        <div id="info-panel">
-            <button id="info-close" class="info-panel-close">✕</button>
-            <div class="info-panel-title"></div>
-            <div class="info-panel-subtitle"></div>
-            <div class="info-panel-body"></div>
-        </div>
+    <div id="info-panel">
+        <button id="info-close" class="info-panel-close">✕</button>
+        <div class="info-panel-title"></div>
+        <div class="info-panel-subtitle"></div>
+        <div class="info-panel-body"></div>
     </div>
 
     {{ game_data|json_script:"game-data" }}
-    <script id="texture-base" type="application/json">"{% static 'core/textures/' %}"</script>
-
     <script type="module" src="{% static 'game/js/main.js' %}"></script>
 </body>
 </html>

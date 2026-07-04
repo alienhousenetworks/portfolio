@@ -1,326 +1,187 @@
 import * as THREE from 'three';
-import { COLORS } from './config.js';
+import { WORLD } from './config.js';
 import { createHumanAvatar, createAlienAvatar, createUFO, createNameTag } from './AvatarFactory.js';
 import { WorldBuilder } from './WorldBuilder.js';
 import { PlayerController } from './PlayerController.js';
 import { DialogueSystem } from './DialogueSystem.js';
 import { CinematicIntro } from './CinematicIntro.js';
-import { WatercolorPass } from './WatercolorPass.js';
 
-class AlienWorldGame {
-    constructor(gameData, textureBase) {
-        this.data = gameData;
-        this.textureBase = textureBase;
+class Game {
+    constructor(data) {
+        this.data = data;
         this.clock = new THREE.Clock();
         this.state = 'loading';
         this.pois = [];
         this.npcs = [];
         this.nearestPOI = null;
 
-        this._initRenderer();
-        this._initScene();
-        this._buildWorld();
-        this._initPlayer();
-        this._initNPCs();
-        this._initSystems();
-        this._bindUI();
-        this._animate();
-    }
-
-    _initRenderer() {
-        const container = document.getElementById('game-canvas');
-        this.renderer = new THREE.WebGLRenderer({
-            antialias: true,
-            powerPreference: 'high-performance',
-        });
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        this.renderer.shadowMap.enabled = true;
-        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        this.renderer.toneMapping = THREE.ReinhardToneMapping;
-        this.renderer.toneMappingExposure = 1.45;
-        this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-        container.appendChild(this.renderer.domElement);
-
-        this.camera = new THREE.PerspectiveCamera(
-            60,
-            window.innerWidth / window.innerHeight,
-            0.1,
-            600
-        );
-
-        window.addEventListener('resize', () => {
-            this.camera.aspect = window.innerWidth / window.innerHeight;
-            this.camera.updateProjectionMatrix();
-            this.renderer.setSize(window.innerWidth, window.innerHeight);
-            this.watercolor?.setSize(window.innerWidth, window.innerHeight);
-        });
-    }
-
-    _initScene() {
+        this._renderer();
         this.scene = new THREE.Scene();
-        this.loader = new THREE.TextureLoader();
-    }
+        const built = new WorldBuilder(this.scene, data).build();
+        this.world = built;
+        this.pois = built.pois;
+        this.colliders = built.colliders;
 
-    _buildWorld() {
-        const builder = new WorldBuilder(this.scene, this.loader, this.data, this.textureBase);
-        const result = builder.build();
-        this.worldBuilder = builder;
-        this.pois = result.pois;
-        this.colliders = result.colliders;
-        this._updateLoading(60);
-    }
-
-    _initPlayer() {
-        this.player = createHumanAvatar({ name: 'Explorer' });
+        this.player = createHumanAvatar();
         this.player.visible = false;
+        this.scene.add(this.player);
 
         this.ufo = createUFO();
-        this.ufo.position.set(0, 80, 50);
+        this.ufo.position.set(0, 60, 90);
         this.scene.add(this.ufo);
 
-        this.playerController = new PlayerController(
-            this.camera,
-            this.player,
-            this.worldBuilder,
-            this.colliders
-        );
-        this._updateLoading(80);
-    }
-
-    _initNPCs() {
-        const team = (this.data.team || []).slice(0, 5);
-        const positions = [
-            { x: -4, z: 20 },
-            { x: 0, z: 18 },
-            { x: 4, z: 20 },
-            { x: -7, z: 22 },
-            { x: 7, z: 22 },
-        ];
-
-        team.forEach((member, i) => {
-            const npc = createAlienAvatar({
-                name: member.name,
-                variant: i,
-                accentColor: COLORS.alien,
-            });
-            npc.position.set(positions[i].x, 0, positions[i].z + 10);
-            npc.visible = false;
-
-            const tag = createNameTag(member.name, COLORS.alien, 'ALIEN CREW');
-            npc.add(tag);
-
-            this.scene.add(npc);
-            this.npcs.push({ mesh: npc, data: member, homePos: { ...positions[i], z: positions[i].z } });
-        });
-        this._updateLoading(95);
-    }
-
-    _initSystems() {
-        this.dialogue = new DialogueSystem(this.data);
+        this.playerCtrl = new PlayerController(this.camera, this.player, this.colliders);
+        this._npcs();
+        this.dialogue = new DialogueSystem(data);
         this.cinematic = new CinematicIntro(
-            this.scene,
-            this.camera,
-            this.ufo,
-            this.player,
+            this.scene, this.camera, this.ufo, this.player,
             this.npcs.map(n => n.mesh),
-            this.worldBuilder,
-            () => this._onCinematicComplete()
+            () => this._afterCinematic()
         );
-        this.watercolor = new WatercolorPass(this.renderer, this.scene, this.camera);
-        this._updateLoading(100);
-
+        this._ui();
+        requestAnimationFrame(() => this._loop());
         setTimeout(() => {
-            document.getElementById('loading-screen').classList.add('hidden');
+            document.getElementById('loading-screen')?.classList.add('hidden');
+            document.getElementById('start-screen')?.classList.remove('hidden');
             this.state = 'start';
-        }, 500);
+        }, 400);
     }
 
-    _bindUI() {
-        document.getElementById('btn-start').addEventListener('click', () => this.startGame());
+    _renderer() {
+        const el = document.getElementById('game-canvas');
+        this.renderer = new THREE.WebGLRenderer({ antialias: true });
+        this.renderer.setSize(innerWidth, innerHeight);
+        this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+        this.renderer.shadowMap.enabled = true;
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+        el.appendChild(this.renderer.domElement);
 
-        window.addEventListener('keydown', (e) => {
-            if (e.code === 'KeyE' && this.state === 'playing' && !this.dialogue.active) {
-                if (this.nearestPOI) this._interactPOI(this.nearestPOI);
+        this.camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.5, 300);
+        this.camera.position.set(0, 8, 60);
+
+        addEventListener('resize', () => {
+            this.camera.aspect = innerWidth / innerHeight;
+            this.camera.updateProjectionMatrix();
+            this.renderer.setSize(innerWidth, innerHeight);
+        });
+    }
+
+    _npcs() {
+        const team = (this.data.team || []).slice(0, 4);
+        team.forEach((m, i) => {
+            const mesh = createAlienAvatar();
+            mesh.position.set(-4 + i * 2.5, WORLD.groundY, 50);
+            mesh.visible = false;
+            mesh.add(createNameTag(m.name));
+            this.scene.add(mesh);
+            this.npcs.push({ mesh, data: m });
+        });
+    }
+
+    _ui() {
+        document.getElementById('btn-start')?.addEventListener('click', () => {
+            document.getElementById('start-screen')?.classList.add('hidden');
+            this.state = 'cinematic';
+            this.cinematic.start();
+        });
+        document.getElementById('info-close')?.addEventListener('click', () => {
+            document.getElementById('info-panel')?.classList.remove('active');
+            this.playerCtrl.enable();
+        });
+        addEventListener('keydown', e => {
+            if (e.code === 'KeyE' && this.state === 'playing' && !this.dialogue.active && this.nearestPOI) {
+                this._openPOI(this.nearestPOI);
             }
         });
-
-        document.getElementById('info-close').addEventListener('click', () => {
-            document.getElementById('info-panel').classList.remove('active');
-            this.playerController.enable();
-        });
     }
 
-    startGame() {
-        document.getElementById('start-screen').classList.add('hidden');
-        this.state = 'cinematic';
-        this.cinematic.start();
-    }
-
-    _onCinematicComplete() {
+    _afterCinematic() {
         this.state = 'dialogue';
-        this.player.position.y = this.worldBuilder.getTerrainHeight(
-            this.player.position.x,
-            this.player.position.z
-        );
         this.dialogue.start(this.dialogue.getIntroDialogue(), () => {
             this.state = 'playing';
-            this.playerController.enable();
-            document.getElementById('hud').classList.add('visible');
-            document.querySelector('.back-link').classList.add('visible');
+            this.playerCtrl.enable();
+            document.getElementById('hud')?.classList.add('visible');
+            document.querySelector('.back-link')?.classList.add('visible');
         });
     }
 
-    _interactPOI(poi) {
-        this.playerController.disable();
-        const panel = document.getElementById('info-panel');
-        panel.querySelector('.info-panel-title').textContent = poi.title;
-        panel.querySelector('.info-panel-subtitle').textContent = poi.subtitle;
-        panel.querySelector('.info-panel-body').textContent = poi.content;
-        panel.classList.add('active');
+    _openPOI(poi) {
+        this.playerCtrl.disable();
+        const p = document.getElementById('info-panel');
+        p.querySelector('.info-panel-title').textContent = poi.title;
+        p.querySelector('.info-panel-subtitle').textContent = poi.subtitle;
+        p.querySelector('.info-panel-body').textContent = poi.content;
+        p.classList.add('active');
     }
 
-    _updatePOIProximity() {
+    _proximity() {
         if (this.state !== 'playing' || this.dialogue.active) {
             this.nearestPOI = null;
-            document.getElementById('interact-prompt').classList.remove('visible');
+            document.getElementById('interact-prompt')?.classList.remove('visible');
             return;
         }
-
-        const playerPos = this.player.position;
-        let nearest = null;
-        let nearestDist = Infinity;
-
+        let best = null, dist = Infinity;
+        const pos = this.player.position;
         this.pois.forEach(poi => {
-            const dist = playerPos.distanceTo(poi.position);
-            if (dist < poi.radius && dist < nearestDist) {
-                nearest = poi;
-                nearestDist = dist;
-            }
-            if (poi.marker) {
-                poi.marker.children.forEach(child => {
-                    if (child.name === 'holo') child.rotation.y += 0.02;
-                });
-                const pulse = 1 + Math.sin(Date.now() * 0.003) * 0.1;
-                const ring = poi.marker.children[1];
-                if (ring) ring.scale.set(pulse, pulse, 1);
-            }
+            const d = pos.distanceTo(poi.position);
+            if (d < poi.radius && d < dist) { best = poi; dist = d; }
         });
-
-        this.nearestPOI = nearest;
+        this.nearestPOI = best;
         const prompt = document.getElementById('interact-prompt');
-        if (nearest) {
+        if (best) {
             prompt.classList.add('visible');
-            prompt.innerHTML = `<kbd>E</kbd> Explore: ${nearest.title}`;
+            prompt.innerHTML = `<kbd>E</kbd> ${best.title}`;
         } else {
             prompt.classList.remove('visible');
         }
     }
 
-    _updateHUD() {
+    _hud() {
         if (this.state !== 'playing') return;
-        const pos = this.player.position;
-        document.getElementById('coord-display').textContent =
-            `${pos.x.toFixed(1)}, ${pos.z.toFixed(1)}`;
-        document.getElementById('zone-display').textContent =
-            this.nearestPOI ? this.nearestPOI.subtitle : 'EXPLORING';
+        const p = this.player.position;
+        document.getElementById('coord-display').textContent = `${p.x.toFixed(0)}, ${p.z.toFixed(0)}`;
+        document.getElementById('zone-display').textContent = this.nearestPOI?.subtitle || 'DOWNTOWN';
         document.getElementById('site-display').textContent = this.data.siteName;
     }
 
-    _updateMinimap() {
-        const canvas = document.getElementById('minimap-canvas');
-        if (!canvas || this.state !== 'playing') return;
-        const ctx = canvas.getContext('2d');
-        const w = canvas.width;
-        const h = canvas.height;
-        const scale = w / 200;
-
-        ctx.fillStyle = 'rgba(0, 10, 5, 0.9)';
+    _minimap() {
+        const c = document.getElementById('minimap-canvas');
+        if (!c || this.state !== 'playing') return;
+        const ctx = c.getContext('2d');
+        const w = c.width, h = c.height, sc = w / 200;
+        ctx.fillStyle = '#2a3a2a';
         ctx.fillRect(0, 0, w, h);
-
-        ctx.strokeStyle = 'rgba(0, 255, 65, 0.2)';
-        ctx.lineWidth = 0.5;
-        for (let i = 0; i < w; i += 20) {
-            ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, h); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(w, i); ctx.stroke();
-        }
-
         this.pois.forEach(poi => {
-            const px = w / 2 + poi.position.x * scale;
-            const py = h / 2 + poi.position.z * scale;
-            ctx.fillStyle = 'rgba(0, 255, 65, 0.6)';
+            ctx.fillStyle = '#4a8';
             ctx.beginPath();
-            ctx.arc(px, py, 3, 0, Math.PI * 2);
+            ctx.arc(w / 2 + poi.position.x * sc, h / 2 + poi.position.z * sc, 3, 0, 6.28);
             ctx.fill();
         });
-
-        const px = w / 2 + this.player.position.x * scale;
-        const py = h / 2 + this.player.position.z * scale;
-        ctx.fillStyle = '#00f0ff';
+        const px = w / 2 + this.player.position.x * sc;
+        const py = h / 2 + this.player.position.z * sc;
+        ctx.fillStyle = '#fff';
         ctx.beginPath();
-        ctx.arc(px, py, 4, 0, Math.PI * 2);
+        ctx.arc(px, py, 4, 0, 6.28);
         ctx.fill();
-
-        ctx.strokeStyle = '#00ff41';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(px, py);
-        ctx.lineTo(
-            px - Math.sin(this.player.rotation.y) * 8,
-            py - Math.cos(this.player.rotation.y) * 8
-        );
-        ctx.stroke();
     }
 
-    _animateNPCs(dt) {
-        this.npcs.forEach((npc, i) => {
-            if (!npc.mesh.visible) return;
-            npc.mesh.position.y = this.worldBuilder.getTerrainHeight(
-                npc.mesh.position.x,
-                npc.mesh.position.z
-            );
-            npc.mesh.rotation.y = Math.sin(Date.now() * 0.001 + i) * 0.1;
-        });
-    }
-
-    _updateLoading(pct) {
-        const fill = document.querySelector('.loading-bar-fill');
-        if (fill) fill.style.width = `${pct}%`;
-    }
-
-    _animate() {
-        requestAnimationFrame(() => this._animate());
+    _loop() {
+        requestAnimationFrame(() => this._loop());
         const dt = Math.min(this.clock.getDelta(), 0.05);
-        const elapsed = this.clock.getElapsedTime();
 
-        if (this.cinematic?.isActive()) {
-            this.cinematic.update(dt);
-        } else if (this.state === 'playing') {
-            this.playerController.update(dt);
-        }
+        if (this.cinematic.isActive()) this.cinematic.update(dt);
+        else if (this.state === 'playing') this.playerCtrl.update(dt);
 
-        this._animateNPCs(dt);
-        if (this.state === 'playing') {
-            this.worldBuilder.updateResidents(dt, elapsed);
-        }
-        this._updatePOIProximity();
-        this._updateHUD();
-        this._updateMinimap();
-
-        this.ufo.rotation.y += dt * 0.2;
-        const ufoLights = this.ufo.children.filter(c => c.geometry?.type === 'SphereGeometry');
-        ufoLights.forEach((light, i) => {
-            light.material.emissiveIntensity = 0.8 + Math.sin(elapsed * 3 + i) * 0.4;
-        });
-
-        this.watercolor.render();
+        this._proximity();
+        this._hud();
+        this._minimap();
+        this.renderer.render(this.scene, this.camera);
     }
 }
 
-window.addEventListener('DOMContentLoaded', () => {
-    const dataEl = document.getElementById('game-data');
-    let gameData = JSON.parse(dataEl.textContent);
-    if (typeof gameData === 'string') gameData = JSON.parse(gameData);
-    const textureBase = JSON.parse(document.getElementById('texture-base').textContent);
-    new AlienWorldGame(gameData, textureBase);
+addEventListener('DOMContentLoaded', () => {
+    let data = JSON.parse(document.getElementById('game-data').textContent);
+    if (typeof data === 'string') data = JSON.parse(data);
+    new Game(data);
 });
