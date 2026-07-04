@@ -384,6 +384,7 @@ export class TransitRideController {
             this.scene.add(this.player);
         }
         this.player.position.set(exitX, WORLD.groundY, exitZ);
+        this.player.rotation.set(0, 0, 0);
         this.player.visible = true;
 
         this.active = false;

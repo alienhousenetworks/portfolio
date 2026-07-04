@@ -14,14 +14,15 @@ export class PlayerController {
         this.camYaw = 0;
         this.camPitch = CAMERA.defaultPitch;
         this.camDistance = CAMERA.defaultDistance;
-
         this.keys = {};
         this.enabled = false;
         this.isRunning = false;
         this.walkCycle = 0;
-        this.isMoving = false;
         this._desiredCam = new THREE.Vector3();
         this._lookPoint = new THREE.Vector3();
+        this._fwd = new THREE.Vector3();
+        this._right = new THREE.Vector3();
+        this._up = new THREE.Vector3(0, 1, 0);
         this._input();
     }
 
@@ -77,19 +78,26 @@ export class PlayerController {
         this.enabled = true;
         this._clearKeys();
         this.canvas?.focus();
-        this.syncCameraToPlayer();
+        this._syncCamYawFromCamera();
         this._snapCamera();
     }
 
     disable() {
         this.enabled = false;
         this.velocity.set(0, 0, 0);
-        this.isMoving = false;
         this._clearKeys();
     }
 
     syncCameraToPlayer() {
-        this.camYaw = this.avatar.rotation.y;
+        this.camYaw = this.avatar.rotation.y + Math.PI;
+    }
+
+    _syncCamYawFromCamera() {
+        const dx = this.camera.position.x - this.avatar.position.x;
+        const dz = this.camera.position.z - this.avatar.position.z;
+        if (dx * dx + dz * dz > 0.04) {
+            this.camYaw = Math.atan2(dx, dz);
+        }
     }
 
     _clearKeys() {
@@ -97,19 +105,29 @@ export class PlayerController {
         this.isRunning = false;
     }
 
-    _cameraYaw() {
-        return this.isMoving ? this.avatar.rotation.y : this.camYaw;
+    _moveBasis() {
+        const p = this.avatar.position;
+        this._fwd.set(p.x - this.camera.position.x, 0, p.z - this.camera.position.z);
+        if (this._fwd.lengthSq() < 1e-4) {
+            this._fwd.set(-Math.sin(this.camYaw), 0, -Math.cos(this.camYaw));
+        } else {
+            this._fwd.normalize();
+        }
+        this._right.crossVectors(this._fwd, this._up).normalize();
+    }
+
+    _placeCamera(target) {
+        const cosP = Math.cos(this.camPitch);
+        this._desiredCam.set(
+            target.x + Math.sin(this.camYaw) * cosP * this.camDistance,
+            target.y + Math.sin(this.camPitch) * this.camDistance + CAMERA.heightBoost,
+            target.z + Math.cos(this.camYaw) * cosP * this.camDistance
+        );
     }
 
     _snapCamera() {
         const p = this.avatar.position;
-        const yaw = this._cameraYaw();
-        const cosP = Math.cos(this.camPitch);
-        this._desiredCam.set(
-            p.x - Math.sin(yaw) * cosP * this.camDistance,
-            p.y + Math.sin(this.camPitch) * this.camDistance + CAMERA.heightBoost,
-            p.z - Math.cos(yaw) * cosP * this.camDistance
-        );
+        this._placeCamera(p);
         this.camera.position.copy(this._desiredCam);
         this._lookPoint.set(p.x, p.y + CAMERA.lookHeight, p.z);
         this.camera.lookAt(this._lookPoint);
@@ -117,15 +135,9 @@ export class PlayerController {
 
     _updateCamera(dt) {
         const p = this.avatar.position;
-        const yaw = this._cameraYaw();
-        const cosP = Math.cos(this.camPitch);
-        this._desiredCam.set(
-            p.x - Math.sin(yaw) * cosP * this.camDistance,
-            p.y + Math.sin(this.camPitch) * this.camDistance + CAMERA.heightBoost,
-            p.z - Math.cos(yaw) * cosP * this.camDistance
-        );
-
-        this.camera.position.lerp(this._desiredCam, 1 - Math.exp(-CAMERA.positionDamp * dt));
+        this._placeCamera(p);
+        const alpha = 1 - Math.exp(-CAMERA.positionDamp * dt);
+        this.camera.position.lerp(this._desiredCam, alpha);
         this._lookPoint.set(p.x, p.y + CAMERA.lookHeight, p.z);
         this.camera.lookAt(this._lookPoint);
     }
@@ -133,19 +145,16 @@ export class PlayerController {
     update(dt) {
         if (!this.enabled) return;
 
+        this._moveBasis();
         const speed = this.isRunning ? PLAYER.runSpeed : PLAYER.walkSpeed;
-        const fwd = new THREE.Vector3(-Math.sin(this.camYaw), 0, -Math.cos(this.camYaw));
-        const right = new THREE.Vector3(Math.cos(this.camYaw), 0, -Math.sin(this.camYaw));
         const dir = new THREE.Vector3();
 
-        if (this.keys.KeyW || this.keys.ArrowUp) dir.add(fwd);
-        if (this.keys.KeyS || this.keys.ArrowDown) dir.sub(fwd);
-        if (this.keys.KeyA || this.keys.ArrowLeft) dir.sub(right);
-        if (this.keys.KeyD || this.keys.ArrowRight) dir.add(right);
+        if (this.keys.KeyW || this.keys.ArrowUp) dir.add(this._fwd);
+        if (this.keys.KeyS || this.keys.ArrowDown) dir.sub(this._fwd);
+        if (this.keys.KeyA || this.keys.ArrowLeft) dir.sub(this._right);
+        if (this.keys.KeyD || this.keys.ArrowRight) dir.add(this._right);
 
-        this.isMoving = dir.lengthSq() > 0;
-
-        if (this.isMoving) {
+        if (dir.lengthSq() > 0) {
             dir.normalize();
             this.velocity.set(dir.x * speed, 0, dir.z * speed);
             this.avatar.rotation.y = Math.atan2(dir.x, dir.z);
@@ -171,8 +180,8 @@ export class PlayerController {
             animateHumanWalk(this.avatar, this.walkCycle, this.isRunning ? 1.1 : 0.9);
         } else if (this.avatar.userData.walkParts) {
             (this.avatar.userData.walkParts || []).forEach(name => {
-                const p = this.avatar.getObjectByName(name);
-                if (p) p.rotation.x = THREE.MathUtils.lerp(p.rotation.x, 0, 0.15);
+                const part = this.avatar.getObjectByName(name);
+                if (part) part.rotation.x = THREE.MathUtils.lerp(part.rotation.x, 0, 0.15);
             });
         }
 
@@ -213,6 +222,7 @@ export class PlayerController {
     setPosition(x, z, preferredX = null, preferredZ = null) {
         const safe = this.findSafePosition(x, z, preferredX, preferredZ);
         this.avatar.position.set(safe.x, WORLD.groundY, safe.z);
+        this.avatar.rotation.y = 0;
         this.velocity.set(0, 0, 0);
         this.syncCameraToPlayer();
         this._snapCamera();
