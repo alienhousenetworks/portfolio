@@ -4,6 +4,10 @@ import { animateHumanWalk } from './AvatarFactory.js';
 
 const MOVE_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
 
+function dampAngle(current, target, lambda, dt) {
+    return THREE.MathUtils.lerp(current, target, 1 - Math.exp(-lambda * dt));
+}
+
 export class PlayerController {
     constructor(camera, avatar, colliders, canvas) {
         this.camera = camera;
@@ -14,13 +18,14 @@ export class PlayerController {
         this.camYaw = 0;
         this.camPitch = CAMERA.defaultPitch;
         this.camDistance = CAMERA.defaultDistance;
+        this.facingYaw = 0;
         this.keys = {};
         this.enabled = false;
         this.isRunning = false;
         this.walkCycle = 0;
         this.isMoving = false;
-        this._lookTarget = new THREE.Vector3();
-        this._offset = new THREE.Vector3();
+        this._desiredCam = new THREE.Vector3();
+        this._lookPoint = new THREE.Vector3();
         this._input();
     }
 
@@ -77,7 +82,7 @@ export class PlayerController {
         this._clearKeys();
         this.canvas?.focus();
         this.syncCameraToPlayer();
-        this._updateCamera();
+        this._snapCamera();
     }
 
     disable() {
@@ -89,6 +94,7 @@ export class PlayerController {
 
     syncCameraToPlayer() {
         this.camYaw = this.avatar.rotation.y;
+        this.facingYaw = this.avatar.rotation.y;
     }
 
     _clearKeys() {
@@ -96,20 +102,35 @@ export class PlayerController {
         this.isRunning = false;
     }
 
-    _updateCamera() {
-        const target = this.avatar.position.clone();
-        target.y += CAMERA.lookHeight;
-
+    _snapCamera() {
+        const p = this.avatar.position;
         const cosP = Math.cos(this.camPitch);
-        this._offset.set(
-            Math.sin(this.camYaw) * cosP * this.camDistance,
-            Math.sin(this.camPitch) * this.camDistance + CAMERA.heightBoost,
-            Math.cos(this.camYaw) * cosP * this.camDistance
+        this._desiredCam.set(
+            p.x + Math.sin(this.facingYaw) * cosP * this.camDistance,
+            p.y + Math.sin(this.camPitch) * this.camDistance + CAMERA.heightBoost,
+            p.z + Math.cos(this.facingYaw) * cosP * this.camDistance
+        );
+        this.camera.position.copy(this._desiredCam);
+        this._lookPoint.set(p.x, p.y + CAMERA.lookHeight, p.z);
+        this.camera.lookAt(this._lookPoint);
+    }
+
+    _updateCamera(dt) {
+        if (this.isMoving) {
+            this.facingYaw = dampAngle(this.facingYaw, this.avatar.rotation.y, CAMERA.facingDamp, dt);
+        }
+
+        const p = this.avatar.position;
+        const cosP = Math.cos(this.camPitch);
+        this._desiredCam.set(
+            p.x + Math.sin(this.facingYaw) * cosP * this.camDistance,
+            p.y + Math.sin(this.camPitch) * this.camDistance + CAMERA.heightBoost,
+            p.z + Math.cos(this.facingYaw) * cosP * this.camDistance
         );
 
-        this.camera.position.lerp(target.clone().add(this._offset), CAMERA.smoothing);
-        this._lookTarget.lerp(target, CAMERA.lookSmoothing);
-        this.camera.lookAt(this._lookTarget);
+        this.camera.position.lerp(this._desiredCam, 1 - Math.exp(-CAMERA.positionDamp * dt));
+        this._lookPoint.set(p.x, p.y + CAMERA.lookHeight, p.z);
+        this.camera.lookAt(this._lookPoint);
     }
 
     update(dt) {
@@ -130,13 +151,7 @@ export class PlayerController {
         if (this.isMoving) {
             dir.normalize();
             this.velocity.set(dir.x * speed, 0, dir.z * speed);
-            const moveYaw = Math.atan2(dir.x, dir.z);
-            this.avatar.rotation.y = moveYaw;
-            this.camYaw = THREE.MathUtils.lerp(
-                this.camYaw,
-                moveYaw,
-                1 - Math.pow(1 - CAMERA.followSpeed, dt * 60)
-            );
+            this.avatar.rotation.y = Math.atan2(dir.x, dir.z);
             this.walkCycle += dt * (this.isRunning ? 12 : 9);
         } else {
             this.velocity.set(0, 0, 0);
@@ -156,7 +171,7 @@ export class PlayerController {
         this.avatar.position.y = WORLD.groundY;
 
         if (this.avatar.userData.isHuman && this.velocity.lengthSq() > 0.5) {
-            animateHumanWalk(this.avatar, this.walkCycle, this.isRunning ? 1.2 : 1);
+            animateHumanWalk(this.avatar, this.walkCycle, this.isRunning ? 1.1 : 0.9);
         } else if (this.avatar.userData.walkParts) {
             (this.avatar.userData.walkParts || []).forEach(name => {
                 const p = this.avatar.getObjectByName(name);
@@ -164,7 +179,7 @@ export class PlayerController {
             });
         }
 
-        this._updateCamera();
+        this._updateCamera(dt);
     }
 
     _blocked(x, z) {
@@ -203,5 +218,6 @@ export class PlayerController {
         this.avatar.position.set(safe.x, WORLD.groundY, safe.z);
         this.velocity.set(0, 0, 0);
         this.syncCameraToPlayer();
+        this._snapCamera();
     }
 }
