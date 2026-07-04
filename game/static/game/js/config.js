@@ -28,7 +28,6 @@ export const CAMERA = {
     lookHeight: 1.5,
     heightBoost: 1.2,
     positionDamp: 10,
-    facingDamp: 5,
 };
 
 export const PALETTE = {

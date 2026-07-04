@@ -4,10 +4,6 @@ import { animateHumanWalk } from './AvatarFactory.js';
 
 const MOVE_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
 
-function dampAngle(current, target, lambda, dt) {
-    return THREE.MathUtils.lerp(current, target, 1 - Math.exp(-lambda * dt));
-}
-
 export class PlayerController {
     constructor(camera, avatar, colliders, canvas) {
         this.camera = camera;
@@ -18,7 +14,7 @@ export class PlayerController {
         this.camYaw = 0;
         this.camPitch = CAMERA.defaultPitch;
         this.camDistance = CAMERA.defaultDistance;
-        this.facingYaw = 0;
+
         this.keys = {};
         this.enabled = false;
         this.isRunning = false;
@@ -94,7 +90,6 @@ export class PlayerController {
 
     syncCameraToPlayer() {
         this.camYaw = this.avatar.rotation.y;
-        this.facingYaw = this.avatar.rotation.y;
     }
 
     _clearKeys() {
@@ -102,13 +97,18 @@ export class PlayerController {
         this.isRunning = false;
     }
 
+    _cameraYaw() {
+        return this.isMoving ? this.avatar.rotation.y : this.camYaw;
+    }
+
     _snapCamera() {
         const p = this.avatar.position;
+        const yaw = this._cameraYaw();
         const cosP = Math.cos(this.camPitch);
         this._desiredCam.set(
-            p.x + Math.sin(this.facingYaw) * cosP * this.camDistance,
+            p.x - Math.sin(yaw) * cosP * this.camDistance,
             p.y + Math.sin(this.camPitch) * this.camDistance + CAMERA.heightBoost,
-            p.z + Math.cos(this.facingYaw) * cosP * this.camDistance
+            p.z - Math.cos(yaw) * cosP * this.camDistance
         );
         this.camera.position.copy(this._desiredCam);
         this._lookPoint.set(p.x, p.y + CAMERA.lookHeight, p.z);
@@ -116,16 +116,13 @@ export class PlayerController {
     }
 
     _updateCamera(dt) {
-        if (this.isMoving) {
-            this.facingYaw = dampAngle(this.facingYaw, this.avatar.rotation.y, CAMERA.facingDamp, dt);
-        }
-
         const p = this.avatar.position;
+        const yaw = this._cameraYaw();
         const cosP = Math.cos(this.camPitch);
         this._desiredCam.set(
-            p.x + Math.sin(this.facingYaw) * cosP * this.camDistance,
+            p.x - Math.sin(yaw) * cosP * this.camDistance,
             p.y + Math.sin(this.camPitch) * this.camDistance + CAMERA.heightBoost,
-            p.z + Math.cos(this.facingYaw) * cosP * this.camDistance
+            p.z - Math.cos(yaw) * cosP * this.camDistance
         );
 
         this.camera.position.lerp(this._desiredCam, 1 - Math.exp(-CAMERA.positionDamp * dt));
