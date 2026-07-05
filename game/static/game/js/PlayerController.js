@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { PLAYER, WORLD, CAMERA, PHYSICS } from './config.js';
 import { updateLocomotionPose, tickAnimator } from './AvatarFactory.js';
+import { floorYForAvatar, refreshGroundLift, getGroundLift } from './CharacterModels.js';
 
 const MOVE_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
 
@@ -42,6 +43,7 @@ export class PlayerController {
             // Scale the avatar uniformly based on ratio to default height
             const scale = newH / PLAYER.height;
             this.avatar.scale.setScalar(scale);
+            refreshGroundLift(this.avatar);
             this._lookHeightScaled = CAMERA.lookHeight * scale;
         });
     }
@@ -198,18 +200,21 @@ export class PlayerController {
         const ox = this.avatar.position.x;
         const oz = this.avatar.position.z;
         const curY = this.avatar.position.y;
+        if (this.avatar.userData.groundLift == null) refreshGroundLift(this.avatar);
+        const lift = getGroundLift(this.avatar);
+        const feetY = curY - lift;
         let nx = ox + this.velocity.x * dt;
         let nz = oz + this.velocity.z * dt;
 
         // --- Horizontal collision + block-top stepping ---
-        const blockedX = this._blockedWithStep(nx, oz, curY);
+        const blockedX = this._blockedWithStep(nx, oz, feetY);
         if (blockedX) nx = ox;
-        const blockedZ = this._blockedWithStep(ox, nz, curY);
+        const blockedZ = this._blockedWithStep(ox, nz, feetY);
         if (blockedZ) nz = oz;
-        if (!blockedX && !blockedZ && this._blockedWithStep(nx, nz, curY)) { nx = ox; nz = oz; }
+        if (!blockedX && !blockedZ && this._blockedWithStep(nx, nz, feetY)) { nx = ox; nz = oz; }
 
         // River traversal check
-        if (this.terrain && !this.terrain.canTraverse(ox, oz, curY, nx, nz)) {
+        if (this.terrain && !this.terrain.canTraverse(ox, oz, feetY, nx, nz)) {
             nx = ox;
             nz = oz;
         }
@@ -219,12 +224,13 @@ export class PlayerController {
 
         // --- Vertical physics (gravity + ground snap) ---
         const terrainY = this.terrain
-            ? this.terrain.getWalkableHeight(nx, nz, curY)
+            ? this.terrain.getWalkableHeight(nx, nz, feetY)
             : WORLD.groundY;
 
         // Check if standing on top of a block
-        const blockTopY = this._getBlockTopBelow(nx, nz, curY);
-        const floorY = Math.max(terrainY, blockTopY !== null ? blockTopY : -Infinity);
+        const blockTopY = this._getBlockTopBelow(nx, nz, feetY);
+        const surfaceY = Math.max(terrainY, blockTopY !== null ? blockTopY : -Infinity);
+        const floorY = floorYForAvatar(this.avatar, surfaceY);
 
         // Apply gravity
         this.vy -= PHYSICS.gravity * dt;
@@ -342,8 +348,9 @@ export class PlayerController {
 
     setPosition(x, z, preferredX = null, preferredZ = null) {
         const safe = this.findSafePosition(x, z, preferredX, preferredZ);
-        const y = this.terrain ? this.terrain.getHeightAt(safe.x, safe.z) : WORLD.groundY;
-        this.avatar.position.set(safe.x, y, safe.z);
+        if (this.avatar.userData.groundLift == null) refreshGroundLift(this.avatar);
+        const surfaceY = this.terrain ? this.terrain.getHeightAt(safe.x, safe.z) : WORLD.groundY;
+        this.avatar.position.set(safe.x, floorYForAvatar(this.avatar, surfaceY), safe.z);
         this.avatar.rotation.y = 0;
         this.velocity.set(0, 0, 0);
         this.vy = 0;

@@ -1,6 +1,11 @@
 import * as THREE from 'three';
 import { WORLD } from './config.js';
 import { animateHumanWalk } from './AvatarFactory.js';
+import { floorYForAvatar } from './CharacterModels.js';
+
+function footY(mesh, surfaceY = WORLD.groundY) {
+    return mesh ? floorYForAvatar(mesh, surfaceY) : surfaceY;
+}
 
 function ease(t) {
     return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -42,11 +47,11 @@ export class CinematicIntro {
         this.npcs.forEach(n => { n.visible = false; });
         if (this.welcome.human) {
             this.welcome.human.visible = false;
-            this.welcome.human.position.set(WORLD.parkX - 16, WORLD.groundY, WORLD.parkZ + 12);
+            this.welcome.human.position.set(WORLD.parkX - 16, footY(this.welcome.human), WORLD.parkZ + 12);
         }
         if (this.welcome.alien) {
             this.welcome.alien.visible = false;
-            this.welcome.alien.position.set(WORLD.parkX + 16, WORLD.groundY, WORLD.parkZ + 12);
+            this.welcome.alien.position.set(WORLD.parkX + 16, footY(this.welcome.alien), WORLD.parkZ + 12);
         }
 
         const ramp = this.ufo.getObjectByName('rampPivot');
@@ -159,12 +164,12 @@ export class CinematicIntro {
                 this.ufo.remove(this.player);
                 this.scene.add(this.player);
                 this.player.position.copy(wp);
-                this.player.position.y = WORLD.groundY;
+                this.player.position.y = footY(this.player);
             }
             this._walkPhase += dt * 6;
             this.player.position.set(
                 px,
-                WORLD.groundY,
+                footY(this.player),
                 THREE.MathUtils.lerp(pz, pz - 9, t)
             );
             this.player.rotation.y = Math.PI;
@@ -181,7 +186,7 @@ export class CinematicIntro {
             const playerZ = pz - 10;
 
             this._walkPhase += dt * 2;
-            this.player.position.set(px, WORLD.groundY, playerZ);
+            this.player.position.set(px, footY(this.player), playerZ);
             this.player.rotation.y = 0;
             animateHumanWalk(this.player, this._walkPhase, 0.3);
 
@@ -189,25 +194,25 @@ export class CinematicIntro {
                 this.welcome.human.visible = true;
                 this.welcome.human.position.set(
                     THREE.MathUtils.lerp(px - 16, px - 5.5, t),
-                    WORLD.groundY,
+                    footY(this.welcome.human),
                     THREE.MathUtils.lerp(pz + 12, playerZ + 2.5, t)
                 );
-                this.welcome.human.lookAt(px, WORLD.groundY + 1.5, playerZ);
+                this.welcome.human.lookAt(px, footY(this.welcome.human) + 1.5, playerZ);
             }
             if (this.welcome.alien) {
                 this.welcome.alien.visible = true;
                 this.welcome.alien.position.set(
                     THREE.MathUtils.lerp(px + 16, px + 5.5, t),
-                    WORLD.groundY,
+                    footY(this.welcome.alien),
                     THREE.MathUtils.lerp(pz + 12, playerZ + 2.5, t)
                 );
-                this.welcome.alien.lookAt(px, WORLD.groundY + 1.5, playerZ);
+                this.welcome.alien.lookAt(px, footY(this.welcome.alien) + 1.5, playerZ);
             }
 
             this.npcs.forEach((npc, i) => {
                 npc.visible = t > 0.35;
-                npc.position.set(-10 + i * 5, WORLD.groundY, pz - 16 - i);
-                npc.lookAt(px, WORLD.groundY + 1, playerZ);
+                npc.position.set(-10 + i * 5, footY(npc), pz - 16 - i);
+                npc.lookAt(px, footY(npc) + 1, playerZ);
             });
 
             const camAngle = t * 0.4;
@@ -234,17 +239,17 @@ export class CinematicIntro {
             this.scene.add(this.player);
             this.player.position.copy(wp);
         }
-        this.player.position.set(WORLD.parkX, WORLD.groundY, WORLD.parkZ - 6);
+        this.player.position.set(WORLD.parkX, footY(this.player), WORLD.parkZ - 6);
         this.player.rotation.y = 0;
         this.player.visible = true;
 
         this.npcs.forEach(n => { n.visible = true; });
         if (this.welcome.human) {
-            this.welcome.human.position.set(WORLD.parkX - 6, WORLD.groundY, WORLD.parkZ - 10);
+            this.welcome.human.position.set(WORLD.parkX - 6, footY(this.welcome.human), WORLD.parkZ - 10);
             this.welcome.human.visible = true;
         }
         if (this.welcome.alien) {
-            this.welcome.alien.position.set(WORLD.parkX + 6, WORLD.groundY, WORLD.parkZ - 10);
+            this.welcome.alien.position.set(WORLD.parkX + 6, footY(this.welcome.alien), WORLD.parkZ - 10);
             this.welcome.alien.visible = true;
         }
 

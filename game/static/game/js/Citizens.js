@@ -7,7 +7,7 @@ import {
     animateCyclist,
 } from './AvatarFactory.js';
 import { isRiggedAvatar } from './CharacterAnimator.js';
-import { getBodyKeyForCitizen } from './CharacterModels.js';
+import { getBodyKeyForCitizen, floorYForAvatar, refreshGroundLift, getGroundLift } from './CharacterModels.js';
 
 const HUMAN_NAMES = ['Alex', 'Jordan', 'Sam', 'Riley', 'Casey', 'Morgan', 'Taylor', 'Jamie', 'Quinn', 'Avery'];
 const ALIEN_NAMES = ['Zyx', 'Nara', 'Kov', 'Eli', 'Pax', 'Ryn', 'Oma', 'Dex', 'Vex', 'Luma', 'Kira', 'Zeno'];
@@ -44,10 +44,12 @@ export class CitizenManager {
     }
 
     _snapToGround(mesh, dt) {
+        if (mesh.userData.groundLift == null) refreshGroundLift(mesh);
         const x = mesh.position.x;
         const z = mesh.position.z;
-        const target = this._groundY(x, z, mesh.position.y);
-        const snap = 1 - Math.exp(-12 * dt);
+        const surface = this._groundY(x, z, mesh.position.y - getGroundLift(mesh));
+        const target = floorYForAvatar(mesh, surface);
+        const snap = 1 - Math.exp(-14 * dt);
         mesh.position.y += (target - mesh.position.y) * snap;
     }
 
@@ -78,7 +80,9 @@ export class CitizenManager {
         teamMembers.slice(0, 6).forEach((m, i) => {
             const modelKey = getBodyKeyForCitizen(m.name || '', 'alien', i);
             const mesh = createAlienAvatar({ variant: i + 1, modelKey, name: m.name });
-            mesh.position.set(-12 + i * 4, this._groundY(-12 + i * 4, WORLD.parkZ - 12 - i), WORLD.parkZ - 12 - i);
+            const tx = -12 + i * 4;
+            const tz = WORLD.parkZ - 12 - i;
+            mesh.position.set(tx, floorYForAvatar(mesh, this._groundY(tx, tz)), tz);
             mesh.visible = false;
             mesh.add(createNameTag(m.name));
             this.scene.add(mesh);
@@ -234,7 +238,8 @@ export class CitizenManager {
     }
 
     _placeCitizen(mesh, spot, name, type, line, phase, speed = null) {
-        mesh.position.set(spot.x, this._groundY(spot.x, spot.z), spot.z);
+        const surfaceY = this._groundY(spot.x, spot.z);
+        mesh.position.set(spot.x, floorYForAvatar(mesh, surfaceY), spot.z);
         mesh.visible = true;
         mesh.traverse(child => { child.visible = true; });
         const stature = mesh.userData.targetHeight ?? citizenHeight(phase);

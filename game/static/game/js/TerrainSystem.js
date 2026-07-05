@@ -262,7 +262,7 @@ export class TerrainSystem {
 
     _buildCurvedHills(scene) {
         // 1. Build flat ground base (colored sand/shore in center, grass on sides)
-        const groundGeo = new THREE.PlaneGeometry(WORLD.size, WORLD.size, 40, 40);
+        const groundGeo = new THREE.PlaneGeometry(WORLD.size, WORLD.size, 64, 64);
         groundGeo.rotateX(-Math.PI / 2);
         
         const pos = groundGeo.attributes.position;
@@ -300,41 +300,8 @@ export class TerrainSystem {
         baseMesh.position.y = 0;
         baseMesh.receiveShadow = true;
         scene.add(baseMesh);
-
-        // 2. Build submerged sphere rolling hills
-        this.hills.forEach(h => {
-            const hillGeo = new THREE.SphereGeometry(h.r, 32, 24);
-            const hp = hillGeo.attributes.position;
-            const hn = hillGeo.attributes.normal;
-            const hillColors = [];
-
-            for (let i = 0; i < hp.count; i++) {
-                const ny = hn.getY(i);
-                const vy = hp.getY(i) + h.hy;
-                
-                if (ny > 0.58 && vy > 0.25) {
-                    const shades = ['#b8e6c8', '#c8edd6', '#a8dfc0'];
-                    const c = new THREE.Color(shades[i % shades.length]);
-                    hillColors.push(c.r, c.g, c.b);
-                } else {
-                    const c = new THREE.Color('#f5efe4');
-                    hillColors.push(c.r, c.g, c.b);
-                }
-            }
-            hillGeo.setAttribute('color', new THREE.Float32BufferAttribute(hillColors, 3));
-
-            const hillMat = new THREE.MeshToonMaterial({
-                vertexColors: true,
-                gradientMap: getGradientMap()
-            });
-            this.grassMaterials.push(hillMat);
-
-            const hillMesh = new THREE.Mesh(hillGeo, hillMat);
-            hillMesh.position.set(h.x, h.hy, h.z);
-            hillMesh.castShadow = true;
-            hillMesh.receiveShadow = true;
-            scene.add(hillMesh);
-        });
+        // Hill shapes are baked into the deformed ground plane above — no extra spheres
+        // (separate spheres caused avatars to appear submerged inside green geometry).
     }
 
     _buildSteppingStones(scene) {

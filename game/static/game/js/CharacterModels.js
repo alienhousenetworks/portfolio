@@ -201,12 +201,46 @@ function normalizeHeight(root, targetHeight) {
     seatModelFeet(root);
 }
 
-/** Keep rig feet on the avatar root origin after scaling or outfit swaps. */
+/** Nudge the inner model so bind-pose feet sit near local y=0. */
 export function seatModelFeet(model) {
     if (!model) return;
+    model.updateMatrixWorld(true);
+    model.traverse(obj => {
+        if (obj.isSkinnedMesh) obj.skeleton?.update();
+    });
     const box = new THREE.Box3().setFromObject(model);
     if (!Number.isFinite(box.min.y)) return;
-    model.position.y -= box.min.y;
+    const inv = model.matrixWorld.clone().invert();
+    const localMin = box.min.clone().applyMatrix4(inv);
+    model.position.y -= localMin.y;
+}
+
+/**
+ * Measure how far the avatar root must sit above the floor so feet touch ground.
+ * Stored on userData.groundLift and scaled with avatar.scale.y at runtime.
+ */
+export function refreshGroundLift(avatar) {
+    if (!avatar) return 0;
+    avatar.updateMatrixWorld(true);
+    avatar.traverse(obj => {
+        if (obj.isSkinnedMesh) obj.skeleton?.update();
+    });
+    if (avatar.userData?.mixer) avatar.userData.mixer.update(0);
+
+    const box = new THREE.Box3().setFromObject(avatar);
+    const lift = Number.isFinite(box.min.y) ? avatar.position.y - box.min.y : 0;
+    avatar.userData.groundLift = Math.max(0, lift);
+    return avatar.userData.groundLift;
+}
+
+export function getGroundLift(avatar) {
+    const base = avatar?.userData?.groundLift ?? 0;
+    const scaleY = avatar?.scale?.y ?? 1;
+    return base * scaleY;
+}
+
+export function floorYForAvatar(avatar, surfaceY) {
+    return surfaceY + getGroundLift(avatar);
 }
 
 const BAD_POSE_CLIP = /stand|clap|punch|wave|tpose|t-pose/i;
@@ -402,6 +436,7 @@ export function createCharacterInstance(type, modelKey, opts = {}) {
         root.userData.isFallback = true;
         root.userData.isRigged = false;
         root.userData.isStaticModel = true;
+        refreshGroundLift(root);
         return root;
     }
 
@@ -439,6 +474,7 @@ export function createCharacterInstance(type, modelKey, opts = {}) {
     const presetIdx = opts.outfitPreset ?? (opts.variant ?? 0) % OUTFIT_PRESETS.length;
     if (root.userData.isRigged) applyOutfitPreset(root, presetIdx);
     if (!root.userData.isFallback) seatModelFeet(model);
+    refreshGroundLift(root);
 
     return root;
 }
