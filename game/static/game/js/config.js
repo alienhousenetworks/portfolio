@@ -7,6 +7,7 @@ export const WORLD = {
     parkX: 0,
     parkZ: 80,
     parkRadius: 38,
+    parkLawnRadius: 55,
     riverX: 0,
     riverWidth: 38,
     riverLength: 620,

@@ -198,8 +198,15 @@ function normalizeHeight(root, targetHeight) {
     const size = new THREE.Vector3();
     box.getSize(size);
     root.scale.setScalar(targetHeight / (size.y || 1));
-    const box2 = new THREE.Box3().setFromObject(root);
-    root.position.y -= box2.min.y;
+    seatModelFeet(root);
+}
+
+/** Keep rig feet on the avatar root origin after scaling or outfit swaps. */
+export function seatModelFeet(model) {
+    if (!model) return;
+    const box = new THREE.Box3().setFromObject(model);
+    if (!Number.isFinite(box.min.y)) return;
+    model.position.y -= box.min.y;
 }
 
 const BAD_POSE_CLIP = /stand|clap|punch|wave|tpose|t-pose/i;
@@ -405,6 +412,7 @@ export function createCharacterInstance(type, modelKey, opts = {}) {
     root.userData.targetHeight = appliedHeight;
     if (Math.abs(appliedHeight - cached.targetHeight) > 0.01) {
         model.scale.multiplyScalar(appliedHeight / cached.targetHeight);
+        seatModelFeet(model);
     }
 
     const tint = opts.tint ?? (type === 'alien' ? ALIEN_TINTS[(opts.variant ?? 0) % ALIEN_TINTS.length] : null);
@@ -430,6 +438,7 @@ export function createCharacterInstance(type, modelKey, opts = {}) {
 
     const presetIdx = opts.outfitPreset ?? (opts.variant ?? 0) % OUTFIT_PRESETS.length;
     if (root.userData.isRigged) applyOutfitPreset(root, presetIdx);
+    if (!root.userData.isFallback) seatModelFeet(model);
 
     return root;
 }

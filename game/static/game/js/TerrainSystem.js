@@ -78,6 +78,48 @@ export class TerrainSystem {
         });
     }
 
+    _isParkLawn(x, z) {
+        return Math.hypot(x - WORLD.parkX, z - WORLD.parkZ) < (WORLD.parkLawnRadius ?? WORLD.parkRadius + 15);
+    }
+
+    /** Walkable height on open lawn / hills (no bridge decks). */
+    _lawnHeightAt(x, z) {
+        if (this._isParkLawn(x, z)) return WORLD.groundY;
+
+        for (const s of this.stairs) {
+            if (this._inRect(x, z, s)) {
+                const t = s.axis === 'z'
+                    ? (z - s.zMin) / (s.zMax - s.zMin)
+                    : (x - s.xMin) / (s.xMax - s.xMin);
+                return THREE.MathUtils.lerp(s.y0, s.y1, THREE.MathUtils.clamp(t, 0, 1));
+            }
+        }
+
+        for (const sl of this.slopes) {
+            const h = this._heightOnSlope(x, z, sl);
+            if (h != null) return h;
+        }
+
+        let maxH = WORLD.groundY;
+        for (const h of this.hills) {
+            const dx = x - h.x;
+            const dz = z - h.z;
+            const distSq = dx * dx + dz * dz;
+            const rSq = h.r * h.r;
+            if (distSq >= rSq) continue;
+
+            const rise = Math.sqrt(rSq - distSq);
+            const ny = rise / h.r;
+            if (ny < 0.55) continue;
+
+            const y = h.hy + rise;
+            if (y < WORLD.groundY) continue;
+            if (y > maxH) maxH = y;
+        }
+
+        return maxH;
+    }
+
     getHeightAt(x, z) {
         // Bridge decks override river ground
         for (const b of BRIDGES) {
@@ -99,7 +141,7 @@ export class TerrainSystem {
                 const t = side > 0
                     ? (x - innerX) / (outerX - innerX)
                     : (innerX - x) / (innerX - outerX);
-                return THREE.MathUtils.lerp(0.15, b.deckY, THREE.MathUtils.clamp(t, 0, 1));
+                return THREE.MathUtils.lerp(WORLD.groundY, b.deckY, THREE.MathUtils.clamp(t, 0, 1));
             }
         }
 
@@ -113,37 +155,7 @@ export class TerrainSystem {
             }
         }
 
-        // Slopes override
-        for (const sl of this.slopes) {
-            const h = this._heightOnSlope(x, z, sl);
-            if (h != null) return h;
-        }
-
-        // Submerged sphere hills — only the exposed grassy cap is walkable
-        const MIN_GROUND = 0.12;
-        let maxH = MIN_GROUND;
-        for (const h of this.hills) {
-            const dx = x - h.x;
-            const dz = z - h.z;
-            const distSq = dx * dx + dz * dz;
-            const rSq = h.r * h.r;
-            if (distSq >= rSq) continue;
-
-            const rise = Math.sqrt(rSq - distSq);
-            const ny = rise / h.r;
-            if (ny < 0.55) continue;
-
-            const y = h.hy + rise;
-            if (y < MIN_GROUND) continue;
-            if (y > maxH) maxH = y;
-        }
-
-        // Keep sakura park walkable and level
-        if (Math.hypot(x - WORLD.parkX, z - WORLD.parkZ) < WORLD.parkRadius) {
-            maxH = Math.min(maxH, 0.22);
-        }
-
-        return maxH;
+        return this._lawnHeightAt(x, z);
     }
 
     isOnBridge(x, z) {
@@ -257,10 +269,16 @@ export class TerrainSystem {
         const colors = [];
         for (let i = 0; i < pos.count; i++) {
             const vx = pos.getX(i);
+            const vz = pos.getZ(i);
+            const surfaceY = this._lawnHeightAt(vx, vz);
+            pos.setY(i, surfaceY);
+
             const d = Math.abs(vx);
             let colHex = '#b8e6c8';
             if (d < 45) {
                 colHex = '#f5efe4';
+            } else if (this._isParkLawn(vx, vz)) {
+                colHex = '#c8edd6';
             } else if (Math.random() < 0.35) {
                 const shades = ['#c8edd6', '#d4f2e0', '#a8dfc0'];
                 colHex = shades[Math.floor(Math.random() * shades.length)];
@@ -269,6 +287,8 @@ export class TerrainSystem {
             colors.push(c.r, c.g, c.b);
         }
         groundGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+        pos.needsUpdate = true;
+        groundGeo.computeVertexNormals();
 
         const baseMat = new THREE.MeshToonMaterial({
             vertexColors: true,
@@ -277,7 +297,7 @@ export class TerrainSystem {
         this.grassMaterials.push(baseMat);
 
         const baseMesh = new THREE.Mesh(groundGeo, baseMat);
-        baseMesh.position.y = 0.15;
+        baseMesh.position.y = 0;
         baseMesh.receiveShadow = true;
         scene.add(baseMesh);
 

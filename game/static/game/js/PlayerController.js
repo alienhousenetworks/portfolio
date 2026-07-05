@@ -42,7 +42,6 @@ export class PlayerController {
             // Scale the avatar uniformly based on ratio to default height
             const scale = newH / PLAYER.height;
             this.avatar.scale.setScalar(scale);
-            // Adjust camera look-height proportionally
             this._lookHeightScaled = CAMERA.lookHeight * scale;
         });
     }

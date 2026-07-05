@@ -36,8 +36,19 @@ export class CitizenManager {
         this.citizens = [];
     }
 
-    _groundY(x, z) {
-        return this.terrain ? this.terrain.getHeightAt(x, z) : WORLD.groundY;
+    _groundY(x, z, currentY = null) {
+        if (!this.terrain) return WORLD.groundY;
+        return currentY == null
+            ? this.terrain.getHeightAt(x, z)
+            : this.terrain.getWalkableHeight(x, z, currentY);
+    }
+
+    _snapToGround(mesh, dt) {
+        const x = mesh.position.x;
+        const z = mesh.position.z;
+        const target = this._groundY(x, z, mesh.position.y);
+        const snap = 1 - Math.exp(-12 * dt);
+        mesh.position.y += (target - mesh.position.y) * snap;
     }
 
     spawn(teamMembers = [], buildings = []) {
@@ -295,6 +306,7 @@ export class CitizenManager {
     update(dt) {
         this.citizens.filter(c => !c.isTeam || c.mesh.visible).forEach(c => {
             tickAnimator(c.mesh, dt);
+            this._snapToGround(c.mesh, dt);
 
             if (c.isTeam) {
                 if (isRiggedAvatar(c.mesh)) setCharacterPose(c.mesh, 'idle', 0.2);
@@ -327,8 +339,6 @@ export class CitizenManager {
                     c.mesh.position.x = nx;
                     c.mesh.position.z = nz;
                 }
-                const ty = this._groundY(c.mesh.position.x, c.mesh.position.z);
-                c.mesh.position.y += (ty - c.mesh.position.y) * (1 - Math.exp(-8 * dt));
                 c.mesh.rotation.y = Math.atan2(dx, dz);
                 c.walkT += dt * 9;
 
