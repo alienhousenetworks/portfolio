@@ -3,38 +3,59 @@ import { PALETTE } from './config.js';
 import { toonMat } from './ToonStyle.js';
 import {
     createCharacterInstance,
-    getHumanModelKey,
-    getAlienModelKey,
-    fadeCharacterAction,
-    updateCharacterAnimator,
+    getAnimatedHumanKey,
+    getStatueHumanKey,
+    getStatueAlienKey,
     animateStaticWalk,
 } from './CharacterModels.js';
+import {
+    setCharacterPose,
+    updateLocomotionPose,
+    tickAnimator,
+    isRiggedAvatar,
+} from './CharacterAnimator.js';
 
-export { fadeCharacterAction as fadeHumanAction, updateCharacterAnimator as updateHumanAnimator };
+export { setCharacterPose, updateLocomotionPose };
+export const fadeHumanAction = setCharacterPose;
+export const updateHumanAnimator = tickAnimator;
 
+/** Rigged GLB body with stand / walk / run clips */
 export function createHumanAvatar(opts = {}) {
-    const modelKey = opts.modelKey ?? getHumanModelKey(opts.variant ?? 0);
+    const modelKey = opts.modelKey ?? getAnimatedHumanKey(opts.variant ?? 0);
     const g = createCharacterInstance('human', modelKey, opts);
     g.userData.isHuman = true;
+    if (isRiggedAvatar(g)) setCharacterPose(g, 'stand', 0);
+    return g;
+}
+
+/** Display-only human (dezyne statue or rigged stand) */
+export function createStatueHuman(opts = {}) {
+    const modelKey = opts.modelKey ?? getStatueHumanKey(opts.variant ?? 0);
+    const g = createCharacterInstance('human', modelKey, opts);
+    g.userData.isHuman = true;
+    g.userData.isStatue = true;
+    if (isRiggedAvatar(g)) setCharacterPose(g, 'stand', 0);
     return g;
 }
 
 export function createStudentAvatar(opts = {}) {
-    return createHumanAvatar({ modelKey: getHumanModelKey(0), ...opts });
+    return createHumanAvatar({ modelKey: getAnimatedHumanKey(opts.variant ?? 0), ...opts });
 }
 
 export function createCommuterAvatar(opts = {}) {
-    return createHumanAvatar({ modelKey: getHumanModelKey(1), ...opts });
+    const g = createStatueHuman({ modelKey: getAnimatedHumanKey(opts.variant ?? 1), ...opts });
+    g.userData.isCommuter = true;
+    return g;
 }
 
 export function createWandererAvatar(opts = {}) {
-    const g = createHumanAvatar({ modelKey: getHumanModelKey(2), ...opts });
+    const g = createStatueHuman({ modelKey: getAnimatedHumanKey(0), ...opts });
     g.userData.isWanderer = true;
     return g;
 }
 
 export function createCyclistAvatar(opts = {}) {
-    const g = createHumanAvatar({ modelKey: getHumanModelKey(opts.variant ?? 1), ...opts });
+    const g = createHumanAvatar({ modelKey: getAnimatedHumanKey(opts.variant ?? 1), ...opts });
     g.position.y = 0.35;
     const bike = createBicycle();
     g.add(bike);
@@ -44,9 +65,14 @@ export function createCyclistAvatar(opts = {}) {
 }
 
 export function createAlienAvatar(opts = {}) {
-    const modelKey = opts.modelKey ?? getAlienModelKey(opts.variant ?? 0);
-    const g = createCharacterInstance('alien', modelKey, opts);
+    const modelKey = opts.modelKey ?? getStatueAlienKey(opts.variant ?? 0) ?? 'fantasy';
+    const g = createCharacterInstance('alien', modelKey, {
+        ...opts,
+        tint: opts.tint ?? 0x88ccaa,
+        tintStrength: 0.2,
+    });
     g.userData.isAlien = true;
+    if (isRiggedAvatar(g)) setCharacterPose(g, 'stand', 0);
     return g;
 }
 
@@ -100,20 +126,24 @@ export function createNameTag(name) {
 }
 
 export function animateHumanWalk(avatar, walkT, intensity = 1) {
-    if (avatar.userData.mixer) return;
+    if (isRiggedAvatar(avatar)) {
+        setCharacterPose(avatar, 'walk', 0.12);
+        return;
+    }
     animateStaticWalk(avatar, walkT, intensity);
 }
 
 export function animateWanderer(avatar, t) {
-    fadeCharacterAction(avatar, 'idle', 0.3);
+    setCharacterPose(avatar, 'stand', 0.3);
     const body = avatar.children[0];
-    if (body) body.rotation.x = -0.15 + Math.sin(t * 2) * 0.08;
+    if (body && !isRiggedAvatar(avatar)) {
+        body.rotation.x = -0.15 + Math.sin(t * 2) * 0.08;
+    }
 }
 
 export function animateCyclist(avatar, t, speed = 1) {
-    fadeCharacterAction(avatar, 'walk', 0.15);
-    if (avatar.userData.mixer) avatar.userData.mixer.timeScale = speed * 1.4;
-    else animateStaticWalk(avatar, t, speed);
+    updateLocomotionPose(avatar, { moving: true, running: false, onGround: true, fade: 0.15 });
+    if (avatar.userData.mixer) avatar.userData.mixer.timeScale = speed * 1.2;
     const bike = avatar.userData.bike;
     if (bike) bike.rotation.z += speed * 0.02;
 }

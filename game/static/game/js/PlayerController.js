@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { PLAYER, WORLD, CAMERA, PHYSICS } from './config.js';
-import { fadeHumanAction, updateHumanAnimator } from './AvatarFactory.js';
+import { updateLocomotionPose, tickAnimator } from './AvatarFactory.js';
 
 const MOVE_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
 
@@ -252,23 +252,14 @@ export class PlayerController {
             this.avatar.position.y = newY;
         }
 
-        if (this.avatar.userData.mixer) {
-            updateHumanAnimator(this.avatar, dt);
-            let nextAnim = 'idle';
-            const isStair = this.terrain?.isOnStair(this.avatar.position.x, this.avatar.position.z);
-            if (isStair && this.avatar.userData.actions?.climb) {
-                nextAnim = 'climb';
-            } else if (!this.onGround && this.avatar.userData.actions?.jump) {
-                nextAnim = 'jump';
-            } else if (this.velocity.lengthSq() > 0.1) {
-                nextAnim = this.isRunning && this.avatar.userData.actions?.run ? 'run' : 'walk';
-            }
-            fadeHumanAction(this.avatar, nextAnim, 0.18);
-            const action = this.avatar.userData.actions?.[nextAnim];
-            if (action) {
-                action.timeScale = nextAnim === 'run' ? 1.35 : nextAnim === 'climb' ? 1.1 : 1;
-            }
-        }
+        tickAnimator(this.avatar, dt);
+        updateLocomotionPose(this.avatar, {
+            moving: this.velocity.lengthSq() > 0.1,
+            running: this.isRunning,
+            onGround: this.onGround,
+            climbing: this.terrain?.isOnStair(this.avatar.position.x, this.avatar.position.z),
+            fade: 0.18,
+        });
 
         this._updateCamera(dt);
     }

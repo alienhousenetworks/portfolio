@@ -8,6 +8,8 @@ export const MODEL_CATALOG = {
         male: {
             file: 'models/quaternius_cc0-male-character-1354.glb',
             animated: true,
+            rigged: true,
+            role: 'locomotion',
             targetHeight: PLAYER.height,
             priority: 'critical',
             sizeMB: 1.2,
@@ -15,6 +17,8 @@ export const MODEL_CATALOG = {
         female: {
             file: 'models/quaternius_cc0-female-character-1350.glb',
             animated: true,
+            rigged: true,
+            role: 'locomotion',
             targetHeight: 1.65,
             priority: 'critical',
             sizeMB: 1.2,
@@ -22,6 +26,8 @@ export const MODEL_CATALOG = {
         dezyne: {
             file: 'models/dezyne_3d-man-462.glb',
             animated: false,
+            rigged: true,
+            role: 'statue',
             targetHeight: PLAYER.height,
             priority: 'lazy',
             sizeMB: 44,
@@ -31,6 +37,8 @@ export const MODEL_CATALOG = {
         fantasy: {
             file: 'models/pixellabs-dark-fantasy-3330.glb',
             animated: false,
+            rigged: false,
+            role: 'statue',
             targetHeight: 1.9,
             priority: 'lazy',
             sizeMB: 32,
@@ -38,6 +46,8 @@ export const MODEL_CATALOG = {
         creature: {
             file: 'models/pixellabs-glb-3347.glb',
             animated: false,
+            rigged: false,
+            role: 'statue',
             targetHeight: 1.85,
             priority: 'lazy',
             sizeMB: 46,
@@ -97,7 +107,22 @@ async function fetchAndParseGlb(url) {
     });
 }
 
+const HIDDEN_MESH = /collision|hitbox|cube|box|placeholder|root\s*mesh/i;
+
+function stripHelperMeshes(root) {
+    const toRemove = [];
+    root.traverse(obj => {
+        if (!obj.isMesh) return;
+        const name = obj.name || '';
+        if (HIDDEN_MESH.test(name)) toRemove.push(obj);
+    });
+    toRemove.forEach(obj => {
+        obj.parent?.remove(obj);
+    });
+}
+
 function prepareMeshes(root) {
+    stripHelperMeshes(root);
     root.traverse(obj => {
         if (!obj.isMesh) return;
         obj.castShadow = true;
@@ -126,7 +151,8 @@ function normalizeHeight(root, targetHeight) {
 
 function findClip(clips, kind) {
     const rules = {
-        idle: [/idle/i, /standing/i],
+        stand: [/_standing$/i, /_idle$/i, /\|man_standing$/i, /\|female_standing$/i],
+        idle: [/_idle$/i, /_standing$/i],
         walk: [/_walk$/i, /\|man_walk$/i, /\|female_walk$/i],
         run: [/_run$/i, /\|man_run$/i, /\|female_run$/i],
         jump: [/_jump$/i, /\|man_jump$/i, /\|female_jump$/i],
@@ -143,15 +169,16 @@ function findClip(clips, kind) {
 function setupAnimator(root, clips) {
     const mixer = new THREE.AnimationMixer(root);
     const actions = {};
-    const kinds = ['idle', 'walk', 'run', 'jump', 'climb'];
-    kinds.forEach(kind => {
+    ['stand', 'walk', 'run', 'jump', 'climb'].forEach(kind => {
         const clip = findClip(clips, kind);
         if (clip) actions[kind] = mixer.clipAction(clip);
     });
-    if (!actions.idle && clips[0]) {
-        actions.idle = mixer.clipAction(clips[0]);
+    if (!actions.stand) {
+        const idleClip = findClip(clips, 'idle');
+        if (idleClip) actions.stand = mixer.clipAction(idleClip);
     }
-    if (actions.idle) actions.idle.play();
+    actions.idle = actions.stand;
+    if (actions.stand) actions.stand.play();
     return { mixer, actions };
 }
 
@@ -171,7 +198,9 @@ async function loadEntry(baseUrl, entry, onProgress) {
         _cache.set(id, {
             scene,
             animations: gltf.animations || [],
-            animated: cfg.animated,
+            animated: cfg.animated && gltf.animations.length > 0,
+            rigged: cfg.rigged,
+            role: cfg.role,
             targetHeight: cfg.targetHeight,
         });
         return null;
@@ -234,19 +263,33 @@ export function isModelLoaded(type, modelKey) {
     return _cache.has(`${type}:${modelKey}`);
 }
 
-export function getHumanModelKey(index = 0) {
-    const order = ['male', 'female', 'dezyne'];
-    const preferred = order[index % order.length];
-    if (isModelLoaded('human', preferred)) return preferred;
+/** Rigged Quaternius models — real stand / walk / run on skeleton */
+export function getAnimatedHumanKey(index = 0) {
+    const key = index % 2 === 0 ? 'male' : 'female';
+    if (isModelLoaded('human', key)) return key;
     if (isModelLoaded('human', 'male')) return 'male';
     if (isModelLoaded('human', 'female')) return 'female';
-    return preferred;
+    return 'male';
 }
 
-export function getAlienModelKey(index = 0) {
+/** Statue / display models — stand still only (no walk clips) */
+export function getStatueHumanKey(index = 0) {
+    if (isModelLoaded('human', 'dezyne')) return 'dezyne';
+    return getAnimatedHumanKey(index);
+}
+
+export function getHumanModelKey(index = 0) {
+    return getAnimatedHumanKey(index);
+}
+
+export function getStatueAlienKey(index = 0) {
     const preferred = ALIEN_KEYS[index % ALIEN_KEYS.length];
     if (isModelLoaded('alien', preferred)) return preferred;
     return null;
+}
+
+export function getAlienModelKey(index = 0) {
+    return getStatueAlienKey(index);
 }
 
 export function createCharacterInstance(type, modelKey, opts = {}) {
@@ -298,9 +341,20 @@ export function createCharacterInstance(type, modelKey, opts = {}) {
     root.userData.characterType = type;
     root.userData.isHuman = type === 'human';
     root.userData.isAlien = type === 'alien';
-    root.userData.isStaticModel = !cached.animated || cached.animations.length === 0;
+    root.userData.isRigged = cached.rigged;
+    root.userData.isStaticModel = !cached.animated;
+    root.userData.role = cached.role;
 
-    if (!root.userData.isStaticModel && cached.animations.length) {
+    if (opts.tint && model) {
+        const tint = new THREE.Color(opts.tint);
+        model.traverse(obj => {
+            if (!obj.isMesh || !obj.material) return;
+            const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+            mats.forEach(m => { if (m.color) m.color.lerp(tint, opts.tintStrength ?? 0.25); });
+        });
+    }
+
+    if (cached.animated && cached.animations.length) {
         const { mixer, actions } = setupAnimator(model, cached.animations);
         root.userData.mixer = mixer;
         root.userData.actions = actions;
@@ -317,14 +371,17 @@ function createFallbackMarker() {
 }
 
 export function fadeCharacterAction(avatar, name, duration = 0.2) {
+    const resolved = name === 'idle' ? 'stand' : name;
     const actions = avatar.userData.actions;
-    if (!actions || !actions[name]) return;
+    if (!actions) return;
+    const next = actions[resolved] ?? actions.stand ?? actions.walk;
+    if (!next) return;
     const prev = avatar.userData._activeAction;
-    const next = actions[name];
     if (prev === next) return;
     if (prev) prev.fadeOut(duration);
     next.reset().setEffectiveTimeScale(1).setEffectiveWeight(1).fadeIn(duration).play();
     avatar.userData._activeAction = next;
+    avatar.userData.pose = resolved;
 }
 
 export function updateCharacterAnimator(avatar, dt) {

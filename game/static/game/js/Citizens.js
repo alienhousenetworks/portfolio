@@ -1,12 +1,13 @@
 import * as THREE from 'three';
 import { WORLD } from './config.js';
-import { getHumanModelKey, getAlienModelKey } from './CharacterModels.js';
+import { getAnimatedHumanKey, getStatueAlienKey } from './CharacterModels.js';
 import {
-    createHumanAvatar, createAlienAvatar, createNameTag,
+    createHumanAvatar, createStatueHuman, createAlienAvatar, createNameTag,
     createStudentAvatar, createCommuterAvatar, createWandererAvatar, createCyclistAvatar,
-    fadeHumanAction, updateHumanAnimator,
-    animateWanderer, animateCyclist, animateHumanWalk,
+    setCharacterPose, tickAnimator, updateLocomotionPose,
+    animateWanderer, animateCyclist,
 } from './AvatarFactory.js';
+import { isRiggedAvatar } from './CharacterAnimator.js';
 
 const HUMAN_NAMES = ['Alex', 'Jordan', 'Sam', 'Riley', 'Casey', 'Morgan', 'Taylor', 'Jamie', 'Quinn', 'Avery'];
 const ALIEN_NAMES = ['Zyx', 'Nara', 'Kov', 'Eli', 'Pax', 'Ryn', 'Oma', 'Dex', 'Vex', 'Luma', 'Kira', 'Zeno'];
@@ -49,20 +50,18 @@ export class CitizenManager {
         const spots = this._walkSpots();
         for (let i = 0; i < 10; i++) {
             const spot = spots[i % spots.length];
-            const mesh = createHumanAvatar({ modelKey: getHumanModelKey(i), variant: i });
+            const mesh = createHumanAvatar({ modelKey: getAnimatedHumanKey(i), variant: i });
             this._placeCitizen(mesh, spot, HUMAN_NAMES[i % HUMAN_NAMES.length], 'human', HUMAN_LINES[i % HUMAN_LINES.length], i * 0.7);
         }
 
         for (let i = 0; i < 12; i++) {
             const spot = spots[(i + 5) % spots.length];
-            const alienKey = getAlienModelKey(i);
-            const mesh = createAlienAvatar({ modelKey: alienKey ?? 'fantasy', variant: i });
+            const mesh = createAlienAvatar({ modelKey: getStatueAlienKey(i) ?? 'fantasy', variant: i });
             this._placeCitizen(mesh, spot, ALIEN_NAMES[i % ALIEN_NAMES.length], 'alien', ALIEN_LINES[i % ALIEN_LINES.length], i * 0.5 + 2);
         }
 
         teamMembers.slice(0, 6).forEach((m, i) => {
-            const teamKey = getAlienModelKey(i + 1);
-            const mesh = createAlienAvatar({ modelKey: teamKey ?? 'fantasy', variant: i + 1 });
+            const mesh = createAlienAvatar({ modelKey: getStatueAlienKey(i + 1) ?? 'fantasy', variant: i + 1 });
             mesh.position.set(-12 + i * 4, this._groundY(-12 + i * 4, WORLD.parkZ - 12 - i), WORLD.parkZ - 12 - i);
             mesh.visible = false;
             mesh.add(createNameTag(m.name));
@@ -143,7 +142,7 @@ export class CitizenManager {
             { x: WORLD.parkX, z: WORLD.parkZ + 14, line: 'The fountain sounds so peaceful.' },
         ];
         parkSpots.forEach((spot, i) => {
-            const mesh = createHumanAvatar({ modelKey: getHumanModelKey(i + 1), variant: i + 1 });
+            const mesh = createStatueHuman({ modelKey: getAnimatedHumanKey(i + 1), variant: i + 1 });
             mesh.position.set(spot.x, this._groundY(spot.x, spot.z), spot.z);
             mesh.add(createNameTag(['Sora', 'Hana', 'Ren'][i]));
             this.scene.add(mesh);
@@ -179,8 +178,8 @@ export class CitizenManager {
         buildings.forEach((b, i) => {
             const isAlien = b.hostType === 'alien';
             const mesh = isAlien
-                ? createAlienAvatar({ modelKey: getAlienModelKey(i) ?? 'fantasy', variant: i })
-                : createHumanAvatar({ modelKey: getHumanModelKey(i), variant: i });
+                ? createAlienAvatar({ modelKey: getStatueAlienKey(i) ?? 'fantasy', variant: i })
+                : createStatueHuman({ modelKey: getAnimatedHumanKey(i), variant: i });
 
             mesh.position.set(b.hostX, this._groundY(b.hostX, b.hostZ), b.hostZ);
             mesh.rotation.y = Math.atan2(b.x - b.hostX, b.z - b.hostZ);
@@ -249,7 +248,7 @@ export class CitizenManager {
         for (let i = 0; i < humans; i++) {
             const angle = (i / humans) * Math.PI * 2;
             const r = baseR + (i % 3) * 4;
-            const mesh = createHumanAvatar({ modelKey: getHumanModelKey(i), variant: i });
+            const mesh = createHumanAvatar({ modelKey: getAnimatedHumanKey(i), variant: i });
             const hx = x + Math.cos(angle) * r;
             const hz = z + Math.sin(angle) * r;
             const line = district === 'software'
@@ -263,8 +262,7 @@ export class CitizenManager {
         for (let i = 0; i < aliens; i++) {
             const angle = (i / aliens) * Math.PI * 2 + 0.5;
             const r = baseR + 4 + (i % 3) * 3;
-            const alienKey = getAlienModelKey(i);
-            const mesh = createAlienAvatar({ modelKey: alienKey ?? 'fantasy', variant: i });
+            const mesh = createAlienAvatar({ modelKey: getStatueAlienKey(i) ?? 'fantasy', variant: i });
             const ax = x + Math.cos(angle) * r;
             const az = z + Math.sin(angle) * r;
             const line = district === 'innovation'
@@ -285,14 +283,14 @@ export class CitizenManager {
 
     update(dt) {
         this.citizens.filter(c => !c.isTeam || c.mesh.visible).forEach(c => {
-            if (c.mesh.userData.mixer) updateHumanAnimator(c.mesh, dt);
+            tickAnimator(c.mesh, dt);
 
             if (c.isTeam || c.isHost || c.isParkVisitor || c.speed === 0) {
                 if (c.isWanderer) {
                     c.wanderT = (c.wanderT || 0) + dt;
                     animateWanderer(c.mesh, c.wanderT);
-                } else if (c.mesh.userData.mixer) {
-                    fadeHumanAction(c.mesh, 'idle', 0.2);
+                } else if (isRiggedAvatar(c.mesh)) {
+                    setCharacterPose(c.mesh, 'stand', 0.2);
                 }
                 return;
             }
@@ -307,6 +305,7 @@ export class CitizenManager {
 
             if (dist < 1) {
                 c.goingToTarget = !c.goingToTarget;
+                if (isRiggedAvatar(c.mesh)) setCharacterPose(c.mesh, 'stand', 0.2);
             } else {
                 const step = c.speed * dt;
                 const nx = c.mesh.position.x + (dx / dist) * step;
@@ -322,11 +321,13 @@ export class CitizenManager {
 
                 if (c.isCyclist) {
                     animateCyclist(c.mesh, c.walkT, c.speed / 2);
-                } else if (c.mesh.userData.mixer) {
-                    updateHumanAnimator(c.mesh, dt);
-                    fadeHumanAction(c.mesh, c.speed > 1.8 ? 'run' : 'walk', 0.15);
-                } else {
-                    animateHumanWalk(c.mesh, c.walkT, c.speed / 2);
+                } else if (isRiggedAvatar(c.mesh)) {
+                    updateLocomotionPose(c.mesh, {
+                        moving: true,
+                        running: c.speed > 1.8,
+                        onGround: true,
+                        fade: 0.15,
+                    });
                 }
             }
         });
