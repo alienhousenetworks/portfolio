@@ -10,9 +10,20 @@ export function createStreetLamp() {
     const arm = toonMesh(new THREE.BoxGeometry(0.8, 0.08, 0.08), PALETTE.pole);
     arm.mesh.position.set(0.35, 4, 0);
     g.add(arm.group);
-    const bulb = toonMesh(new THREE.BoxGeometry(0.35, 0.25, 0.35), PALETTE.yellow, { emissive: PALETTE.yellow, emissiveIntensity: 0.15 });
+    const bulb = toonMesh(new THREE.BoxGeometry(0.35, 0.25, 0.35), PALETTE.yellow, { emissive: PALETTE.yellow, emissiveIntensity: 0.18 });
     bulb.mesh.position.set(0.7, 3.85, 0);
     g.add(bulb.group);
+    return g;
+}
+
+export function createBridgeLamp() {
+    const g = new THREE.Group();
+    const pole = toonMesh(new THREE.BoxGeometry(0.12, 3.5, 0.12), PALETTE.bridgeRail);
+    pole.mesh.position.y = 1.75;
+    g.add(pole.group);
+    const orb = toonMesh(new THREE.SphereGeometry(0.22, 8, 8), PALETTE.yellow, { emissive: PALETTE.yellow, emissiveIntensity: 0.25 });
+    orb.mesh.position.y = 3.7;
+    g.add(orb.group);
     return g;
 }
 
@@ -71,10 +82,12 @@ export function createCherryTree() {
     const g = new THREE.Group();
     const trunk = toonMesh(new THREE.BoxGeometry(0.35, 2.8, 0.35), PALETTE.blossomTrunk);
     trunk.mesh.position.y = 1.4;
+    trunk.mesh.castShadow = true;
     g.add(trunk.group);
     const canopy = toonMesh(new THREE.SphereGeometry(2.2, 8, 8), PALETTE.blossom);
     canopy.mesh.position.y = 3.8;
     canopy.mesh.scale.set(1.1, 0.75, 1.1);
+    canopy.mesh.castShadow = true;
     g.add(canopy.group);
     return g;
 }
@@ -84,11 +97,92 @@ export function createLargeTree(seed = 0) {
     const col = PALETTE.foliage[seed % PALETTE.foliage.length];
     const trunk = toonMesh(new THREE.BoxGeometry(0.4, 3.5, 0.4), PALETTE.wood[0]);
     trunk.mesh.position.y = 1.75;
+    trunk.mesh.castShadow = true;
     g.add(trunk.group);
     const canopy = toonMesh(new THREE.SphereGeometry(2.5, 8, 8), col);
     canopy.mesh.position.y = 4.5;
     canopy.mesh.scale.set(1, 0.85, 1);
+    canopy.mesh.castShadow = true;
     g.add(canopy.group);
+    return g;
+}
+
+/** Pine tree for mountain slopes — tall cone */
+export function createPineTree(seed = 0, height = 1.0) {
+    const g = new THREE.Group();
+    const h = (5 + (seed % 4)) * height;
+    const col = seed % 3 === 0 ? PALETTE.pineDark : PALETTE.pineGreen;
+
+    // Trunk
+    const trunk = toonMesh(new THREE.CylinderGeometry(0.15, 0.22, h * 0.35, 5), PALETTE.wood[0]);
+    trunk.mesh.position.y = h * 0.175;
+    trunk.mesh.castShadow = true;
+    g.add(trunk.group);
+
+    // Tiered cone foliage
+    const tiers = 3;
+    for (let t = 0; t < tiers; t++) {
+        const tierH = h * (0.45 - t * 0.08);
+        const tierR = (h * 0.32) * (1 - t * 0.25);
+        const tierY = h * 0.3 + t * (h * 0.22);
+        const cone = toonMesh(new THREE.ConeGeometry(tierR, tierH, 7), col);
+        cone.mesh.position.y = tierY;
+        cone.mesh.castShadow = true;
+        g.add(cone.group);
+    }
+    return g;
+}
+
+/** Willow-style tree for riverbanks — drooping sphere */
+export function createWillowTree(seed = 0) {
+    const g = new THREE.Group();
+    const trunk = toonMesh(new THREE.CylinderGeometry(0.18, 0.28, 5, 6), PALETTE.wood[0]);
+    trunk.mesh.position.y = 2.5;
+    trunk.mesh.castShadow = true;
+    g.add(trunk.group);
+
+    // Drooping canopy — elongated ellipsoid
+    const canopy = toonMesh(new THREE.SphereGeometry(2.6, 9, 7), PALETTE.willowGreen);
+    canopy.mesh.position.y = 6.5;
+    canopy.mesh.scale.set(1.2, 0.9, 1.2);
+    canopy.mesh.castShadow = true;
+    g.add(canopy.group);
+
+    // Draping tendrils
+    for (let i = 0; i < 6; i++) {
+        const angle = (i / 6) * Math.PI * 2;
+        const r = 1.8 + (seed + i) % 3 * 0.3;
+        const drape = toonMesh(new THREE.CylinderGeometry(0.04, 0.01, 2.2, 4), PALETTE.willowGreen, { outline: false });
+        drape.mesh.position.set(Math.cos(angle) * r, 4.8, Math.sin(angle) * r);
+        drape.mesh.rotation.z = Math.cos(angle) * 0.3;
+        drape.mesh.rotation.x = Math.sin(angle) * 0.3;
+        g.add(drape.group);
+    }
+    return g;
+}
+
+/** Mountain rock cluster */
+export function createRockCluster(seed = 0) {
+    const g = new THREE.Group();
+    const sizes = [
+        [1.2, 0.9, 1.0], [0.8, 0.6, 0.7], [1.5, 1.1, 1.3], [0.6, 0.5, 0.6]
+    ];
+    const offsets = [[0, 0, 0], [1.2, 0, 0.5], [-0.8, 0, 0.8], [0.4, 0, -0.9]];
+    const col = seed % 2 === 0 ? PALETTE.mountainRock : PALETTE.mountain[2];
+
+    sizes.forEach(([rx, ry, rz], i) => {
+        const [ox, oy, oz] = offsets[i];
+        const rock = toonMesh(
+            new THREE.DodecahedronGeometry(rx * 0.7, 0),
+            col
+        );
+        rock.mesh.position.set(ox, ry * 0.4, oz);
+        rock.mesh.scale.set(1, 0.65, 0.85);
+        rock.mesh.rotation.y = (seed + i) * 0.9;
+        rock.mesh.castShadow = true;
+        rock.mesh.receiveShadow = true;
+        g.add(rock.group);
+    });
     return g;
 }
 
@@ -96,7 +190,7 @@ export function createBambooCluster() {
     const g = new THREE.Group();
     for (let i = 0; i < 6; i++) {
         const h = 4 + (i % 3) * 1.5;
-        const stalk = toonMesh(new THREE.BoxGeometry(0.12, h, 0.12), 0x6ea56b, { outline: false });
+        const stalk = toonMesh(new THREE.BoxGeometry(0.12, h, 0.12), 0x5a9450, { outline: false });
         stalk.mesh.position.set((i % 3) * 0.5 - 0.5, h / 2, Math.floor(i / 3) * 0.5);
         g.add(stalk.group);
     }
@@ -107,6 +201,7 @@ export function createFountain() {
     const g = new THREE.Group();
     const base = toonMesh(new THREE.CylinderGeometry(2.5, 2.8, 0.5, 12), PALETTE.concrete);
     base.mesh.position.y = 0.25;
+    base.mesh.receiveShadow = true;
     g.add(base.group);
     const pool = toonMesh(new THREE.CylinderGeometry(2.2, 2.2, 0.3, 12), PALETTE.mint, { transparent: true, opacity: 0.85 });
     pool.mesh.position.y = 0.45;
@@ -114,6 +209,10 @@ export function createFountain() {
     const spout = toonMesh(new THREE.BoxGeometry(0.3, 1.2, 0.3), PALETTE.concreteLight);
     spout.mesh.position.y = 0.9;
     g.add(spout.group);
+    // Water jet effect
+    const jet = toonMesh(new THREE.CylinderGeometry(0.08, 0.18, 1.0, 6), PALETTE.riverShallow, { transparent: true, opacity: 0.7, outline: false });
+    jet.mesh.position.y = 1.9;
+    g.add(jet.group);
     return g;
 }
 
@@ -130,7 +229,7 @@ export function createHangingSign(text, color = PALETTE.orange) {
 
 export function createAirConditioner() {
     const g = new THREE.Group();
-    const unit = toonMesh(new THREE.BoxGeometry(0.7, 0.45, 0.5), 0xeae8df, { outline: false });
+    const unit = toonMesh(new THREE.BoxGeometry(0.7, 0.45, 0.5), 0xe8e6dd, { outline: false });
     g.add(unit.group);
     return g;
 }

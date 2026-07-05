@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { PLAYER, WORLD, CAMERA } from './config.js';
+import { PLAYER, WORLD, CAMERA, PHYSICS } from './config.js';
 import { animateHumanWalk } from './AvatarFactory.js';
 
 const MOVE_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
@@ -12,6 +12,8 @@ export class PlayerController {
         this.canvas = canvas;
         this.terrain = terrain;
         this.velocity = new THREE.Vector3();
+        this.vy = 0;                    // vertical velocity for physics
+        this.onGround = false;
         this.camYaw = 0;
         this.camPitch = CAMERA.defaultPitch;
         this.camDistance = CAMERA.defaultDistance;
@@ -24,7 +26,25 @@ export class PlayerController {
         this._fwd = new THREE.Vector3();
         this._right = new THREE.Vector3();
         this._up = new THREE.Vector3(0, 1, 0);
+
+        // player height scale
+        this.playerHeight = PLAYER.height;
+
         this._input();
+        this._listenHeightSlider();
+    }
+
+    _listenHeightSlider() {
+        // Listen for height-change events dispatched from the UI slider
+        window.addEventListener('player-height-change', (e) => {
+            const newH = e.detail.height;
+            this.playerHeight = newH;
+            // Scale the avatar uniformly based on ratio to default height
+            const scale = newH / PLAYER.height;
+            this.avatar.scale.setScalar(scale);
+            // Adjust camera look-height proportionally
+            this._lookHeightScaled = CAMERA.lookHeight * scale;
+        });
     }
 
     _input() {
@@ -33,6 +53,15 @@ export class PlayerController {
             if (MOVE_KEYS.has(e.code)) e.preventDefault();
             this.keys[e.code] = true;
             if (e.code.startsWith('Shift')) this.isRunning = true;
+
+            // Jump
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (this.onGround) {
+                    this.vy = PHYSICS.jumpForce;
+                    this.onGround = false;
+                }
+            }
         });
         addEventListener('keyup', e => {
             this.keys[e.code] = false;
@@ -118,6 +147,7 @@ export class PlayerController {
     }
 
     _placeCamera(target) {
+        const lookH = this._lookHeightScaled || CAMERA.lookHeight;
         const cosP = Math.cos(this.camPitch);
         this._desiredCam.set(
             target.x + Math.sin(this.camYaw) * cosP * this.camDistance,
@@ -128,18 +158,20 @@ export class PlayerController {
 
     _snapCamera() {
         const p = this.avatar.position;
+        const lookH = this._lookHeightScaled || CAMERA.lookHeight;
         this._placeCamera(p);
         this.camera.position.copy(this._desiredCam);
-        this._lookPoint.set(p.x, p.y + CAMERA.lookHeight, p.z);
+        this._lookPoint.set(p.x, p.y + lookH, p.z);
         this.camera.lookAt(this._lookPoint);
     }
 
     _updateCamera(dt) {
         const p = this.avatar.position;
+        const lookH = this._lookHeightScaled || CAMERA.lookHeight;
         this._placeCamera(p);
         const alpha = 1 - Math.exp(-CAMERA.positionDamp * dt);
         this.camera.position.lerp(this._desiredCam, alpha);
-        this._lookPoint.set(p.x, p.y + CAMERA.lookHeight, p.z);
+        this._lookPoint.set(p.x, p.y + lookH, p.z);
         this.camera.lookAt(this._lookPoint);
     }
 
@@ -166,15 +198,18 @@ export class PlayerController {
 
         const ox = this.avatar.position.x;
         const oz = this.avatar.position.z;
+        const curY = this.avatar.position.y;
         let nx = ox + this.velocity.x * dt;
         let nz = oz + this.velocity.z * dt;
 
-        const curY = this.avatar.position.y;
+        // --- Horizontal collision + block-top stepping ---
+        const blockedX = this._blockedWithStep(nx, oz, curY);
+        if (blockedX) nx = ox;
+        const blockedZ = this._blockedWithStep(ox, nz, curY);
+        if (blockedZ) nz = oz;
+        if (!blockedX && !blockedZ && this._blockedWithStep(nx, nz, curY)) { nx = ox; nz = oz; }
 
-        if (this._blocked(nx, oz, curY)) nx = ox;
-        if (this._blocked(ox, nz, curY)) nz = oz;
-        if (this._blocked(nx, nz, curY)) { nx = ox; nz = oz; }
-
+        // River traversal check
         if (this.terrain && !this.terrain.canTraverse(ox, oz, curY, nx, nz)) {
             nx = ox;
             nz = oz;
@@ -183,13 +218,40 @@ export class PlayerController {
         this.avatar.position.x = THREE.MathUtils.clamp(nx, -WORLD.bound, WORLD.bound);
         this.avatar.position.z = THREE.MathUtils.clamp(nz, -WORLD.bound, WORLD.bound);
 
-        const targetY = this.terrain
+        // --- Vertical physics (gravity + ground snap) ---
+        const terrainY = this.terrain
             ? this.terrain.getWalkableHeight(nx, nz, curY)
             : WORLD.groundY;
-        const onStair = this.terrain?.isOnStair(nx, nz);
-        const ySmooth = onStair ? 14 : 10;
-        this.avatar.position.y += (targetY - this.avatar.position.y) * (1 - Math.exp(-ySmooth * dt));
 
+        // Check if standing on top of a block
+        const blockTopY = this._getBlockTopBelow(nx, nz, curY);
+        const floorY = Math.max(terrainY, blockTopY !== null ? blockTopY : -Infinity);
+
+        // Apply gravity
+        this.vy -= PHYSICS.gravity * dt;
+        this.vy = Math.max(this.vy, PHYSICS.terminalVelocity);
+
+        let newY = curY + this.vy * dt;
+
+        // Ground / platform collision
+        if (newY <= floorY + PHYSICS.groundSnap && this.vy <= 0) {
+            newY = floorY;
+            this.vy = 0;
+            this.onGround = true;
+        } else {
+            this.onGround = false;
+        }
+
+        // Stair smooth-step
+        const onStair = this.terrain?.isOnStair(nx, nz);
+        if (onStair && Math.abs(terrainY - curY) < 3) {
+            const ySmooth = 14;
+            this.avatar.position.y += (terrainY - this.avatar.position.y) * (1 - Math.exp(-ySmooth * dt));
+        } else {
+            this.avatar.position.y = newY;
+        }
+
+        // Walk animation
         if (this.avatar.userData.isHuman && this.velocity.lengthSq() > 0.5) {
             animateHumanWalk(this.avatar, this.walkCycle, this.isRunning ? 1.1 : 0.9);
         } else if (this.avatar.userData.walkParts) {
@@ -202,13 +264,52 @@ export class PlayerController {
         this._updateCamera(dt);
     }
 
-    _blocked(x, z, y = WORLD.groundY) {
+    /**
+     * Returns the Y position of the top of any block directly below (and close to) the player.
+     * Returns null if no block found.
+     */
+    _getBlockTopBelow(x, z, y) {
+        const r = PLAYER.radius * 0.8;
+        let best = null;
+        for (const c of this.colliders) {
+            const hw = c.w / 2 + r;
+            const hd = c.d / 2 + r;
+            if (Math.abs(x - c.x) < hw && Math.abs(z - c.z) < hd) {
+                const top = (c.floorY || 0) + (c.h || 0);
+                // Only count blocks that are below or near the player
+                if (top <= y + PLAYER.maxStepHeight + 0.5) {
+                    if (best === null || top > best) best = top;
+                }
+            }
+        }
+        return best;
+    }
+
+    /**
+     * Check if movement to (x,z) at current height y is blocked.
+     * Allows stepping UP onto a block if its top is within maxStepHeight.
+     */
+    _blockedWithStep(x, z, y) {
         const r = PLAYER.radius;
         for (const c of this.colliders) {
             const hw = c.w / 2 + r;
             const hd = c.d / 2 + r;
             if (Math.abs(x - c.x) < hw && Math.abs(z - c.z) < hd) {
+                // Is this a stair-traversal exception?
                 if (c.d > 100 && this.terrain?.isOnStair(x, z)) continue;
+
+                const blockFloor = c.floorY || 0;
+                const blockTop = blockFloor + (c.h || 0);
+
+                // If the block top is within step-up range AND player is approaching from below top
+                if (blockTop <= y + PLAYER.maxStepHeight && blockTop > blockFloor) {
+                    // Allow: player can step up onto this block
+                    continue;
+                }
+
+                // If player is above the block top (standing on it), allow movement
+                if (y >= blockTop - 0.1) continue;
+
                 return true;
             }
         }
@@ -231,7 +332,7 @@ export class PlayerController {
             );
         }
         for (const [tx, tz] of candidates) {
-            if (!this._blocked(tx, tz)) return { x: tx, z: tz };
+            if (!this._blockedWithStep(tx, tz, 0)) return { x: tx, z: tz };
         }
         return { x, z };
     }
@@ -242,6 +343,8 @@ export class PlayerController {
         this.avatar.position.set(safe.x, y, safe.z);
         this.avatar.rotation.y = 0;
         this.velocity.set(0, 0, 0);
+        this.vy = 0;
+        this.onGround = true;
         this.syncCameraToPlayer();
         this._snapCamera();
     }

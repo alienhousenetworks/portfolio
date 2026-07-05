@@ -48,6 +48,10 @@ export class TerrainSystem {
     }
 
     canTraverse(fromX, fromZ, fromY, toX, toZ) {
+        // Block entry into river zone
+        const inRiver = (x) => Math.abs(x - WORLD.riverX) < WORLD.riverWidth / 2 + 1;
+        if (inRiver(toX) && !inRiver(fromX)) return false;
+
         const toY = this.getHeightAt(toX, toZ);
         const dy = toY - fromY;
         if (Math.abs(dy) <= MAX_STEP) return true;

@@ -27,17 +27,35 @@ function shopFront(g, w, h, d, seed, signColor = PALETTE.orange) {
     g.add(shutter.group);
 }
 
+/**
+ * Creates a base building group.
+ * Returns { group, w, d, h } where h is the building height above its base.
+ */
 function base(cx, cz, w, d, h, wallColor, seed) {
     const g = new THREE.Group();
     g.position.set(cx, 0, cz);
     const body = toonMesh(new THREE.BoxGeometry(w, h, d), wallColor);
     body.mesh.position.y = h / 2;
+    body.mesh.castShadow = true;
+    body.mesh.receiveShadow = true;
     g.add(body.group);
     return { group: g, w, d, h };
 }
 
-function finish(b, cx, cz) {
-    return { group: b.group, collider: { x: cx, z: cz, w: b.w + 1.5, d: b.d + 1.5 } };
+/**
+ * Wraps a building with its collider.
+ * Collider includes h (height) so physics can determine block-top stepping.
+ */
+function finish(b, cx, cz, extraH = 0) {
+    return {
+        group: b.group,
+        collider: {
+            x: cx, z: cz,
+            w: b.w + 1.5, d: b.d + 1.5,
+            h: b.h + extraH,  // roof height above group.position.y
+            floorY: 0,        // relative floor — will be offset by group.position.y
+        }
+    };
 }
 
 // ── Residential ──────────────────────────────────────────────
@@ -59,7 +77,7 @@ export function createJapaneseTraditional(cx, cz, seed) {
     const engawa = toonMesh(new THREE.BoxGeometry(b.w + 1, 0.15, 1.8), PALETTE.wood[1]);
     engawa.mesh.position.set(0, 0.08, b.d / 2 + 0.8);
     b.group.add(engawa.group);
-    return finish(b, cx, cz);
+    return finish(b, cx, cz, 1.4);
 }
 
 export function createJapaneseModern(cx, cz, seed) {
@@ -90,16 +108,16 @@ export function createKoreanTownhouse(cx, cz, seed) {
 }
 
 export function createScandinavian(cx, cz, seed) {
-    const b = base(cx, cz, 13, 10, 5, 0xeae8df, seed);
+    const b = base(cx, cz, 13, 10, 5, 0xe8e6dd, seed);
     const r = toonMesh(new THREE.BoxGeometry(b.w + 0.5, 0.8, b.d + 0.5), PALETTE.wood[2]);
     r.mesh.position.set(0, b.h + 0.4, 0);
     r.mesh.rotation.x = 0.1;
     b.group.add(r.group);
-    return finish(b, cx, cz);
+    return finish(b, cx, cz, 0.8);
 }
 
 export function createMediterranean(cx, cz, seed) {
-    const b = base(cx, cz, 14, 12, 5.5, 0xddd9d0, seed);
+    const b = base(cx, cz, 14, 12, 5.5, 0xdbd7ce, seed);
     const r = toonMesh(new THREE.BoxGeometry(b.w, 0.5, b.d), PALETTE.red);
     r.mesh.position.y = b.h + 0.25;
     b.group.add(r.group);
@@ -116,7 +134,7 @@ export function createEuropean(cx, cz, seed) {
     r.mesh.rotation.x = 0.12;
     b.group.add(r.group);
     shopFront(b.group, b.w, b.h, b.d, seed, PALETTE.pink);
-    return finish(b, cx, cz);
+    return finish(b, cx, cz, 1);
 }
 
 export function createTinyHome(cx, cz, seed) {
@@ -129,7 +147,7 @@ export function createTinyHome(cx, cz, seed) {
 }
 
 export function createVilla(cx, cz, seed) {
-    const b = base(cx, cz, 18, 16, 7, 0xeae8df, seed);
+    const b = base(cx, cz, 18, 16, 7, 0xe8e6dd, seed);
     const r = toonMesh(new THREE.BoxGeometry(b.w + 0.4, 0.4, b.d + 0.4), roof(seed));
     r.mesh.position.y = b.h + 0.2;
     b.group.add(r.group);
@@ -209,9 +227,10 @@ export function createArcade(cx, cz, seed) {
 // ── Public & institutional ─────────────────────────────────
 
 export function createSchool(cx, cz, seed) {
-    const b = base(cx, cz, 28, 22, 8, 0xeae8df, seed);
+    const b = base(cx, cz, 28, 22, 8, 0xe8e6dd, seed);
     const gym = toonMesh(new THREE.BoxGeometry(12, 5, 10), PALETTE.blue);
     gym.mesh.position.set(b.w / 2 + 4, 2.5, 0);
+    gym.mesh.castShadow = true;
     b.group.add(gym.group);
     return finish(b, cx, cz);
 }
@@ -227,7 +246,7 @@ export function createLibrary(cx, cz, seed) {
 }
 
 export function createGlassTower(cx, cz, seed) {
-    const floors = 5 + seed % 3;
+    const floors = 5 + (seed % 3);
     const b = base(cx, cz, 18, 18, floors * 3.2, PALETTE.concreteLight, seed);
     for (let f = 1; f < floors; f++) {
         const panel = toonMesh(new THREE.PlaneGeometry(b.w * 0.85, 2.5), PALETTE.glass, { transparent: true, opacity: 0.9 });
@@ -258,7 +277,7 @@ export function createIndustrial(cx, cz, seed) {
 
 // ── Legacy service buildings (game POIs) ───────────────────
 
-export function createOfficeTower(cx, cz, floors, accent = 0xeae8df) {
+export function createOfficeTower(cx, cz, floors, accent = 0xe8e6dd) {
     const b = base(cx, cz, 18, 16, floors * 3.4, accent, 0);
     for (let row = 1; row < floors; row++) {
         for (let col = 0; col < 4; col++) {
@@ -271,7 +290,9 @@ export function createOfficeTower(cx, cz, floors, accent = 0xeae8df) {
 }
 
 export function createTechCampus(cx, cz, data = {}) {
-    const r = createGlassTower(cx, cz, 6, data.seed || 0);
+    // Fixed: was incorrectly calling createGlassTower with 4 args; it only takes (cx, cz, seed)
+    const seed = data.seed || 0;
+    const r = createGlassTower(cx, cz, seed);
     if (data.title) r.group.userData.label = data.title;
     return { ...r, style: 'tech' };
 }
@@ -282,16 +303,16 @@ export function createMarketingStudio(cx, cz, data = {}) {
 }
 
 export function createConsultingOffice(cx, cz, data = {}) {
-    const r = createOfficeTower(cx, cz, 4, 0xddd9d0);
+    const r = createOfficeTower(cx, cz, 4, 0xdbd7ce);
     return { ...r, style: 'consulting' };
 }
 
 export function createProjectShowcase(cx, cz, data = {}) {
-    const b = base(cx, cz, 16, 14, 14, 0xeae8df, 0);
+    const b = base(cx, cz, 16, 14, 14, 0xe8e6dd, 0);
     const spire = toonMesh(new THREE.BoxGeometry(3, 6, 3), PALETTE.mint, { emissive: PALETTE.mint, emissiveIntensity: 0.06 });
     spire.mesh.position.set(0, b.h + 3, 0);
     b.group.add(spire.group);
-    return { ...finish(b, cx, cz), style: 'project' };
+    return { ...finish(b, cx, cz, 9), style: 'project' };
 }
 
 // ── Street utilities ─────────────────────────────────────
@@ -368,6 +389,6 @@ export function createServiceBuilding(cx, cz, buildingData) {
         case 'marketing': return createMarketingStudio(cx, cz, buildingData);
         case 'consulting': return createConsultingOffice(cx, cz, buildingData);
         case 'project': return createProjectShowcase(cx, cz, buildingData);
-        default: return createOfficeTower(cx, cz, 4, 0xddd9d0);
+        default: return createOfficeTower(cx, cz, 4, 0xdbd7ce);
     }
 }

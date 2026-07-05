@@ -129,6 +129,12 @@ class Game {
             this.playerCtrl.enable();
             document.getElementById('hud')?.classList.add('visible');
             document.querySelector('.back-link')?.classList.add('visible');
+            document.getElementById('height-control')?.classList.add('visible');
+            const hint = document.getElementById('physics-hint');
+            if (hint) {
+                hint.classList.add('visible');
+                setTimeout(() => hint.classList.add('fade-out'), 7000);
+            }
         });
     }
 
@@ -370,10 +376,23 @@ class Game {
             this.citizens.update(dt);
         }
 
+        // Animate clouds drifting
+        this._animateClouds(dt);
+
         this._proximity();
         this._hud();
         this._minimap();
         this.renderer.render(this.scene, this.camera);
+    }
+
+    _animateClouds(dt) {
+        const clouds = this.world?._cloudMeshes || this.world?.cloudMeshes || [];
+        clouds.forEach(c => {
+            c.g.position.x += c.dir * c.speed * dt;
+            // Wrap clouds around the world
+            if (c.g.position.x > 320) c.g.position.x = -320;
+            if (c.g.position.x < -320) c.g.position.x = 320;
+        });
     }
 }
 

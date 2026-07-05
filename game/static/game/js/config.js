@@ -8,16 +8,24 @@ export const WORLD = {
     parkZ: 80,
     parkRadius: 38,
     riverX: 0,
-    riverWidth: 40,
+    riverWidth: 38,
     riverLength: 620,
     mountainY: 0,
 };
 
 export const PLAYER = {
     height: 1.75,
-    radius: 0.35,
+    radius: 0.38,
     walkSpeed: 7,
     runSpeed: 13,
+    maxStepHeight: 1.2,   // max height player can auto-step onto a block top
+};
+
+export const PHYSICS = {
+    gravity: 28,
+    jumpForce: 10,
+    terminalVelocity: -40,
+    groundSnap: 0.08,      // distance from ground before snapping
 };
 
 export const CAMERA = {
@@ -34,68 +42,101 @@ export const CAMERA = {
     positionDamp: 10,
 };
 
-/** Cohesive anime neighborhood palette — cheerful but not oversaturated */
+/** Cohesive natural-world palette */
 export const PALETTE = {
-    sky: 0x8ce7f4,
-    skyTop: 0x72d8e5,
-    fog: 0xaeeef8,
+    // Sky & atmosphere
+    sky: 0x87ceeb,
+    skyTop: 0x3a82c4,
+    skyHorizon: 0xb8ddf5,
+    fog: 0xc8e8f5,
 
-    grass: 0x8fc47d,
-    grassLight: 0xa6d58f,
-    grassDark: 0x6ea56b,
-    embankment: 0xa6d58f,
-    sand: 0xe8dcc8,
+    // Ground & nature
+    grass: 0x7ab869,
+    grassLight: 0x98cc7f,
+    grassDark: 0x5a9450,
+    grassHighland: 0x6d9e5a,
+    embankment: 0x8aab72,
+    sand: 0xe2d4b0,
+    dirt: 0xb8936a,
 
-    asphalt: 0x7a878c,
-    asphaltDark: 0x6e7c80,
-    asphaltLight: 0x8b969a,
-    sidewalk: 0xd6d4cc,
-    concrete: 0xc8c7c1,
-    concreteLight: 0xeae8df,
-    retainingWall: 0xc8c7c1,
+    // Roads & urban
+    asphalt: 0x6e7b82,
+    asphaltDark: 0x5c6a70,
+    asphaltLight: 0x8a9599,
+    sidewalk: 0xcfcdc5,
+    concrete: 0xbebdb7,
+    concreteLight: 0xe6e4dc,
+    retainingWall: 0xbebdb7,
 
-    river: 0x4ed2c8,
-    waterDeep: 0x4c8fe3,
-    mountain: [0xaeeef8, 0x8ce7f4, 0x72d8e5, 0x8b969a],
+    // Water
+    river: 0x4abfce,
+    riverShallow: 0x6ed4e0,
+    waterDeep: 0x2e6faa,
+    waterFoam: 0xe8f4f8,
 
-    bridge: 0xc95757,
+    // Mountains – layered depth
+    mountain: [
+        0x4a6741,  // near — forested dark green
+        0x6a7f60,  // near — lighter green slope
+        0x8a9e80,  // mid — greyish green
+        0x9eaaa0,  // far — atmospheric grey-blue
+    ],
+    mountainSnow: 0xf4f0eb,
+    mountainRock: 0x8a8278,
+    mountainDeep: 0x6a7868,
+
+    // Bridges
+    bridge: 0xc8beaa,
+    bridgeStone: 0xa89880,
+    bridgeRail: 0x8a8278,
+
+    // Wood
     wood: [0x8b684d, 0xa57958, 0xc3926d],
 
+    // Buildings
     building: {
-        wall: [0xeae8df, 0xddd9d0, 0xcfcbc1],
-        roof: [0x6e7c80, 0xc95757, 0x8fc47d, 0x4c8fe3, 0x8b684d],
+        wall: [0xe8e6dd, 0xdbd7ce, 0xcfcbc2],
+        roof: [0x6e7c80, 0xc45252, 0x7ab869, 0x4a8fd0, 0x8b684d],
     },
-    awning: [0xe8a6b7, 0xf7d55c, 0x4ed2c8, 0x8a78d8],
-    glass: 0xaeeef8,
-    frostGlass: 0xddd9d0,
+    awning: [0xe0a0b0, 0xf5cc50, 0x48ccc0, 0x8870d0],
+    glass: 0xa8e4ee,
+    frostGlass: 0xd8d4cc,
 
-    vending: [0x4ed2c8, 0x4c8fe3, 0xe8a6b7],
-    pole: 0x7a878c,
-    wire: 0x2a2a30,
-    lamp: 0xf7d55c,
+    // Props
+    vending: [0x48ccc0, 0x4a8fd0, 0xe0a0b0],
+    pole: 0x6e7b82,
+    wire: 0x28282e,
+    lamp: 0xf5cc50,
 
-    blossom: 0xe8a6b7,
+    // Trees & plants
+    blossom: 0xe0a0b2,
     blossomTrunk: 0x8b684d,
-    foliage: [0x6ea56b, 0x8fc47d, 0xa6d58f],
+    foliage: [0x5a9450, 0x7ab869, 0x98cc7f],
+    pineGreen: 0x3d7040,
+    pineDark: 0x2e5530,
+    willowGreen: 0x7ab060,
 
+    // Characters
     humanSkin: 0xf0d0b0,
-    alienSkin: 0x8fc47d,
+    alienSkin: 0x7ab869,
     accent: 0xf08b3a,
 
-    mint: 0x4ed2c8,
+    // UI colors
+    mint: 0x48ccc0,
     orange: 0xf08b3a,
-    red: 0xc95757,
-    blue: 0x4c8fe3,
-    yellow: 0xf7d55c,
-    pink: 0xe8a6b7,
-    purple: 0x8a78d8,
+    red: 0xc45252,
+    blue: 0x4a8fd0,
+    yellow: 0xf5cc50,
+    pink: 0xe0a0b2,
+    purple: 0x8870d0,
 
-    trainSilver: 0xddd9d0,
+    // Transit
+    trainSilver: 0xdbd7ce,
     trainPeach: 0xf08b3a,
-    busCream: 0xeae8df,
+    busCream: 0xe8e6dd,
     busOrange: 0xf08b3a,
-    uniformNavy: 0x4c8fe3,
-    trench: 0xddd9d0,
+    uniformNavy: 0x4a8fd0,
+    trench: 0xdbd7ce,
 };
 
 export const POI_TYPES = {

@@ -10,6 +10,7 @@ import { toonMat, toonMesh, sketchLines, setupCityLighting, INK } from './ToonSt
 import {
     createCherryTree, createLargeTree, createBambooCluster, createFountain,
     createBench, createCrosswalk, createSidewalk, scatterStreetProps,
+    createPineTree, createWillowTree, createRockCluster, createBridgeLamp,
 } from './Props.js';
 
 export class WorldBuilder {
@@ -23,13 +24,15 @@ export class WorldBuilder {
     }
 
     build() {
-        this._sky();
+        this._skyDome();
+        this._clouds();
         this._lights();
         this._ground();
         this._mountains();
         this._beach();
         this._river();
         this._bridges();
+        this._waterfall();
         this._districtZones();
         this._roadGrid();
         this._city();
@@ -37,10 +40,16 @@ export class WorldBuilder {
         this._dbBuildings();
         this._parks();
         this._nature();
+        this._riverForest();
         this._urbanDetails();
         this._pois();
         if (this.terrain) this.colliders.push(...this.terrain.wallColliders);
-        return { pois: this.pois, colliders: this.colliders, buildings: this.data.buildings || [] };
+        return {
+            pois: this.pois,
+            colliders: this.colliders,
+            buildings: this.data.buildings || [],
+            _cloudMeshes: this._cloudMeshes || [],
+        };
     }
 
     getTerrainHeight(x, z) {
@@ -55,9 +64,9 @@ export class WorldBuilder {
         return Math.abs(x - WORLD.riverX) < WORLD.riverWidth / 2 + margin;
     }
 
-    _markSite(x, z, w = 24, d = 24) {
+    _markSite(x, z, w = 24, d = 24, h = 0) {
         this.buildingSites.add(`${Math.round(x)},${Math.round(z)}`);
-        this.colliders.push({ x, z, w, d });
+        this.colliders.push({ x, z, w, d, h, floorY: this.getTerrainHeight(x, z) });
     }
 
     _isOccupied(cx, cz) {
@@ -68,112 +77,481 @@ export class WorldBuilder {
         return false;
     }
 
-    _sky() {
-        this.scene.background = new THREE.Color(PALETTE.sky);
-        this.scene.fog = new THREE.Fog(PALETTE.fog, 200, 600);
+    // ── Sky dome ────────────────────────────────────────────────────────────
+
+    _skyDome() {
+        // Large hemisphere for gradient sky
+        const skyGeo = new THREE.SphereGeometry(580, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+        // Vertex-color gradient: top = deep blue, horizon = lighter
+        const colors = [];
+        const posArr = skyGeo.attributes.position;
+        for (let i = 0; i < posArr.count; i++) {
+            const y = posArr.getY(i);
+            const t = Math.max(0, Math.min(1, y / 580));
+            // lerp from horizon color to zenith
+            const r = THREE.MathUtils.lerp(0.72, 0.23, t);
+            const g = THREE.MathUtils.lerp(0.88, 0.51, t);
+            const b = THREE.MathUtils.lerp(0.96, 0.76, t);
+            colors.push(r, g, b);
+        }
+        skyGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+        const skyMat = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide });
+        const sky = new THREE.Mesh(skyGeo, skyMat);
+        sky.rotation.x = 0;
+        this.scene.add(sky);
+
+        this.scene.fog = new THREE.FogExp2(PALETTE.fog, 0.0018);
+    }
+
+    // ── Clouds ──────────────────────────────────────────────────────────────
+
+    _clouds() {
+        this._cloudMeshes = [];
+        const cloudMat = toonMat(0xfcfcfc, { transparent: true, opacity: 0.88 });
+
+        for (let i = 0; i < 22; i++) {
+            const g = new THREE.Group();
+            const seed = i * 13 + 7;
+            const cx = ((seed * 37 + 11) % 600) - 300;
+            const cz = ((seed * 53 + 19) % 600) - 300;
+            const cy = 85 + (seed % 40);
+
+            const puffs = 3 + (seed % 3);
+            for (let p = 0; p < puffs; p++) {
+                const r = 6 + (seed + p) % 8;
+                const cloud = new THREE.Mesh(
+                    new THREE.SphereGeometry(r, 7, 5),
+                    cloudMat
+                );
+                cloud.scale.set(1.4, 0.55, 1.0);
+                cloud.position.set(p * r * 0.9, (p % 2) * 2 - 1, (p * 3 % 7) - 3);
+                cloud.castShadow = false;
+                g.add(cloud);
+            }
+            g.position.set(cx, cy, cz);
+            this.scene.add(g);
+            this._cloudMeshes.push({ g, speed: 0.8 + (seed % 10) * 0.12, dir: (seed % 2 === 0 ? 1 : -1) });
+        }
     }
 
     _lights() {
         setupCityLighting(this.scene);
     }
 
+    // ── Ground ──────────────────────────────────────────────────────────────
+
     _ground() {
-        const geo = new THREE.PlaneGeometry(WORLD.size, WORLD.size);
+        // Main grass plane
+        const geo = new THREE.PlaneGeometry(WORLD.size, WORLD.size, 8, 8);
         geo.rotateX(-Math.PI / 2);
         const mesh = new THREE.Mesh(geo, toonMat(PALETTE.grass));
         mesh.receiveShadow = true;
         this.scene.add(mesh);
+
+        // Subtle grass variation patches
+        for (let i = 0; i < 60; i++) {
+            const s = i * 17 + 3;
+            const px = ((s * 41) % 580) - 290;
+            const pz = ((s * 67) % 580) - 290;
+            if (this._inRiver(px, pz, 20)) continue;
+            const col = i % 3 === 0 ? PALETTE.grassLight : (i % 3 === 1 ? PALETTE.grassDark : PALETTE.grassHighland);
+            const patch = new THREE.Mesh(
+                new THREE.PlaneGeometry(15 + (s % 20), 12 + (s % 15)),
+                toonMat(col, { transparent: true, opacity: 0.4 })
+            );
+            patch.rotation.x = -Math.PI / 2;
+            patch.position.set(px, 0.01, pz);
+            this.scene.add(patch);
+        }
     }
+
+    // ── Mountains ───────────────────────────────────────────────────────────
 
     _mountains() {
-        const layers = [
-            { z: -310, colors: [PALETTE.mountain[0], PALETTE.mountain[1]] },
-            { z: 310, colors: [PALETTE.mountain[2], PALETTE.mountain[3]] },
-            { x: -300, colors: [PALETTE.mountain[0], PALETTE.mountain[2]] },
-            { x: 300, colors: [PALETTE.mountain[1], PALETTE.mountain[3]] },
+        // Four mountain ranges: North, South, East, West
+        const ranges = [
+            { dir: 'N', peaks: this._northMountains() },
+            { dir: 'S', peaks: this._southMountains() },
+            { dir: 'E', peaks: this._eastMountains() },
+            { dir: 'W', peaks: this._westMountains() },
         ];
-        layers.forEach((layer, li) => {
-            for (let i = 0; i < 5; i++) {
-                const g = new THREE.Group();
-                const w = 100 + i * 35;
-                const h = 45 + i * 15;
-                const color = layer.colors[i % 2];
-                const shape = new THREE.Shape();
-                const hw = w / 2;
-                shape.moveTo(-hw, 0);
-                for (let b = 0; b <= 5; b++) {
-                    const t = b / 5;
-                    shape.lineTo(-hw + t * w, h * (0.4 + 0.6 * Math.sin(t * Math.PI)));
-                }
-                shape.closePath();
-                const extrude = new THREE.ExtrudeGeometry(shape, { depth: 6, bevelEnabled: false });
-                extrude.rotateX(-Math.PI / 2);
-                const { group, mesh } = toonMesh(extrude, color, { castShadow: false });
-                mesh.position.y = 0.4;
-                g.add(group);
-                if (layer.z != null) g.position.set(-150 + i * 70, 0, layer.z);
-                else g.position.set(layer.x, 0, -160 + i * 80);
-                this.scene.add(g);
-            }
-        });
+        // ranges is just for reference; peaks added inside each method
     }
 
+    _buildMountain(cx, cy_base, cz, radius, height, seed) {
+        const g = new THREE.Group();
+        g.position.set(cx, cy_base, cz);
+
+        // Determine color based on height
+        let bodyColor, capColor;
+        if (height > 90) {
+            bodyColor = PALETTE.mountain[3]; // atmospheric distant grey
+            capColor  = PALETTE.mountainSnow;
+        } else if (height > 65) {
+            bodyColor = PALETTE.mountainRock;
+            capColor  = PALETTE.mountainSnow;
+        } else if (height > 40) {
+            bodyColor = PALETTE.mountain[0]; // dark forest green
+            capColor  = PALETTE.mountain[2];
+        } else {
+            bodyColor = PALETTE.mountain[1]; // lighter green
+            capColor  = null;
+        }
+
+        // Main cone body
+        const segs = 8 + (seed % 4);
+        const body = toonMesh(
+            new THREE.ConeGeometry(radius, height, segs),
+            bodyColor
+        );
+        body.mesh.position.y = height / 2;
+        body.mesh.castShadow = true;
+        body.mesh.receiveShadow = true;
+        // Slight irregular rotation to break symmetry
+        body.mesh.rotation.y = (seed * 0.37) % (Math.PI * 2);
+        g.add(body.group);
+
+        // Snow cap on tall peaks
+        if (capColor && height > 50) {
+            const snapH = height * 0.28;
+            const snapR = radius * 0.35;
+            const cap = toonMesh(new THREE.ConeGeometry(snapR, snapH, segs), capColor);
+            cap.mesh.position.y = height - snapH * 0.35;
+            cap.mesh.rotation.y = body.mesh.rotation.y;
+            g.add(cap.group);
+        }
+
+        // Secondary bump for realism
+        if (seed % 3 !== 0) {
+            const bump = toonMesh(
+                new THREE.ConeGeometry(radius * 0.52, height * 0.68, 7),
+                bodyColor
+            );
+            bump.mesh.position.set(radius * 0.38, height * 0.34, radius * 0.18);
+            bump.mesh.rotation.y = seed * 0.8;
+            g.add(bump.group);
+        }
+
+        this.scene.add(g);
+
+        // Pine forest on lower slopes
+        if (height < 80) {
+            const pineCount = 5 + (seed % 7);
+            for (let p = 0; p < pineCount; p++) {
+                const angle = (p / pineCount) * Math.PI * 2 + seed * 0.3;
+                const r = radius * (0.55 + (p % 3) * 0.15);
+                const px = cx + Math.cos(angle) * r;
+                const pz = cz + Math.sin(angle) * r;
+                const pine = createPineTree(seed + p, 0.75 + (p % 3) * 0.12);
+                const ty = this.getTerrainHeight(px, pz);
+                pine.position.set(px, ty, pz);
+                this.scene.add(pine);
+            }
+        }
+    }
+
+    _northMountains() {
+        const configs = [
+            { cx: -220, cz: -330, r: 80, h: 105, s: 1 },
+            { cx: -120, cz: -320, r: 65, h: 88,  s: 4 },
+            { cx:   20, cz: -340, r: 90, h: 118, s: 7 },
+            { cx:  140, cz: -315, r: 70, h: 95,  s: 2 },
+            { cx:  250, cz: -330, r: 75, h: 82,  s: 9 },
+            // Near hills
+            { cx: -190, cz: -290, r: 42, h: 52, s: 12 },
+            { cx:   80, cz: -295, r: 38, h: 44, s: 15 },
+            { cx:  195, cz: -285, r: 44, h: 50, s: 18 },
+        ];
+        configs.forEach(c => this._buildMountain(c.cx, 0, c.cz, c.r, c.h, c.s));
+    }
+
+    _southMountains() {
+        const configs = [
+            { cx: -230, cz: 330, r: 72, h: 90,  s: 3  },
+            { cx: -100, cz: 340, r: 85, h: 112, s: 6  },
+            { cx:   30, cz: 325, r: 65, h: 78,  s: 11 },
+            { cx:  160, cz: 335, r: 80, h: 100, s: 14 },
+            { cx:  260, cz: 320, r: 60, h: 72,  s: 17 },
+            // Near hills
+            { cx: -160, cz: 295, r: 36, h: 42, s: 20 },
+            { cx:   90, cz: 290, r: 40, h: 48, s: 23 },
+        ];
+        configs.forEach(c => this._buildMountain(c.cx, 0, c.cz, c.r, c.h, c.s));
+    }
+
+    _eastMountains() {
+        const configs = [
+            { cx: 330, cz: -200, r: 68, h: 88,  s: 5  },
+            { cx: 325, cz:  -50, r: 78, h: 102, s: 8  },
+            { cx: 335, cz:  110, r: 62, h: 76,  s: 13 },
+            { cx: 320, cz:  240, r: 55, h: 65,  s: 16 },
+            // Near hills
+            { cx: 295, cz: -130, r: 38, h: 46, s: 21 },
+            { cx: 290, cz:  170, r: 34, h: 40, s: 24 },
+        ];
+        configs.forEach(c => this._buildMountain(c.cx, 0, c.cz, c.r, c.h, c.s));
+    }
+
+    _westMountains() {
+        const configs = [
+            { cx: -330, cz: -180, r: 75, h: 96,  s: 10 },
+            { cx: -325, cz:  -20, r: 82, h: 108, s: 19 },
+            { cx: -335, cz:  130, r: 58, h: 72,  s: 22 },
+            { cx: -320, cz:  260, r: 70, h: 85,  s: 25 },
+            // Near hills
+            { cx: -292, cz: -100, r: 40, h: 48, s: 26 },
+            { cx: -288, cz:  200, r: 36, h: 44, s: 27 },
+        ];
+        configs.forEach(c => this._buildMountain(c.cx, 0, c.cz, c.r, c.h, c.s));
+    }
+
+    // ── Beach ───────────────────────────────────────────────────────────────
+
     _beach() {
-        const sand = toonMesh(new THREE.BoxGeometry(WORLD.size * 0.9, 0.2, 50), PALETTE.sand);
-        sand.mesh.position.set(0, 0.05, 265);
+        const sand = toonMesh(new THREE.BoxGeometry(WORLD.size * 0.9, 0.22, 55), PALETTE.sand);
+        sand.mesh.position.set(0, 0.06, 268);
         sand.mesh.receiveShadow = true;
         this.scene.add(sand.group);
-        const water = toonMesh(new THREE.BoxGeometry(WORLD.size, 0.1, 30), PALETTE.waterDeep, { transparent: true, opacity: 0.85 });
-        water.mesh.position.set(0, -0.05, 295);
+
+        // Sandy dunes
+        for (let i = 0; i < 8; i++) {
+            const dune = toonMesh(
+                new THREE.SphereGeometry(4 + i % 3, 8, 4),
+                PALETTE.sand
+            );
+            dune.mesh.position.set(-180 + i * 52, 0.4, 272 + (i % 3) * 5);
+            dune.mesh.scale.set(1.4, 0.35, 1.0);
+            dune.mesh.receiveShadow = true;
+            this.scene.add(dune.group);
+        }
+
+        const water = toonMesh(new THREE.BoxGeometry(WORLD.size, 0.15, 35), PALETTE.waterDeep, { transparent: true, opacity: 0.88 });
+        water.mesh.position.set(0, -0.05, 297);
         this.scene.add(water.group);
+
+        // Shallow water overlap
+        const shallow = toonMesh(new THREE.BoxGeometry(WORLD.size * 0.85, 0.1, 18), PALETTE.riverShallow, { transparent: true, opacity: 0.65 });
+        shallow.mesh.position.set(0, 0.02, 282);
+        this.scene.add(shallow.group);
     }
+
+    // ── River ───────────────────────────────────────────────────────────────
 
     _river() {
         const len = WORLD.riverLength;
         const w = WORLD.riverWidth;
-        const water = toonMesh(new THREE.BoxGeometry(w, 0.12, len), PALETTE.river);
-        water.mesh.position.set(WORLD.riverX, -0.02, 0);
+
+        // Deep water
+        const water = toonMesh(new THREE.BoxGeometry(w, 0.18, len), PALETTE.river);
+        water.mesh.position.set(WORLD.riverX, -0.04, 0);
         water.mesh.receiveShadow = true;
         this.scene.add(water.group);
 
-        for (let z = -len / 2; z < len / 2; z += 16) {
+        // Shallow edges
+        [-1, 1].forEach(side => {
+            const shallow = toonMesh(
+                new THREE.BoxGeometry(5, 0.12, len),
+                PALETTE.riverShallow,
+                { transparent: true, opacity: 0.75 }
+            );
+            shallow.mesh.position.set(WORLD.riverX + side * (w / 2 - 2.5), -0.01, 0);
+            this.scene.add(shallow.group);
+        });
+
+        // Water ripple sketch lines
+        for (let z = -len / 2; z < len / 2; z += 14) {
             sketchLines(this.scene, [
-                new THREE.Vector3(WORLD.riverX - 3, 0.05, z),
-                new THREE.Vector3(WORLD.riverX, 0.05, z + 8),
-                new THREE.Vector3(WORLD.riverX + 4, 0.05, z + 14),
-            ], 0xffffff, 0.5);
+                new THREE.Vector3(WORLD.riverX - 4, 0.06, z),
+                new THREE.Vector3(WORLD.riverX, 0.06, z + 7),
+                new THREE.Vector3(WORLD.riverX + 5, 0.06, z + 13),
+            ], 0xffffff, 0.35);
+        }
+        // Shorter cross ripples
+        for (let z = -len / 2 + 7; z < len / 2; z += 22) {
+            sketchLines(this.scene, [
+                new THREE.Vector3(WORLD.riverX - 8, 0.06, z),
+                new THREE.Vector3(WORLD.riverX + 8, 0.06, z + 4),
+            ], 0xe8f4f8, 0.25);
         }
 
+        // Embankment banks (grass slopes)
         [-1, 1].forEach(side => {
-            const bank = toonMesh(new THREE.BoxGeometry(12, 1.2, len), PALETTE.embankment);
-            bank.mesh.position.set(WORLD.riverX + side * (w / 2 + 6), 0.4, 0);
+            const bank = toonMesh(new THREE.BoxGeometry(14, 1.4, len), PALETTE.embankment);
+            bank.mesh.position.set(WORLD.riverX + side * (w / 2 + 7), 0.5, 0);
             bank.mesh.receiveShadow = true;
             this.scene.add(bank.group);
+
+            // Stone edge along bank
+            const stone = toonMesh(new THREE.BoxGeometry(1.5, 0.6, len), PALETTE.bridgeStone);
+            stone.mesh.position.set(WORLD.riverX + side * (w / 2 + 0.75), 0.1, 0);
+            stone.mesh.receiveShadow = true;
+            this.scene.add(stone.group);
         });
     }
 
+    // ── Bridges ─────────────────────────────────────────────────────────────
+
     _bridges() {
-        [-120, -40, 60, 160].forEach(z => {
-            const g = new THREE.Group();
-            g.position.set(WORLD.riverX, 1.2, z);
-            const deck = toonMesh(new THREE.BoxGeometry(WORLD.riverWidth + 5, 0.45, 7), PALETTE.concrete);
-            deck.mesh.position.y = 0.22;
-            g.add(deck.group);
-            [-1, 1].forEach(s => {
-                const rail = toonMesh(new THREE.BoxGeometry(0.25, 1, 7), PALETTE.concreteLight);
-                rail.mesh.position.set(s * (WORLD.riverWidth / 2 + 1.2), 0.7, 0);
-                g.add(rail.group);
-            });
-            this.scene.add(g);
+        const bridgeZs = [-130, -40, 65, 170];
+        bridgeZs.forEach((z, bi) => {
+            this._buildBridge(WORLD.riverX, z, bi);
         });
     }
+
+    _buildBridge(rx, z, seed) {
+        const g = new THREE.Group();
+        const deckW = WORLD.riverWidth + 14;
+        const deckH = 1.8;   // height above ground
+        const deckThick = 0.55;
+
+        g.position.set(rx, 0, z);
+
+        // --- Stone arch supports below deck ---
+        const archCount = 3;
+        const archSpacing = WORLD.riverWidth / (archCount + 1);
+        for (let a = 0; a < archCount; a++) {
+            const ax = -WORLD.riverWidth / 2 + archSpacing * (a + 1);
+            const arch = toonMesh(new THREE.BoxGeometry(2.5, deckH, 2.5), PALETTE.bridgeStone);
+            arch.mesh.position.set(ax, deckH / 2 - 0.1, 0);
+            arch.mesh.castShadow = true;
+            g.add(arch.group);
+
+            // Arch curve suggestion (a flat arc ring approximation)
+            const ring = toonMesh(new THREE.TorusGeometry(2.0, 0.28, 6, 8, Math.PI), PALETTE.bridge);
+            ring.mesh.rotation.z = Math.PI;
+            ring.mesh.position.set(ax, deckH - 0.5, 0);
+            g.add(ring.group);
+        }
+
+        // --- Bridge deck ---
+        const deck = toonMesh(new THREE.BoxGeometry(deckW, deckThick, 8.5), PALETTE.bridge);
+        deck.mesh.position.y = deckH + deckThick / 2;
+        deck.mesh.castShadow = true;
+        deck.mesh.receiveShadow = true;
+        g.add(deck.group);
+
+        // Stone edge trim
+        [-1, 1].forEach(s => {
+            const trim = toonMesh(new THREE.BoxGeometry(deckW, 0.18, 0.25), PALETTE.bridgeStone);
+            trim.mesh.position.set(0, deckH + deckThick + 0.09, s * 4.25);
+            g.add(trim.group);
+        });
+
+        // --- Rails ---
+        [-1, 1].forEach(s => {
+            const rail = toonMesh(new THREE.BoxGeometry(deckW, 0.18, 0.14), PALETTE.bridgeRail);
+            rail.mesh.position.set(0, deckH + deckThick + 0.95, s * 4.1);
+            g.add(rail.group);
+
+            // Balusters
+            const bCount = Math.floor(deckW / 2.2);
+            for (let b = 0; b <= bCount; b++) {
+                const bx = -deckW / 2 + b * (deckW / bCount);
+                const baluster = toonMesh(new THREE.BoxGeometry(0.1, 0.9, 0.1), PALETTE.bridgeStone);
+                baluster.mesh.position.set(bx, deckH + deckThick + 0.5, s * 4.1);
+                g.add(baluster.group);
+            }
+        });
+
+        // --- Lamp posts on bridge ---
+        const lampPositions = [-deckW / 2 + 2, -deckW / 2 + deckW * 0.35, deckW / 2 - deckW * 0.35, deckW / 2 - 2];
+        lampPositions.forEach(lx => {
+            [-1, 1].forEach(ls => {
+                const lamp = createBridgeLamp();
+                lamp.position.set(lx, deckH + deckThick, ls * 3.8);
+                g.add(lamp);
+            });
+        });
+
+        this.scene.add(g);
+
+        // Add the bridge deck as a walkable platform collider
+        const worldRx = rx;
+        const deckTopY = deckH + deckThick;
+        this.colliders.push({
+            x: worldRx,
+            z: z,
+            w: deckW + 2,
+            d: 10,
+            h: deckTopY,      // height of bridge top surface
+            floorY: 0,        // bridge sits at world origin
+        });
+    }
+
+    // ── Waterfall ───────────────────────────────────────────────────────────
+
+    _waterfall() {
+        // At northern end of river — a cascading waterfall feature
+        const wfX = WORLD.riverX;
+        const wfZ = -WORLD.riverLength / 2 - 5;
+        const g = new THREE.Group();
+        g.position.set(wfX, 0, wfZ);
+
+        const tiers = [
+            { y: 12, w: WORLD.riverWidth + 4,  d: 6, depth: 4 },
+            { y: 7,  w: WORLD.riverWidth + 10, d: 7, depth: 5 },
+            { y: 3,  w: WORLD.riverWidth + 16, d: 8, depth: 4 },
+        ];
+
+        tiers.forEach(t => {
+            // Ledge platform
+            const ledge = toonMesh(new THREE.BoxGeometry(t.w, 0.8, t.d), PALETTE.bridgeStone);
+            ledge.mesh.position.set(0, t.y, 0);
+            ledge.mesh.castShadow = true;
+            ledge.mesh.receiveShadow = true;
+            g.add(ledge.group);
+
+            // Falling water curtain
+            const fall = toonMesh(
+                new THREE.BoxGeometry(t.w * 0.7, t.depth, 0.35),
+                PALETTE.riverShallow,
+                { transparent: true, opacity: 0.65, outline: false }
+            );
+            fall.mesh.position.set(0, t.y - t.depth / 2 - 0.2, t.d / 2 - 0.1);
+            g.add(fall.group);
+
+            // Mist splash
+            const mist = toonMesh(
+                new THREE.BoxGeometry(t.w + 2, 0.3, 4),
+                PALETTE.waterFoam,
+                { transparent: true, opacity: 0.5, outline: false }
+            );
+            mist.mesh.position.set(0, t.y - t.depth + 0.4, t.d);
+            g.add(mist.group);
+        });
+
+        // Rocky cliff face behind waterfall
+        const cliff = toonMesh(new THREE.BoxGeometry(WORLD.riverWidth + 28, 18, 10), PALETTE.mountainRock);
+        cliff.mesh.position.set(0, 9, -8);
+        cliff.mesh.castShadow = true;
+        g.add(cliff.group);
+
+        // Cliff side rocks
+        [-1, 1].forEach(side => {
+            const rock = toonMesh(new THREE.BoxGeometry(14, 16, 12), PALETTE.mountain[0]);
+            rock.mesh.position.set(side * (WORLD.riverWidth / 2 + 16), 8, -4);
+            rock.mesh.castShadow = true;
+            g.add(rock.group);
+
+            // Pine trees on cliff
+            for (let p = 0; p < 5; p++) {
+                const pine = createPineTree(p + side * 10, 0.9);
+                pine.position.set(side * (WORLD.riverWidth / 2 + 12 + p * 3), 15, -5 + p * 2);
+                g.add(pine);
+            }
+        });
+
+        this.scene.add(g);
+    }
+
+    // ── District zones (unchanged) ───────────────────────────────────────────
 
     _districtZones() {
         Object.values(DISTRICT_DEFS).forEach(d => {
             if (d.id === 'downtown') return;
             const pad = new THREE.Mesh(
                 new THREE.CircleGeometry(d.radius, 32),
-                toonMat(d.groundColor, { transparent: true, opacity: 0.22 })
+                toonMat(d.groundColor, { transparent: true, opacity: 0.18 })
             );
             pad.rotation.x = -Math.PI / 2;
             pad.position.set(d.x, 0.02, d.z);
@@ -181,9 +559,10 @@ export class WorldBuilder {
         });
     }
 
+    // ── Roads ───────────────────────────────────────────────────────────────
+
     _roadGrid() {
         const asphalt = toonMat(PALETTE.asphalt);
-        const line = toonMat(0xffffff);
         const span = WORLD.size - 30;
         const half = Math.floor((WORLD.size / 2) / WORLD.roadSpacing);
 
@@ -236,6 +615,8 @@ export class WorldBuilder {
         });
     }
 
+    // ── City buildings ───────────────────────────────────────────────────────
+
     _city() {
         const half = Math.floor((WORLD.size / 2 - 40) / WORLD.roadSpacing);
         let seed = 0;
@@ -253,24 +634,33 @@ export class WorldBuilder {
                 const district = getDistrictAt(cx, cz);
                 const gameDist = district.id !== 'downtown' ? district.id : null;
                 const built = createZoneBuilding(cx, cz, seed++, gameDist);
-                built.group.position.y = this.getTerrainHeight(cx, cz);
+                const ty = this.getTerrainHeight(cx, cz);
+                built.group.position.y = ty;
+                // Update collider floorY to actual terrain height
+                if (built.collider) built.collider.floorY = ty;
                 this.scene.add(built.group);
                 this.colliders.push(built.collider);
-                this._markSite(cx, cz, built.collider.w, built.collider.d);
+                this._markSite(cx, cz, built.collider.w, built.collider.d, built.collider.h || 0);
             }
         }
     }
+
+    // ── Landmarks ───────────────────────────────────────────────────────────
 
     _landmarks() {
         this._hqTower(0, -120);
 
         const school = createSchool(-150, -130, 1);
-        school.group.position.y = this.getTerrainHeight(-150, -130);
+        const sty = this.getTerrainHeight(-150, -130);
+        school.group.position.y = sty;
+        if (school.collider) school.collider.floorY = sty;
         this.scene.add(school.group);
         this._markSite(-150, -130, 30, 24);
 
         const lib = createServiceBuilding(155, -125, { buildingStyle: 'consulting' });
-        lib.group.position.y = this.getTerrainHeight(155, -125);
+        const lty = this.getTerrainHeight(155, -125);
+        lib.group.position.y = lty;
+        if (lib.collider) lib.collider.floorY = lty;
         this.scene.add(lib.group);
         this._markSite(155, -125, 20, 18);
     }
@@ -281,25 +671,31 @@ export class WorldBuilder {
         g.position.set(x, ty, z);
         const base = toonMesh(new THREE.BoxGeometry(26, 16, 16), PALETTE.concreteLight);
         base.mesh.position.y = 8;
+        base.mesh.castShadow = true;
         g.add(base.group);
-        const tower = toonMesh(new THREE.BoxGeometry(11, 28, 11), 0xddd9d0);
+        const tower = toonMesh(new THREE.BoxGeometry(11, 28, 11), 0xdbd7ce);
         tower.mesh.position.y = 30;
+        tower.mesh.castShadow = true;
         g.add(tower.group);
-        const sign = toonMesh(new THREE.BoxGeometry(9, 1, 0.25), PALETTE.mint, { emissive: PALETTE.mint, emissiveIntensity: 0.08 });
+        const sign = toonMesh(new THREE.BoxGeometry(9, 1, 0.25), PALETTE.mint, { emissive: PALETTE.mint, emissiveIntensity: 0.1 });
         sign.mesh.position.set(0, 46, 5.6);
         g.add(sign.group);
         this.scene.add(g);
-        this._markSite(x, z, 28, 18);
+        this._markSite(x, z, 28, 18, 44);
     }
+
+    // ── Database buildings ───────────────────────────────────────────────────
 
     _dbBuildings() {
         (this.data.buildings || []).forEach(b => {
             if (this._isOccupied(b.x, b.z)) return;
             const built = createServiceBuilding(b.x, b.z, b);
-            built.group.position.y = this.getTerrainHeight(b.x, b.z);
+            const ty = this.getTerrainHeight(b.x, b.z);
+            built.group.position.y = ty;
+            if (built.collider) built.collider.floorY = ty;
             this.scene.add(built.group);
             this.colliders.push(built.collider);
-            this._markSite(b.x, b.z, built.collider.w, built.collider.d);
+            this._markSite(b.x, b.z, built.collider.w, built.collider.d, built.collider.h || 0);
             this._addPOI(
                 b.id, b.type === 'project' ? POI_TYPES.PROJECT : POI_TYPES.SERVICE,
                 b.x, b.z, 18,
@@ -309,49 +705,129 @@ export class WorldBuilder {
         });
     }
 
+    // ── Parks ────────────────────────────────────────────────────────────────
+
     _parks() {
         const ty = this.getTerrainHeight(WORLD.parkX, WORLD.parkZ);
         const fountain = createFountain();
         fountain.position.set(WORLD.parkX, ty, WORLD.parkZ);
         this.scene.add(fountain);
 
-        for (let a = 0; a < 10; a++) {
-            const angle = (a / 10) * Math.PI * 2;
-            const r = 12 + (a % 3) * 4;
+        // Ring of mixed trees
+        for (let a = 0; a < 14; a++) {
+            const angle = (a / 14) * Math.PI * 2;
+            const r = 14 + (a % 4) * 4;
             const tx = WORLD.parkX + Math.cos(angle) * r;
             const tz = WORLD.parkZ + Math.sin(angle) * r;
-            const tree = a % 2 === 0 ? createCherryTree() : createLargeTree(a);
+            let tree;
+            if (a % 4 === 0) tree = createCherryTree();
+            else if (a % 4 === 1) tree = createLargeTree(a);
+            else if (a % 4 === 2) tree = createLargeTree(a + 3);
+            else tree = createCherryTree();
             tree.position.set(tx, ty, tz);
             this.scene.add(tree);
         }
 
+        // Benches
         for (let a = 0; a < 6; a++) {
             const angle = (a / 6) * Math.PI * 2 + 0.4;
             const bench = createBench();
-            bench.position.set(WORLD.parkX + Math.cos(angle) * 20, ty, WORLD.parkZ + Math.sin(angle) * 20);
+            bench.position.set(WORLD.parkX + Math.cos(angle) * 22, ty, WORLD.parkZ + Math.sin(angle) * 22);
             bench.rotation.y = angle + Math.PI;
             this.scene.add(bench);
         }
 
-        const path = toonMesh(new THREE.BoxGeometry(3, 0.06, 40), PALETTE.concrete);
-        path.mesh.position.set(WORLD.parkX, ty + 0.03, WORLD.parkZ);
-        this.scene.add(path.group);
+        // Park paths (cross-shaped)
+        ['x', 'z'].forEach(axis => {
+            const path = toonMesh(new THREE.BoxGeometry(
+                axis === 'x' ? 3 : 44,
+                0.06,
+                axis === 'z' ? 3 : 44
+            ), PALETTE.concrete);
+            path.mesh.position.set(WORLD.parkX, ty + 0.03, WORLD.parkZ);
+            this.scene.add(path.group);
+        });
+
+        // Wildflower patches
+        for (let i = 0; i < 18; i++) {
+            const angle = (i / 18) * Math.PI * 2;
+            const r = 8 + (i % 4) * 5;
+            const fx = WORLD.parkX + Math.cos(angle) * r + (i % 3) * 2 - 1;
+            const fz = WORLD.parkZ + Math.sin(angle) * r + (i % 2) * 2 - 1;
+            const cols = [PALETTE.pink, PALETTE.yellow, PALETTE.purple, PALETTE.mint, PALETTE.orange];
+            const flower = toonMesh(
+                new THREE.CylinderGeometry(0.15, 0.12, 0.45, 5),
+                cols[i % cols.length],
+                { outline: false }
+            );
+            flower.mesh.position.set(fx, ty + 0.22, fz);
+            this.scene.add(flower.group);
+        }
     }
 
+    // ── General nature ───────────────────────────────────────────────────────
+
     _nature() {
-        for (let i = 0; i < 8; i++) {
+        // Bamboo grove north-east
+        for (let i = 0; i < 10; i++) {
             const bamboo = createBambooCluster();
-            bamboo.position.set(-180 + i * 8, this.getTerrainHeight(-180 + i * 8, -240), -240 + (i % 3) * 6);
+            bamboo.position.set(-185 + i * 7, this.getTerrainHeight(-185 + i * 7, -245), -245 + (i % 3) * 6);
             this.scene.add(bamboo);
         }
-        for (let i = 0; i < 12; i++) {
-            const x = -250 + i * 40;
-            const z = 230 + (i % 4) * 15;
-            const tree = createLargeTree(i);
+
+        // Beach trees south
+        for (let i = 0; i < 16; i++) {
+            const x = -280 + i * 38;
+            const z = 232 + (i % 5) * 12;
+            const tree = i % 3 === 0 ? createWillowTree(i) : createLargeTree(i);
             tree.position.set(x, this.getTerrainHeight(x, z), z);
             this.scene.add(tree);
         }
+
+        // Scattered trees in residential hills
+        for (let i = 0; i < 20; i++) {
+            const s = i * 19 + 5;
+            const x = ((s * 43) % 280) - 140;
+            const z = ((s * 71) % 280) - 140;
+            if (this._inRiver(x, z, 20) || this._inPark(x, z, 25)) continue;
+            if (this._isOccupied(x, z)) continue;
+            const tree = i % 5 === 0 ? createCherryTree() : createLargeTree(i);
+            tree.position.set(x, this.getTerrainHeight(x, z), z);
+            this.scene.add(tree);
+        }
+
+        // Rock clusters near mountain bases
+        const rockPositions = [
+            [-210, -265], [195, -255], [-195, 268], [205, 262],
+            [-240, -120], [238, -110], [-235, 140], [242, 135],
+        ];
+        rockPositions.forEach(([x, z], i) => {
+            const rock = createRockCluster(i);
+            rock.position.set(x, this.getTerrainHeight(x, z), z);
+            this.scene.add(rock);
+        });
     }
+
+    // ── River forest (willows along banks) ──────────────────────────────────
+
+    _riverForest() {
+        const len = WORLD.riverLength;
+        const bankOffset = WORLD.riverWidth / 2 + 16;
+
+        for (let z = -len / 2 + 20; z < len / 2 - 20; z += 28) {
+            [-1, 1].forEach(side => {
+                const x = WORLD.riverX + side * bankOffset;
+                const ty = this.getTerrainHeight(x, z);
+                // Alternate between willow and large tree
+                const seed = Math.abs(Math.round(z)) + side + 1;
+                const tree = seed % 3 === 0 ? createWillowTree(seed) : createLargeTree(seed);
+                tree.position.set(x + side * (seed % 5) - 2, ty, z + (seed % 9) - 4);
+                this.scene.add(tree);
+            });
+        }
+    }
+
+    // ── Urban details ────────────────────────────────────────────────────────
 
     _urbanDetails() {
         const half = Math.floor((WORLD.size / 2 - 40) / WORLD.roadSpacing);
@@ -384,6 +860,8 @@ export class WorldBuilder {
             }
         }
     }
+
+    // ── POIs ─────────────────────────────────────────────────────────────────
 
     _pois() {
         const site = this.data.siteName || 'ALIENHOUSE';
@@ -418,10 +896,10 @@ export class WorldBuilder {
             [POI_TYPES.CONTACT]: PALETTE.orange,
         };
         const col = colors[type] || PALETTE.accent;
-        const pole = toonMesh(new THREE.BoxGeometry(0.1, 3, 0.1), col, { emissive: col, emissiveIntensity: 0.08 });
+        const pole = toonMesh(new THREE.BoxGeometry(0.1, 3, 0.1), col, { emissive: col, emissiveIntensity: 0.1 });
         pole.mesh.position.y = 1.5;
         marker.add(pole.group);
-        const icon = toonMesh(new THREE.BoxGeometry(0.45, 0.45, 0.45), 0xffffff, { emissive: col, emissiveIntensity: 0.12 });
+        const icon = toonMesh(new THREE.BoxGeometry(0.45, 0.45, 0.45), 0xffffff, { emissive: col, emissiveIntensity: 0.14 });
         icon.mesh.position.y = 3.1;
         marker.add(icon.group);
         this.scene.add(marker);

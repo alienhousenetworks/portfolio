@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ config.site_name|default:"ALIENHOUSE" }} | City Explorer</title>
-    <link rel="stylesheet" href="{% static 'game/css/world.css' %}?v=10">
+    <link rel="stylesheet" href="{% static 'game/css/world.css' %}?v=22">
     <script type="importmap">
     {
         "imports": {
@@ -18,15 +18,22 @@
 <body>
     <div id="loading-screen">
         <div class="start-badge">LOADING</div>
-        <div class="start-title">Building City</div>
+        <div class="start-title">Building World</div>
         <div class="loading-bar-track"><div class="loading-bar-fill" style="width:100%"></div></div>
     </div>
 
     <div id="start-screen" class="hidden">
         <h1 class="start-title">{{ config.site_name|default:"ALIENHOUSE" }}<span>City Explorer</span></h1>
-        <p class="start-subtitle">Explore a cozy cel-shaded neighborhood city — ride transit, climb hillside stairs, discover every district</p>
-        <button id="btn-start" class="btn-engage">START</button>
-        <p class="controls-hint"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move · Drag to orbit camera · <kbd>Shift</kbd> Run · <kbd>E</kbd> Details · Climb hillside stairs to change elevation</p>
+        <p class="start-subtitle">Explore a vibrant living world — mountains, rivers, bridges, and a thriving city nestled in nature</p>
+        <button id="btn-start" class="btn-engage">EXPLORE</button>
+        <p class="controls-hint">
+            <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move &middot;
+            Drag to orbit camera &middot;
+            <kbd>Shift</kbd> Run &middot;
+            <kbd>Space</kbd> Jump &middot;
+            <kbd>E</kbd> Interact &middot;
+            Walk onto bridges &amp; blocks
+        </p>
     </div>
 
     <div id="game-canvas"></div>
@@ -43,7 +50,28 @@
         <div class="hud-panel hud-bottom-right"><div class="hud-label">City</div><div id="site-display">{{ config.site_name|default:"ALIENHOUSE" }}</div></div>
     </div>
 
+    <!-- Player Height Control -->
+    <div id="height-control">
+        <div class="height-label">
+            <span class="height-icon">↕</span>
+            Height: <span id="height-value">1.75m</span>
+        </div>
+        <input
+            type="range"
+            id="height-slider"
+            min="0.8"
+            max="3.0"
+            step="0.05"
+            value="1.75"
+            aria-label="Player height"
+        >
+    </div>
+
     <div id="interact-prompt"><kbd>E</kbd> Interact</div>
+
+    <div id="physics-hint" class="physics-hint">
+        <kbd>Space</kbd> Jump &nbsp;·&nbsp; Walk onto bridges!
+    </div>
 
     <div id="ride-hud">
         <div class="ride-hud-top">
@@ -79,6 +107,36 @@
     </div>
 
     {{ game_data|json_script:"game-data" }}
-    <script type="module" src="{% static 'game/js/main.js' %}?v=21"></script>
+    <script type="module" src="{% static 'game/js/main.js' %}?v=22"></script>
+
+    <!-- Height slider logic -->
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const slider = document.getElementById('height-slider');
+        const valueEl = document.getElementById('height-value');
+        const control = document.getElementById('height-control');
+
+        slider?.addEventListener('input', () => {
+            const h = parseFloat(slider.value);
+            valueEl.textContent = h.toFixed(2) + 'm';
+            window.dispatchEvent(new CustomEvent('player-height-change', { detail: { height: h } }));
+        });
+
+        // Show height control only when playing
+        const observer = new MutationObserver(() => {
+            const hud = document.getElementById('hud');
+            if (hud?.classList.contains('visible')) {
+                control?.classList.add('visible');
+            }
+        });
+        const hud = document.getElementById('hud');
+        if (hud) observer.observe(hud, { attributes: true });
+
+        // Auto-hide physics hint after 8s
+        setTimeout(() => {
+            document.getElementById('physics-hint')?.classList.add('fade-out');
+        }, 8000);
+    });
+    </script>
 </body>
 </html>
