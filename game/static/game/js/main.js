@@ -1,9 +1,10 @@
 import * as THREE from 'three';
 import { WORLD, PALETTE } from './config.js';
-import { preloadCharacterModels, hasCriticalModels } from './CharacterModels.js';
-import { createHumanAvatar, createAlienAvatar, createUFO, createNameTag } from './AvatarFactory.js';
+import { preloadCharacterModels, hasCriticalModels, cycleOutfitPreset } from './CharacterModels.js';
+import { createHumanAvatar, createAlienAvatar, createUFO, createNameTag, playEmote } from './AvatarFactory.js';
 import { WorldBuilder } from './WorldBuilder.js';
 import { TerrainSystem } from './TerrainSystem.js';
+import { ChunkManager } from './ChunkManager.js';
 import { PlayerController } from './PlayerController.js';
 import { DialogueSystem } from './DialogueSystem.js';
 import { CinematicIntro } from './CinematicIntro.js';
@@ -26,9 +27,11 @@ class Game {
         this._renderer();
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(PALETTE.fog);
+        this.chunks = new ChunkManager(70, 3);
         this.terrain = new TerrainSystem();
         this.terrain.build(this.scene);
-        const built = new WorldBuilder(this.scene, data, this.terrain).build();
+        const built = new WorldBuilder(this.scene, data, this.terrain, this.chunks).build();
+        this.chunks.preloadAround(0, 0, 3);
         this.world = built;
         this.pois = built.pois;
         this.colliders = built.colliders;
@@ -92,9 +95,10 @@ class Game {
         const buildings = this.world?.buildings || this.data.buildings || [];
         this.citizens.spawn(this.data.team || [], buildings);
 
-        this.player = createHumanAvatar();
+        this.player = createHumanAvatar({ gender: 'male', modelKey: 'male', outfitPreset: 0 });
         this.player.visible = false;
         this.scene.add(this.player);
+        this.chunks.markAlwaysVisible(this.player);
 
         const welcome = this.data.welcome || {};
         this.welcomeHuman = createHumanAvatar();
@@ -159,11 +163,20 @@ class Game {
             if (e.code === 'KeyE' && this.state === 'playing' && !this.dialogue.active && this.nearestTarget) {
                 this._interact(this.nearestTarget);
             }
+            if (e.code === 'KeyC' && this.state === 'playing' && this.player) {
+                const preset = cycleOutfitPreset(this.player);
+                const el = document.getElementById('outfit-display');
+                if (el) el.textContent = preset.name;
+            }
+            if (e.code === 'KeyG' && this.state === 'playing' && this.player) {
+                playEmote(this.player);
+            }
         });
     }
 
     _afterCinematic() {
         this.state = 'dialogue';
+        this.chunks?.preloadAround(WORLD.parkX, WORLD.parkZ, 3);
         this.playerCtrl.setPosition(WORLD.parkX, WORLD.parkZ - 6);
         this.dialogue.start(this.dialogue.getIntroDialogue(), () => {
             this.state = 'playing';
@@ -240,6 +253,7 @@ class Game {
             },
             onComplete: (arrival) => {
                 const d = arrival?.dest || dest;
+                this.chunks?.preloadAround(d.x, d.z, 3);
                 this.playerCtrl.setPosition(
                     d.x, d.z,
                     d.arrivalX ?? d.x + 8,
@@ -415,10 +429,12 @@ class Game {
                 this.ride.update(dt);
                 this.transit.update(dt);
                 this.citizens.update(dt);
+                this.chunks?.update(this.player.position.x, this.player.position.z);
             } else if (this.state === 'playing' && this.playerCtrl) {
                 this.playerCtrl.update(dt);
                 this.transit.update(dt);
                 this.citizens.update(dt);
+                this.chunks?.update(this.player.position.x, this.player.position.z);
             }
 
             this._proximity();

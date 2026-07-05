@@ -3,7 +3,8 @@ import { PALETTE } from './config.js';
 import { toonMat } from './ToonStyle.js';
 import {
     createCharacterInstance,
-    getRandomBodyKey,
+    getBodyKeyForCitizen,
+    getBodyKeyForGender,
     ALIEN_TINTS,
 } from './CharacterModels.js';
 import {
@@ -11,52 +12,57 @@ import {
     updateLocomotionPose,
     tickAnimator,
     isRiggedAvatar,
+    playEmote,
 } from './CharacterAnimator.js';
 
-export { setCharacterPose, updateLocomotionPose, tickAnimator, isRiggedAvatar };
+export { setCharacterPose, updateLocomotionPose, tickAnimator, isRiggedAvatar, playEmote };
 export const fadeHumanAction = setCharacterPose;
 export const updateHumanAnimator = tickAnimator;
 
-/** Rigged GLB — stand / walk / run / jump / climb */
+/** Rigged GLB — idle / walk / run / emote / jump */
 export function createHumanAvatar(opts = {}) {
-    const modelKey = opts.modelKey ?? getRandomBodyKey();
+    const modelKey = opts.modelKey ?? getBodyKeyForGender(opts.gender ?? 'male');
     const g = createCharacterInstance('human', modelKey, opts);
     g.userData.isHuman = true;
-    if (isRiggedAvatar(g)) setCharacterPose(g, 'stand', 0);
+    if (isRiggedAvatar(g)) setCharacterPose(g, 'idle', 0);
     return g;
 }
 
-/** Same rigged body as human, tinted to look alien — full locomotion */
+/** Same rigged body, alien skin tint — full locomotion */
 export function createAlienAvatar(opts = {}) {
     const variant = opts.variant ?? 0;
-    const modelKey = opts.modelKey ?? getRandomBodyKey();
+    const modelKey = opts.modelKey ?? getBodyKeyForCitizen('', 'alien', variant);
     const g = createCharacterInstance('alien', modelKey, {
         ...opts,
         variant,
         tint: opts.tint ?? ALIEN_TINTS[variant % ALIEN_TINTS.length],
-        tintStrength: opts.tintStrength ?? 0.38,
+        tintStrength: opts.tintStrength ?? 0.42,
     });
     g.userData.isAlien = true;
-    if (isRiggedAvatar(g)) setCharacterPose(g, 'stand', 0);
+    if (isRiggedAvatar(g)) setCharacterPose(g, 'idle', 0);
     return g;
 }
 
 export function createStudentAvatar(opts = {}) {
-    return createHumanAvatar({ variant: opts.variant ?? 0, ...opts });
+    const name = opts.name ?? '';
+    const modelKey = getBodyKeyForCitizen(name, 'human', opts.variant ?? 0);
+    return createHumanAvatar({ ...opts, modelKey, gender: modelKey });
 }
 
 export function createCommuterAvatar(opts = {}) {
-    return createHumanAvatar({ variant: opts.variant ?? 1, ...opts });
+    const modelKey = getBodyKeyForCitizen(opts.name ?? '', 'human', opts.variant ?? 1);
+    return createHumanAvatar({ ...opts, modelKey, gender: modelKey });
 }
 
 export function createWandererAvatar(opts = {}) {
-    const g = createHumanAvatar({ variant: 0, ...opts });
+    const g = createHumanAvatar({ variant: 0, gender: 'male', ...opts });
     g.userData.isWanderer = true;
     return g;
 }
 
 export function createCyclistAvatar(opts = {}) {
-    const g = createHumanAvatar({ variant: opts.variant ?? 1, ...opts });
+    const modelKey = getBodyKeyForCitizen(opts.name ?? '', 'human', opts.variant ?? 1);
+    const g = createHumanAvatar({ ...opts, modelKey, gender: modelKey });
     g.position.y = 0.35;
     const bike = createBicycle();
     g.add(bike);
@@ -118,8 +124,12 @@ export function animateHumanWalk(avatar, _walkT, _intensity = 1) {
     if (isRiggedAvatar(avatar)) setCharacterPose(avatar, 'walk', 0.12);
 }
 
-export function animateWanderer(avatar, _t) {
-    setCharacterPose(avatar, 'stand', 0.3);
+export function animateWanderer(avatar, t) {
+    if (isRiggedAvatar(avatar) && Math.sin(t * 0.4) > 0.95) {
+        playEmote(avatar, 0.3);
+    } else {
+        setCharacterPose(avatar, 'idle', 0.3);
+    }
 }
 
 export function animateCyclist(avatar, _t, speed = 1) {

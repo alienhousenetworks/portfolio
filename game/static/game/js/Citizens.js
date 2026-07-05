@@ -4,9 +4,10 @@ import {
     createHumanAvatar, createAlienAvatar, createNameTag,
     createStudentAvatar, createCommuterAvatar, createWandererAvatar, createCyclistAvatar,
     setCharacterPose, tickAnimator, updateLocomotionPose,
-    animateWanderer, animateCyclist,
+    animateWanderer, animateCyclist, playEmote,
 } from './AvatarFactory.js';
 import { isRiggedAvatar } from './CharacterAnimator.js';
+import { getBodyKeyForCitizen } from './CharacterModels.js';
 
 const HUMAN_NAMES = ['Alex', 'Jordan', 'Sam', 'Riley', 'Casey', 'Morgan', 'Taylor', 'Jamie', 'Quinn', 'Avery'];
 const ALIEN_NAMES = ['Zyx', 'Nara', 'Kov', 'Eli', 'Pax', 'Ryn', 'Oma', 'Dex', 'Vex', 'Luma', 'Kira', 'Zeno'];
@@ -49,18 +50,23 @@ export class CitizenManager {
         const spots = this._walkSpots();
         for (let i = 0; i < 10; i++) {
             const spot = spots[i % spots.length];
-            const mesh = createHumanAvatar({ variant: i });
-            this._placeCitizen(mesh, spot, HUMAN_NAMES[i % HUMAN_NAMES.length], 'human', HUMAN_LINES[i % HUMAN_LINES.length], i * 0.7);
+            const name = HUMAN_NAMES[i % HUMAN_NAMES.length];
+            const modelKey = getBodyKeyForCitizen(name, 'human', i);
+            const mesh = createHumanAvatar({ variant: i, modelKey, gender: modelKey, name });
+            this._placeCitizen(mesh, spot, name, 'human', HUMAN_LINES[i % HUMAN_LINES.length], i * 0.7);
         }
 
         for (let i = 0; i < 12; i++) {
             const spot = spots[(i + 5) % spots.length];
-            const mesh = createAlienAvatar({ variant: i });
-            this._placeCitizen(mesh, spot, ALIEN_NAMES[i % ALIEN_NAMES.length], 'alien', ALIEN_LINES[i % ALIEN_LINES.length], i * 0.5 + 2);
+            const name = ALIEN_NAMES[i % ALIEN_NAMES.length];
+            const modelKey = getBodyKeyForCitizen(name, 'alien', i);
+            const mesh = createAlienAvatar({ variant: i, modelKey, name });
+            this._placeCitizen(mesh, spot, name, 'alien', ALIEN_LINES[i % ALIEN_LINES.length], i * 0.5 + 2);
         }
 
         teamMembers.slice(0, 6).forEach((m, i) => {
-            const mesh = createAlienAvatar({ variant: i + 1 });
+            const modelKey = getBodyKeyForCitizen(m.name || '', 'alien', i);
+            const mesh = createAlienAvatar({ variant: i + 1, modelKey, name: m.name });
             mesh.position.set(-12 + i * 4, this._groundY(-12 + i * 4, WORLD.parkZ - 12 - i), WORLD.parkZ - 12 - i);
             mesh.visible = false;
             mesh.add(createNameTag(m.name));
@@ -86,10 +92,11 @@ export class CitizenManager {
             { x: 24, z: 98, rx: 28, rz: 118 },
         ];
         riverPairs.forEach((spot, i) => {
-            const mesh = createStudentAvatar({ variant: i });
+            const name = STUDENT_NAMES[i % STUDENT_NAMES.length];
+            const mesh = createStudentAvatar({ variant: i, name });
             this._placeCitizen(
                 mesh, spot,
-                STUDENT_NAMES[i % STUDENT_NAMES.length], 'student',
+                name, 'student',
                 'Heading home along the riverbank. The light is gorgeous today.',
                 i * 0.4, 0.9
             );
@@ -101,14 +108,15 @@ export class CitizenManager {
             { x: -80, z: -80 }, { x: -80, z: 120 }, { x: 80, z: -60 }, { x: 80, z: 140 },
         ];
         platforms.forEach((spot, i) => {
-            const mesh = createCommuterAvatar({ variant: i });
+            const name = HUMAN_NAMES[i % HUMAN_NAMES.length];
+            const mesh = createCommuterAvatar({ variant: i, name });
             mesh.position.set(spot.x + (i % 2) * 2, this._groundY(spot.x, spot.z), spot.z);
             mesh.rotation.y = Math.PI / 2;
-            mesh.add(createNameTag(HUMAN_NAMES[i % HUMAN_NAMES.length]));
+            mesh.add(createNameTag(name));
             this.scene.add(mesh);
             this.citizens.push({
                 mesh,
-                name: HUMAN_NAMES[i % HUMAN_NAMES.length],
+                name,
                 type: 'commuter',
                 subtitle: 'COMMUTER',
                 line: 'Waiting for the metro. Just checking messages.',
@@ -141,12 +149,14 @@ export class CitizenManager {
             { x: WORLD.parkX, z: WORLD.parkZ + 14, line: 'The fountain sounds so peaceful.' },
         ];
         parkSpots.forEach((spot, i) => {
-            const mesh = createHumanAvatar({ variant: i + 1 });
+            const name = ['Sora', 'Hana', 'Ren'][i];
+            const modelKey = getBodyKeyForCitizen(name, 'human', i);
+            const mesh = createHumanAvatar({ variant: i + 1, modelKey, gender: modelKey, name });
             mesh.position.set(spot.x, this._groundY(spot.x, spot.z), spot.z);
-            mesh.add(createNameTag(['Sora', 'Hana', 'Ren'][i]));
+            mesh.add(createNameTag(name));
             this.scene.add(mesh);
             this.citizens.push({
-                mesh, name: ['Sora', 'Hana', 'Ren'][i], type: 'human',
+                mesh, name, type: 'human',
                 subtitle: 'PARK VISITOR', line: spot.line,
                 speed: 0, phase: i, isParkVisitor: true,
             });
@@ -161,11 +171,12 @@ export class CitizenManager {
             { x: 130, z: 110, rx: 100, rz: 85, speed: 2.4 },
         ];
         routes.forEach((route, i) => {
-            const mesh = createCyclistAvatar({ variant: i });
+            const name = HUMAN_NAMES[(i + 3) % HUMAN_NAMES.length];
+            const mesh = createCyclistAvatar({ variant: i, name });
             this._placeCitizen(
                 mesh,
                 { x: route.x, z: route.z, rx: route.rx, rz: route.rz },
-                HUMAN_NAMES[(i + 3) % HUMAN_NAMES.length], 'cyclist',
+                name, 'cyclist',
                 'Coasting down the slope. These mamachari bikes are the best.',
                 i * 1.1, route.speed
             );
@@ -176,9 +187,10 @@ export class CitizenManager {
     spawnBuildingHosts(buildings = []) {
         buildings.forEach((b, i) => {
             const isAlien = b.hostType === 'alien';
+            const modelKey = getBodyKeyForCitizen(b.hostName || '', isAlien ? 'alien' : 'human', i);
             const mesh = isAlien
-                ? createAlienAvatar({ variant: i })
-                : createHumanAvatar({ variant: i });
+                ? createAlienAvatar({ variant: i, modelKey, name: b.hostName })
+                : createHumanAvatar({ variant: i, modelKey, gender: modelKey, name: b.hostName });
 
             mesh.position.set(b.hostX, this._groundY(b.hostX, b.hostZ), b.hostZ);
             mesh.rotation.y = Math.atan2(b.x - b.hostX, b.z - b.hostZ);
@@ -247,7 +259,9 @@ export class CitizenManager {
         for (let i = 0; i < humans; i++) {
             const angle = (i / humans) * Math.PI * 2;
             const r = baseR + (i % 3) * 4;
-            const mesh = createHumanAvatar({ variant: i });
+            const name = HUMAN_NAMES[i % HUMAN_NAMES.length];
+            const modelKey = getBodyKeyForCitizen(name, 'human', i);
+            const mesh = createHumanAvatar({ variant: i, modelKey, gender: modelKey, name });
             const hx = x + Math.cos(angle) * r;
             const hz = z + Math.sin(angle) * r;
             const line = district === 'software'
@@ -256,19 +270,21 @@ export class CitizenManager {
                     ? 'Love the creative energy in this district!'
                     : `Just arrived in ${district} — quiet afternoon in the city.`;
             this._placeCitizen(mesh, { x: hx, z: hz, rx: hx + 4, rz: hz + 4 },
-                HUMAN_NAMES[i % HUMAN_NAMES.length], 'human', line, 10 + i);
+                name, 'human', line, 10 + i);
         }
         for (let i = 0; i < aliens; i++) {
             const angle = (i / aliens) * Math.PI * 2 + 0.5;
             const r = baseR + 4 + (i % 3) * 3;
-            const mesh = createAlienAvatar({ variant: i });
+            const name = ALIEN_NAMES[i % ALIEN_NAMES.length];
+            const modelKey = getBodyKeyForCitizen(name, 'alien', i);
+            const mesh = createAlienAvatar({ variant: i, modelKey, name });
             const ax = x + Math.cos(angle) * r;
             const az = z + Math.sin(angle) * r;
             const line = district === 'innovation'
                 ? 'This innovation park showcases AlienHouse projects — impressive!'
                 : 'Greetings! Our alien community welcomes visitors from all worlds.';
             this._placeCitizen(mesh, { x: ax, z: az, rx: ax - 3, rz: az + 3 },
-                ALIEN_NAMES[i % ALIEN_NAMES.length], 'alien', line, 20 + i);
+                name, 'alien', line, 20 + i);
         }
     }
 
@@ -289,7 +305,7 @@ export class CitizenManager {
                     c.wanderT = (c.wanderT || 0) + dt;
                     animateWanderer(c.mesh, c.wanderT);
                 } else if (isRiggedAvatar(c.mesh)) {
-                    setCharacterPose(c.mesh, 'stand', 0.2);
+                    setCharacterPose(c.mesh, 'idle', 0.2);
                 }
                 return;
             }
@@ -304,7 +320,10 @@ export class CitizenManager {
 
             if (dist < 1) {
                 c.goingToTarget = !c.goingToTarget;
-                if (isRiggedAvatar(c.mesh)) setCharacterPose(c.mesh, 'stand', 0.2);
+                if (isRiggedAvatar(c.mesh)) {
+                    if (Math.random() < 0.15) playEmote(c.mesh, 0.25);
+                    else setCharacterPose(c.mesh, 'idle', 0.2);
+                }
             } else {
                 const step = c.speed * dt;
                 const nx = c.mesh.position.x + (dx / dist) * step;

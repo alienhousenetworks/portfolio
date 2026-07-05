@@ -2,23 +2,40 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { PLAYER } from './config.js';
 
-/** Only two lightweight rigged humans — all characters use these (~2.4 MB total). */
+/** Single rig per gender — Quaternius CC0 GLB with full locomotion + emote clips. */
 export const MODEL_CATALOG = {
     male: {
         file: 'models/quaternius_cc0-male-character-1354.glb',
         targetHeight: PLAYER.height,
         sizeMB: 1.2,
+        slots: ['Skin', 'Eyes', 'Hair', 'Hair2', 'Shirt', 'Shirt2', 'Pants', 'Socks', 'Shoes'],
     },
     female: {
         file: 'models/quaternius_cc0-female-character-1350.glb',
         targetHeight: 1.65,
         sizeMB: 1.2,
+        slots: ['Skin', 'Eyes', 'Hair', 'Dress', 'Shoes'],
     },
 };
 
 export const ALIEN_TINTS = [
     0x88ccaa, 0xaa88cc, 0xccaa88, 0x88aacc, 0xaacc88, 0xcc88aa,
 ];
+
+/** Outfit presets — swap materials by GLB slot name for customization. */
+export const OUTFIT_PRESETS = [
+    { name: 'Classic', skin: 0xece9e1, hair: 0x3d3224, shirt: 0x4e90e8, shirt2: 0x3a78d8, pants: 0x2a2a3a, socks: 0xf0f0f0, shoes: 0x1a1a1a, dress: 0x4e90e8, eyes: 0x2a2a3a },
+    { name: 'Mint', skin: 0xf5e6d8, hair: 0x1a1a28, shirt: 0x48d2c9, shirt2: 0x38b8b0, pants: 0x2d4a4a, socks: 0xffffff, shoes: 0x2a2a2a, dress: 0x48d2c9, eyes: 0x1a2838 },
+    { name: 'Sunset', skin: 0xe8c4a8, hair: 0x5c3a20, shirt: 0xf59a45, shirt2: 0xd67a30, pants: 0x4a3020, socks: 0xf8f0e8, shoes: 0x3a2820, dress: 0xf59a45, eyes: 0x3a2010 },
+    { name: 'Lavender', skin: 0xf0e0e8, hair: 0x2a1a38, shirt: 0x8c7ceb, shirt2: 0x6a5cc8, pants: 0x3a2a50, socks: 0xffffff, shoes: 0x2a2038, dress: 0x8c7ceb, eyes: 0x2a1830 },
+    { name: 'Forest', skin: 0xd8c8a8, hair: 0x1a2818, shirt: 0x79b36a, shirt2: 0x5a9048, pants: 0x2a3820, socks: 0xe8e8e0, shoes: 0x1a2018, dress: 0x79b36a, eyes: 0x1a2818 },
+    { name: 'Coral', skin: 0xf5d0c8, hair: 0x4a2020, shirt: 0xf2b0c5, shirt2: 0xd890a8, pants: 0x4a2838, socks: 0xffffff, shoes: 0x3a2830, dress: 0xf2b0c5, eyes: 0x3a1828 },
+];
+
+const FEMALE_NAMES = new Set([
+    'Hana', 'Mio', 'Yuki', 'Aki', 'Riley', 'Taylor', 'Jamie', 'Quinn', 'Avery',
+    'Nara', 'Eli', 'Oma', 'Kira', 'Luma', 'Sora',
+]);
 
 const MODEL_KEYS = Object.keys(MODEL_CATALOG);
 const _cache = new Map();
@@ -64,16 +81,24 @@ function stripHelperMeshes(root) {
     toRemove.forEach(obj => obj.parent?.remove(obj));
 }
 
+function tagMaterials(root) {
+    root.traverse(obj => {
+        if (!obj.isMesh || !obj.material) return;
+        const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+        mats.forEach(m => {
+            if (!m.name && obj.name) m.name = obj.name;
+            if (m.map) m.map.colorSpace = THREE.SRGBColorSpace;
+        });
+    });
+}
+
 function prepareMeshes(root) {
     stripHelperMeshes(root);
+    tagMaterials(root);
     root.traverse(obj => {
         if (!obj.isMesh) return;
         obj.castShadow = true;
         obj.receiveShadow = true;
-        if (obj.material) {
-            const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-            mats.forEach(m => { if (m.map) m.map.colorSpace = THREE.SRGBColorSpace; });
-        }
     });
 }
 
@@ -88,11 +113,13 @@ function normalizeHeight(root, targetHeight) {
 
 function findClip(clips, kind) {
     const rules = {
-        stand: [/_standing$/i, /_idle$/i],
-        walk: [/_walk$/i],
-        run: [/_run$/i, /\|man_run$/i, /\|female_run$/i],
-        jump: [/_jump$/i, /runningjump/i],
-        climb: [/climb/i, /_walk$/i],
+        idle: [/Man_Idle/i, /Female_Idle/i, /_idle$/i],
+        stand: [/Man_Standing/i, /Female_Standing/i, /_standing$/i],
+        walk: [/Man_Walk/i, /Female_Walk/i, /_walk$/i],
+        run: [/Man_Run/i, /Female_Run/i, /_run$/i],
+        jump: [/Man_Jump/i, /Female_Jump/i, /_jump$/i, /runningjump/i],
+        emote: [/Man_Clapping/i, /Female_Clapping/i, /clapping/i, /Man_Punch/i, /Female_Punch/i],
+        climb: [/climb/i, /Man_Walk/i, /Female_Walk/i],
     };
     for (const pattern of rules[kind] || []) {
         const hit = clips.find(c => pattern.test(c.name));
@@ -104,14 +131,42 @@ function findClip(clips, kind) {
 function setupAnimator(root, clips) {
     const mixer = new THREE.AnimationMixer(root);
     const actions = {};
-    ['stand', 'walk', 'run', 'jump', 'climb'].forEach(kind => {
+    ['idle', 'stand', 'walk', 'run', 'jump', 'emote', 'climb'].forEach(kind => {
         const clip = findClip(clips, kind);
         if (clip) actions[kind] = mixer.clipAction(clip);
     });
-    if (!actions.stand && clips[0]) actions.stand = mixer.clipAction(clips[0]);
-    actions.idle = actions.stand;
-    if (actions.stand) actions.stand.play();
-    return { mixer, actions };
+    if (!actions.idle && actions.stand) actions.idle = actions.stand;
+    if (!actions.stand && actions.idle) actions.stand = actions.idle;
+    const start = actions.idle ?? actions.stand ?? actions.walk ?? clips[0] && mixer.clipAction(clips[0]);
+    if (start) {
+        actions.idle = actions.idle ?? start;
+        actions.stand = actions.stand ?? start;
+        start.play();
+    }
+    return { mixer, actions, clips: clips.map(c => c.name) };
+}
+
+/** Male body for male characters, female body for female characters. */
+export function getBodyKeyForGender(gender = 'male') {
+    return gender === 'female' ? 'female' : 'male';
+}
+
+export function inferGender(name = '', type = 'human') {
+    if (type === 'alien') return 'male';
+    if (FEMALE_NAMES.has(name)) return 'female';
+    return 'male';
+}
+
+export function getBodyKeyForCitizen(name, type = 'human', variant = 0) {
+    if (type === 'alien') return variant % 2 === 0 ? 'male' : 'female';
+    return getBodyKeyForGender(inferGender(name, type));
+}
+
+const BODY_KEYS = ['male', 'female'];
+
+/** @deprecated — use getBodyKeyForCitizen or getBodyKeyForGender */
+export function getRandomBodyKey() {
+    return BODY_KEYS[Math.random() < 0.5 ? 0 : 1];
 }
 
 export async function preloadCharacterModels(baseUrl, onProgress) {
@@ -132,7 +187,9 @@ export async function preloadCharacterModels(baseUrl, onProgress) {
             _cache.set(id, {
                 scene: gltf.scene,
                 animations: gltf.animations || [],
+                animationNames: (gltf.animations || []).map(c => c.name),
                 targetHeight: cfg.targetHeight,
+                slots: cfg.slots,
             });
         } catch (err) {
             console.error(`[CharacterModels] ${key}:`, err.message || err);
@@ -146,30 +203,21 @@ export async function preloadCharacterModels(baseUrl, onProgress) {
     return { loaded: _cache.size, total: entries.length, errors };
 }
 
-/** @deprecated alias */
 export const preloadCriticalModels = preloadCharacterModels;
 export function preloadLazyModels() {
     return Promise.resolve({ loaded: _cache.size, total: 0, errors: [] });
 }
 
-const BODY_KEYS = ['male', 'female'];
-
-/** Random male or female body for each character. */
-export function getRandomBodyKey() {
-    return BODY_KEYS[Math.random() < 0.5 ? 0 : 1];
+export function getAnimatedHumanKey(index = 0) {
+    return index % 2 === 0 ? 'male' : 'female';
 }
 
-/** @deprecated use getRandomBodyKey */
-export function getAnimatedHumanKey(_index = 0) {
-    return getRandomBodyKey();
+export function getHumanModelKey(index = 0) {
+    return getAnimatedHumanKey(index);
 }
 
-export function getHumanModelKey(_index = 0) {
-    return getRandomBodyKey();
-}
-
-export function getAlienModelKey(_index = 0) {
-    return getRandomBodyKey();
+export function getAlienModelKey(index = 0) {
+    return index % 2 === 0 ? 'male' : 'female';
 }
 
 export function isModelLoaded(key) {
@@ -177,7 +225,37 @@ export function isModelLoaded(key) {
 }
 
 export function hasCriticalModels() {
-    return isModelLoaded('male');
+    return isModelLoaded('male') && isModelLoaded('female');
+}
+
+const SLOT_ALIASES = {
+    skin: 'Skin', eyes: 'Eyes', hair: 'Hair', hair2: 'Hair2',
+    shirt: 'Shirt', shirt2: 'Shirt2', pants: 'Pants', socks: 'Socks',
+    shoes: 'Shoes', dress: 'Dress',
+};
+
+/** Swap GLB material slots from a preset palette. */
+export function applyOutfitPreset(avatar, presetIndex = 0) {
+    const preset = OUTFIT_PRESETS[presetIndex % OUTFIT_PRESETS.length];
+    const model = avatar.children.find(c => c.type === 'Group' || c.isMesh) ?? avatar.children[0];
+    if (!model) return preset;
+
+    model.traverse(obj => {
+        if (!obj.isMesh || !obj.material) return;
+        const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+        mats.forEach(m => {
+            const slotName = m.name || '';
+            for (const [key, slot] of Object.entries(SLOT_ALIASES)) {
+                if (slotName === slot && preset[key] != null) {
+                    m.color.setHex(preset[key]);
+                }
+            }
+        });
+    });
+
+    avatar.userData.outfitPreset = presetIndex % OUTFIT_PRESETS.length;
+    avatar.userData.outfitName = preset.name;
+    return preset;
 }
 
 function applyTint(model, color, strength = 0.3) {
@@ -185,14 +263,16 @@ function applyTint(model, color, strength = 0.3) {
     model.traverse(obj => {
         if (!obj.isMesh || !obj.material) return;
         const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-        mats.forEach(m => { if (m.color) m.color.lerp(tint, strength); });
+        mats.forEach(m => {
+            if (m.name === 'Skin' && m.color) m.color.lerp(tint, strength);
+        });
     });
 }
 
 export function createCharacterInstance(type, modelKey, opts = {}) {
     const humanKey = modelKey === 'male' || modelKey === 'female'
         ? modelKey
-        : getRandomBodyKey();
+        : getBodyKeyForGender('male');
 
     const cached = _cache.get(`human:${humanKey}`);
     if (!cached) {
@@ -212,9 +292,10 @@ export function createCharacterInstance(type, modelKey, opts = {}) {
     }
 
     const tint = opts.tint ?? (type === 'alien' ? ALIEN_TINTS[(opts.variant ?? 0) % ALIEN_TINTS.length] : null);
-    if (tint) applyTint(model, tint, opts.tintStrength ?? (type === 'alien' ? 0.38 : 0.2));
+    if (tint) applyTint(model, tint, opts.tintStrength ?? (type === 'alien' ? 0.42 : 0));
 
     root.userData.modelKey = humanKey;
+    root.userData.gender = humanKey;
     root.userData.characterType = type;
     root.userData.isHuman = type === 'human';
     root.userData.isAlien = type === 'alien';
@@ -225,17 +306,20 @@ export function createCharacterInstance(type, modelKey, opts = {}) {
         const { mixer, actions } = setupAnimator(model, cached.animations);
         root.userData.mixer = mixer;
         root.userData.actions = actions;
-        root.userData._activeAction = actions.stand ?? null;
+        root.userData._activeAction = actions.idle ?? actions.stand ?? null;
     }
+
+    const presetIdx = opts.outfitPreset ?? (opts.variant ?? 0) % OUTFIT_PRESETS.length;
+    applyOutfitPreset(root, presetIdx);
 
     return root;
 }
 
 export function fadeCharacterAction(avatar, name, duration = 0.2) {
-    const resolved = name === 'idle' ? 'stand' : name;
+    const resolved = name === 'idle' ? 'idle' : name;
     const actions = avatar.userData.actions;
     if (!actions) return;
-    const next = actions[resolved] ?? actions.stand ?? actions.walk;
+    const next = actions[resolved] ?? actions.idle ?? actions.stand ?? actions.walk;
     if (!next) return;
     const prev = avatar.userData._activeAction;
     if (prev === next) return;
@@ -243,6 +327,11 @@ export function fadeCharacterAction(avatar, name, duration = 0.2) {
     next.reset().setEffectiveTimeScale(1).setEffectiveWeight(1).fadeIn(duration).play();
     avatar.userData._activeAction = next;
     avatar.userData.pose = resolved;
+}
+
+export function cycleOutfitPreset(avatar, delta = 1) {
+    const next = ((avatar.userData.outfitPreset ?? 0) + delta + OUTFIT_PRESETS.length) % OUTFIT_PRESETS.length;
+    return applyOutfitPreset(avatar, next);
 }
 
 export function updateCharacterAnimator(avatar, dt) {

@@ -14,22 +14,33 @@ import {
 } from './Props.js';
 
 export class WorldBuilder {
-    constructor(scene, gameData, terrain = null) {
+    constructor(scene, gameData, terrain = null, chunkManager = null) {
         this.scene = scene;
         this.data = gameData;
         this.terrain = terrain;
+        this.chunks = chunkManager;
         this.pois = [];
         this.colliders = [];
         this.buildingSites = new Set();
+    }
+
+    _add(obj, x, z, opts = {}) {
+        this.scene.add(obj);
+        if (this.chunks && !opts.global) {
+            this.chunks.register(obj, x, z, opts);
+        }
+        return obj;
     }
 
     build() {
         this._skyDome();
         this._clouds();
         this._lights();
-        this._ground();
+        if (!this.terrain) this._ground();
         this._mountains();
         this._beach();
+        this._river();
+        this._bridges();
         this._waterfall();
         this._districtZones();
         this._roadGrid();
@@ -59,7 +70,9 @@ export class WorldBuilder {
     }
 
     _inRiver(x, z, margin = 0) {
-        return false;
+        const halfW = WORLD.riverWidth / 2 + margin;
+        return Math.abs(x - WORLD.riverX) < halfW
+            && Math.abs(z) < WORLD.riverLength / 2 + margin;
     }
 
     _markSite(x, z, w = 24, d = 24, h = 0) {
@@ -98,7 +111,7 @@ export class WorldBuilder {
         sky.rotation.x = 0;
         this.scene.add(sky);
 
-        this.scene.fog = new THREE.FogExp2(PALETTE.fog, 0.0018);
+        this.scene.fog = new THREE.Fog(PALETTE.fog, 120, 420);
     }
 
     // ── Clouds ──────────────────────────────────────────────────────────────
@@ -923,19 +936,19 @@ export class WorldBuilder {
             const vRoad = new THREE.Mesh(new THREE.BoxGeometry(WORLD.roadWidth, 0.06, span), asphalt);
             vRoad.position.set(offset, y, 0);
             vRoad.receiveShadow = true;
-            this.scene.add(vRoad);
+            this._add(vRoad, offset, 0);
 
             const hRoad = new THREE.Mesh(new THREE.BoxGeometry(span, 0.06, WORLD.roadWidth), asphalt);
             hRoad.position.set(0, y, offset);
             hRoad.receiveShadow = true;
-            this.scene.add(hRoad);
+            this._add(hRoad, 0, offset);
 
             const sw = createSidewalk(WORLD.roadWidth + 2, span);
             sw.position.set(offset + WORLD.roadWidth * 0.65, 0.02, 0);
-            this.scene.add(sw);
+            this._add(sw, offset, 0);
 
             if (i % 2 === 0 && Math.abs(offset) > 20) {
-                this.scene.add(createCrosswalk(offset, offset, 'x'));
+                this._add(createCrosswalk(offset, offset, 'x'), offset, offset);
             }
         }
 
@@ -959,7 +972,7 @@ export class WorldBuilder {
                 seg.rotation.y = angle;
                 seg.rotation.x = -Math.atan2(h2 - h1, len);
                 seg.receiveShadow = true;
-                this.scene.add(seg);
+                this._add(seg, (x1 + x2) / 2, (z1 + z2) / 2);
             }
         });
     }
@@ -985,9 +998,8 @@ export class WorldBuilder {
                 const built = createZoneBuilding(cx, cz, seed++, gameDist);
                 const ty = this.getTerrainHeight(cx, cz);
                 built.group.position.y = ty;
-                // Update collider floorY to actual terrain height
                 if (built.collider) built.collider.floorY = ty;
-                this.scene.add(built.group);
+                this._add(built.group, cx, cz);
                 this.colliders.push(built.collider);
                 this._markSite(cx, cz, built.collider.w, built.collider.d, built.collider.h || 0);
             }
@@ -1003,14 +1015,14 @@ export class WorldBuilder {
         const sty = this.getTerrainHeight(-150, -130);
         school.group.position.y = sty;
         if (school.collider) school.collider.floorY = sty;
-        this.scene.add(school.group);
+        this._add(school.group, -150, -130);
         this._markSite(-150, -130, 30, 24);
 
         const lib = createServiceBuilding(155, -125, { buildingStyle: 'consulting' });
         const lty = this.getTerrainHeight(155, -125);
         lib.group.position.y = lty;
         if (lib.collider) lib.collider.floorY = lty;
-        this.scene.add(lib.group);
+        this._add(lib.group, 155, -125);
         this._markSite(155, -125, 20, 18);
     }
 
@@ -1029,7 +1041,7 @@ export class WorldBuilder {
         const sign = toonMesh(new THREE.BoxGeometry(9, 1, 0.25), PALETTE.mint, { emissive: PALETTE.mint, emissiveIntensity: 0.1 });
         sign.mesh.position.set(0, 46, 5.6);
         g.add(sign.group);
-        this.scene.add(g);
+        this._add(g, x, z);
         this._markSite(x, z, 28, 18, 44);
     }
 
@@ -1042,7 +1054,7 @@ export class WorldBuilder {
             const ty = this.getTerrainHeight(b.x, b.z);
             built.group.position.y = ty;
             if (built.collider) built.collider.floorY = ty;
-            this.scene.add(built.group);
+            this._add(built.group, b.x, b.z);
             this.colliders.push(built.collider);
             this._markSite(b.x, b.z, built.collider.w, built.collider.d, built.collider.h || 0);
             this._addPOI(
@@ -1060,7 +1072,7 @@ export class WorldBuilder {
         const ty = this.getTerrainHeight(WORLD.parkX, WORLD.parkZ);
         const fountain = createFountain();
         fountain.position.set(WORLD.parkX, ty, WORLD.parkZ);
-        this.scene.add(fountain);
+        this._add(fountain, WORLD.parkX, WORLD.parkZ);
 
         // Ring of mixed trees
         for (let a = 0; a < 14; a++) {
@@ -1074,16 +1086,18 @@ export class WorldBuilder {
             else if (a % 4 === 2) tree = createLargeTree(a + 3);
             else tree = createCherryTree();
             tree.position.set(tx, ty, tz);
-            this.scene.add(tree);
+            this._add(tree, tx, tz);
         }
 
         // Benches
         for (let a = 0; a < 6; a++) {
             const angle = (a / 6) * Math.PI * 2 + 0.4;
             const bench = createBench();
-            bench.position.set(WORLD.parkX + Math.cos(angle) * 22, ty, WORLD.parkZ + Math.sin(angle) * 22);
+            const bx = WORLD.parkX + Math.cos(angle) * 22;
+            const bz = WORLD.parkZ + Math.sin(angle) * 22;
+            bench.position.set(bx, ty, bz);
             bench.rotation.y = angle + Math.PI;
-            this.scene.add(bench);
+            this._add(bench, bx, bz);
         }
 
         // Park paths (cross-shaped)

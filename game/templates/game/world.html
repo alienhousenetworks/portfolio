@@ -32,7 +32,8 @@
             <kbd>Shift</kbd> Run &middot;
             <kbd>Space</kbd> Jump &middot;
             <kbd>E</kbd> Interact &middot;
-            Walk onto bridges &amp; blocks
+            <kbd>C</kbd> Outfit &middot;
+            <kbd>G</kbd> Emote
         </p>
     </div>
 
@@ -47,7 +48,10 @@
             <canvas id="minimap-canvas" width="200" height="200"></canvas>
             <div id="map-legend"></div>
         </div>
-        <div class="hud-panel hud-bottom-right"><div class="hud-label">City</div><div id="site-display">{{ config.site_name|default:"ALIENHOUSE" }}</div></div>
+        <div class="hud-panel hud-bottom-right">
+            <div class="hud-label">City</div><div id="site-display">{{ config.site_name|default:"ALIENHOUSE" }}</div>
+            <div class="hud-label" style="margin-top:6px">Outfit</div><div id="outfit-display">Classic</div>
+        </div>
     </div>
 
     <!-- Player Height Control -->
@@ -107,7 +111,7 @@
     </div>
 
     {{ game_data|json_script:"game-data" }}
-    <script type="module" src="{% static 'game/js/main.js' %}?v=33"></script>
+    <script type="module" src="{% static 'game/js/main.js' %}?v=34"></script>
 
     <!-- Height slider logic -->
     <script>
