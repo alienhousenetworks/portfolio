@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { WORLD } from './config.js';
-import { getAnimatedHumanKey } from './CharacterModels.js';
 import {
     createHumanAvatar, createAlienAvatar, createNameTag,
     createStudentAvatar, createCommuterAvatar, createWandererAvatar, createCyclistAvatar,
@@ -50,7 +49,7 @@ export class CitizenManager {
         const spots = this._walkSpots();
         for (let i = 0; i < 10; i++) {
             const spot = spots[i % spots.length];
-            const mesh = createHumanAvatar({ modelKey: getAnimatedHumanKey(i), variant: i });
+            const mesh = createHumanAvatar({ variant: i });
             this._placeCitizen(mesh, spot, HUMAN_NAMES[i % HUMAN_NAMES.length], 'human', HUMAN_LINES[i % HUMAN_LINES.length], i * 0.7);
         }
 
@@ -248,7 +247,7 @@ export class CitizenManager {
         for (let i = 0; i < humans; i++) {
             const angle = (i / humans) * Math.PI * 2;
             const r = baseR + (i % 3) * 4;
-            const mesh = createHumanAvatar({ modelKey: getAnimatedHumanKey(i), variant: i });
+            const mesh = createHumanAvatar({ variant: i });
             const hx = x + Math.cos(angle) * r;
             const hz = z + Math.sin(angle) * r;
             const line = district === 'software'

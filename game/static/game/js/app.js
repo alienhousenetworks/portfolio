@@ -90,12 +90,12 @@ class Game {
         const buildings = this.world?.buildings || this.data.buildings || [];
         this.citizens.spawn(this.data.team || [], buildings);
 
-        this.player = createHumanAvatar({ modelKey: 'male' });
+        this.player = createHumanAvatar();
         this.player.visible = false;
         this.scene.add(this.player);
 
         const welcome = this.data.welcome || {};
-        this.welcomeHuman = createHumanAvatar({ modelKey: 'female' });
+        this.welcomeHuman = createHumanAvatar();
         this.welcomeHuman.visible = false;
         this.welcomeHuman.add(createNameTag(welcome.humanName || 'Human Ambassador'));
         this.scene.add(this.welcomeHuman);

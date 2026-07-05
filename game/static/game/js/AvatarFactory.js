@@ -3,8 +3,7 @@ import { PALETTE } from './config.js';
 import { toonMat } from './ToonStyle.js';
 import {
     createCharacterInstance,
-    getAnimatedHumanKey,
-    getAlienModelKey,
+    getRandomBodyKey,
     ALIEN_TINTS,
 } from './CharacterModels.js';
 import {
@@ -20,7 +19,7 @@ export const updateHumanAnimator = tickAnimator;
 
 /** Rigged GLB — stand / walk / run / jump / climb */
 export function createHumanAvatar(opts = {}) {
-    const modelKey = opts.modelKey ?? getAnimatedHumanKey(opts.variant ?? 0);
+    const modelKey = opts.modelKey ?? getRandomBodyKey();
     const g = createCharacterInstance('human', modelKey, opts);
     g.userData.isHuman = true;
     if (isRiggedAvatar(g)) setCharacterPose(g, 'stand', 0);
@@ -30,7 +29,7 @@ export function createHumanAvatar(opts = {}) {
 /** Same rigged body as human, tinted to look alien — full locomotion */
 export function createAlienAvatar(opts = {}) {
     const variant = opts.variant ?? 0;
-    const modelKey = opts.modelKey ?? getAlienModelKey(variant);
+    const modelKey = opts.modelKey ?? getRandomBodyKey();
     const g = createCharacterInstance('alien', modelKey, {
         ...opts,
         variant,

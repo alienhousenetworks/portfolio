@@ -152,16 +152,24 @@ export function preloadLazyModels() {
     return Promise.resolve({ loaded: _cache.size, total: 0, errors: [] });
 }
 
-export function getAnimatedHumanKey(index = 0) {
-    return index % 2 === 0 ? 'male' : 'female';
+const BODY_KEYS = ['male', 'female'];
+
+/** Random male or female body for each character. */
+export function getRandomBodyKey() {
+    return BODY_KEYS[Math.random() < 0.5 ? 0 : 1];
 }
 
-export function getHumanModelKey(index = 0) {
-    return getAnimatedHumanKey(index);
+/** @deprecated use getRandomBodyKey */
+export function getAnimatedHumanKey(_index = 0) {
+    return getRandomBodyKey();
 }
 
-export function getAlienModelKey(index = 0) {
-    return getAnimatedHumanKey(index + 1);
+export function getHumanModelKey(_index = 0) {
+    return getRandomBodyKey();
+}
+
+export function getAlienModelKey(_index = 0) {
+    return getRandomBodyKey();
 }
 
 export function isModelLoaded(key) {
@@ -184,7 +192,7 @@ function applyTint(model, color, strength = 0.3) {
 export function createCharacterInstance(type, modelKey, opts = {}) {
     const humanKey = modelKey === 'male' || modelKey === 'female'
         ? modelKey
-        : getAnimatedHumanKey(opts.variant ?? 0);
+        : getRandomBodyKey();
 
     const cached = _cache.get(`human:${humanKey}`);
     if (!cached) {
