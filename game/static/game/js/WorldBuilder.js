@@ -177,17 +177,13 @@ export class WorldBuilder {
     }
 
     _buildMountain(cx, cy_base, cz, radius, height, seed) {
-        const type = seed % 6;
+        const type = seed % 4;
         if (type === 0) {
-            this._buildShatteredSpire(cx, cy_base, cz, radius, height, seed);
-        } else if (type === 1) {
             this._buildLushTerraces(cx, cy_base, cz, radius, height, seed);
-        } else if (type === 2) {
+        } else if (type === 1) {
             this._buildObsidianFang(cx, cy_base, cz, radius, height, seed);
-        } else if (type === 3) {
+        } else if (type === 2) {
             this._buildCrystalSpine(cx, cy_base, cz, radius, height, seed);
-        } else if (type === 4) {
-            this._buildFloatingIslands(cx, cy_base, cz, radius, height, seed);
         } else {
             this._buildForestMaw(cx, cy_base, cz, radius, height, seed);
         }
