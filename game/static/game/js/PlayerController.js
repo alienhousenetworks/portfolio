@@ -5,11 +5,12 @@ import { animateHumanWalk } from './AvatarFactory.js';
 const MOVE_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
 
 export class PlayerController {
-    constructor(camera, avatar, colliders, canvas) {
+    constructor(camera, avatar, colliders, canvas, terrain = null) {
         this.camera = camera;
         this.avatar = avatar;
         this.colliders = colliders;
         this.canvas = canvas;
+        this.terrain = terrain;
         this.velocity = new THREE.Vector3();
         this.camYaw = 0;
         this.camPitch = CAMERA.defaultPitch;
@@ -168,13 +169,26 @@ export class PlayerController {
         let nx = ox + this.velocity.x * dt;
         let nz = oz + this.velocity.z * dt;
 
-        if (this._blocked(nx, oz)) nx = ox;
-        if (this._blocked(ox, nz)) nz = oz;
-        if (this._blocked(nx, nz)) { nx = ox; nz = oz; }
+        const curY = this.avatar.position.y;
+
+        if (this._blocked(nx, oz, curY)) nx = ox;
+        if (this._blocked(ox, nz, curY)) nz = oz;
+        if (this._blocked(nx, nz, curY)) { nx = ox; nz = oz; }
+
+        if (this.terrain && !this.terrain.canTraverse(ox, oz, curY, nx, nz)) {
+            nx = ox;
+            nz = oz;
+        }
 
         this.avatar.position.x = THREE.MathUtils.clamp(nx, -WORLD.bound, WORLD.bound);
         this.avatar.position.z = THREE.MathUtils.clamp(nz, -WORLD.bound, WORLD.bound);
-        this.avatar.position.y = WORLD.groundY;
+
+        const targetY = this.terrain
+            ? this.terrain.getWalkableHeight(nx, nz, curY)
+            : WORLD.groundY;
+        const onStair = this.terrain?.isOnStair(nx, nz);
+        const ySmooth = onStair ? 14 : 10;
+        this.avatar.position.y += (targetY - this.avatar.position.y) * (1 - Math.exp(-ySmooth * dt));
 
         if (this.avatar.userData.isHuman && this.velocity.lengthSq() > 0.5) {
             animateHumanWalk(this.avatar, this.walkCycle, this.isRunning ? 1.1 : 0.9);
@@ -188,12 +202,15 @@ export class PlayerController {
         this._updateCamera(dt);
     }
 
-    _blocked(x, z) {
+    _blocked(x, z, y = WORLD.groundY) {
         const r = PLAYER.radius;
         for (const c of this.colliders) {
             const hw = c.w / 2 + r;
             const hd = c.d / 2 + r;
-            if (Math.abs(x - c.x) < hw && Math.abs(z - c.z) < hd) return true;
+            if (Math.abs(x - c.x) < hw && Math.abs(z - c.z) < hd) {
+                if (c.d > 100 && this.terrain?.isOnStair(x, z)) continue;
+                return true;
+            }
         }
         return false;
     }
@@ -221,7 +238,8 @@ export class PlayerController {
 
     setPosition(x, z, preferredX = null, preferredZ = null) {
         const safe = this.findSafePosition(x, z, preferredX, preferredZ);
-        this.avatar.position.set(safe.x, WORLD.groundY, safe.z);
+        const y = this.terrain ? this.terrain.getHeightAt(safe.x, safe.z) : WORLD.groundY;
+        this.avatar.position.set(safe.x, y, safe.z);
         this.avatar.rotation.y = 0;
         this.velocity.set(0, 0, 0);
         this.syncCameraToPlayer();

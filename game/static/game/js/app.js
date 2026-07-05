@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { WORLD } from './config.js';
 import { createHumanAvatar, createAlienAvatar, createUFO, createNameTag } from './AvatarFactory.js';
 import { WorldBuilder } from './WorldBuilder.js';
+import { TerrainSystem } from './TerrainSystem.js';
 import { PlayerController } from './PlayerController.js';
 import { DialogueSystem } from './DialogueSystem.js';
 import { CinematicIntro } from './CinematicIntro.js';
@@ -22,7 +23,9 @@ class Game {
 
         this._renderer();
         this.scene = new THREE.Scene();
-        const built = new WorldBuilder(this.scene, data).build();
+        this.terrain = new TerrainSystem();
+        this.terrain.build(this.scene);
+        const built = new WorldBuilder(this.scene, data, this.terrain).build();
         this.world = built;
         this.pois = built.pois;
         this.colliders = built.colliders;
@@ -31,7 +34,7 @@ class Game {
         const stops = this.transit.build();
         this.interactables = [...this.pois, ...stops];
 
-        this.citizens = new CitizenManager(this.scene);
+        this.citizens = new CitizenManager(this.scene, this.terrain);
         this.citizens.spawn(this.data.team || [], built.buildings || this.data.buildings || []);
         this._buildMapLegend();
 
@@ -54,7 +57,7 @@ class Game {
         this.ufo.position.set(0, 60, 90);
         this.scene.add(this.ufo);
 
-        this.playerCtrl = new PlayerController(this.camera, this.player, this.colliders, this.renderer.domElement);
+        this.playerCtrl = new PlayerController(this.camera, this.player, this.colliders, this.renderer.domElement, this.terrain);
         this.ride = new TransitRideController(this.scene, this.camera, this.player, this.transit);
         this.transitPicker = new TransitPicker(
             this.data.transitDestinations || [],

@@ -5,9 +5,10 @@ import { createRandomBuilding, createServiceBuilding, createVendingMachine, crea
 import { toonMat, toonMesh, sketchLines, INK } from './ToonStyle.js';
 
 export class WorldBuilder {
-    constructor(scene, gameData) {
+    constructor(scene, gameData, terrain = null) {
         this.scene = scene;
         this.data = gameData;
+        this.terrain = terrain;
         this.pois = [];
         this.colliders = [];
         this.buildingSites = new Set();
@@ -27,10 +28,15 @@ export class WorldBuilder {
         this._park();
         this._urbanDetails();
         this._pois();
+        if (this.terrain) {
+            this.colliders.push(...this.terrain.wallColliders);
+        }
         return { pois: this.pois, colliders: this.colliders, buildings: this.data.buildings || [] };
     }
 
-    getTerrainHeight() { return WORLD.groundY; }
+    getTerrainHeight(x, z) {
+        return this.terrain ? this.terrain.getHeightAt(x, z) : WORLD.groundY;
+    }
 
     _inPark(x, z, margin = 0) {
         const dx = x - WORLD.parkX;
@@ -163,8 +169,9 @@ export class WorldBuilder {
         }
 
         [-1, 1].forEach(side => {
-            const bank = toonMesh(new THREE.BoxGeometry(14, 1.8, len), PALETTE.embankment);
-            bank.mesh.position.set(WORLD.riverX + side * (w / 2 + 7), 0.5, 0);
+            const bankH = 1.2;
+            const bank = toonMesh(new THREE.BoxGeometry(14, bankH, len), PALETTE.embankment);
+            bank.mesh.position.set(WORLD.riverX + side * (w / 2 + 7), bankH / 2, 0);
             bank.mesh.receiveShadow = true;
             this.scene.add(bank.group);
 
@@ -180,7 +187,8 @@ export class WorldBuilder {
         const positions = [-120, -40, 60, 160];
         positions.forEach(z => {
             const g = new THREE.Group();
-            g.position.set(WORLD.riverX, 0.8, z);
+            const bridgeY = 1.35;
+            g.position.set(WORLD.riverX, bridgeY, z);
 
             const deck = toonMesh(new THREE.BoxGeometry(WORLD.riverWidth + 6, 0.5, 8), PALETTE.bridge);
             deck.mesh.position.y = 0.25;
@@ -267,29 +275,41 @@ export class WorldBuilder {
     _slopeRoads() {
         const asphalt = toonMat(PALETTE.asphalt);
         const white = toonMat(0xffffff);
-        const curves = [
-            { pts: [[-200, -180], [-160, -140], [-120, -110], [-80, -90]], w: 8 },
-            { pts: [[200, -170], [165, -130], [130, -100], [95, -80]], w: 8 },
-            { pts: [[-190, 150], [-150, 120], [-110, 100], [-70, 85]], w: 7 },
-            { pts: [[190, 140], [155, 115], [120, 95], [85, 80]], w: 7 },
+        const curves = this.terrain?.slopes?.map(sl => ({
+            pts: sl.pts.map(([x, z, h]) => [x, z, h]),
+            w: sl.w,
+        })) || [
+            { pts: [[-200, -180, 7.5], [-160, -140, 6.2], [-120, -110, 4.8], [-80, -90, 3.2]], w: 9 },
+            { pts: [[200, -170, 7.5], [165, -130, 6.2], [130, -100, 4.8], [95, -80, 3.2]], w: 9 },
+            { pts: [[-190, 150, 7.5], [-150, 120, 6.2], [-110, 100, 4.8], [-70, 85, 3.2]], w: 8 },
+            { pts: [[190, 140, 7.5], [155, 115, 6.2], [120, 95, 4.8], [85, 80, 3.2]], w: 8 },
         ];
 
         curves.forEach(curve => {
             for (let s = 0; s < curve.pts.length - 1; s++) {
-                const [x1, z1] = curve.pts[s];
-                const [x2, z2] = curve.pts[s + 1];
+                const [x1, z1, h1] = curve.pts[s];
+                const [x2, z2, h2] = curve.pts[s + 1];
                 const dx = x2 - x1, dz = z2 - z1;
                 const len = Math.hypot(dx, dz);
                 const angle = Math.atan2(dx, dz);
-                const seg = new THREE.Mesh(new THREE.BoxGeometry(curve.w, 0.06, len), asphalt);
-                seg.position.set((x1 + x2) / 2, 0.035, (z1 + z2) / 2);
+                const midH = (h1 + h2) / 2 + 0.04;
+                const tilt = Math.atan2(h2 - h1, len);
+
+                const seg = new THREE.Mesh(new THREE.BoxGeometry(curve.w, 0.12, len), asphalt);
+                seg.position.set((x1 + x2) / 2, midH, (z1 + z2) / 2);
                 seg.rotation.y = angle;
+                seg.rotation.x = -tilt;
                 seg.receiveShadow = true;
                 this.scene.add(seg);
 
                 const edge = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.07, len * 0.9), white);
-                edge.position.set((x1 + x2) / 2 + Math.cos(angle) * curve.w * 0.38, 0.045, (z1 + z2) / 2 - Math.sin(angle) * curve.w * 0.38);
+                edge.position.set(
+                    (x1 + x2) / 2 + Math.cos(angle) * curve.w * 0.38,
+                    midH + 0.05,
+                    (z1 + z2) / 2 - Math.sin(angle) * curve.w * 0.38
+                );
                 edge.rotation.y = angle;
+                edge.rotation.x = -tilt;
                 this.scene.add(edge);
             }
         });
@@ -314,6 +334,7 @@ export class WorldBuilder {
                     : 2 + ((Math.abs(gx) + Math.abs(gz) + seed) % 3);
 
                 const built = createRandomBuilding(cx, cz, floors, seed++);
+                built.group.position.y = this.getTerrainHeight(cx, cz);
                 this.scene.add(built.group);
                 this.colliders.push(built.collider);
                 this._markSite(cx, cz, built.collider.w, built.collider.d);
@@ -327,6 +348,7 @@ export class WorldBuilder {
         (this.data.buildings || []).forEach(b => {
             if (this._isOccupied(b.x, b.z)) return;
             const built = createServiceBuilding(b.x, b.z, b);
+            built.group.position.y = this.getTerrainHeight(b.x, b.z);
             this.scene.add(built.group);
             this.colliders.push(built.collider);
             this._markSite(b.x, b.z, built.collider.w, built.collider.d);
@@ -342,7 +364,8 @@ export class WorldBuilder {
 
     _hqTower(x, z) {
         const g = new THREE.Group();
-        g.position.set(x, 0, z);
+        const ty = this.getTerrainHeight(x, z);
+        g.position.set(x, ty, z);
 
         const base = toonMesh(new THREE.BoxGeometry(28, 18, 18), 0xf0ece4);
         base.mesh.position.y = 9;
@@ -401,8 +424,16 @@ export class WorldBuilder {
             }
         }
 
-        poleSpots.slice(0, 45).forEach(([x, z]) => this.scene.add(createUtilityPole(x, z)));
-        vendingSpots.slice(0, 28).forEach(([x, z], i) => this.scene.add(createVendingMachine(x, z, i)));
+        poleSpots.slice(0, 45).forEach(([x, z]) => {
+            const pole = createUtilityPole(x, z);
+            pole.position.y = this.getTerrainHeight(x, z);
+            this.scene.add(pole);
+        });
+        vendingSpots.slice(0, 28).forEach(([x, z], i) => {
+            const vm = createVendingMachine(x, z, i);
+            vm.position.y = this.getTerrainHeight(x, z);
+            this.scene.add(vm);
+        });
     }
 
     _pois() {
@@ -430,7 +461,8 @@ export class WorldBuilder {
 
     _addPOI(id, type, x, z, radius, title, subtitle, content, district = null) {
         const marker = new THREE.Group();
-        marker.position.set(x, 0, z);
+        const ty = this.getTerrainHeight(x, z);
+        marker.position.set(x, ty, z);
 
         const colors = {
             [POI_TYPES.HQ]: 0xe88870,
@@ -451,7 +483,7 @@ export class WorldBuilder {
 
         this.scene.add(marker);
         this.pois.push({
-            id, type, position: new THREE.Vector3(x, 0, z), radius,
+            id, type, position: new THREE.Vector3(x, ty, z), radius,
             title, subtitle, content, marker, district,
             mapLabel: title.length > 10 ? title.slice(0, 9) + '…' : title,
         });

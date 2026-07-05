@@ -29,9 +29,14 @@ const ALIEN_LINES = [
 const SHIRT_COLORS = [0xf0a040, 0x6a9ad8, 0xe88888, 0x88c8a0, 0xd8a0c8, 0xf0c878];
 
 export class CitizenManager {
-    constructor(scene) {
+    constructor(scene, terrain = null) {
         this.scene = scene;
+        this.terrain = terrain;
         this.citizens = [];
+    }
+
+    _groundY(x, z) {
+        return this.terrain ? this.terrain.getHeightAt(x, z) : WORLD.groundY;
     }
 
     spawn(teamMembers = [], buildings = []) {
@@ -60,7 +65,7 @@ export class CitizenManager {
 
         teamMembers.slice(0, 6).forEach((m, i) => {
             const mesh = createAlienAvatar({ variant: i });
-            mesh.position.set(-12 + i * 4, WORLD.groundY, WORLD.parkZ - 12 - i);
+            mesh.position.set(-12 + i * 4, this._groundY(-12 + i * 4, WORLD.parkZ - 12 - i), WORLD.parkZ - 12 - i);
             mesh.visible = false;
             mesh.add(createNameTag(m.name));
             this.scene.add(mesh);
@@ -105,7 +110,7 @@ export class CitizenManager {
             const mesh = createCommuterAvatar({
                 skinTone: [0xf0d0b0, 0xd8b898][i % 2],
             });
-            mesh.position.set(spot.x + (i % 2) * 2, WORLD.groundY, spot.z);
+            mesh.position.set(spot.x + (i % 2) * 2, this._groundY(spot.x, spot.z), spot.z);
             mesh.rotation.y = Math.PI / 2;
             mesh.add(createNameTag(HUMAN_NAMES[i % HUMAN_NAMES.length]));
             this.scene.add(mesh);
@@ -125,7 +130,7 @@ export class CitizenManager {
     _spawnWanderer() {
         const spot = { x: 58, z: 52 };
         const mesh = createWandererAvatar({ shirtColor: 0xf0a040, skinTone: 0xf0d0b0 });
-        mesh.position.set(spot.x, WORLD.groundY, spot.z);
+        mesh.position.set(spot.x, this._groundY(spot.x, spot.z), spot.z);
         mesh.rotation.y = -0.6;
         mesh.add(createNameTag('Kai'));
         this.scene.add(mesh);
@@ -171,7 +176,7 @@ export class CitizenManager {
                     skinTone: [0xf0d0b0, 0xc49a7a][i % 2],
                 });
 
-            mesh.position.set(b.hostX, WORLD.groundY, b.hostZ);
+            mesh.position.set(b.hostX, this._groundY(b.hostX, b.hostZ), b.hostZ);
             mesh.rotation.y = Math.atan2(b.x - b.hostX, b.z - b.hostZ);
             mesh.add(createNameTag(b.hostName));
             this.scene.add(mesh);
@@ -213,7 +218,7 @@ export class CitizenManager {
     }
 
     _placeCitizen(mesh, spot, name, type, line, phase, speed = null) {
-        mesh.position.set(spot.x, WORLD.groundY, spot.z);
+        mesh.position.set(spot.x, this._groundY(spot.x, spot.z), spot.z);
         mesh.add(createNameTag(name));
         this.scene.add(mesh);
         this.citizens.push({
@@ -296,8 +301,14 @@ export class CitizenManager {
                 c.goingToTarget = !c.goingToTarget;
             } else {
                 const step = c.speed * dt;
-                c.mesh.position.x += (dx / dist) * step;
-                c.mesh.position.z += (dz / dist) * step;
+                const nx = c.mesh.position.x + (dx / dist) * step;
+                const nz = c.mesh.position.z + (dz / dist) * step;
+                if (!this.terrain || this.terrain.canTraverse(c.mesh.position.x, c.mesh.position.z, c.mesh.position.y, nx, nz)) {
+                    c.mesh.position.x = nx;
+                    c.mesh.position.z = nz;
+                }
+                const ty = this._groundY(c.mesh.position.x, c.mesh.position.z);
+                c.mesh.position.y += (ty - c.mesh.position.y) * (1 - Math.exp(-8 * dt));
                 c.mesh.rotation.y = Math.atan2(dx, dz);
                 c.walkT += dt * 9;
 
