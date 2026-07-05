@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
-import { PLAYER } from './config.js';
+import { PLAYER, CITIZEN } from './config.js';
 import { toonMat } from './ToonStyle.js';
 
 /** Single rig per gender — Quaternius CC0 GLB with full locomotion + emote clips. */
@@ -14,7 +14,7 @@ export const MODEL_CATALOG = {
     },
     female: {
         file: 'models/quaternius_cc0-female-character-1350.glb',
-        targetHeight: 1.65,
+        targetHeight: CITIZEN.heightDefault,
         sizeMB: 1.2,
         slots: ['Skin', 'Eyes', 'Hair', 'Dress', 'Shoes'],
     },
@@ -226,13 +226,12 @@ function setupAnimator(root, clips) {
         const clip = findClip(clips, kind);
         if (clip) actions[kind] = mixer.clipAction(clip);
     });
-    if (!actions.idle && actions.stand) actions.idle = actions.stand;
-    if (!actions.stand && actions.idle) actions.stand = actions.idle;
-    const start = actions.idle ?? actions.stand ?? actions.walk
+    // Prefer relaxed idle — standing clips often raise arms (T-pose wave)
+    const start = actions.idle ?? actions.walk
+        ?? (clips.find(c => /idle/i.test(c.name)) ? mixer.clipAction(clips.find(c => /idle/i.test(c.name))) : null)
         ?? (clips[0] ? mixer.clipAction(clips[0]) : null);
     if (start) {
         actions.idle = actions.idle ?? start;
-        actions.stand = actions.stand ?? start;
         start.play();
     }
     return { mixer, actions, clips: clips.map(c => c.name) };
@@ -397,8 +396,10 @@ export function createCharacterInstance(type, modelKey, opts = {}) {
     const model = cloneSkinnedModel(cached.scene);
     root.add(model);
 
-    if (opts.targetHeight && Math.abs(opts.targetHeight - cached.targetHeight) > 0.01) {
-        model.scale.multiplyScalar(opts.targetHeight / cached.targetHeight);
+    const appliedHeight = opts.targetHeight ?? cached.targetHeight;
+    root.userData.targetHeight = appliedHeight;
+    if (Math.abs(appliedHeight - cached.targetHeight) > 0.01) {
+        model.scale.multiplyScalar(appliedHeight / cached.targetHeight);
     }
 
     const tint = opts.tint ?? (type === 'alien' ? ALIEN_TINTS[(opts.variant ?? 0) % ALIEN_TINTS.length] : null);
@@ -432,7 +433,7 @@ export function fadeCharacterAction(avatar, name, duration = 0.2) {
     const resolved = name === 'idle' ? 'idle' : name;
     const actions = avatar.userData.actions;
     if (!actions) return;
-    const next = actions[resolved] ?? actions.idle ?? actions.stand ?? actions.walk;
+    const next = actions[resolved] ?? actions.idle ?? actions.walk;
     if (!next) return;
     const prev = avatar.userData._activeAction;
     if (prev === next) return;

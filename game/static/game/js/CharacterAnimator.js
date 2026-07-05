@@ -15,7 +15,7 @@ export function setCharacterPose(avatar, state, fade = 0.18) {
     if (!isRiggedAvatar(avatar)) return false;
     const actions = avatar.userData.actions;
     const resolved = state === 'stand' ? 'idle' : state;
-    const next = actions[resolved] ?? actions.idle ?? actions.stand ?? actions.walk;
+    const next = actions[resolved] ?? actions.idle ?? actions.walk;
     if (!next) return false;
 
     const prev = avatar.userData._activeAction;

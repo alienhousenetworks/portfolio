@@ -14,8 +14,15 @@ export class TerrainSystem {
         this.wallColliders = [];
         this.stairMeshes = [];
         this.grassMaterials = [];
+        this.grassTufts = null;
         this.butterflies = [];
         this.time = 0;
+        this._grassPalette = [
+            new THREE.Color('#c8edd6'),
+            new THREE.Color('#b8e6c8'),
+            new THREE.Color('#d4f2e0'),
+            new THREE.Color('#a8dfc0'),
+        ];
         
         // Procedural rolling hills (submerged spheres matching the designs)
         this.hills = [
@@ -39,6 +46,7 @@ export class TerrainSystem {
         this._buildSteppingStones(scene);
         this._buildHedges(scene);
         this._buildWildflowers(scene);
+        this._buildGrassTufts(scene);
         this._buildButterflies(scene);
         return this;
     }
@@ -46,15 +54,13 @@ export class TerrainSystem {
     update(dt) {
         this.time += dt;
 
-        // 1. Realistic Lawn Color Cycling (breeze/lighting wave) - Light Sage/Matcha Shades
+        // Soft pastel lawn shimmer (breeze / afternoon light)
+        const [colA, colB, colC, colD] = this._grassPalette;
         this.grassMaterials.forEach(mat => {
             if (mat.color) {
-                const colA = new THREE.Color('#74c688');
-                const colB = new THREE.Color('#83d596');
-                const colC = new THREE.Color('#67b97b');
-                
-                const finalCol = new THREE.Color().lerpColors(colA, colB, (Math.sin(this.time * 0.5) + 1.0) / 2.0);
-                finalCol.lerp(colC, (Math.cos(this.time * 0.3) + 1.0) / 4.0);
+                const finalCol = new THREE.Color().lerpColors(colA, colB, (Math.sin(this.time * 0.45) + 1.0) / 2.0);
+                finalCol.lerp(colC, (Math.cos(this.time * 0.28) + 1.0) / 5.0);
+                finalCol.lerp(colD, (Math.sin(this.time * 0.18 + 1.2) + 1.0) / 8.0);
                 mat.color.copy(finalCol);
             }
         });
@@ -211,9 +217,12 @@ export class TerrainSystem {
         for (let i = 0; i < pos.count; i++) {
             const vx = pos.getX(i);
             const d = Math.abs(vx);
-            let colHex = '#74c688'; // Light Ghibli green
+            let colHex = '#b8e6c8';
             if (d < 45) {
-                colHex = '#f5eada'; // Light sand
+                colHex = '#f5efe4';
+            } else if (Math.random() < 0.35) {
+                const shades = ['#c8edd6', '#d4f2e0', '#a8dfc0'];
+                colHex = shades[Math.floor(Math.random() * shades.length)];
             }
             const c = new THREE.Color(colHex);
             colors.push(c.r, c.g, c.b);
@@ -243,10 +252,11 @@ export class TerrainSystem {
                 const vy = hp.getY(i) + h.hy;
                 
                 if (ny > 0.58 && vy > 0.25) {
-                    const c = new THREE.Color('#74c688');
+                    const shades = ['#b8e6c8', '#c8edd6', '#a8dfc0'];
+                    const c = new THREE.Color(shades[i % shades.length]);
                     hillColors.push(c.r, c.g, c.b);
                 } else {
-                    const c = new THREE.Color('#f5eada');
+                    const c = new THREE.Color('#f5efe4');
                     hillColors.push(c.r, c.g, c.b);
                 }
             }
@@ -298,7 +308,7 @@ export class TerrainSystem {
 
     _buildHedges(scene) {
         const hedgeMat = new THREE.MeshToonMaterial({
-            color: 0x5ea96a,
+            color: 0x8ecfa0,
             gradientMap: getGradientMap()
         });
 
@@ -318,6 +328,53 @@ export class TerrainSystem {
             hedge.receiveShadow = true;
             scene.add(hedge);
         });
+    }
+
+    _buildGrassTufts(scene) {
+        const bladeGeo = new THREE.PlaneGeometry(0.14, 0.42);
+        bladeGeo.translate(0, 0.21, 0);
+        const bladeMat = new THREE.MeshToonMaterial({
+            color: '#b8e6c8',
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.92,
+            gradientMap: getGradientMap(),
+        });
+        this.grassMaterials.push(bladeMat);
+
+        const count = 520;
+        const tufts = new THREE.InstancedMesh(bladeGeo, bladeMat, count);
+        const dummy = new THREE.Object3D();
+        const tuftColors = ['#c8edd6', '#b8e6c8', '#d4f2e0', '#a8dfc0', '#bce9d0'];
+
+        for (let i = 0; i < count; i++) {
+            const hill = this.hills[i % this.hills.length];
+            const angle = (i * 1.73) % (Math.PI * 2);
+            const r = (0.35 + (i % 7) * 0.08) * hill.r;
+            const x = hill.x + Math.cos(angle) * r;
+            const z = hill.z + Math.sin(angle) * r;
+            const y = this.getHeightAt(x, z);
+
+            dummy.position.set(x, y, z);
+            dummy.scale.set(
+                0.55 + (i % 4) * 0.12,
+                0.7 + (i % 5) * 0.1,
+                1
+            );
+            dummy.rotation.set(
+                (Math.random() - 0.5) * 0.25,
+                Math.random() * Math.PI * 2,
+                (Math.random() - 0.5) * 0.2
+            );
+            dummy.updateMatrix();
+            tufts.setMatrixAt(i, dummy.matrix);
+            tufts.setColorAt(i, new THREE.Color(tuftColors[i % tuftColors.length]));
+        }
+        tufts.instanceMatrix.needsUpdate = true;
+        if (tufts.instanceColor) tufts.instanceColor.needsUpdate = true;
+        tufts.receiveShadow = true;
+        scene.add(tufts);
+        this.grassTufts = tufts;
     }
 
     _buildWildflowers(scene) {

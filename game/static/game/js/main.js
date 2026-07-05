@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { WORLD, PALETTE } from './config.js';
+import { WORLD, PALETTE, PLAYER } from './config.js';
 import { preloadCharacterModels, hasCriticalModels, cycleOutfitPreset } from './CharacterModels.js';
 import { createHumanAvatar, createAlienAvatar, createUFO, createNameTag, playEmote } from './AvatarFactory.js';
 import { WorldBuilder } from './WorldBuilder.js';
@@ -95,7 +95,10 @@ class Game {
         const buildings = this.world?.buildings || this.data.buildings || [];
         this.citizens.spawn(this.data.team || [], buildings);
 
-        this.player = createHumanAvatar({ gender: 'male', modelKey: 'male', outfitPreset: 0 });
+        this.player = createHumanAvatar({
+            gender: 'male', modelKey: 'male', outfitPreset: 0,
+            targetHeight: PLAYER.height, variant: 0,
+        });
         this.player.visible = false;
         this.scene.add(this.player);
         this.chunks.markAlwaysVisible(this.player);
@@ -103,12 +106,15 @@ class Game {
         const welcome = this.data.welcome || {};
         this.welcomeHuman = createHumanAvatar({
             gender: 'male', modelKey: 'male', name: welcome.humanName, outfitPreset: 1,
+            targetHeight: PLAYER.height,
         });
         this.welcomeHuman.visible = false;
         this.welcomeHuman.add(createNameTag(welcome.humanName || 'Human Ambassador'));
         this.scene.add(this.welcomeHuman);
 
-        this.welcomeAlien = createAlienAvatar({ variant: 0, modelKey: 'female', name: welcome.alienName });
+        this.welcomeAlien = createAlienAvatar({
+            variant: 0, modelKey: 'female', name: welcome.alienName, targetHeight: PLAYER.height,
+        });
         this.welcomeAlien.visible = false;
         this.welcomeAlien.add(createNameTag(welcome.alienName || 'Alien Ambassador'));
         this.scene.add(this.welcomeAlien);

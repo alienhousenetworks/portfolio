@@ -7,6 +7,7 @@ import {
     getBodyKeyForGender,
     ALIEN_TINTS,
 } from './CharacterModels.js';
+import { CITIZEN, citizenHeight } from './config.js';
 import {
     setCharacterPose,
     updateLocomotionPose,
@@ -22,7 +23,8 @@ export const updateHumanAnimator = tickAnimator;
 /** Rigged GLB — idle / walk / run / emote / jump */
 export function createHumanAvatar(opts = {}) {
     const modelKey = opts.modelKey ?? getBodyKeyForGender(opts.gender ?? 'male');
-    const g = createCharacterInstance('human', modelKey, opts);
+    const targetHeight = opts.targetHeight ?? citizenHeight(opts.variant ?? 0);
+    const g = createCharacterInstance('human', modelKey, { ...opts, targetHeight });
     g.userData.isHuman = true;
     if (isRiggedAvatar(g)) setCharacterPose(g, 'idle', 0);
     return g;
@@ -32,9 +34,11 @@ export function createHumanAvatar(opts = {}) {
 export function createAlienAvatar(opts = {}) {
     const variant = opts.variant ?? 0;
     const modelKey = opts.modelKey ?? getBodyKeyForCitizen('', 'alien', variant);
+    const targetHeight = opts.targetHeight ?? citizenHeight(variant);
     const g = createCharacterInstance('alien', modelKey, {
         ...opts,
         variant,
+        targetHeight,
         tint: opts.tint ?? ALIEN_TINTS[variant % ALIEN_TINTS.length],
         tintStrength: opts.tintStrength ?? 0.42,
     });
@@ -104,7 +108,7 @@ export function createBicycle() {
     return bike;
 }
 
-export function createNameTag(name) {
+export function createNameTag(name, stature = CITIZEN.heightDefault) {
     const c = document.createElement('canvas');
     c.width = 256; c.height = 48;
     const ctx = c.getContext('2d');
@@ -115,8 +119,9 @@ export function createNameTag(name) {
     ctx.textAlign = 'center';
     ctx.fillText(name, 128, 30);
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true }));
-    sp.scale.set(2, 0.45, 1);
-    sp.position.y = 2.05;
+    const tagScale = stature / CITIZEN.heightDefault;
+    sp.scale.set(2 * tagScale, 0.45 * tagScale, 1);
+    sp.position.y = stature * 1.18;
     return sp;
 }
 
@@ -124,12 +129,8 @@ export function animateHumanWalk(avatar, _walkT, _intensity = 1) {
     if (isRiggedAvatar(avatar)) setCharacterPose(avatar, 'walk', 0.12);
 }
 
-export function animateWanderer(avatar, t) {
-    if (isRiggedAvatar(avatar) && Math.sin(t * 0.4) > 0.95) {
-        playEmote(avatar, 0.3);
-    } else {
-        setCharacterPose(avatar, 'idle', 0.3);
-    }
+export function animateWanderer(avatar, _t) {
+    if (isRiggedAvatar(avatar)) setCharacterPose(avatar, 'walk', 0.15);
 }
 
 export function animateCyclist(avatar, _t, speed = 1) {

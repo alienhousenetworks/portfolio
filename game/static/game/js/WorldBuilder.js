@@ -5,6 +5,7 @@ import { getZoneAt, propDensity } from './CityZones.js';
 import {
     createZoneBuilding, createServiceBuilding,
     createVendingMachine, createUtilityPole, createSchool,
+    createResidential, createTinyHome, createCafe, createJapaneseModern,
 } from './Buildings.js';
 import { toonMat, toonMesh, sketchLines, setupCityLighting, INK } from './ToonStyle.js';
 import {
@@ -45,10 +46,12 @@ export class WorldBuilder {
         this._districtZones();
         this._roadGrid();
         this._city();
+        this._cityInfill();
         this._landmarks();
         this._dbBuildings();
         this._parks();
         this._nature();
+        this._urbanGreenery();
         this._riverForest();
         this._urbanDetails();
         this._pois();
@@ -161,8 +164,8 @@ export class WorldBuilder {
         mesh.receiveShadow = true;
         this.scene.add(mesh);
 
-        // Subtle grass variation patches
-        for (let i = 0; i < 60; i++) {
+        // Subtle pastel grass variation patches
+        for (let i = 0; i < 90; i++) {
             const s = i * 17 + 3;
             const px = ((s * 41) % 580) - 290;
             const pz = ((s * 67) % 580) - 290;
@@ -1008,6 +1011,94 @@ export class WorldBuilder {
         }
     }
 
+    _cityInfill() {
+        const half = Math.floor((WORLD.size / 2 - 40) / WORLD.roadSpacing);
+        const infillTypes = [createTinyHome, createResidential, createCafe, createJapaneseModern];
+        let seed = 9000;
+
+        for (let gx = -half; gx <= half; gx++) {
+            for (let gz = -half; gz <= half; gz++) {
+                if ((gx + gz) % 3 !== 0) continue;
+
+                const cx = gx * WORLD.roadSpacing + WORLD.roadSpacing * 0.22;
+                const cz = gz * WORLD.roadSpacing + WORLD.roadSpacing * 0.78;
+
+                if (this._inPark(cx, cz, 18)) continue;
+                if (this._inRiver(cx, cz, 12)) continue;
+                if (Math.abs(cx) < 8 && Math.abs(cz) < 8) continue;
+                if (this._isOccupied(cx, cz)) continue;
+
+                const fn = infillTypes[seed % infillTypes.length];
+                const built = fn(cx, cz, seed++);
+                const ty = this.getTerrainHeight(cx, cz);
+                built.group.position.y = ty;
+                if (built.collider) built.collider.floorY = ty;
+                this._add(built.group, cx, cz);
+                this.colliders.push(built.collider);
+                this._markSite(cx, cz, built.collider.w * 0.85, built.collider.d * 0.85, built.collider.h || 0);
+            }
+        }
+
+        // Corner shops along main avenues
+        const avenueSpots = [
+            [-175, -175], [175, -175], [-175, 175], [175, 175],
+            [-175, 0], [175, 0], [0, -175], [0, 175],
+            [-125, -125], [125, 125], [-125, 125], [125, -125],
+        ];
+        avenueSpots.forEach(([cx, cz], i) => {
+            if (this._inRiver(cx, cz, 10) || this._isOccupied(cx, cz)) return;
+            const built = createZoneBuilding(cx, cz, 9100 + i, null);
+            const ty = this.getTerrainHeight(cx, cz);
+            built.group.position.y = ty;
+            if (built.collider) built.collider.floorY = ty;
+            this._add(built.group, cx, cz);
+            this.colliders.push(built.collider);
+            this._markSite(cx, cz, built.collider.w, built.collider.d, built.collider.h || 0);
+        });
+    }
+
+    _urbanGreenery() {
+        const half = Math.floor((WORLD.size / 2 - 50) / WORLD.roadSpacing);
+        for (let gx = -half; gx <= half; gx += 2) {
+            for (let gz = -half; gz <= half; gz += 2) {
+                const cx = gx * WORLD.roadSpacing + 6;
+                const cz = gz * WORLD.roadSpacing - 6;
+                if (this._inRiver(cx, cz, 8) || this._inPark(cx, cz, 10)) continue;
+                if (this._isOccupied(cx, cz)) continue;
+
+                if ((gx * 3 + gz) % 5 === 0) {
+                    const tree = (gx + gz) % 4 === 0 ? createCherryTree() : createLargeTree(gx + gz);
+                    tree.position.set(cx, this.getTerrainHeight(cx, cz), cz);
+                    this.scene.add(tree);
+                }
+
+                if ((gx + gz) % 7 === 0) {
+                    const bush = toonMesh(new THREE.SphereGeometry(0.9, 8, 8), PALETTE.grassLight);
+                    bush.mesh.position.set(cx + 3, this.getTerrainHeight(cx + 3, cz) + 0.45, cz + 2);
+                    bush.mesh.scale.set(1.2, 0.65, 1.1);
+                    this.scene.add(bush.group);
+                }
+            }
+        }
+
+        // Pastel lawn pads between districts
+        for (let i = 0; i < 24; i++) {
+            const angle = (i / 24) * Math.PI * 2;
+            const r = 95 + (i % 4) * 18;
+            const lx = Math.cos(angle) * r;
+            const lz = Math.sin(angle) * r;
+            if (this._inRiver(lx, lz, 12)) continue;
+            const patch = toonMesh(
+                new THREE.CircleGeometry(8 + (i % 3) * 2, 16),
+                i % 2 === 0 ? PALETTE.grassLight : PALETTE.grass,
+                { transparent: true, opacity: 0.55, outline: false }
+            );
+            patch.mesh.rotation.x = -Math.PI / 2;
+            patch.mesh.position.set(lx, this.getTerrainHeight(lx, lz) + 0.02, lz);
+            this.scene.add(patch.group);
+        }
+    }
+
     // ── Landmarks ───────────────────────────────────────────────────────────
 
     _landmarks() {
@@ -1077,7 +1168,7 @@ export class WorldBuilder {
         this._add(fountain, WORLD.parkX, WORLD.parkZ);
 
         // Ring of mixed trees
-        for (let a = 0; a < 14; a++) {
+        for (let a = 0; a < 22; a++) {
             const angle = (a / 14) * Math.PI * 2;
             const r = 14 + (a % 4) * 4;
             const tx = WORLD.parkX + Math.cos(angle) * r;
@@ -1150,7 +1241,7 @@ export class WorldBuilder {
         }
 
         // Scattered trees in residential hills
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < 45; i++) {
             const s = i * 19 + 5;
             const x = ((s * 43) % 280) - 140;
             const z = ((s * 71) % 280) - 140;

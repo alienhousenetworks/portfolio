@@ -1,10 +1,10 @@
 import * as THREE from 'three';
-import { WORLD } from './config.js';
+import { WORLD, citizenHeight } from './config.js';
 import {
     createHumanAvatar, createAlienAvatar, createNameTag,
     createStudentAvatar, createCommuterAvatar, createWandererAvatar, createCyclistAvatar,
     setCharacterPose, tickAnimator, updateLocomotionPose,
-    animateWanderer, animateCyclist, playEmote,
+    animateCyclist,
 } from './AvatarFactory.js';
 import { isRiggedAvatar } from './CharacterAnimator.js';
 import { getBodyKeyForCitizen } from './CharacterModels.js';
@@ -105,41 +105,33 @@ export class CitizenManager {
 
     _spawnCommuters() {
         const platforms = [
-            { x: -80, z: -80 }, { x: -80, z: 120 }, { x: 80, z: -60 }, { x: 80, z: 140 },
+            { x: -80, z: -80, rx: -72, rz: -80 },
+            { x: -80, z: 120, rx: -72, rz: 120 },
+            { x: 80, z: -60, rx: 72, rz: -60 },
+            { x: 80, z: 140, rx: 72, rz: 140 },
         ];
         platforms.forEach((spot, i) => {
             const name = HUMAN_NAMES[i % HUMAN_NAMES.length];
-            const mesh = createCommuterAvatar({ variant: i, name });
-            mesh.position.set(spot.x + (i % 2) * 2, this._groundY(spot.x, spot.z), spot.z);
-            mesh.rotation.y = Math.PI / 2;
-            mesh.add(createNameTag(name));
-            this.scene.add(mesh);
-            this.citizens.push({
-                mesh,
-                name,
-                type: 'commuter',
-                subtitle: 'COMMUTER',
-                line: 'Waiting for the metro. Just checking messages.',
-                speed: 0,
-                phase: i,
-                isCommuter: true,
-            });
+            const stature = citizenHeight(i);
+            const mesh = createCommuterAvatar({ variant: i, name, targetHeight: stature });
+            this._placeCitizen(
+                mesh, spot, name, 'commuter',
+                'Walking the platform while waiting for the metro.',
+                i * 0.5, 0.85 + (i % 3) * 0.15
+            );
+            this.citizens[this.citizens.length - 1].isCommuter = true;
         });
     }
 
     _spawnWanderer() {
-        const spot = { x: 58, z: 52 };
-        const mesh = createWandererAvatar({ variant: 2 });
-        mesh.position.set(spot.x, this._groundY(spot.x, spot.z), spot.z);
-        mesh.rotation.y = -0.6;
-        mesh.add(createNameTag('Kai'));
-        this.scene.add(mesh);
-        this.citizens.push({
-            mesh, name: 'Kai', type: 'wanderer',
-            subtitle: 'WANDERER',
-            line: 'Nothing like a cold soda on a breezy afternoon.',
-            speed: 0, phase: 0, isWanderer: true, wanderT: 0,
-        });
+        const spot = { x: 58, z: 52, rx: 48, rz: 62 };
+        const mesh = createWandererAvatar({ variant: 2, targetHeight: citizenHeight(2) });
+        this._placeCitizen(
+            mesh, spot, 'Kai', 'wanderer',
+            'Nothing like a cold soda on a breezy afternoon.',
+            0, 0.75
+        );
+        this.citizens[this.citizens.length - 1].isWanderer = true;
     }
 
     _spawnParkLife() {
@@ -152,14 +144,14 @@ export class CitizenManager {
             const name = ['Sora', 'Hana', 'Ren'][i];
             const modelKey = getBodyKeyForCitizen(name, 'human', i);
             const mesh = createHumanAvatar({ variant: i + 1, modelKey, gender: modelKey, name });
-            mesh.position.set(spot.x, this._groundY(spot.x, spot.z), spot.z);
-            mesh.add(createNameTag(name));
-            this.scene.add(mesh);
-            this.citizens.push({
-                mesh, name, type: 'human',
-                subtitle: 'PARK VISITOR', line: spot.line,
-                speed: 0, phase: i, isParkVisitor: true,
-            });
+            const walkSpot = {
+                x: spot.x, z: spot.z,
+                rx: spot.x + (i % 2 === 0 ? 6 : -6),
+                rz: spot.z + (i % 2 === 0 ? -4 : 4),
+            };
+            this._placeCitizen(mesh, walkSpot, name, 'human', spot.line, i, 0.7 + i * 0.1);
+            this.citizens[this.citizens.length - 1].isParkVisitor = true;
+            this.citizens[this.citizens.length - 1].subtitle = 'PARK VISITOR';
         });
     }
 
@@ -192,29 +184,26 @@ export class CitizenManager {
                 ? createAlienAvatar({ variant: i, modelKey, name: b.hostName })
                 : createHumanAvatar({ variant: i, modelKey, gender: modelKey, name: b.hostName });
 
-            mesh.position.set(b.hostX, this._groundY(b.hostX, b.hostZ), b.hostZ);
-            mesh.rotation.y = Math.atan2(b.x - b.hostX, b.z - b.hostZ);
-            mesh.add(createNameTag(b.hostName));
-            this.scene.add(mesh);
-
-            this.citizens.push({
-                mesh,
-                name: b.hostName,
-                type: isAlien ? 'alien' : 'human',
-                subtitle: b.subtitle || 'BUILDING HOST',
-                line: b.hostLine || b.shortDescription || '',
-                panelContent: b.panelContent || b.content || b.description || '',
-                panelTitle: b.title,
-                isHost: true,
-                buildingId: b.id,
-                buildingTitle: b.title,
-                speed: 0,
-                homeX: b.hostX,
-                homeZ: b.hostZ,
-                targetX: b.hostX,
-                targetZ: b.hostZ,
-                phase: i,
-            });
+            const hostAngle = Math.atan2(b.x - b.hostX, b.z - b.hostZ);
+            const patrol = {
+                x: b.hostX,
+                z: b.hostZ,
+                rx: b.hostX + Math.sin(hostAngle) * 3,
+                rz: b.hostZ + Math.cos(hostAngle) * 3,
+            };
+            this._placeCitizen(
+                mesh, patrol, b.hostName, isAlien ? 'alien' : 'human',
+                b.hostLine || b.shortDescription || '',
+                i, 0.55
+            );
+            const entry = this.citizens[this.citizens.length - 1];
+            entry.subtitle = b.subtitle || 'BUILDING HOST';
+            entry.panelContent = b.panelContent || b.content || b.description || '';
+            entry.panelTitle = b.title;
+            entry.isHost = true;
+            entry.buildingId = b.id;
+            entry.buildingTitle = b.title;
+            entry.mesh.rotation.y = hostAngle;
         });
     }
 
@@ -237,14 +226,18 @@ export class CitizenManager {
         mesh.position.set(spot.x, this._groundY(spot.x, spot.z), spot.z);
         mesh.visible = true;
         mesh.traverse(child => { child.visible = true; });
-        mesh.add(createNameTag(name));
+        const stature = mesh.userData.targetHeight ?? citizenHeight(phase);
+        mesh.userData.targetHeight = stature;
+        mesh.add(createNameTag(name, stature));
         this.scene.add(mesh);
         this.citizens.push({
             mesh, name, type,
             subtitle: type === 'human' ? 'HUMAN CITIZEN'
                 : type === 'student' ? 'STUDENT'
                     : type === 'cyclist' ? 'CYCLIST'
-                        : type === 'alien' ? 'ALIEN CITIZEN' : 'CITIZEN',
+                        : type === 'commuter' ? 'COMMUTER'
+                            : type === 'wanderer' ? 'WANDERER'
+                                : type === 'alien' ? 'ALIEN CITIZEN' : 'CITIZEN',
             line,
             homeX: spot.x, homeZ: spot.z,
             targetX: spot.rx, targetZ: spot.rz,
@@ -302,13 +295,13 @@ export class CitizenManager {
         this.citizens.filter(c => !c.isTeam || c.mesh.visible).forEach(c => {
             tickAnimator(c.mesh, dt);
 
-            if (c.isTeam || c.isHost || c.isParkVisitor || c.speed === 0) {
-                if (c.isWanderer) {
-                    c.wanderT = (c.wanderT || 0) + dt;
-                    animateWanderer(c.mesh, c.wanderT);
-                } else if (isRiggedAvatar(c.mesh)) {
-                    setCharacterPose(c.mesh, 'idle', 0.2);
-                }
+            if (c.isTeam) {
+                if (isRiggedAvatar(c.mesh)) setCharacterPose(c.mesh, 'idle', 0.2);
+                return;
+            }
+
+            if (c.speed === 0) {
+                if (isRiggedAvatar(c.mesh)) setCharacterPose(c.mesh, 'idle', 0.2);
                 return;
             }
 
@@ -322,10 +315,7 @@ export class CitizenManager {
 
             if (dist < 1) {
                 c.goingToTarget = !c.goingToTarget;
-                if (isRiggedAvatar(c.mesh)) {
-                    if (Math.random() < 0.15) playEmote(c.mesh, 0.25);
-                    else setCharacterPose(c.mesh, 'idle', 0.2);
-                }
+                if (isRiggedAvatar(c.mesh)) setCharacterPose(c.mesh, 'idle', 0.2);
             } else {
                 const step = c.speed * dt;
                 const nx = c.mesh.position.x + (dx / dist) * step;

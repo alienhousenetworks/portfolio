@@ -13,9 +13,21 @@ export const WORLD = {
     mountainY: 0,
 };
 
+/** NPC / citizen stature — compact scale for the toon city */
+export const CITIZEN = {
+    heightMin: 0.8,
+    heightMax: 0.9,
+    heightDefault: 0.85,
+};
+
+export function citizenHeight(variant = 0) {
+    const span = CITIZEN.heightMax - CITIZEN.heightMin;
+    return CITIZEN.heightMin + ((variant % 5) / 4) * span;
+}
+
 export const PLAYER = {
-    height: 1.75,
-    radius: 0.38,
+    height: CITIZEN.heightDefault,
+    radius: 0.22,
     walkSpeed: 7,
     runSpeed: 13,
     maxStepHeight: 1.2,   // max height player can auto-step onto a block top
@@ -37,8 +49,8 @@ export const CAMERA = {
     maxPitch: 1.35,
     yawSpeed: 0.004,
     pitchSpeed: 0.003,
-    lookHeight: 1.5,
-    heightBoost: 1.2,
+    lookHeight: 0.78,
+    heightBoost: 0.65,
     positionDamp: 10,
 };
 
@@ -50,12 +62,12 @@ export const PALETTE = {
     skyHorizon: 0xB5F1F9,
     fog: 0xB5F1F9,
 
-    // Ground & nature (Anime-inspired greens)
-    grass: 0x8CC97D,
-    grassLight: 0xA4D68B,
-    grassDark: 0x79B36A,
-    grassHighland: 0x79B36A,
-    embankment: 0x8CC97D,
+    // Ground & nature (soft pastel lawn)
+    grass: 0xB8E6C8,
+    grassLight: 0xC8EDD6,
+    grassDark: 0xA8DFC0,
+    grassHighland: 0xB0E4CC,
+    embankment: 0xB8E6C8,
     sand: 0xECE9E1,
     dirt: 0xB98A67,
 
