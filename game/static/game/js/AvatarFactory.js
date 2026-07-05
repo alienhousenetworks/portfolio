@@ -1,19 +1,9 @@
 import * as THREE from 'three';
 import { PALETTE } from './config.js';
+import { toonMat, toonMesh } from './ToonStyle.js';
 
 function std(color, opts = {}) {
-    const params = {
-        color,
-        roughness: opts.roughness ?? 0.8,
-        metalness: opts.metalness ?? 0,
-        transparent: opts.transparent ?? false,
-        opacity: opts.opacity ?? 1,
-    };
-    if (opts.emissive != null) {
-        params.emissive = opts.emissive;
-        params.emissiveIntensity = opts.emissiveIntensity ?? 0.1;
-    }
-    return new THREE.MeshStandardMaterial(params);
+    return toonMat(color, opts);
 }
 
 function limb(name, geo, mat, parent, pos, rot = [0, 0, 0]) {
@@ -28,113 +18,214 @@ function limb(name, geo, mat, parent, pos, rot = [0, 0, 0]) {
     return pivot;
 }
 
-export function createHumanAvatar(opts = {}) {
-    const g = new THREE.Group();
-    const skin = std(opts.skinTone ?? PALETTE.humanSkin, { roughness: 0.75 });
+function buildHumanBase(g, opts = {}) {
+    const skin = std(opts.skinTone ?? PALETTE.humanSkin);
     const skinDark = std(
-        new THREE.Color(opts.skinTone ?? PALETTE.humanSkin).multiplyScalar(0.85).getHex(),
-        { roughness: 0.8 }
+        new THREE.Color(opts.skinTone ?? PALETTE.humanSkin).multiplyScalar(0.85).getHex()
     );
-    const shirt = std(opts.shirtColor ?? 0x3a5a8a, { roughness: 0.9 });
-    const pants = std(opts.pantsColor ?? 0x2e3340, { roughness: 0.95 });
-    const shoe = std(0x1a1a22, { roughness: 0.7 });
-    const hairCol = std(opts.hairColor ?? 0x2a2018, { roughness: 0.95 });
+    const shirt = std(opts.shirtColor ?? 0x3a5a8a);
+    const pants = std(opts.pantsColor ?? 0x2e3340);
+    const shoe = std(0x1a1a22);
+    const hairCol = std(opts.hairColor ?? 0x2a2018);
 
-    const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.22, 0.42, 6, 10), shirt);
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.5, 0.22), shirt);
     torso.position.y = 1.18;
     torso.castShadow = true;
     g.add(torso);
 
-    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, 0.12, 8), skin);
-    neck.position.y = 1.52;
+    const neck = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.1), skin);
+    neck.position.y = 1.48;
     g.add(neck);
 
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.19, 16, 14), skin);
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.32, 0.28), skin);
     head.position.y = 1.68;
-    head.scale.set(1, 1.05, 0.95);
     head.castShadow = true;
     g.add(head);
 
-    const hair = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 10, 0, Math.PI * 2, 0, Math.PI * 0.55), hairCol);
-    hair.position.set(0, 1.78, -0.02);
-    hair.scale.set(1.02, 0.85, 1);
+    const hair = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.14, 0.3), hairCol);
+    hair.position.set(0, 1.86, -0.02);
     g.add(hair);
 
-    const eyeWhite = std(0xf5f5f0);
-    const eyePupil = std(0x1a1a2a);
-    [-0.06, 0.06].forEach(x => {
-        const ew = new THREE.Mesh(new THREE.SphereGeometry(0.028, 8, 8), eyeWhite);
-        ew.position.set(x, 1.7, 0.16);
+    [-0.07, 0.07].forEach(x => {
+        const ew = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.04, 0.02), std(0xf5f5f0));
+        ew.position.set(x, 1.7, 0.14);
         g.add(ew);
-        const ep = new THREE.Mesh(new THREE.SphereGeometry(0.014, 6, 6), eyePupil);
-        ep.position.set(x, 1.7, 0.185);
+        const ep = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.03, 0.02), std(0x1a1a2a));
+        ep.position.set(x, 1.7, 0.155);
         g.add(ep);
     });
 
-    const legMat = pants;
-    const legL = limb('legL', new THREE.CapsuleGeometry(0.09, 0.38, 4, 8), legMat, g, [-0.11, 0.88, 0]);
-    legL.children[0].position.y = -0.22;
-    const calfL = new THREE.Mesh(new THREE.CapsuleGeometry(0.08, 0.32, 4, 8), legMat);
-    calfL.position.set(0, -0.48, 0);
-    calfL.name = 'calfL';
-    legL.add(calfL);
-    const footL = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.08, 0.22), shoe);
-    footL.position.set(0, -0.72, 0.04);
+    const legL = limb('legL', new THREE.BoxGeometry(0.12, 0.42, 0.12), pants, g, [-0.1, 0.88, 0]);
+    legL.children[0].position.y = -0.2;
+    const footL = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.08, 0.2), shoe);
+    footL.position.set(0, -0.42, 0.04);
     legL.add(footL);
 
-    const legR = limb('legR', new THREE.CapsuleGeometry(0.09, 0.38, 4, 8), legMat, g, [0.11, 0.88, 0]);
-    legR.children[0].position.y = -0.22;
-    const calfR = calfL.clone();
-    calfR.name = 'calfR';
-    legR.add(calfR);
+    const legR = limb('legR', new THREE.BoxGeometry(0.12, 0.42, 0.12), pants, g, [0.1, 0.88, 0]);
+    legR.children[0].position.y = -0.2;
     const footR = footL.clone();
     legR.add(footR);
 
-    const armL = limb('armL', new THREE.CapsuleGeometry(0.07, 0.28, 4, 8), shirt, g, [-0.3, 1.22, 0], [0, 0, 0.15]);
-    armL.children[0].position.y = -0.16;
-    const foreL = new THREE.Mesh(new THREE.CapsuleGeometry(0.06, 0.26, 4, 8), skinDark);
-    foreL.position.set(0, -0.42, 0);
+    const armL = limb('armL', new THREE.BoxGeometry(0.1, 0.3, 0.1), shirt, g, [-0.26, 1.22, 0], [0, 0, 0.12]);
+    armL.children[0].position.y = -0.14;
+    const foreL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.24, 0.08), skinDark);
+    foreL.position.set(0, -0.36, 0);
     foreL.name = 'foreL';
     armL.add(foreL);
-    const handL = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), skin);
-    handL.position.set(0, -0.58, 0);
-    armL.add(handL);
 
-    const armR = limb('armR', new THREE.CapsuleGeometry(0.07, 0.28, 4, 8), shirt, g, [0.3, 1.22, 0], [0, 0, -0.15]);
-    armR.children[0].position.y = -0.16;
+    const armR = limb('armR', new THREE.BoxGeometry(0.1, 0.3, 0.1), shirt, g, [0.26, 1.22, 0], [0, 0, -0.12]);
+    armR.children[0].position.y = -0.14;
     const foreR = foreL.clone();
     foreR.name = 'foreR';
     armR.add(foreR);
-    const handR = handL.clone();
-    armR.add(handR);
 
     g.userData.walkParts = ['legL', 'legR', 'armL', 'armR'];
     g.userData.isHuman = true;
     return g;
 }
 
+export function createHumanAvatar(opts = {}) {
+    return buildHumanBase(new THREE.Group(), opts);
+}
+
+export function createStudentAvatar(opts = {}) {
+    const g = buildHumanBase(new THREE.Group(), {
+        shirtColor: PALETTE.uniformNavy,
+        pantsColor: 0x2a3040,
+        skinTone: opts.skinTone ?? PALETTE.humanSkin,
+        ...opts,
+    });
+
+    const blazer = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.52, 0.24), std(PALETTE.uniformNavy));
+    blazer.position.y = 1.18;
+    g.add(blazer);
+
+    const collar = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.08, 0.26), std(0xffffff));
+    collar.position.set(0, 1.38, 0.02);
+    g.add(collar);
+
+    const satchel = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.32, 0.12), std(0x6a4a30));
+    satchel.position.set(0.22, 1.0, 0.08);
+    satchel.rotation.y = -0.3;
+    g.add(satchel);
+    g.userData.hasSatchel = true;
+
+    return g;
+}
+
+export function createCommuterAvatar(opts = {}) {
+    const g = buildHumanBase(new THREE.Group(), {
+        shirtColor: 0x4a5a6a,
+        pantsColor: 0x3a3a48,
+        skinTone: opts.skinTone ?? PALETTE.humanSkin,
+        ...opts,
+    });
+
+    const coat = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.9, 0.28), std(PALETTE.trench));
+    coat.position.y = 1.05;
+    g.add(coat);
+
+    const phone = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.14, 0.04), std(0x3a4a5a, { emissive: 0x6a9ad8, emissiveIntensity: 0.2 }));
+    phone.position.set(0.18, 1.05, 0.18);
+    phone.rotation.x = -0.4;
+    g.add(phone);
+
+    g.userData.isCommuter = true;
+    g.userData.walkParts = [];
+    return g;
+}
+
+export function createWandererAvatar(opts = {}) {
+    const g = buildHumanBase(new THREE.Group(), {
+        shirtColor: opts.shirtColor ?? 0xf0a040,
+        pantsColor: 0x4a5a6a,
+        skinTone: opts.skinTone ?? PALETTE.humanSkin,
+        ...opts,
+    });
+
+    const headphones = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.12, 0.3), std(0x3a3a48));
+    headphones.position.set(0, 1.82, 0);
+    g.add(headphones);
+
+    const band = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.2, 0.06), std(0x3a3a48));
+    band.position.set(0, 1.95, 0);
+    g.add(band);
+
+    g.userData.isWanderer = true;
+    g.userData.canPhase = 0;
+    return g;
+}
+
+export function createBicycle() {
+    const bike = new THREE.Group();
+    bike.name = 'bicycle';
+
+    const frame = toonMesh(new THREE.BoxGeometry(0.08, 0.5, 0.6), 0x6a7a88);
+    frame.mesh.position.set(0, 0.65, 0);
+    frame.mesh.rotation.x = 0.4;
+    bike.add(frame.group);
+
+    const bar = toonMesh(new THREE.BoxGeometry(0.5, 0.06, 0.06), 0x6a7a88);
+    bar.mesh.position.set(0, 0.95, 0.15);
+    bar.mesh.rotation.y = 0.3;
+    bike.add(bar.group);
+
+    const seat = toonMesh(new THREE.BoxGeometry(0.18, 0.06, 0.1), 0x2a2a2a);
+    seat.mesh.position.set(-0.1, 0.88, -0.15);
+    bike.add(seat.group);
+
+    const basket = toonMesh(new THREE.BoxGeometry(0.35, 0.25, 0.3), 0xc8a878);
+    basket.mesh.position.set(0, 0.95, 0.45);
+    bike.add(basket.group);
+
+    const wheelGeo = new THREE.TorusGeometry(0.28, 0.04, 6, 12);
+    [-0.35, 0.35].forEach(z => {
+        const w = toonMesh(wheelGeo, 0x2a2a2a);
+        w.mesh.rotation.y = Math.PI / 2;
+        w.mesh.position.set(0, 0.28, z);
+        bike.add(w.group);
+    });
+
+    return bike;
+}
+
+export function createCyclistAvatar(opts = {}) {
+    const g = buildHumanBase(new THREE.Group(), {
+        shirtColor: opts.shirtColor ?? 0xe8a0a0,
+        pantsColor: 0x4a5a68,
+        skinTone: opts.skinTone ?? PALETTE.humanSkin,
+        ...opts,
+    });
+    g.position.y = 0.35;
+
+    const bike = createBicycle();
+    g.add(bike);
+    g.userData.isCyclist = true;
+    g.userData.bike = bike;
+    return g;
+}
+
 export function createAlienAvatar(opts = {}) {
     const g = new THREE.Group();
-    const skin = std(opts.skinTone ?? PALETTE.alienSkin, { roughness: 0.6 });
-    const robe = std([0x2a4a3a, 0x3a2a4a, 0x2a3a4a, 0x4a3a2a][(opts.variant ?? 0) % 4]);
+    const skin = std(opts.skinTone ?? PALETTE.alienSkin);
+    const robe = std([0x4a6a5a, 0x5a4a6a, 0x4a5a6a, 0x6a5a4a][(opts.variant ?? 0) % 4]);
 
-    const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.25, 0.6, 4, 8), skin);
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.7, 0.3), skin);
     body.position.y = 1.0;
     g.add(body);
 
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.24, 12, 12), skin);
-    head.position.y = 1.65;
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.36, 0.32), skin);
+    head.position.y = 1.62;
     g.add(head);
 
-    const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), std(0x111122));
-    eyeL.position.set(-0.09, 1.68, 0.18);
-    g.add(eyeL);
-    const eyeR = eyeL.clone();
-    eyeR.position.x = 0.09;
-    g.add(eyeR);
+    [-0.09, 0.09].forEach(x => {
+        const eye = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.1, 0.04), std(0x111122));
+        eye.position.set(x, 1.65, 0.16);
+        g.add(eye);
+    });
 
-    const robeMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.45, 0.6, 10), robe);
-    robeMesh.position.y = 0.7;
+    const robeMesh = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.55, 0.4), robe);
+    robeMesh.position.y = 0.72;
     g.add(robeMesh);
 
     g.userData.walkParts = [];
@@ -143,14 +234,14 @@ export function createAlienAvatar(opts = {}) {
 
 export function createUFO() {
     const ufo = new THREE.Group();
-    const metal = std(0xb0b8c0, { metalness: 0.7, roughness: 0.3 });
+    const metal = std(0xc0c8d0, { emissive: 0x8898a8, emissiveIntensity: 0.05 });
 
     const hull = new THREE.Mesh(new THREE.CylinderGeometry(3.5, 4, 0.5, 32), metal);
     ufo.add(hull);
 
     const rim = new THREE.Mesh(
         new THREE.TorusGeometry(3.8, 0.12, 8, 32),
-        std(0x00cc44, { emissive: 0x00cc44, emissiveIntensity: 0.25, metalness: 0.5 })
+        std(0xe88870, { emissive: 0xe88870, emissiveIntensity: 0.2 })
     );
     rim.rotation.x = Math.PI / 2;
     rim.position.y = -0.1;
@@ -159,12 +250,12 @@ export function createUFO() {
 
     const dome = new THREE.Mesh(
         new THREE.SphereGeometry(1.3, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2),
-        std(0x88bbdd, { metalness: 0.5, roughness: 0.2, transparent: true, opacity: 0.7 })
+        std(0xa8c8e0, { transparent: true, opacity: 0.75 })
     );
     dome.position.y = 0.3;
     ufo.add(dome);
 
-    const thruster = new THREE.PointLight(0x66ffaa, 2, 40);
+    const thruster = new THREE.PointLight(0xa8e8c8, 2, 40);
     thruster.position.y = -1.5;
     thruster.name = 'thrusterLight';
     ufo.add(thruster);
@@ -190,7 +281,7 @@ export function createNameTag(name) {
     const c = document.createElement('canvas');
     c.width = 256; c.height = 48;
     const ctx = c.getContext('2d');
-    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillStyle = 'rgba(26,26,34,0.7)';
     ctx.fillRect(0, 0, 256, 48);
     ctx.font = 'bold 18px sans-serif';
     ctx.fillStyle = '#fff';
@@ -209,8 +300,6 @@ export function animateHumanWalk(avatar, walkT, intensity = 1) {
         const s = Math.sin(walkT + i * Math.PI * 0.5) * 0.55 * intensity;
         if (partName.includes('leg')) {
             p.rotation.x = s;
-            const calf = p.getObjectByName(partName === 'legL' ? 'calfL' : 'calfR');
-            if (calf) calf.rotation.x = Math.max(0, -s * 0.6);
         }
         if (partName.includes('arm')) {
             p.rotation.x = -s * 0.45;
@@ -218,4 +307,30 @@ export function animateHumanWalk(avatar, walkT, intensity = 1) {
             if (fore) fore.rotation.x = -s * 0.2;
         }
     });
+}
+
+export function animateWanderer(avatar, t) {
+    const foreR = avatar.getObjectByName('armR')?.getObjectByName('foreR');
+    if (foreR) {
+        foreR.rotation.x = -0.8 + Math.sin(t * 2) * 0.3;
+        foreR.position.y = -0.3 + Math.abs(Math.sin(t * 3)) * 0.15;
+    }
+}
+
+export function animateCyclist(avatar, t, speed = 1) {
+    const legs = ['legL', 'legR'];
+    legs.forEach((name, i) => {
+        const p = avatar.getObjectByName(name);
+        if (p) p.rotation.x = Math.sin(t * 6 * speed + i) * 0.35;
+    });
+    const bike = avatar.userData.bike;
+    if (bike) {
+        bike.children.forEach((child, i) => {
+            if (child.name === 'bicycle' || i > 2) {
+                child.children.forEach(w => {
+                    if (w.rotation) w.rotation.z += speed * 0.08;
+                });
+            }
+        });
+    }
 }

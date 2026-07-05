@@ -83,8 +83,10 @@ class Game {
         this.renderer.setSize(innerWidth, innerHeight);
         this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
         this.renderer.shadowMap.enabled = true;
-        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        this.renderer.shadowMap.type = THREE.BasicShadowMap;
         this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        this.renderer.toneMappingExposure = 1.05;
         el.appendChild(this.renderer.domElement);
 
         this.camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.5, 800);
@@ -289,8 +291,12 @@ class Game {
         const w = c.width, h = c.height, sc = w / 400;
         const cx = w / 2, cy = h / 2;
 
-        ctx.fillStyle = '#1e2a1e';
+        ctx.fillStyle = '#c8d8c0';
         ctx.fillRect(0, 0, w, h);
+
+        const rcx = cx + WORLD.riverX * sc;
+        ctx.fillStyle = '#a8dcc8';
+        ctx.fillRect(rcx - WORLD.riverWidth * sc / 2, 0, WORLD.riverWidth * sc, h);
 
         ctx.strokeStyle = 'rgba(255,255,255,0.06)';
         ctx.lineWidth = 1;

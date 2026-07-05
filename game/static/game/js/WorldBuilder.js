@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { WORLD, PALETTE, POI_TYPES } from './config.js';
 import { DISTRICT_DEFS } from './Districts.js';
-import { createRandomBuilding, createServiceBuilding } from './Buildings.js';
+import { createRandomBuilding, createServiceBuilding, createVendingMachine, createUtilityPole } from './Buildings.js';
+import { toonMat, toonMesh, sketchLines, INK } from './ToonStyle.js';
 
 export class WorldBuilder {
     constructor(scene, gameData) {
@@ -16,12 +17,15 @@ export class WorldBuilder {
         this._sky();
         this._lights();
         this._ground();
+        this._mountains();
+        this._river();
+        this._bridges();
         this._districtZones();
         this._roadGrid();
         this._city();
         this._dbBuildings();
         this._park();
-        this._palms();
+        this._urbanDetails();
         this._pois();
         return { pois: this.pois, colliders: this.colliders, buildings: this.data.buildings || [] };
     }
@@ -32,6 +36,10 @@ export class WorldBuilder {
         const dx = x - WORLD.parkX;
         const dz = z - WORLD.parkZ;
         return Math.sqrt(dx * dx + dz * dz) < WORLD.parkRadius + margin;
+    }
+
+    _inRiver(x, z, margin = 0) {
+        return Math.abs(x - WORLD.riverX) < WORLD.riverWidth / 2 + margin;
     }
 
     _markSite(x, z, w = 24, d = 24) {
@@ -49,32 +57,152 @@ export class WorldBuilder {
 
     _sky() {
         this.scene.background = new THREE.Color(PALETTE.sky);
-        this.scene.fog = new THREE.Fog(PALETTE.sky, 200, 620);
+        this.scene.fog = new THREE.Fog(PALETTE.fog, 180, 580);
     }
 
     _lights() {
-        this.scene.add(new THREE.AmbientLight(0xffffff, 0.65));
-        const sun = new THREE.DirectionalLight(0xfff5e0, 1.2);
-        sun.position.set(80, 120, 60);
+        this.scene.add(new THREE.AmbientLight(0xfff8f0, 0.72));
+        const sun = new THREE.DirectionalLight(0xfff0d8, 1.05);
+        sun.position.set(-60, 90, 80);
         sun.castShadow = true;
         sun.shadow.mapSize.set(2048, 2048);
         sun.shadow.camera.near = 1;
         sun.shadow.camera.far = 400;
-        const s = 200;
+        sun.shadow.bias = -0.0008;
+        const s = 220;
         sun.shadow.camera.left = -s;
         sun.shadow.camera.right = s;
         sun.shadow.camera.top = s;
         sun.shadow.camera.bottom = -s;
         this.scene.add(sun);
-        this.scene.add(new THREE.HemisphereLight(0x87ceeb, 0x5a7a42, 0.4));
+        this.scene.add(new THREE.HemisphereLight(0xc8d8f0, 0xa8d070, 0.35));
     }
 
     _ground() {
         const geo = new THREE.PlaneGeometry(WORLD.size, WORLD.size);
         geo.rotateX(-Math.PI / 2);
-        const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: PALETTE.grass, roughness: 1 }));
+        const mesh = new THREE.Mesh(geo, toonMat(PALETTE.grass));
         mesh.receiveShadow = true;
         this.scene.add(mesh);
+    }
+
+    _mountains() {
+        const layers = [
+            { z: -310, scale: 1.4, colors: [PALETTE.mountain[0], PALETTE.mountain[1]] },
+            { z: -280, scale: 1.1, colors: [PALETTE.mountain[1], PALETTE.mountain[2]] },
+            { z: 310, scale: 1.3, colors: [PALETTE.mountain[2], PALETTE.mountain[3]] },
+            { x: -300, scale: 1.2, colors: [PALETTE.mountain[0], PALETTE.mountain[2]] },
+            { x: 300, scale: 1.15, colors: [PALETTE.mountain[1], PALETTE.mountain[3]] },
+        ];
+
+        layers.forEach((layer, li) => {
+            const count = 5 + li;
+            for (let i = 0; i < count; i++) {
+                const g = new THREE.Group();
+                const w = 120 + (i % 3) * 40;
+                const h = 55 + (i % 4) * 18;
+                const color = layer.colors[i % layer.colors.length];
+                const shape = new THREE.Shape();
+                const hw = w / 2;
+                shape.moveTo(-hw, 0);
+                const bumps = 4 + (i % 3);
+                for (let b = 0; b <= bumps; b++) {
+                    const t = b / bumps;
+                    const x = -hw + t * w;
+                    const y = h * (0.35 + 0.65 * Math.sin(t * Math.PI) * (0.8 + (i % 5) * 0.04));
+                    shape.lineTo(x, y);
+                }
+                shape.lineTo(hw, 0);
+                shape.closePath();
+
+                const extrude = new THREE.ExtrudeGeometry(shape, { depth: 8, bevelEnabled: false });
+                extrude.rotateX(-Math.PI / 2);
+                const { group, mesh } = toonMesh(extrude, color, { castShadow: false, receiveShadow: false });
+                mesh.position.y = 0.5;
+                g.add(group);
+
+                if (layer.z != null) {
+                    g.position.set(-180 + i * (360 / count) + (li * 12), 0, layer.z);
+                } else {
+                    g.position.set(layer.x, 0, -200 + i * (400 / count));
+                }
+                g.scale.setScalar(layer.scale);
+                this.scene.add(g);
+
+                const ridgePts = [];
+                for (let b = 0; b <= 6; b++) {
+                    const t = b / 6;
+                    ridgePts.push(new THREE.Vector3(
+                        -hw * 0.7 + t * w * 0.7,
+                        h * (0.5 + 0.4 * Math.sin(t * Math.PI)),
+                        4
+                    ));
+                }
+                sketchLines(g, ridgePts, INK, 0.25);
+            }
+        });
+    }
+
+    _river() {
+        const len = WORLD.riverLength;
+        const w = WORLD.riverWidth;
+
+        const water = toonMesh(new THREE.BoxGeometry(w, 0.15, len), PALETTE.river);
+        water.mesh.position.set(WORLD.riverX, -0.02, 0);
+        water.mesh.receiveShadow = true;
+        this.scene.add(water.group);
+
+        for (let z = -len / 2; z < len / 2; z += 18) {
+            const offset = Math.sin(z * 0.04) * 3;
+            const pts = [
+                new THREE.Vector3(WORLD.riverX + offset - 4, 0.06, z),
+                new THREE.Vector3(WORLD.riverX + offset, 0.06, z + 9),
+                new THREE.Vector3(WORLD.riverX + offset + 5, 0.06, z + 16),
+            ];
+            sketchLines(this.scene, pts, 0xffffff, 0.55);
+        }
+
+        [-1, 1].forEach(side => {
+            const bank = toonMesh(new THREE.BoxGeometry(14, 1.8, len), PALETTE.embankment);
+            bank.mesh.position.set(WORLD.riverX + side * (w / 2 + 7), 0.5, 0);
+            bank.mesh.receiveShadow = true;
+            this.scene.add(bank.group);
+
+            for (let z = -len / 2 + 20; z < len / 2; z += 30) {
+                const step = toonMesh(new THREE.BoxGeometry(12, 0.6, 4), PALETTE.retainingWall);
+                step.mesh.position.set(WORLD.riverX + side * (w / 2 + 6), 0.3, z);
+                this.scene.add(step.group);
+            }
+        });
+    }
+
+    _bridges() {
+        const positions = [-120, -40, 60, 160];
+        positions.forEach(z => {
+            const g = new THREE.Group();
+            g.position.set(WORLD.riverX, 0.8, z);
+
+            const deck = toonMesh(new THREE.BoxGeometry(WORLD.riverWidth + 6, 0.5, 8), PALETTE.bridge);
+            deck.mesh.position.y = 0.25;
+            g.add(deck.group);
+
+            const arch = toonMesh(new THREE.BoxGeometry(WORLD.riverWidth + 2, 2.5, 1.2), PALETTE.bridge);
+            arch.mesh.position.set(0, -0.5, 0);
+            g.add(arch.group);
+
+            [-1, 1].forEach(side => {
+                const rail = toonMesh(new THREE.BoxGeometry(0.3, 1.2, 8), 0xf0e8e0);
+                rail.mesh.position.set(side * (WORLD.riverWidth / 2 + 1.5), 0.9, 0);
+                g.add(rail.group);
+                for (let i = 0; i < 5; i++) {
+                    const post = toonMesh(new THREE.BoxGeometry(0.15, 1, 0.15), 0xe8e0d8);
+                    post.mesh.position.set(side * (WORLD.riverWidth / 2 + 1.5), 0.6, -3 + i * 1.5);
+                    g.add(post.group);
+                }
+            });
+
+            this.scene.add(g);
+        });
     }
 
     _districtZones() {
@@ -82,12 +210,7 @@ export class WorldBuilder {
             if (d.id === 'downtown') return;
             const pad = new THREE.Mesh(
                 new THREE.CircleGeometry(d.radius, 32),
-                new THREE.MeshStandardMaterial({
-                    color: d.groundColor,
-                    roughness: 0.95,
-                    transparent: true,
-                    opacity: d.id === 'park' ? 0.5 : 0.35,
-                })
+                toonMat(d.groundColor, { transparent: true, opacity: d.id === 'park' ? 0.45 : 0.28 })
             );
             pad.rotation.x = -Math.PI / 2;
             pad.position.set(d.x, 0.02, d.z);
@@ -101,45 +224,75 @@ export class WorldBuilder {
 
     _districtSign(text, color) {
         const g = new THREE.Group();
-        const post = new THREE.Mesh(
-            new THREE.BoxGeometry(0.15, 4, 0.15),
-            new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.4 })
-        );
-        post.position.y = 2;
-        g.add(post);
-        const board = new THREE.Mesh(
-            new THREE.BoxGeometry(12, 2.5, 0.2),
-            new THREE.MeshStandardMaterial({ color: color, emissive: new THREE.Color(color), emissiveIntensity: 0.1 })
-        );
-        board.position.y = 4.5;
-        g.add(board);
+        const post = toonMesh(new THREE.BoxGeometry(0.15, 4, 0.15), PALETTE.pole);
+        post.mesh.position.y = 2;
+        g.add(post.group);
+        const col = typeof color === 'string' ? parseInt(color.replace('#', ''), 16) : color;
+        const board = toonMesh(new THREE.BoxGeometry(12, 2.5, 0.2), col, { emissive: col, emissiveIntensity: 0.08 });
+        board.mesh.position.y = 4.5;
+        g.add(board.group);
         return g;
     }
 
     _roadGrid() {
-        const asphalt = new THREE.MeshStandardMaterial({ color: PALETTE.asphalt, roughness: 0.95 });
-        const line = new THREE.MeshBasicMaterial({ color: 0xeeeecc });
+        const asphalt = toonMat(PALETTE.asphalt);
+        const line = toonMat(0xffffff);
         const span = WORLD.size - 30;
         const half = Math.floor((WORLD.size / 2) / WORLD.roadSpacing);
 
         for (let i = -half; i <= half; i++) {
             const offset = i * WORLD.roadSpacing;
+            if (Math.abs(offset - WORLD.riverX) < WORLD.riverWidth / 2 + 8) continue;
+
             const vRoad = new THREE.Mesh(new THREE.BoxGeometry(WORLD.roadWidth, 0.06, span), asphalt);
             vRoad.position.set(offset, 0.03, 0);
+            vRoad.receiveShadow = true;
             this.scene.add(vRoad);
 
             const hRoad = new THREE.Mesh(new THREE.BoxGeometry(span, 0.06, WORLD.roadWidth), asphalt);
             hRoad.position.set(0, 0.03, offset);
+            hRoad.receiveShadow = true;
             this.scene.add(hRoad);
 
-            const vLine = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.07, span * 0.95), line);
-            vLine.position.set(offset, 0.04, 0);
-            this.scene.add(vLine);
-
-            const hLine = new THREE.Mesh(new THREE.BoxGeometry(span * 0.95, 0.07, 0.2), line);
-            hLine.position.set(0, 0.04, offset);
-            this.scene.add(hLine);
+            if (Math.abs(offset) > 100 || Math.abs(i) > 2) {
+                const vLine = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.07, span * 0.92), line);
+                vLine.position.set(offset + WORLD.roadWidth * 0.35, 0.04, 0);
+                this.scene.add(vLine);
+            }
         }
+
+        this._slopeRoads();
+    }
+
+    _slopeRoads() {
+        const asphalt = toonMat(PALETTE.asphalt);
+        const white = toonMat(0xffffff);
+        const curves = [
+            { pts: [[-200, -180], [-160, -140], [-120, -110], [-80, -90]], w: 8 },
+            { pts: [[200, -170], [165, -130], [130, -100], [95, -80]], w: 8 },
+            { pts: [[-190, 150], [-150, 120], [-110, 100], [-70, 85]], w: 7 },
+            { pts: [[190, 140], [155, 115], [120, 95], [85, 80]], w: 7 },
+        ];
+
+        curves.forEach(curve => {
+            for (let s = 0; s < curve.pts.length - 1; s++) {
+                const [x1, z1] = curve.pts[s];
+                const [x2, z2] = curve.pts[s + 1];
+                const dx = x2 - x1, dz = z2 - z1;
+                const len = Math.hypot(dx, dz);
+                const angle = Math.atan2(dx, dz);
+                const seg = new THREE.Mesh(new THREE.BoxGeometry(curve.w, 0.06, len), asphalt);
+                seg.position.set((x1 + x2) / 2, 0.035, (z1 + z2) / 2);
+                seg.rotation.y = angle;
+                seg.receiveShadow = true;
+                this.scene.add(seg);
+
+                const edge = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.07, len * 0.9), white);
+                edge.position.set((x1 + x2) / 2 + Math.cos(angle) * curve.w * 0.38, 0.045, (z1 + z2) / 2 - Math.sin(angle) * curve.w * 0.38);
+                edge.rotation.y = angle;
+                this.scene.add(edge);
+            }
+        });
     }
 
     _city() {
@@ -152,10 +305,14 @@ export class WorldBuilder {
                 const cz = gz * WORLD.roadSpacing + WORLD.roadSpacing / 2;
 
                 if (this._inPark(cx, cz, 18)) continue;
+                if (this._inRiver(cx, cz, 12)) continue;
                 if (Math.abs(cx) < 8 && Math.abs(cz) < 8) continue;
                 if (this._isOccupied(cx, cz)) continue;
 
-                const floors = 2 + ((Math.abs(gx) + Math.abs(gz) + seed) % 5);
+                const distRiver = Math.abs(cx);
+                const floors = distRiver < 70 ? 3 + ((Math.abs(gx) + Math.abs(gz) + seed) % 3)
+                    : 2 + ((Math.abs(gx) + Math.abs(gz) + seed) % 3);
+
                 const built = createRandomBuilding(cx, cz, floors, seed++);
                 this.scene.add(built.group);
                 this.colliders.push(built.collider);
@@ -187,75 +344,65 @@ export class WorldBuilder {
         const g = new THREE.Group();
         g.position.set(x, 0, z);
 
-        const base = new THREE.Mesh(
-            new THREE.BoxGeometry(28, 18, 18),
-            new THREE.MeshStandardMaterial({ color: 0xf0ece4, roughness: 0.7 })
-        );
-        base.position.y = 9;
-        base.castShadow = true;
-        g.add(base);
+        const base = toonMesh(new THREE.BoxGeometry(28, 18, 18), 0xf0ece4);
+        base.mesh.position.y = 9;
+        g.add(base.group);
 
-        const tower = new THREE.Mesh(
-            new THREE.BoxGeometry(12, 32, 12),
-            new THREE.MeshStandardMaterial({ color: 0xe4eaf0, roughness: 0.6, metalness: 0.1 })
-        );
-        tower.position.y = 26;
-        tower.castShadow = true;
-        g.add(tower);
+        const tower = toonMesh(new THREE.BoxGeometry(12, 32, 12), 0xe8ecf0);
+        tower.mesh.position.y = 34;
+        g.add(tower.group);
 
-        const sign = new THREE.Mesh(
-            new THREE.BoxGeometry(10, 1.2, 0.3),
-            new THREE.MeshStandardMaterial({ color: PALETTE.accent, emissive: new THREE.Color(PALETTE.accent), emissiveIntensity: 0.12 })
-        );
-        sign.position.set(0, 40, 6.1);
-        g.add(sign);
+        const sign = toonMesh(new THREE.BoxGeometry(10, 1.2, 0.3), PALETTE.accent, { emissive: PALETTE.accent, emissiveIntensity: 0.1 });
+        sign.mesh.position.set(0, 52, 6.1);
+        g.add(sign.group);
+
+        for (let row = 2; row < 10; row++) {
+            for (let col = 0; col < 3; col++) {
+                const win = toonMesh(new THREE.PlaneGeometry(1.4, 1.8), PALETTE.glass);
+                win.mesh.position.set(-3 + col * 3, row * 3.2, 6.06);
+                g.add(win.group);
+            }
+        }
 
         this.scene.add(g);
         this._markSite(x, z, 30, 20);
     }
 
     _park() {
-        const pad = new THREE.Mesh(
-            new THREE.CylinderGeometry(18, 18, 0.1, 32),
-            new THREE.MeshStandardMaterial({ color: PALETTE.concrete, roughness: 0.8 })
-        );
-        pad.position.set(WORLD.parkX, 0.05, WORLD.parkZ);
-        this.scene.add(pad);
+        const pad = toonMesh(new THREE.CylinderGeometry(18, 18, 0.1, 32), PALETTE.concrete);
+        pad.mesh.position.set(WORLD.parkX, 0.05, WORLD.parkZ);
+        this.scene.add(pad.group);
+
+        for (let a = 0; a < 8; a++) {
+            const angle = (a / 8) * Math.PI * 2;
+            const bx = WORLD.parkX + Math.cos(angle) * 14;
+            const bz = WORLD.parkZ + Math.sin(angle) * 14;
+            const bench = toonMesh(new THREE.BoxGeometry(2.5, 0.2, 0.7), 0xc8a878);
+            bench.mesh.position.set(bx, 0.35, bz);
+            bench.mesh.rotation.y = angle;
+            this.scene.add(bench.group);
+        }
     }
 
-    _palms() {
-        const spots = [];
-        for (let a = 0; a < 12; a++) {
-            const angle = (a / 12) * Math.PI * 2;
-            spots.push([
-                WORLD.parkX + Math.cos(angle) * 24,
-                WORLD.parkZ + Math.sin(angle) * 24,
-            ]);
-        }
-        [-150, -80, 150, 80].forEach((z, i) => {
-            spots.push([40 + i * 20, z], [-40 - i * 20, z]);
-        });
-        spots.forEach(([x, z]) => { if (!this._inPark(x, z, 5)) this._palmTree(x, z); });
-    }
+    _urbanDetails() {
+        const poleSpots = [];
+        const vendingSpots = [];
+        const half = Math.floor((WORLD.size / 2 - 40) / WORLD.roadSpacing);
 
-    _palmTree(x, z) {
-        const g = new THREE.Group();
-        g.position.set(x, 0, z);
-        const trunk = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.2, 0.35, 5, 8),
-            new THREE.MeshStandardMaterial({ color: PALETTE.trunk, roughness: 0.9 })
-        );
-        trunk.position.y = 2.5;
-        g.add(trunk);
-        const leafMat = new THREE.MeshStandardMaterial({ color: PALETTE.palm, roughness: 0.8 });
-        for (let i = 0; i < 6; i++) {
-            const leaf = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.1, 3), leafMat);
-            leaf.position.y = 5.2;
-            leaf.rotation.y = (i / 6) * Math.PI * 2;
-            leaf.rotation.x = -0.5;
-            g.add(leaf);
+        for (let gx = -half; gx <= half; gx++) {
+            for (let gz = -half; gz <= half; gz++) {
+                const cx = gx * WORLD.roadSpacing;
+                const cz = gz * WORLD.roadSpacing;
+                if (this._inRiver(cx, cz, 5)) continue;
+                if ((gx + gz) % 3 === 0) poleSpots.push([cx + 6, cz + 6]);
+                if ((gx * 7 + gz * 3) % 11 === 0 && Math.abs(cx) > 30) {
+                    vendingSpots.push([cx + WORLD.roadSpacing / 2, cz + WORLD.roadSpacing / 2]);
+                }
+            }
         }
-        this.scene.add(g);
+
+        poleSpots.slice(0, 45).forEach(([x, z]) => this.scene.add(createUtilityPole(x, z)));
+        vendingSpots.slice(0, 28).forEach(([x, z], i) => this.scene.add(createVendingMachine(x, z, i)));
     }
 
     _pois() {
@@ -286,27 +433,21 @@ export class WorldBuilder {
         marker.position.set(x, 0, z);
 
         const colors = {
-            [POI_TYPES.HQ]: 0x00cc44,
-            [POI_TYPES.SERVICE]: 0x4488ff,
-            [POI_TYPES.PROJECT]: 0x88aa44,
-            [POI_TYPES.TEAM]: 0xcc88ff,
-            [POI_TYPES.CONTACT]: 0xffaa66,
+            [POI_TYPES.HQ]: 0xe88870,
+            [POI_TYPES.SERVICE]: 0x6a9ad8,
+            [POI_TYPES.PROJECT]: 0x9ab878,
+            [POI_TYPES.TEAM]: 0xc8a0e0,
+            [POI_TYPES.CONTACT]: 0xf0c090,
         };
         const col = colors[type] || PALETTE.accent;
 
-        const pole = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.08, 0.12, 3, 6),
-            new THREE.MeshStandardMaterial({ color: col, emissive: new THREE.Color(col), emissiveIntensity: 0.1 })
-        );
-        pole.position.y = 1.5;
-        marker.add(pole);
+        const pole = toonMesh(new THREE.BoxGeometry(0.1, 3, 0.1), col, { emissive: col, emissiveIntensity: 0.08 });
+        pole.mesh.position.y = 1.5;
+        marker.add(pole.group);
 
-        const icon = new THREE.Mesh(
-            new THREE.SphereGeometry(0.3, 8, 8),
-            new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: new THREE.Color(col), emissiveIntensity: 0.2 })
-        );
-        icon.position.y = 3.2;
-        marker.add(icon);
+        const icon = toonMesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), 0xffffff, { emissive: col, emissiveIntensity: 0.15 });
+        icon.mesh.position.y = 3.2;
+        marker.add(icon.group);
 
         this.scene.add(marker);
         this.pois.push({

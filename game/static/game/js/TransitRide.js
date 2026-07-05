@@ -1,6 +1,8 @@
 import * as THREE from 'three';
-import { WORLD } from './config.js';
+import { WORLD, PALETTE } from './config.js';
 import { createBus, createTrain } from './Vehicles.js';
+
+const ELEVATED_RAIL_Y = 9.5;
 
 export const CAMERA_MODES = [
     { id: 'chase', label: 'Chase Cam' },
@@ -129,7 +131,7 @@ export class TransitRideController {
 
         if (leg.type === 'train') {
             const train = createTrain();
-            train.position.set(leg.fromX, WORLD.groundY, leg.fromZ);
+            train.position.set(leg.fromX, ELEVATED_RAIL_Y, leg.fromZ);
             train.rotation.y = leg.toZ > leg.fromZ ? 0 : Math.PI;
             this.scene.add(train);
             this.vehicle = train;
@@ -142,7 +144,10 @@ export class TransitRideController {
             this._board({ x: 1.8, y: 1.35, z: -6 });
             this._showHud('METRO RAIL');
         } else {
-            const bus = createBus(leg.label?.includes('Connecting') ? 0x44aacc : 0xd4a020);
+            const bus = createBus(
+                PALETTE.busCream,
+                leg.label?.includes('Connecting') ? 0xa8c8e0 : PALETTE.busOrange
+            );
             bus.position.set(leg.fromX, WORLD.groundY, leg.fromZ);
             this.scene.add(bus);
             this.vehicle = bus;

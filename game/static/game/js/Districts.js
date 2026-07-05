@@ -7,7 +7,7 @@ export const DISTRICT_DEFS = {
         z: -90,
         radius: 75,
         color: '#4488cc',
-        groundColor: 0x4a6a8a,
+        groundColor: 0xa8c0d8,
     },
     marketing: {
         id: 'marketing',
@@ -17,7 +17,7 @@ export const DISTRICT_DEFS = {
         z: -90,
         radius: 75,
         color: '#cc6644',
-        groundColor: 0x8a5a4a,
+        groundColor: 0xe8c0b0,
     },
     innovation: {
         id: 'innovation',
@@ -27,7 +27,7 @@ export const DISTRICT_DEFS = {
         z: 165,
         radius: 65,
         color: '#88aa44',
-        groundColor: 0x5a7a4a,
+        groundColor: 0xb8d8a0,
     },
     hq: {
         id: 'hq',
@@ -37,7 +37,7 @@ export const DISTRICT_DEFS = {
         z: -120,
         radius: 45,
         color: '#00cc44',
-        groundColor: 0x4a6a5a,
+        groundColor: 0xc8d8c0,
     },
     park: {
         id: 'park',
@@ -47,7 +47,7 @@ export const DISTRICT_DEFS = {
         z: 80,
         radius: 35,
         color: '#6b8e4e',
-        groundColor: 0x6b8e4e,
+        groundColor: 0xa8d878,
     },
     downtown: {
         id: 'downtown',
@@ -57,7 +57,7 @@ export const DISTRICT_DEFS = {
         z: 0,
         radius: 90,
         color: '#aaaaaa',
-        groundColor: 0x5a6a5a,
+        groundColor: 0xd0d8c8,
     },
 };
 

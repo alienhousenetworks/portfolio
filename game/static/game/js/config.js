@@ -1,12 +1,16 @@
 export const WORLD = {
     size: 700,
     groundY: 0,
-    roadWidth: 12,
+    roadWidth: 10,
     roadSpacing: 50,
     bound: 320,
     parkX: 0,
     parkZ: 80,
     parkRadius: 30,
+    riverX: 0,
+    riverWidth: 42,
+    riverLength: 620,
+    mountainY: 0,
 };
 
 export const PLAYER = {
@@ -31,19 +35,39 @@ export const CAMERA = {
 };
 
 export const PALETTE = {
-    sky: 0x87ceeb,
-    ground: 0x5a7a42,
-    grass: 0x6b8e4e,
-    asphalt: 0x3a3a40,
-    sidewalk: 0xb8b4ac,
-    concrete: 0xd4d0c8,
-    building: [0xe8e0d0, 0xd8d0c0, 0xc8c0b0, 0xf0e8d8, 0xe0d8c8, 0xd0c8b8],
-    glass: 0x6a8aaa,
-    palm: 0x4a7a3a,
+    sky: 0xc8d8e8,
+    fog: 0xd4dce8,
+    ground: 0x9ed46a,
+    grass: 0xa8d86a,
+    embankment: 0xb8e070,
+    asphalt: 0x4a4a52,
+    sidewalk: 0xe8e4dc,
+    concrete: 0xb8b4ac,
+    retainingWall: 0xa8a49c,
+    river: 0xa8dcc8,
+    mountain: [0xb8c8d8, 0xa0b8c8, 0x88a8b8, 0x78a0a8],
+    bridge: 0xd89088,
+    building: {
+        wall: [0xf0ece4, 0xe8dcc8, 0xf5e8b8, 0xe0d8c8],
+        roof: [0x3a4a6a, 0xc88870, 0x8aaa88, 0x5a6a7a],
+    },
+    awning: [0xf0b8c8, 0xb8d8f0, 0xf0e0a8, 0xc8b8e8],
+    glass: 0xf0e8a8,
+    frostGlass: 0xe8e4dc,
+    vending: [0xa8e8b8, 0xb8d8f0],
+    pole: 0x6a6a6a,
+    wire: 0x1a1a22,
+    palm: 0x6aaa5a,
     trunk: 0x8b6914,
-    humanSkin: 0xe0b090,
+    humanSkin: 0xf0d0b0,
     alienSkin: 0x7ec88a,
-    accent: 0x00cc44,
+    accent: 0xe88870,
+    trainSilver: 0xc0c4c8,
+    trainPeach: 0xf0c0a8,
+    busCream: 0xf0e8d8,
+    busOrange: 0xf0b888,
+    uniformNavy: 0x2a3a5a,
+    trench: 0xe0d4c0,
 };
 
 export const POI_TYPES = {

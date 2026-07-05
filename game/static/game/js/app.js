@@ -83,8 +83,10 @@ class Game {
         this.renderer.setSize(innerWidth, innerHeight);
         this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
         this.renderer.shadowMap.enabled = true;
-        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        this.renderer.shadowMap.type = THREE.BasicShadowMap;
         this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        this.renderer.toneMappingExposure = 1.05;
         el.appendChild(this.renderer.domElement);
 
         this.camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.5, 800);
