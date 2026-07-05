@@ -242,11 +242,12 @@ export class PlayerController {
             this.onGround = false;
         }
 
-        // Stair smooth-step
-        const onStair = this.terrain?.isOnStair(nx, nz);
-        if (onStair && Math.abs(terrainY - curY) < 3) {
-            const ySmooth = 14;
+        // Smooth height transition for all climbing/slopes (GTA style)
+        if (this.vy <= 0 && Math.abs(terrainY - curY) < 3.0) {
+            const ySmooth = 12; // smooth factor
             this.avatar.position.y += (terrainY - this.avatar.position.y) * (1 - Math.exp(-ySmooth * dt));
+            this.onGround = true;
+            this.vy = 0;
         } else {
             this.avatar.position.y = newY;
         }

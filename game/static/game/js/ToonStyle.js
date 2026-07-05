@@ -44,8 +44,13 @@ export function addInkOutline(mesh, scale = 1.04) {
     const size = new THREE.Vector3();
     box.getSize(size);
     
-    // If the geometry is extremely large (e.g. landscape grass, water, sand), skip outlines
-    if (size.x > 30 || size.y > 30 || size.z > 30) {
+    // Multiply by local scale to check actual world size of the mesh
+    size.x *= Math.abs(mesh.scale.x);
+    size.y *= Math.abs(mesh.scale.y);
+    size.z *= Math.abs(mesh.scale.z);
+    
+    // If the mesh is large (e.g. landscape grass, water, sand, mountains), skip outlines
+    if (size.x > 25 || size.y > 25 || size.z > 25) {
         return null;
     }
 

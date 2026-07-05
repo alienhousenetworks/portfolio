@@ -80,83 +80,190 @@ export function createBicycleParked() {
 
 export function createCherryTree() {
     const g = new THREE.Group();
-    const trunk = toonMesh(new THREE.BoxGeometry(0.35, 2.8, 0.35), PALETTE.blossomTrunk);
-    trunk.mesh.position.y = 1.4;
-    trunk.mesh.castShadow = true;
-    g.add(trunk.group);
-    const canopy = toonMesh(new THREE.SphereGeometry(2.2, 8, 8), PALETTE.blossom);
-    canopy.mesh.position.y = 3.8;
-    canopy.mesh.scale.set(1.1, 0.75, 1.1);
-    canopy.mesh.castShadow = true;
-    g.add(canopy.group);
+    
+    // Create organic, curved trunk
+    const segments = 4;
+    const segH = 0.8;
+    let lastPivot = g;
+    for (let i = 0; i < segments; i++) {
+        const seg = toonMesh(new THREE.CylinderGeometry(0.18 - i * 0.02, 0.22 - i * 0.02, segH, 6), PALETTE.blossomTrunk);
+        seg.mesh.position.y = segH / 2;
+        seg.mesh.rotation.z = (Math.sin(i * 1.5) * 0.12);
+        seg.mesh.rotation.x = (Math.cos(i * 1.2) * 0.08);
+        seg.mesh.castShadow = true;
+        
+        const nextPivot = new THREE.Group();
+        nextPivot.position.y = segH - 0.05;
+        seg.group.add(nextPivot);
+        
+        lastPivot.add(seg.group);
+        lastPivot = nextPivot;
+    }
+
+    // Fluffy cloud-like pink blossom canopy (multi-sphere organic cluster)
+    const foliageOffsets = [
+        { x: 0, y: 0.4, z: 0, r: 1.6 },
+        { x: -0.9, y: 0.1, z: 0.3, r: 1.15 },
+        { x: 0.8, y: -0.1, z: -0.5, r: 1.1 },
+        { x: 0.3, y: -0.2, z: 0.7, r: 0.95 },
+        { x: -0.6, y: -0.3, z: -0.6, r: 0.9 }
+    ];
+
+    foliageOffsets.forEach(fo => {
+        const leaf = toonMesh(new THREE.DodecahedronGeometry(fo.r, 1), PALETTE.blossom);
+        leaf.mesh.position.set(fo.x, fo.y, fo.z);
+        leaf.mesh.scale.set(1.0, 0.8, 1.0);
+        leaf.mesh.castShadow = true;
+        lastPivot.add(leaf.group);
+    });
+
     return g;
 }
 
 export function createLargeTree(seed = 0) {
     const g = new THREE.Group();
     const col = PALETTE.foliage[seed % PALETTE.foliage.length];
-    const trunk = toonMesh(new THREE.BoxGeometry(0.4, 3.5, 0.4), PALETTE.wood[0]);
-    trunk.mesh.position.y = 1.75;
-    trunk.mesh.castShadow = true;
-    g.add(trunk.group);
-    const canopy = toonMesh(new THREE.SphereGeometry(2.5, 8, 8), col);
-    canopy.mesh.position.y = 4.5;
-    canopy.mesh.scale.set(1, 0.85, 1);
-    canopy.mesh.castShadow = true;
-    g.add(canopy.group);
+    
+    // Winding, organic trunk
+    const segments = 5;
+    const segH = 0.9;
+    let lastPivot = g;
+    for (let i = 0; i < segments; i++) {
+        const seg = toonMesh(new THREE.CylinderGeometry(0.22 - i * 0.02, 0.28 - i * 0.03, segH, 6), PALETTE.wood[0]);
+        seg.mesh.position.y = segH / 2;
+        seg.mesh.rotation.z = (Math.sin(i * 1.3 + seed) * 0.14);
+        seg.mesh.rotation.x = (Math.cos(i * 1.1 + seed) * 0.09);
+        seg.mesh.castShadow = true;
+        
+        const nextPivot = new THREE.Group();
+        nextPivot.position.y = segH - 0.05;
+        seg.group.add(nextPivot);
+        
+        lastPivot.add(seg.group);
+        lastPivot = nextPivot;
+    }
+
+    // Cloud-like layered green foliage clusters
+    const foliageOffsets = [
+        { x: 0, y: 0.5, z: 0, r: 1.8 },
+        { x: -1.1, y: 0.2, z: 0.4, r: 1.3 },
+        { x: 1.0, y: 0.0, z: -0.6, r: 1.25 },
+        { x: 0.4, y: -0.3, z: 0.9, r: 1.1 },
+        { x: -0.7, y: -0.4, z: -0.8, r: 1.05 }
+    ];
+
+    foliageOffsets.forEach(fo => {
+        const leaf = toonMesh(new THREE.DodecahedronGeometry(fo.r, 1), col);
+        leaf.mesh.position.set(fo.x, fo.y, fo.z);
+        leaf.mesh.scale.set(1.1, 0.85, 1.1);
+        leaf.mesh.castShadow = true;
+        lastPivot.add(leaf.group);
+    });
+
     return g;
 }
 
-/** Pine tree for mountain slopes — tall cone */
+/** Pine tree for mountain slopes — organic cloud tiers */
 export function createPineTree(seed = 0, height = 1.0) {
     const g = new THREE.Group();
-    const h = (5 + (seed % 4)) * height;
+    const h = (6 + (seed % 4)) * height;
     const col = seed % 3 === 0 ? PALETTE.pineDark : PALETTE.pineGreen;
 
-    // Trunk
-    const trunk = toonMesh(new THREE.CylinderGeometry(0.15, 0.22, h * 0.35, 5), PALETTE.wood[0]);
-    trunk.mesh.position.y = h * 0.175;
-    trunk.mesh.castShadow = true;
-    g.add(trunk.group);
+    // Organic slanted trunk
+    const segments = 4;
+    const segH = (h * 0.35) / segments;
+    let lastPivot = g;
+    for (let i = 0; i < segments; i++) {
+        const seg = toonMesh(new THREE.CylinderGeometry(0.16 - i * 0.015, 0.23 - i * 0.02, segH, 5), PALETTE.wood[0]);
+        seg.mesh.position.y = segH / 2;
+        seg.mesh.rotation.z = 0.08 + Math.sin(i * 1.4 + seed) * 0.05;
+        seg.mesh.castShadow = true;
+        
+        const nextPivot = new THREE.Group();
+        nextPivot.position.y = segH - 0.02;
+        seg.group.add(nextPivot);
+        
+        lastPivot.add(seg.group);
+        lastPivot = nextPivot;
+    }
 
-    // Tiered cone foliage
+    // Tiered pine foliage (multiple overlapping clusters per tier for Ghibli look)
     const tiers = 3;
     for (let t = 0; t < tiers; t++) {
-        const tierH = h * (0.45 - t * 0.08);
-        const tierR = (h * 0.32) * (1 - t * 0.25);
-        const tierY = h * 0.3 + t * (h * 0.22);
-        const cone = toonMesh(new THREE.ConeGeometry(tierR, tierH, 7), col);
-        cone.mesh.position.y = tierY;
-        cone.mesh.castShadow = true;
-        g.add(cone.group);
+        const tierScale = 1.0 - t * 0.25;
+        const tierY = t * (h * 0.22);
+        
+        const tierGroup = new THREE.Group();
+        tierGroup.position.y = tierY;
+        
+        // Multi-clump assembly for each tier
+        const clumps = [
+            { x: 0, y: 0, z: 0, r: 1.4 },
+            { x: -0.6, y: -0.15, z: 0.2, r: 1.0 },
+            { x: 0.5, y: -0.15, z: -0.4, r: 0.95 },
+            { x: -0.2, y: -0.2, z: -0.6, r: 0.9 }
+        ];
+
+        clumps.forEach(c => {
+            const clumpMesh = toonMesh(new THREE.DodecahedronGeometry(c.r * tierScale, 1), col);
+            clumpMesh.mesh.position.set(c.x * tierScale, c.y * tierScale, c.z * tierScale);
+            clumpMesh.mesh.scale.set(1.0, 0.8, 1.0);
+            clumpMesh.mesh.castShadow = true;
+            tierGroup.add(clumpMesh.group);
+        });
+
+        lastPivot.add(tierGroup);
     }
     return g;
 }
 
-/** Willow-style tree for riverbanks — drooping sphere */
+/** Willow-style tree for riverbanks — organic drooping canopies */
 export function createWillowTree(seed = 0) {
     const g = new THREE.Group();
-    const trunk = toonMesh(new THREE.CylinderGeometry(0.18, 0.28, 5, 6), PALETTE.wood[0]);
-    trunk.mesh.position.y = 2.5;
-    trunk.mesh.castShadow = true;
-    g.add(trunk.group);
+    
+    // Slanted weeping trunk
+    const segments = 5;
+    const segH = 1.0;
+    let lastPivot = g;
+    for (let i = 0; i < segments; i++) {
+        const seg = toonMesh(new THREE.CylinderGeometry(0.20 - i * 0.015, 0.28 - i * 0.02, segH, 6), PALETTE.wood[0]);
+        seg.mesh.position.y = segH / 2;
+        seg.mesh.rotation.z = -0.06 + Math.cos(i * 1.2) * 0.07;
+        seg.mesh.castShadow = true;
+        
+        const nextPivot = new THREE.Group();
+        nextPivot.position.y = segH - 0.05;
+        seg.group.add(nextPivot);
+        
+        lastPivot.add(seg.group);
+        lastPivot = nextPivot;
+    }
 
-    // Drooping canopy — elongated ellipsoid
-    const canopy = toonMesh(new THREE.SphereGeometry(2.6, 9, 7), PALETTE.willowGreen);
-    canopy.mesh.position.y = 6.5;
-    canopy.mesh.scale.set(1.2, 0.9, 1.2);
-    canopy.mesh.castShadow = true;
-    g.add(canopy.group);
+    // Main weeping canopy
+    const foliageOffsets = [
+        { x: 0, y: 0.4, z: 0, r: 1.9 },
+        { x: -0.8, y: -0.1, z: 0.6, r: 1.35 },
+        { x: 0.8, y: -0.1, z: -0.6, r: 1.3 },
+        { x: -0.6, y: -0.3, z: -0.8, r: 1.1 }
+    ];
 
-    // Draping tendrils
-    for (let i = 0; i < 6; i++) {
-        const angle = (i / 6) * Math.PI * 2;
-        const r = 1.8 + (seed + i) % 3 * 0.3;
-        const drape = toonMesh(new THREE.CylinderGeometry(0.04, 0.01, 2.2, 4), PALETTE.willowGreen, { outline: false });
-        drape.mesh.position.set(Math.cos(angle) * r, 4.8, Math.sin(angle) * r);
-        drape.mesh.rotation.z = Math.cos(angle) * 0.3;
-        drape.mesh.rotation.x = Math.sin(angle) * 0.3;
-        g.add(drape.group);
+    foliageOffsets.forEach(fo => {
+        const leaf = toonMesh(new THREE.DodecahedronGeometry(fo.r, 1), PALETTE.willowGreen);
+        leaf.mesh.position.set(fo.x, fo.y, fo.z);
+        leaf.mesh.scale.set(1.1, 0.9, 1.1);
+        leaf.mesh.castShadow = true;
+        lastPivot.add(leaf.group);
+    });
+
+    // Weeping tendrils / hanging leaves
+    for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI * 2;
+        const r = 1.6 + (seed + i) % 3 * 0.4;
+        const drape = toonMesh(new THREE.CylinderGeometry(0.04, 0.01, 2.5, 4), PALETTE.willowGreen, { outline: false });
+        drape.mesh.position.set(Math.cos(angle) * r, -0.4, Math.sin(angle) * r);
+        drape.mesh.rotation.z = Math.cos(angle) * 0.25;
+        drape.mesh.rotation.x = Math.sin(angle) * 0.25;
+        lastPivot.add(drape.group);
     }
     return g;
 }

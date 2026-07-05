@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { WORLD, PALETTE } from './config.js';
 import { toonMat, toonMesh } from './ToonStyle.js';
 
-const MAX_STEP = 0.45;
+const MAX_STEP = 2.2;
 const STAIR_MAX_STEP = 2.5;
 
 /** Hillside terraces + stairs — height query & walkability for the residential slopes. */
