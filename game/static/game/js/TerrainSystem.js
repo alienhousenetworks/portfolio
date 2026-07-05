@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { WORLD, PALETTE } from './config.js';
-import { toonMat, toonMesh } from './ToonStyle.js';
+import { toonMat, toonMesh, getGradientMap } from './ToonStyle.js';
 
 const MAX_STEP = 2.2;
 const STAIR_MAX_STEP = 2.5;
