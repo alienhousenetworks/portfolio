@@ -16,16 +16,12 @@ export class CinematicIntro {
         this.camera = camera;
         this.ufo = ufo;
         this.player = player;
-        this.npcs = npcs;
-        this.welcome = welcome;
+        this.npcs = npcs || [];
+        this.welcome = welcome || {};
         this.onComplete = onComplete;
         this.active = false;
         this.time = 0;
         this.dustRings = [];
-        this._camFrom = new THREE.Vector3();
-        this._camTo = new THREE.Vector3();
-        this._lookFrom = new THREE.Vector3();
-        this._lookTo = new THREE.Vector3();
         this._walkPhase = 0;
     }
 
@@ -44,11 +40,11 @@ export class CinematicIntro {
         if (thruster) thruster.intensity = 3;
 
         this.npcs.forEach(n => { n.visible = false; });
-        if (this.welcome?.human) {
+        if (this.welcome.human) {
             this.welcome.human.visible = false;
             this.welcome.human.position.set(WORLD.parkX - 16, WORLD.groundY, WORLD.parkZ + 12);
         }
-        if (this.welcome?.alien) {
+        if (this.welcome.alien) {
             this.welcome.alien.visible = false;
             this.welcome.alien.position.set(WORLD.parkX + 16, WORLD.groundY, WORLD.parkZ + 12);
         }
@@ -189,7 +185,7 @@ export class CinematicIntro {
             this.player.rotation.y = 0;
             animateHumanWalk(this.player, this._walkPhase, 0.3);
 
-            if (this.welcome?.human) {
+            if (this.welcome.human) {
                 this.welcome.human.visible = true;
                 this.welcome.human.position.set(
                     THREE.MathUtils.lerp(px - 16, px - 5.5, t),
@@ -198,7 +194,7 @@ export class CinematicIntro {
                 );
                 this.welcome.human.lookAt(px, WORLD.groundY + 1.5, playerZ);
             }
-            if (this.welcome?.alien) {
+            if (this.welcome.alien) {
                 this.welcome.alien.visible = true;
                 this.welcome.alien.position.set(
                     THREE.MathUtils.lerp(px + 16, px + 5.5, t),
@@ -240,13 +236,14 @@ export class CinematicIntro {
         }
         this.player.position.set(WORLD.parkX, WORLD.groundY, WORLD.parkZ - 6);
         this.player.rotation.y = 0;
+        this.player.visible = true;
 
         this.npcs.forEach(n => { n.visible = true; });
-        if (this.welcome?.human) {
+        if (this.welcome.human) {
             this.welcome.human.position.set(WORLD.parkX - 6, WORLD.groundY, WORLD.parkZ - 10);
             this.welcome.human.visible = true;
         }
-        if (this.welcome?.alien) {
+        if (this.welcome.alien) {
             this.welcome.alien.position.set(WORLD.parkX + 6, WORLD.groundY, WORLD.parkZ - 10);
             this.welcome.alien.visible = true;
         }

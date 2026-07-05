@@ -252,13 +252,10 @@ export class PlayerController {
             this.avatar.position.y = newY;
         }
 
-        // Skeletal animation (bone-driven human rig)
         if (this.avatar.userData.mixer) {
             updateHumanAnimator(this.avatar, dt);
-
             let nextAnim = 'idle';
             const isStair = this.terrain?.isOnStair(this.avatar.position.x, this.avatar.position.z);
-
             if (isStair && this.avatar.userData.actions?.climb) {
                 nextAnim = 'climb';
             } else if (!this.onGround && this.avatar.userData.actions?.jump) {
@@ -266,9 +263,7 @@ export class PlayerController {
             } else if (this.velocity.lengthSq() > 0.1) {
                 nextAnim = this.isRunning && this.avatar.userData.actions?.run ? 'run' : 'walk';
             }
-
             fadeHumanAction(this.avatar, nextAnim, 0.18);
-
             const action = this.avatar.userData.actions?.[nextAnim];
             if (action) {
                 action.timeScale = nextAnim === 'run' ? 1.35 : nextAnim === 'climb' ? 1.1 : 1;

@@ -18,8 +18,8 @@
 <body>
     <div id="loading-screen">
         <div class="start-badge">LOADING</div>
-        <div class="start-title">Building World</div>
-        <div class="loading-bar-track"><div class="loading-bar-fill" style="width:100%"></div></div>
+        <div class="start-title">Loading Characters…</div>
+        <div class="loading-bar-track"><div class="loading-bar-fill" style="width:0%"></div></div>
     </div>
 
     <div id="start-screen" class="hidden">
@@ -107,7 +107,7 @@
     </div>
 
     {{ game_data|json_script:"game-data" }}
-    <script type="module" src="{% static 'game/js/main.js' %}?v=23"></script>
+    <script type="module" src="{% static 'game/js/main.js' %}?v=26"></script>
 
     <!-- Height slider logic -->
     <script>

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { WORLD, PALETTE } from './config.js';
+import { preloadCharacterModels } from './CharacterModels.js';
 import { createHumanAvatar, createAlienAvatar, createUFO, createNameTag } from './AvatarFactory.js';
 import { WorldBuilder } from './WorldBuilder.js';
 import { TerrainSystem } from './TerrainSystem.js';
@@ -37,49 +38,67 @@ class Game {
         this.interactables = [...this.pois, ...stops];
 
         this.citizens = new CitizenManager(this.scene, this.terrain);
-        this.citizens.spawn(this.data.team || [], built.buildings || this.data.buildings || []);
         this._buildMapLegend();
-
-        this.player = createHumanAvatar();
-        this.player.visible = false;
-        this.scene.add(this.player);
-
-        const welcome = this.data.welcome || {};
-        this.welcomeHuman = createHumanAvatar({ shirtColor: 0x2a5a8a, skinTone: 0xe0b090 });
-        this.welcomeHuman.visible = false;
-        this.welcomeHuman.add(createNameTag(welcome.humanName || 'Human Ambassador'));
-        this.scene.add(this.welcomeHuman);
-
-        this.welcomeAlien = createAlienAvatar({ variant: 1 });
-        this.welcomeAlien.visible = false;
-        this.welcomeAlien.add(createNameTag(welcome.alienName || 'Alien Ambassador'));
-        this.scene.add(this.welcomeAlien);
 
         this.ufo = createUFO();
         this.ufo.position.set(0, 60, 90);
         this.scene.add(this.ufo);
 
-        this.playerCtrl = new PlayerController(this.camera, this.player, this.colliders, this.renderer.domElement, this.terrain);
-        this.ride = new TransitRideController(this.scene, this.camera, this.player, this.transit);
         this.transitPicker = new TransitPicker(
             this.data.transitDestinations || [],
             (dest, stop, mode) => this._startJourney(dest, stop, mode),
-            () => this.playerCtrl.enable()
+            () => this.playerCtrl?.enable()
         );
         this.dialogue = new DialogueSystem(data);
+        this._ui();
+        requestAnimationFrame(() => this._loop());
+    }
+
+    _setLoadProgress(pct) {
+        const fill = document.querySelector('.loading-bar-fill');
+        const title = document.querySelector('#loading-screen .start-title');
+        if (fill) fill.style.width = `${Math.round(pct * 100)}%`;
+        if (title) title.textContent = pct < 1 ? 'Loading Characters…' : 'Building World';
+    }
+
+    async initCharacters() {
+        const base = this.data.staticBase || '/static/game/';
+        try {
+            await preloadCharacterModels(base, pct => this._setLoadProgress(pct));
+        } catch (err) {
+            console.error('[game] Failed to load character models', err);
+        }
+
+        const buildings = this.world?.buildings || this.data.buildings || [];
+        this.citizens.spawn(this.data.team || [], buildings);
+
+        this.player = createHumanAvatar({ modelKey: 'male' });
+        this.player.visible = false;
+        this.scene.add(this.player);
+
+        const welcome = this.data.welcome || {};
+        this.welcomeHuman = createHumanAvatar({ modelKey: 'female' });
+        this.welcomeHuman.visible = false;
+        this.welcomeHuman.add(createNameTag(welcome.humanName || 'Human Ambassador'));
+        this.scene.add(this.welcomeHuman);
+
+        this.welcomeAlien = createAlienAvatar({ modelKey: 'fantasy', variant: 0 });
+        this.welcomeAlien.visible = false;
+        this.welcomeAlien.add(createNameTag(welcome.alienName || 'Alien Ambassador'));
+        this.scene.add(this.welcomeAlien);
+
+        this.playerCtrl = new PlayerController(this.camera, this.player, this.colliders, this.renderer.domElement, this.terrain);
+        this.ride = new TransitRideController(this.scene, this.camera, this.player, this.transit);
         this.cinematic = new CinematicIntro(
             this.scene, this.camera, this.ufo, this.player,
             this.citizens.getTeamMeshes(),
             { human: this.welcomeHuman, alien: this.welcomeAlien },
             () => this._afterCinematic()
         );
-        this._ui();
-        requestAnimationFrame(() => this._loop());
-        setTimeout(() => {
-            document.getElementById('loading-screen')?.classList.add('hidden');
-            document.getElementById('start-screen')?.classList.remove('hidden');
-            this.state = 'start';
-        }, 400);
+
+        document.getElementById('loading-screen')?.classList.add('hidden');
+        document.getElementById('start-screen')?.classList.remove('hidden');
+        this.state = 'start';
     }
 
     _renderer() {
@@ -415,6 +434,7 @@ function loadGameData() {
     return data;
 }
 
-addEventListener('DOMContentLoaded', () => {
-    new Game(loadGameData());
+addEventListener('DOMContentLoaded', async () => {
+    const game = new Game(loadGameData());
+    await game.initCharacters();
 });

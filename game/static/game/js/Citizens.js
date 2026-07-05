@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 import { WORLD } from './config.js';
+import { getHumanModelKey, getAlienModelKey } from './CharacterModels.js';
 import {
     createHumanAvatar, createAlienAvatar, createNameTag,
     createStudentAvatar, createCommuterAvatar, createWandererAvatar, createCyclistAvatar,
     fadeHumanAction, updateHumanAnimator,
-    animateWanderer, animateCyclist,
+    animateWanderer, animateCyclist, animateHumanWalk,
 } from './AvatarFactory.js';
 
 const HUMAN_NAMES = ['Alex', 'Jordan', 'Sam', 'Riley', 'Casey', 'Morgan', 'Taylor', 'Jamie', 'Quinn', 'Avery'];
@@ -27,8 +28,6 @@ const ALIEN_LINES = [
     'Our elevated metro was built by the finest architects.',
 ];
 
-const SHIRT_COLORS = [0xf08b3a, 0x4c8fe3, 0xc95757, 0x4ed2c8, 0xe8a6b7, 0xf7d55c, 0x8a78d8];
-
 export class CitizenManager {
     constructor(scene, terrain = null) {
         this.scene = scene;
@@ -48,25 +47,20 @@ export class CitizenManager {
         this._spawnParkLife();
 
         const spots = this._walkSpots();
-        for (let i = 0; i < 14; i++) {
+        for (let i = 0; i < 10; i++) {
             const spot = spots[i % spots.length];
-            const name = HUMAN_NAMES[i % HUMAN_NAMES.length];
-            const mesh = createHumanAvatar({
-                shirtColor: SHIRT_COLORS[i % SHIRT_COLORS.length],
-                skinTone: [0xf0d0b0, 0xc49a7a, 0xf0d0b0, 0xb88860][i % 4],
-            });
-            this._placeCitizen(mesh, spot, name, 'human', HUMAN_LINES[i % HUMAN_LINES.length], i * 0.7);
+            const mesh = createHumanAvatar({ modelKey: getHumanModelKey(i), variant: i });
+            this._placeCitizen(mesh, spot, HUMAN_NAMES[i % HUMAN_NAMES.length], 'human', HUMAN_LINES[i % HUMAN_LINES.length], i * 0.7);
         }
 
-        for (let i = 0; i < 18; i++) {
+        for (let i = 0; i < 12; i++) {
             const spot = spots[(i + 5) % spots.length];
-            const name = ALIEN_NAMES[i % ALIEN_NAMES.length];
-            const mesh = createAlienAvatar({ variant: i % 4 });
-            this._placeCitizen(mesh, spot, name, 'alien', ALIEN_LINES[i % ALIEN_LINES.length], i * 0.5 + 2);
+            const mesh = createAlienAvatar({ modelKey: getAlienModelKey(i), variant: i });
+            this._placeCitizen(mesh, spot, ALIEN_NAMES[i % ALIEN_NAMES.length], 'alien', ALIEN_LINES[i % ALIEN_LINES.length], i * 0.5 + 2);
         }
 
         teamMembers.slice(0, 6).forEach((m, i) => {
-            const mesh = createAlienAvatar({ variant: i });
+            const mesh = createAlienAvatar({ modelKey: getAlienModelKey(i + 1), variant: i + 1 });
             mesh.position.set(-12 + i * 4, this._groundY(-12 + i * 4, WORLD.parkZ - 12 - i), WORLD.parkZ - 12 - i);
             mesh.visible = false;
             mesh.add(createNameTag(m.name));
@@ -92,9 +86,7 @@ export class CitizenManager {
             { x: 24, z: 98, rx: 28, rz: 118 },
         ];
         riverPairs.forEach((spot, i) => {
-            const mesh = createStudentAvatar({
-                skinTone: [0xf0d0b0, 0xe8c8a8, 0xd8b898][i % 3],
-            });
+            const mesh = createStudentAvatar({ variant: i });
             this._placeCitizen(
                 mesh, spot,
                 STUDENT_NAMES[i % STUDENT_NAMES.length], 'student',
@@ -109,9 +101,7 @@ export class CitizenManager {
             { x: -80, z: -80 }, { x: -80, z: 120 }, { x: 80, z: -60 }, { x: 80, z: 140 },
         ];
         platforms.forEach((spot, i) => {
-            const mesh = createCommuterAvatar({
-                skinTone: [0xf0d0b0, 0xd8b898][i % 2],
-            });
+            const mesh = createCommuterAvatar({ variant: i });
             mesh.position.set(spot.x + (i % 2) * 2, this._groundY(spot.x, spot.z), spot.z);
             mesh.rotation.y = Math.PI / 2;
             mesh.add(createNameTag(HUMAN_NAMES[i % HUMAN_NAMES.length]));
@@ -131,7 +121,7 @@ export class CitizenManager {
 
     _spawnWanderer() {
         const spot = { x: 58, z: 52 };
-        const mesh = createWandererAvatar({ shirtColor: 0xf0a040, skinTone: 0xf0d0b0 });
+        const mesh = createWandererAvatar({ variant: 2 });
         mesh.position.set(spot.x, this._groundY(spot.x, spot.z), spot.z);
         mesh.rotation.y = -0.6;
         mesh.add(createNameTag('Kai'));
@@ -151,10 +141,7 @@ export class CitizenManager {
             { x: WORLD.parkX, z: WORLD.parkZ + 14, line: 'The fountain sounds so peaceful.' },
         ];
         parkSpots.forEach((spot, i) => {
-            const mesh = createHumanAvatar({
-                shirtColor: SHIRT_COLORS[(i + 2) % SHIRT_COLORS.length],
-                skinTone: 0xf0d0b0,
-            });
+            const mesh = createHumanAvatar({ modelKey: getHumanModelKey(i + 1), variant: i + 1 });
             mesh.position.set(spot.x, this._groundY(spot.x, spot.z), spot.z);
             mesh.add(createNameTag(['Sora', 'Hana', 'Ren'][i]));
             this.scene.add(mesh);
@@ -174,10 +161,7 @@ export class CitizenManager {
             { x: 130, z: 110, rx: 100, rz: 85, speed: 2.4 },
         ];
         routes.forEach((route, i) => {
-            const mesh = createCyclistAvatar({
-                shirtColor: SHIRT_COLORS[(i + 2) % SHIRT_COLORS.length],
-                skinTone: [0xf0d0b0, 0xe0c0a0][i % 2],
-            });
+            const mesh = createCyclistAvatar({ variant: i });
             this._placeCitizen(
                 mesh,
                 { x: route.x, z: route.z, rx: route.rx, rz: route.rz },
@@ -185,8 +169,7 @@ export class CitizenManager {
                 'Coasting down the slope. These mamachari bikes are the best.',
                 i * 1.1, route.speed
             );
-            const c = this.citizens[this.citizens.length - 1];
-            c.isCyclist = true;
+            this.citizens[this.citizens.length - 1].isCyclist = true;
         });
     }
 
@@ -194,11 +177,8 @@ export class CitizenManager {
         buildings.forEach((b, i) => {
             const isAlien = b.hostType === 'alien';
             const mesh = isAlien
-                ? createAlienAvatar({ variant: i % 4 })
-                : createHumanAvatar({
-                    shirtColor: SHIRT_COLORS[i % SHIRT_COLORS.length],
-                    skinTone: [0xf0d0b0, 0xc49a7a][i % 2],
-                });
+                ? createAlienAvatar({ modelKey: getAlienModelKey(i), variant: i })
+                : createHumanAvatar({ modelKey: getHumanModelKey(i), variant: i });
 
             mesh.position.set(b.hostX, this._groundY(b.hostX, b.hostZ), b.hostZ);
             mesh.rotation.y = Math.atan2(b.x - b.hostX, b.z - b.hostZ);
@@ -267,10 +247,7 @@ export class CitizenManager {
         for (let i = 0; i < humans; i++) {
             const angle = (i / humans) * Math.PI * 2;
             const r = baseR + (i % 3) * 4;
-            const mesh = createHumanAvatar({
-                shirtColor: SHIRT_COLORS[i % SHIRT_COLORS.length],
-                skinTone: [0xf0d0b0, 0xc49a7a, 0xf0d0b0][i % 3],
-            });
+            const mesh = createHumanAvatar({ modelKey: getHumanModelKey(i), variant: i });
             const hx = x + Math.cos(angle) * r;
             const hz = z + Math.sin(angle) * r;
             const line = district === 'software'
@@ -284,7 +261,7 @@ export class CitizenManager {
         for (let i = 0; i < aliens; i++) {
             const angle = (i / aliens) * Math.PI * 2 + 0.5;
             const r = baseR + 4 + (i % 3) * 3;
-            const mesh = createAlienAvatar({ variant: i % 4 });
+            const mesh = createAlienAvatar({ modelKey: getAlienModelKey(i), variant: i });
             const ax = x + Math.cos(angle) * r;
             const az = z + Math.sin(angle) * r;
             const line = district === 'innovation'
@@ -345,17 +322,8 @@ export class CitizenManager {
                 } else if (c.mesh.userData.mixer) {
                     updateHumanAnimator(c.mesh, dt);
                     fadeHumanAction(c.mesh, c.speed > 1.8 ? 'run' : 'walk', 0.15);
-                } else if (c.mesh.userData.isHuman) {
-                    fadeHumanAction(c.mesh, 'walk', 0.15);
                 } else {
-                    (c.mesh.userData.walkParts || []).forEach((partName, i) => {
-                        const p = c.mesh.getObjectByName(partName);
-                        if (p) {
-                            const s = Math.sin(c.walkT + i) * 0.3;
-                            if (partName.includes('leg')) p.rotation.x = s;
-                            if (partName.includes('arm')) p.rotation.x = -s * 0.4;
-                        }
-                    });
+                    animateHumanWalk(c.mesh, c.walkT, c.speed / 2);
                 }
             }
         });
@@ -373,7 +341,6 @@ export class CitizenManager {
 
     toInteractable(c) {
         if (!c) return null;
-        const verb = c.isHost ? c.buildingTitle : c.name;
         return {
             id: c.isHost ? `host-${c.buildingId}` : `citizen-${c.name}`,
             type: 'citizen',
