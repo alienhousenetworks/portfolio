@@ -82,7 +82,7 @@ class Game {
 
         if (!hasCriticalModels()) {
             const hint = result.errors[0]?.error?.message?.includes('LFS')
-                ? 'GLB models missing on server. Run: git lfs pull && collectstatic'
+                ? 'GLB models missing on server. Run: git lfs pull and collectstatic'
                 : 'Character models failed to load. Check browser console.';
             this._showLoadError(hint);
             console.error('[game] No character models loaded', result.errors);

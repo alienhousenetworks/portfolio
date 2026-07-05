@@ -71,8 +71,10 @@ export class WorldBuilder {
 
     _inRiver(x, z, margin = 0) {
         const halfW = WORLD.riverWidth / 2 + margin;
-        return Math.abs(x - WORLD.riverX) < halfW
-            && Math.abs(z) < WORLD.riverLength / 2 + margin;
+        return (
+            Math.abs(x - WORLD.riverX) < halfW
+            && Math.abs(z) < WORLD.riverLength / 2 + margin
+        );
     }
 
     _markSite(x, z, w = 24, d = 24, h = 0) {
