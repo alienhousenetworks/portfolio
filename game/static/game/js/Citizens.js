@@ -26,7 +26,7 @@ const ALIEN_LINES = [
     'Our elevated metro was built by the finest architects.',
 ];
 
-const SHIRT_COLORS = [0xf0a040, 0x6a9ad8, 0xe88888, 0x88c8a0, 0xd8a0c8, 0xf0c878];
+const SHIRT_COLORS = [0xf08b3a, 0x4c8fe3, 0xc95757, 0x4ed2c8, 0xe8a6b7, 0xf7d55c, 0x8a78d8];
 
 export class CitizenManager {
     constructor(scene, terrain = null) {
@@ -44,6 +44,7 @@ export class CitizenManager {
         this._spawnCommuters();
         this._spawnWanderer();
         this._spawnCyclists();
+        this._spawnParkLife();
 
         const spots = this._walkSpots();
         for (let i = 0; i < 14; i++) {
@@ -139,6 +140,28 @@ export class CitizenManager {
             subtitle: 'WANDERER',
             line: 'Nothing like a cold soda on a breezy afternoon.',
             speed: 0, phase: 0, isWanderer: true, wanderT: 0,
+        });
+    }
+
+    _spawnParkLife() {
+        const parkSpots = [
+            { x: WORLD.parkX - 8, z: WORLD.parkZ + 5, line: 'Perfect weather for cherry blossoms.' },
+            { x: WORLD.parkX + 10, z: WORLD.parkZ - 6, line: 'This bench is my favorite reading spot.' },
+            { x: WORLD.parkX, z: WORLD.parkZ + 14, line: 'The fountain sounds so peaceful.' },
+        ];
+        parkSpots.forEach((spot, i) => {
+            const mesh = createHumanAvatar({
+                shirtColor: SHIRT_COLORS[(i + 2) % SHIRT_COLORS.length],
+                skinTone: 0xf0d0b0,
+            });
+            mesh.position.set(spot.x, this._groundY(spot.x, spot.z), spot.z);
+            mesh.add(createNameTag(['Sora', 'Hana', 'Ren'][i]));
+            this.scene.add(mesh);
+            this.citizens.push({
+                mesh, name: ['Sora', 'Hana', 'Ren'][i], type: 'human',
+                subtitle: 'PARK VISITOR', line: spot.line,
+                speed: 0, phase: i, isParkVisitor: true,
+            });
         });
     }
 
@@ -281,7 +304,7 @@ export class CitizenManager {
 
     update(dt) {
         this.citizens.filter(c => !c.isTeam || c.mesh.visible).forEach(c => {
-            if (c.isTeam || c.isHost || c.speed === 0) {
+            if (c.isTeam || c.isHost || c.isParkVisitor || c.speed === 0) {
                 if (c.isWanderer) {
                     c.wanderT = (c.wanderT || 0) + dt;
                     animateWanderer(c.mesh, c.wanderT);

@@ -10,6 +10,7 @@ import { TransitSystem } from './Vehicles.js';
 import { CitizenManager } from './Citizens.js';
 import { TransitRideController } from './TransitRide.js';
 import { DISTRICT_DEFS, MAP_LEGEND, POI_MAP_COLORS, getDistrictAt } from './Districts.js';
+import { getZoneAt, getZoneLabel } from './CityZones.js';
 import { TransitPicker } from './TransitPicker.js';
 
 class Game {
@@ -89,7 +90,7 @@ class Game {
         this.renderer.shadowMap.type = THREE.BasicShadowMap;
         this.renderer.outputColorSpace = THREE.SRGBColorSpace;
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        this.renderer.toneMappingExposure = 1.05;
+        this.renderer.toneMappingExposure = 0.95;
         el.appendChild(this.renderer.domElement);
 
         this.camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.5, 800);
@@ -274,8 +275,9 @@ class Game {
         const p = this.player.position;
         document.getElementById('coord-display').textContent = `${p.x.toFixed(0)}, ${p.z.toFixed(0)}`;
         const district = getDistrictAt(p.x, p.z);
+        const zone = getZoneLabel(getZoneAt(p.x, p.z));
         document.getElementById('zone-display').textContent =
-            this.nearestTarget?.subtitle || district.label.toUpperCase();
+            this.nearestTarget?.subtitle || (district.id !== 'downtown' ? district.label : zone).toUpperCase();
         document.getElementById('site-display').textContent = this.data.siteName;
     }
 
@@ -294,11 +296,11 @@ class Game {
         const w = c.width, h = c.height, sc = w / 400;
         const cx = w / 2, cy = h / 2;
 
-        ctx.fillStyle = '#c8d8c0';
+        ctx.fillStyle = '#a6d58f';
         ctx.fillRect(0, 0, w, h);
 
         const rcx = cx + WORLD.riverX * sc;
-        ctx.fillStyle = '#a8dcc8';
+        ctx.fillStyle = '#4ed2c8';
         ctx.fillRect(rcx - WORLD.riverWidth * sc / 2, 0, WORLD.riverWidth * sc, h);
 
         ctx.strokeStyle = 'rgba(255,255,255,0.06)';

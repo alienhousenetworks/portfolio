@@ -24,7 +24,7 @@
 
     <div id="start-screen" class="hidden">
         <h1 class="start-title">{{ config.site_name|default:"ALIENHOUSE" }}<span>City Explorer</span></h1>
-        <p class="start-subtitle">Land to a human &amp; alien welcome, then ride buses &amp; metro to any service city</p>
+        <p class="start-subtitle">Explore a cozy cel-shaded neighborhood city — ride transit, climb hillside stairs, discover every district</p>
         <button id="btn-start" class="btn-engage">START</button>
         <p class="controls-hint"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move · Drag to orbit camera · <kbd>Shift</kbd> Run · <kbd>E</kbd> Details · Climb hillside stairs to change elevation</p>
     </div>
@@ -79,6 +79,6 @@
     </div>
 
     {{ game_data|json_script:"game-data" }}
-    <script type="module" src="{% static 'game/js/main.js' %}?v=20"></script>
+    <script type="module" src="{% static 'game/js/main.js' %}?v=21"></script>
 </body>
 </html>

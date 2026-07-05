@@ -10,6 +10,7 @@ import { TransitSystem } from './Vehicles.js';
 import { CitizenManager } from './Citizens.js';
 import { TransitRideController } from './TransitRide.js';
 import { DISTRICT_DEFS, MAP_LEGEND, POI_MAP_COLORS, getDistrictAt } from './Districts.js';
+import { getZoneAt, getZoneLabel } from './CityZones.js';
 import { TransitPicker } from './TransitPicker.js';
 
 class Game {
@@ -274,8 +275,9 @@ class Game {
         const p = this.player.position;
         document.getElementById('coord-display').textContent = `${p.x.toFixed(0)}, ${p.z.toFixed(0)}`;
         const district = getDistrictAt(p.x, p.z);
+        const zone = getZoneLabel(getZoneAt(p.x, p.z));
         document.getElementById('zone-display').textContent =
-            this.nearestTarget?.subtitle || district.label.toUpperCase();
+            this.nearestTarget?.subtitle || (district.id !== 'downtown' ? district.label : zone).toUpperCase();
         document.getElementById('site-display').textContent = this.data.siteName;
     }
 

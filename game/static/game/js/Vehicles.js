@@ -249,9 +249,9 @@ export class TransitSystem {
     _spawnBuses() {
         const routes = [
             { axis: 'z', pos: 25, min: -280, max: 280, speed: 16, color: PALETTE.busCream, accent: PALETTE.busOrange, label: 'Route 7' },
-            { axis: 'z', pos: 75, min: -280, max: 280, speed: -14, color: 0xf0e8d8, accent: 0xf0a888, label: 'Route 3' },
-            { axis: 'x', pos: 55, min: -280, max: 280, speed: 15, color: PALETTE.busCream, accent: 0xe8c8a0, label: 'Route 12' },
-            { axis: 'x', pos: -75, min: -280, max: 280, speed: -13, color: 0xf5f0e8, accent: PALETTE.busOrange, label: 'Route 5' },
+            { axis: 'z', pos: 75, min: -280, max: 280, speed: -14, color: PALETTE.concreteLight, accent: PALETTE.mint, label: 'Route 3' },
+            { axis: 'x', pos: 55, min: -280, max: 280, speed: 15, color: PALETTE.busCream, accent: PALETTE.yellow, label: 'Route 12' },
+            { axis: 'x', pos: -75, min: -280, max: 280, speed: -13, color: PALETTE.concreteLight, accent: PALETTE.busOrange, label: 'Route 5' },
         ];
         routes.forEach((r, i) => {
             const bus = createBus(r.color, r.accent);
