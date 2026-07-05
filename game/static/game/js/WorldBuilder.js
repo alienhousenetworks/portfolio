@@ -242,22 +242,83 @@ export class WorldBuilder {
     _buildLushTerraces(cx, cy_base, cz, radius, height, seed) {
         const g = new THREE.Group();
         g.position.set(cx, cy_base, cz);
-        const steps = 6;
-        const heightPerStep = height / steps;
 
-        for (let i = 0; i < steps; i++) {
-            const stepRadius = radius * (1.0 - (i * 0.12));
-            const yPos = i * heightPerStep;
+        const numLevels = 7;
+        const levelHeight = height / numLevels;
+        let currentRadius = radius;
+        const terraceData = [];
+
+        // Colors matching aesthetic
+        const rockColor = 0x7a6c62;
+        const grassColor = PALETTE.grass;
+        const waterColor = PALETTE.riverShallow;
+        const treeFoliageColor = 0x8a3ba0; // Purple foliage
+        const woodColor = PALETTE.wood[0];
+
+        for (let i = 0; i < numLevels; i++) {
+            const nextRadius = currentRadius - (radius * 0.12);
             
-            const step = toonMesh(new THREE.CylinderGeometry(stepRadius, stepRadius + 1.2, heightPerStep, 10), PALETTE.grass);
-            step.mesh.position.y = yPos + heightPerStep / 2;
-            g.add(step.group);
+            // 1. Rock Base
+            const rock = toonMesh(new THREE.CylinderGeometry(nextRadius, currentRadius, levelHeight, 16), rockColor);
+            rock.mesh.position.y = (i * levelHeight) + (levelHeight / 2);
+            g.add(rock.group);
 
-            // Waterfall segment
-            const water = toonMesh(new THREE.BoxGeometry(stepRadius * 0.22, heightPerStep + 0.5, 0.6), PALETTE.riverShallow);
-            water.mesh.position.set(stepRadius - 0.2, yPos + heightPerStep / 2, 0);
+            // 2. Grass Layer on top
+            const grassHeight = 0.4;
+            const grass = toonMesh(new THREE.CylinderGeometry(nextRadius, nextRadius, grassHeight, 16), grassColor);
+            grass.mesh.position.y = (i * levelHeight) + levelHeight + grassHeight / 2;
+            g.add(grass.group);
+
+            terraceData.push({ y: (i * levelHeight) + levelHeight + grassHeight / 2, radius: nextRadius });
+
+            // 3. Add Purple Trees around the perimeter (leaving a gap for the waterfall at angle 0)
+            const numTrees = 4 + (seed % 3);
+            for (let t = 0; t < numTrees; t++) {
+                const angle = (t / numTrees) * Math.PI * 2 + (seed * 0.5);
+                if (angle > -0.5 && angle < 0.5) continue; // Gap for waterfall
+
+                const treeRadius = nextRadius - 1.2;
+                const treeSize = 0.6 + (t % 3) * 0.2;
+                const tree = toonMesh(new THREE.SphereGeometry(treeSize, 12, 12), treeFoliageColor);
+                
+                tree.mesh.position.set(
+                    Math.cos(angle) * treeRadius,
+                    ((i * levelHeight) + levelHeight + grassHeight) + treeSize * 0.5,
+                    Math.sin(angle) * treeRadius
+                );
+                g.add(tree.group);
+            }
+
+            currentRadius = nextRadius;
+        }
+
+        // 4. Create Waterfall Cascades (down Z axis)
+        for (let i = 1; i < numLevels; i++) {
+            const upper = terraceData[i];
+            const lower = terraceData[i - 1];
+            
+            const waterWidth = 1.6 + ((numLevels - i) * 0.4); 
+            const waterHeight = (upper.y - lower.y) * 1.4;
+
+            const water = toonMesh(new THREE.PlaneGeometry(waterWidth, waterHeight), waterColor, { transparent: true, opacity: 0.85 });
+            
+            water.mesh.position.set(0, (upper.y + lower.y) / 2, upper.radius - 0.1);
+            water.mesh.rotation.x = -Math.PI / 8; // angle it down/outwards slightly
+            
             g.add(water.group);
         }
+
+        // 5. Add Temple at the Peak
+        const topLevel = terraceData[numLevels - 1];
+        const base = toonMesh(new THREE.BoxGeometry(3, 1.5, 3), woodColor);
+        base.mesh.position.set(0, topLevel.y + 0.75, 0);
+        g.add(base.group);
+
+        const roof = toonMesh(new THREE.ConeGeometry(2.5, 2, 4), treeFoliageColor);
+        roof.mesh.position.set(0, topLevel.y + 2.5, 0);
+        roof.mesh.rotation.y = Math.PI / 4;
+        g.add(roof.group);
+
         this.scene.add(g);
     }
 
@@ -265,20 +326,68 @@ export class WorldBuilder {
         const g = new THREE.Group();
         g.position.set(cx, cy_base, cz);
 
-        const volcano = toonMesh(new THREE.ConeGeometry(radius, height, 8), 0x222222);
-        volcano.mesh.position.y = height / 2;
-        g.add(volcano.group);
+        const magmaCol = 0xff2200;
+        const obsidianCol = 0x1a1a1c;
 
-        for (let i = 0; i < 3; i++) {
-            const rRatio = 0.65 - i * 0.15;
-            const vein = toonMesh(new THREE.TorusGeometry(radius * rRatio, radius * 0.08, 8, 16), 0xff4500, {
-                emissive: 0xff2200,
-                emissiveIntensity: 1.0
-            });
-            vein.mesh.rotation.x = Math.PI / 2 + (i * 0.1);
-            vein.mesh.position.y = height * (0.3 + i * 0.22);
-            g.add(vein.group);
+        // 1. The Glowing Core (Magma Base)
+        const core = toonMesh(new THREE.ConeGeometry(radius, height, 16), magmaCol, {
+            emissive: 0xff3300,
+            emissiveIntensity: 1.5
+        });
+        core.mesh.position.y = height / 2;
+        g.add(core.group);
+
+        // Magma Glow PointLight
+        const light = new THREE.PointLight(0xff4500, 2.0, radius * 2.5);
+        light.position.set(0, height * 0.4, 0);
+        g.add(light);
+
+        // 2. Procedural Obsidian Rock Shell (optimized count for performance)
+        const numRocks = 120;
+        for (let i = 0; i < numRocks; i++) {
+            const yPos = (i / numRocks) * height;
+            const angle = (i * 2.39) % (Math.PI * 2); // Fibonacci spiral-like angle distribution
+            const currentRadius = radius * (1.0 - (yPos / height));
+            const size = (0.08 + (i % 5) * 0.03) * radius * (1.0 - (yPos / height) * 0.5);
+
+            const rock = toonMesh(new THREE.DodecahedronGeometry(size, 0), obsidianCol);
+            rock.mesh.position.set(
+                Math.cos(angle) * (currentRadius + 0.1),
+                yPos,
+                Math.sin(angle) * (currentRadius + 0.1)
+            );
+            rock.mesh.rotation.set((i * 0.3) % Math.PI, (i * 0.7) % Math.PI, (i * 1.1) % Math.PI);
+            rock.mesh.scale.set(1.0, 1.4, 0.6); // Flat slab shape
+            g.add(rock.group);
         }
+
+        // 3. Magma River Tube
+        const curve = new THREE.CatmullRomCurve3([
+            new THREE.Vector3(0, height - 1.5, 0),
+            new THREE.Vector3(radius * 0.18, height * 0.6, radius * 0.32),
+            new THREE.Vector3(radius * 0.12, height * 0.3, radius * 0.68),
+            new THREE.Vector3(radius * 0.28, 0.5, radius * 1.02)
+        ]);
+        const riverGeo = new THREE.TubeGeometry(curve, 16, radius * 0.07, 6, false);
+        const river = toonMesh(riverGeo, magmaCol, {
+            emissive: 0xff3300,
+            emissiveIntensity: 1.5
+        });
+        g.add(river.group);
+
+        // 4. Static smoke clouds at the peak
+        const smokeMat = toonMat(0x444444, { transparent: true, opacity: 0.6 });
+        for (let i = 0; i < 5; i++) {
+            const smoke = new THREE.Mesh(new THREE.SphereGeometry(radius * 0.12, 8, 8), smokeMat);
+            smoke.position.set(
+                (Math.sin(i * 3) * radius * 0.1),
+                height + (i * radius * 0.08),
+                (Math.cos(i * 3) * radius * 0.1)
+            );
+            smoke.scale.set(1.4, 0.8, 1.2);
+            g.add(smoke);
+        }
+
         this.scene.add(g);
     }
 
@@ -354,35 +463,143 @@ export class WorldBuilder {
         const g = new THREE.Group();
         g.position.set(cx, cy_base, cz);
 
-        const cave = toonMesh(new THREE.SphereGeometry(radius * 0.7, 16, 12, 0, Math.PI, 0, Math.PI / 2), 0x555544);
-        cave.mesh.rotation.x = -Math.PI / 2;
-        g.add(cave.group);
+        const scale = radius * 0.055;
+        const rockColor = 0x82857d;
+        const mossColor = 0x5b7548;
+        const barkColor = 0x3d3224;
+        const leafColor = 0x4a6e38;
+        const ruinColor = 0x6e7368;
+        const mushroomGlowColor = 0x66ffcc;
 
-        const darkHole = toonMesh(new THREE.CircleGeometry(radius * 0.62, 16), 0x000000);
-        darkHole.mesh.position.y = 0.04;
-        darkHole.mesh.rotation.x = -Math.PI / 2;
-        g.add(darkHole.group);
+        // Cave interior mysterious light
+        const caveLight = new THREE.PointLight(0x4444ff, 2.0, 25 * scale);
+        caveLight.position.set(0, 4 * scale, -5 * scale);
+        g.add(caveLight);
 
-        for (let i = 0; i < 6; i++) {
-            const angle = (i / 6) * Math.PI;
-            const tx = Math.cos(angle) * (radius * 0.75);
-            const tz = Math.sin(angle) * (radius * 0.75);
-            const ty = this.getTerrainHeight(cx + tx, cz + tz) - cy_base;
+        // 1. Dome Rocks & Mossy Patches
+        const rockLayout = [
+            { x: -6 * scale, y: 3 * scale, z: 2 * scale, s: 7 * scale },
+            { x: 6 * scale, y: 3 * scale, z: 2 * scale, s: 7 * scale },
+            { x: 0 * scale, y: 8 * scale, z: -2 * scale, s: 8 * scale },
+            { x: -4 * scale, y: 6 * scale, z: -4 * scale, s: 6 * scale },
+            { x: 4 * scale, y: 6 * scale, z: -4 * scale, s: 6 * scale },
+            { x: 0 * scale, y: 3 * scale, z: -8 * scale, s: 8 * scale }
+        ];
 
+        rockLayout.forEach((data, idx) => {
+            // Jagged rock
+            const rock = toonMesh(new THREE.IcosahedronGeometry(data.s, 1), rockColor);
+            rock.mesh.position.set(data.x, data.y, data.z);
+            rock.mesh.scale.set(1.0, 1.2, 1.0);
+            rock.mesh.rotation.set((idx * 0.4) % Math.PI, (idx * 0.7) % Math.PI, (idx * 1.1) % Math.PI);
+            g.add(rock.group);
+
+            // Moss patch on top
+            const moss = toonMesh(new THREE.IcosahedronGeometry(data.s * 0.95, 1), mossColor);
+            moss.mesh.position.set(data.x, data.y + (data.s * 0.18), data.z);
+            moss.mesh.scale.set(1.05, 0.9, 1.05);
+            moss.mesh.rotation.copy(rock.mesh.rotation);
+            g.add(moss.group);
+        });
+
+        // Dark depth background plane
+        const darkPlane = toonMesh(new THREE.PlaneGeometry(20 * scale, 15 * scale), 0x050508);
+        darkPlane.mesh.position.set(0, 5 * scale, -10 * scale);
+        g.add(darkPlane.group);
+
+        // 2. Prehistoric Ruins (Broken Pillars)
+        const pillarGeo = new THREE.BoxGeometry(1.2 * scale, 4 * scale, 1.2 * scale);
+        
+        const pillar1 = toonMesh(pillarGeo, ruinColor);
+        pillar1.mesh.position.set(-2 * scale, 2 * scale, -1 * scale);
+        pillar1.mesh.rotation.set(0, 0.4, 0.1);
+        g.add(pillar1.group);
+
+        const pillar2 = toonMesh(pillarGeo, ruinColor);
+        pillar2.mesh.position.set(2.5 * scale, 1.5 * scale, -2 * scale);
+        pillar2.mesh.rotation.set(-0.1, 0, -0.2);
+        g.add(pillar2.group);
+
+        // 3. Twisting Roots
+        const createRoot = (pts, rad) => {
+            const curve = new THREE.CatmullRomCurve3(pts);
+            const tube = toonMesh(new THREE.TubeGeometry(curve, 16, rad, 6, false), barkColor);
+            g.add(tube.group);
+        };
+
+        // Left draping root
+        createRoot([
+            new THREE.Vector3(-4 * scale, 14 * scale, -2 * scale),
+            new THREE.Vector3(-7 * scale, 9 * scale, 2 * scale),
+            new THREE.Vector3(-5 * scale, 4 * scale, 6 * scale),
+            new THREE.Vector3(-8 * scale, 0, 8 * scale)
+        ], 0.6 * scale);
+
+        // Right framing root
+        createRoot([
+            new THREE.Vector3(4 * scale, 13 * scale, -1 * scale),
+            new THREE.Vector3(6 * scale, 8 * scale, 4 * scale),
+            new THREE.Vector3(8 * scale, 3 * scale, 5 * scale),
+            new THREE.Vector3(5 * scale, 0, 9 * scale)
+        ], 0.5 * scale);
+
+        // 4. Top Forest Trees
+        const createTopTree = (x, y, z, sc) => {
             const treeGroup = new THREE.Group();
-            treeGroup.position.set(tx, ty, tz);
+            treeGroup.position.set(x, y, z);
+            treeGroup.scale.setScalar(sc);
 
-            const trunk = toonMesh(new THREE.CylinderGeometry(radius * 0.04, radius * 0.06, radius * 0.35, 5), PALETTE.wood[0]);
-            trunk.mesh.position.y = radius * 0.17;
-            const leaves = toonMesh(new THREE.DodecahedronGeometry(radius * 0.22), PALETTE.foliage[i % 3]);
-            leaves.mesh.position.y = radius * 0.4;
-            
+            const trunk = toonMesh(new THREE.CylinderGeometry(0.8 * scale, 1.2 * scale, 4 * scale, 7), barkColor);
+            trunk.mesh.position.y = 2 * scale;
             treeGroup.add(trunk.group);
-            treeGroup.add(leaves.group);
 
-            treeGroup.scale.setScalar(0.7 + (i % 3) * 0.2);
+            const leafGeo = new THREE.IcosahedronGeometry(2.5 * scale, 1);
+            for (let i = 0; i < 3; i++) {
+                const leaves = toonMesh(leafGeo, leafColor);
+                leaves.mesh.position.set(
+                    (Math.sin(i * 2) * 0.8 * scale),
+                    (4 * scale + i * 0.8 * scale),
+                    (Math.cos(i * 2) * 0.8 * scale)
+                );
+                treeGroup.add(leaves.group);
+            }
             g.add(treeGroup);
-        }
+        };
+
+        createTopTree(2 * scale, 13 * scale, -3 * scale, 1.5);
+        createTopTree(-3 * scale, 11 * scale, -4 * scale, 1.2);
+        createTopTree(-8 * scale, 5 * scale, 2 * scale, 0.8);
+
+        // 5. Glowing Cyan Mushrooms
+        const createMushroom = (x, y, z, sc) => {
+            const shroom = new THREE.Group();
+            shroom.position.set(x, y, z);
+            shroom.scale.setScalar(sc);
+
+            const stalk = toonMesh(new THREE.CylinderGeometry(0.1 * scale, 0.2 * scale, 1 * scale, 8), barkColor);
+            stalk.mesh.position.y = 0.5 * scale;
+            shroom.add(stalk.group);
+
+            const cap = toonMesh(new THREE.SphereGeometry(0.6 * scale, 12, 12, 0, Math.PI * 2, 0, Math.PI / 2), mushroomGlowColor, {
+                emissive: 0x22ccaa,
+                emissiveIntensity: 2.0
+            });
+            cap.mesh.position.y = 1 * scale;
+            cap.mesh.scale.set(1.0, 0.5, 1.0);
+            shroom.add(cap.group);
+
+            const shroomLight = new THREE.PointLight(0x66ffcc, 1.0, 4 * scale);
+            shroomLight.position.y = 1 * scale;
+            shroom.add(shroomLight);
+
+            g.add(shroom);
+        };
+
+        createMushroom(-6 * scale, 2 * scale, 6 * scale, 1.2);
+        createMushroom(-7 * scale, 1.5 * scale, 7 * scale, 0.8);
+        createMushroom(6 * scale, 4 * scale, 5 * scale, 1.5);
+        createMushroom(8 * scale, 1 * scale, 4 * scale, 1.0);
+
         this.scene.add(g);
     }
 
