@@ -14,7 +14,7 @@ import {
     isRiggedAvatar,
 } from './CharacterAnimator.js';
 
-export { setCharacterPose, updateLocomotionPose };
+export { setCharacterPose, updateLocomotionPose, tickAnimator, isRiggedAvatar };
 export const fadeHumanAction = setCharacterPose;
 export const updateHumanAnimator = tickAnimator;
 
