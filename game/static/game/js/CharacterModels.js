@@ -46,6 +46,35 @@ function resolveUrl(base, file) {
     return `${root}${file}`;
 }
 
+function glbLoadError(url, buffer) {
+    const bytes = new Uint8Array(buffer);
+    const magic = String.fromCharCode(bytes[0] || 0, bytes[1] || 0, bytes[2] || 0, bytes[3] || 0);
+    if (magic === 'glTF') return null;
+    const preview = new TextDecoder().decode(bytes.slice(0, 160));
+    if (preview.startsWith('version https://git-lfs')) {
+        return new Error(
+            `Git LFS pointer at ${url} — on VPS run: git lfs install && git lfs pull && collectstatic`
+        );
+    }
+    if (preview.trimStart().startsWith('<!DOCTYPE') || preview.trimStart().startsWith('<html')) {
+        return new Error(`HTML error page returned for ${url} — check static file path on server`);
+    }
+    return new Error(`Invalid GLB at ${url} (expected glTF magic, got "${magic}")`);
+}
+
+async function fetchAndParseGlb(url) {
+    const res = await fetch(url);
+    if (!res.ok) {
+        throw new Error(`Failed to fetch ${url}: HTTP ${res.status}`);
+    }
+    const buffer = await res.arrayBuffer();
+    const bad = glbLoadError(url, buffer);
+    if (bad) throw bad;
+    return new Promise((resolve, reject) => {
+        _loader.parse(buffer, url, resolve, reject);
+    });
+}
+
 function prepareMeshes(root) {
     root.traverse(obj => {
         if (!obj.isMesh) return;
@@ -119,39 +148,36 @@ export async function preloadCharacterModels(baseUrl, onProgress) {
     ];
     let done = 0;
     const total = entries.length;
+    const errors = [];
 
-    await Promise.all(entries.map(({ id, cfg }) => new Promise((resolve, reject) => {
+    await Promise.all(entries.map(async ({ id, cfg }) => {
         if (_cache.has(id)) {
             done += 1;
             onProgress?.(done / total, id);
-            resolve();
             return;
         }
-        _loader.load(
-            resolveUrl(baseUrl, cfg.file),
-            gltf => {
-                const scene = gltf.scene;
-                prepareMeshes(scene);
-                normalizeHeight(scene, cfg.targetHeight);
-                _cache.set(id, {
-                    scene,
-                    animations: gltf.animations || [],
-                    animated: cfg.animated,
-                    targetHeight: cfg.targetHeight,
-                });
-                done += 1;
-                onProgress?.(done / total, id);
-                resolve();
-            },
-            xhr => {
-                if (xhr.total) {
-                    const filePct = xhr.loaded / xhr.total;
-                    onProgress?.((done + filePct) / total, id);
-                }
-            },
-            reject
-        );
-    })));
+        const url = resolveUrl(baseUrl, cfg.file);
+        try {
+            const gltf = await fetchAndParseGlb(url);
+            const scene = gltf.scene;
+            prepareMeshes(scene);
+            normalizeHeight(scene, cfg.targetHeight);
+            _cache.set(id, {
+                scene,
+                animations: gltf.animations || [],
+                animated: cfg.animated,
+                targetHeight: cfg.targetHeight,
+            });
+        } catch (err) {
+            console.error(`[CharacterModels] ${id}:`, err.message || err);
+            errors.push({ id, url, error: err });
+        } finally {
+            done += 1;
+            onProgress?.(done / total, id);
+        }
+    }));
+
+    return { loaded: _cache.size, total, errors };
 }
 
 export function createCharacterInstance(type, modelKey, opts = {}) {

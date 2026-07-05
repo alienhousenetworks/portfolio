@@ -51,7 +51,15 @@ class Game {
         );
         this.dialogue = new DialogueSystem(data);
         this._ui();
+        this._ready = false;
         requestAnimationFrame(() => this._loop());
+    }
+
+    _showLoadError(msg) {
+        const title = document.querySelector('#loading-screen .start-title');
+        const fill = document.querySelector('.loading-bar-fill');
+        if (title) title.textContent = msg;
+        if (fill) fill.style.width = '0%';
     }
 
     _setLoadProgress(pct) {
@@ -63,10 +71,18 @@ class Game {
 
     async initCharacters() {
         const base = this.data.staticBase || '/static/game/';
-        try {
-            await preloadCharacterModels(base, pct => this._setLoadProgress(pct));
-        } catch (err) {
-            console.error('[game] Failed to load character models', err);
+        const result = await preloadCharacterModels(base, pct => this._setLoadProgress(pct));
+
+        if (!result.loaded) {
+            const hint = result.errors[0]?.error?.message?.includes('LFS')
+                ? 'GLB models missing on server. Run: git lfs pull && collectstatic'
+                : 'Character models failed to load. Check browser console.';
+            this._showLoadError(hint);
+            console.error('[game] No character models loaded', result.errors);
+            return;
+        }
+        if (result.errors.length) {
+            console.warn('[game] Some character models failed:', result.errors);
         }
 
         const buildings = this.world?.buildings || this.data.buildings || [];
@@ -96,6 +112,7 @@ class Game {
             () => this._afterCinematic()
         );
 
+        this._ready = true;
         document.getElementById('loading-screen')?.classList.add('hidden');
         document.getElementById('start-screen')?.classList.remove('hidden');
         this.state = 'start';
@@ -247,6 +264,7 @@ class Game {
     }
 
     _proximity() {
+        if (!this._ready || !this.player) return;
         if (this.state === 'riding' || this.state !== 'playing' || this.dialogue.active
             || document.getElementById('transit-picker')?.classList.contains('active')) {
             this.nearestTarget = null;
@@ -285,6 +303,7 @@ class Game {
     }
 
     _hud() {
+        if (!this._ready || !this.player) return;
         if (this.state === 'riding') {
             const p = this.player.position;
             document.getElementById('coord-display').textContent = `${p.x.toFixed(0)}, ${p.z.toFixed(0)}`;
@@ -311,7 +330,7 @@ class Game {
 
     _minimap() {
         const c = document.getElementById('minimap-canvas');
-        if (!c || (this.state !== 'playing' && this.state !== 'riding')) return;
+        if (!c || !this._ready || !this.player || (this.state !== 'playing' && this.state !== 'riding')) return;
         const ctx = c.getContext('2d');
         const w = c.width, h = c.height, sc = w / 400;
         const cx = w / 2, cy = h / 2;
@@ -374,21 +393,29 @@ class Game {
         requestAnimationFrame(() => this._loop());
         const dt = Math.min(this.clock.getDelta(), 0.05);
 
-        if (this.cinematic.isActive()) {
-            this.cinematic.update(dt);
-        } else if (this.ride.isActive()) {
-            this.ride.update(dt);
-            this.transit.update(dt);
-            this.citizens.update(dt);
-        } else if (this.state === 'playing') {
-            this.playerCtrl.update(dt);
-            this.transit.update(dt);
-            this.citizens.update(dt);
+        if (this._ready) {
+            if (this.cinematic?.isActive()) {
+                this.cinematic.update(dt);
+            } else if (this.ride?.isActive()) {
+                this.ride.update(dt);
+                this.transit.update(dt);
+                this.citizens.update(dt);
+            } else if (this.state === 'playing' && this.playerCtrl) {
+                this.playerCtrl.update(dt);
+                this.transit.update(dt);
+                this.citizens.update(dt);
+            }
+
+            this._proximity();
+            this._hud();
+            this._minimap();
         }
 
-        this._proximity();
-        this._hud();
-        this._minimap();
+        if (this.terrain?.update) {
+            this.terrain.update(dt);
+        }
+
+        this._animateClouds?.(dt);
         this.renderer.render(this.scene, this.camera);
     }
 }
