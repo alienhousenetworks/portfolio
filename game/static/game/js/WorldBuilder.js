@@ -177,62 +177,22 @@ export class WorldBuilder {
     }
 
     _buildMountain(cx, cy_base, cz, radius, height, seed) {
-        const g = new THREE.Group();
-        g.position.set(cx, cy_base, cz);
-
-        // Determine color based on height
-        let bodyColor, capColor;
-        if (height > 90) {
-            bodyColor = PALETTE.mountain[3]; // atmospheric distant grey
-            capColor  = PALETTE.mountainSnow;
-        } else if (height > 65) {
-            bodyColor = PALETTE.mountainRock;
-            capColor  = PALETTE.mountainSnow;
-        } else if (height > 40) {
-            bodyColor = PALETTE.mountain[0]; // dark forest green
-            capColor  = PALETTE.mountain[2];
+        const type = seed % 6;
+        if (type === 0) {
+            this._buildShatteredSpire(cx, cy_base, cz, radius, height, seed);
+        } else if (type === 1) {
+            this._buildLushTerraces(cx, cy_base, cz, radius, height, seed);
+        } else if (type === 2) {
+            this._buildObsidianFang(cx, cy_base, cz, radius, height, seed);
+        } else if (type === 3) {
+            this._buildCrystalSpine(cx, cy_base, cz, radius, height, seed);
+        } else if (type === 4) {
+            this._buildFloatingIslands(cx, cy_base, cz, radius, height, seed);
         } else {
-            bodyColor = PALETTE.mountain[1]; // lighter green
-            capColor  = null;
+            this._buildForestMaw(cx, cy_base, cz, radius, height, seed);
         }
 
-        // Main cone body
-        const segs = 8 + (seed % 4);
-        const body = toonMesh(
-            new THREE.ConeGeometry(radius, height, segs),
-            bodyColor
-        );
-        body.mesh.position.y = height / 2;
-        body.mesh.castShadow = true;
-        body.mesh.receiveShadow = true;
-        // Slight irregular rotation to break symmetry
-        body.mesh.rotation.y = (seed * 0.37) % (Math.PI * 2);
-        g.add(body.group);
-
-        // Snow cap on tall peaks
-        if (capColor && height > 50) {
-            const snapH = height * 0.28;
-            const snapR = radius * 0.35;
-            const cap = toonMesh(new THREE.ConeGeometry(snapR, snapH, segs), capColor);
-            cap.mesh.position.y = height - snapH * 0.35;
-            cap.mesh.rotation.y = body.mesh.rotation.y;
-            g.add(cap.group);
-        }
-
-        // Secondary bump for realism
-        if (seed % 3 !== 0) {
-            const bump = toonMesh(
-                new THREE.ConeGeometry(radius * 0.52, height * 0.68, 7),
-                bodyColor
-            );
-            bump.mesh.position.set(radius * 0.38, height * 0.34, radius * 0.18);
-            bump.mesh.rotation.y = seed * 0.8;
-            g.add(bump.group);
-        }
-
-        this.scene.add(g);
-
-        // Pine forest on lower slopes
+        // Pine forest on lower slopes of mountain bases
         if (height < 80) {
             const pineCount = 5 + (seed % 7);
             for (let p = 0; p < pineCount; p++) {
@@ -246,6 +206,184 @@ export class WorldBuilder {
                 this.scene.add(pine);
             }
         }
+    }
+
+    _buildShatteredSpire(cx, cy_base, cz, radius, height, seed) {
+        const g = new THREE.Group();
+        g.position.set(cx, cy_base, cz);
+
+        // Core Energy
+        const core = toonMesh(new THREE.CylinderGeometry(radius * 0.12, radius * 0.12, height, 6), 0x00ffff, {
+            emissive: 0x0088ff,
+            emissiveIntensity: 1.5
+        });
+        core.mesh.position.y = height / 2;
+        g.add(core.group);
+
+        // Fractured Shells
+        const rockMatColor = 0x4a4a5a;
+        for (let i = 0; i < 15; i++) {
+            const rockGeo = new THREE.TetrahedronGeometry((0.15 + (i % 3) * 0.08) * radius, 1);
+            const rock = toonMesh(rockGeo, rockMatColor);
+            
+            const angle = (i / 15) * Math.PI * 2 + (i * 0.7);
+            const r = radius * (0.3 + (i % 3) * 0.22);
+            rock.mesh.position.set(
+                Math.cos(angle) * r,
+                ((i / 15) * height),
+                Math.sin(angle) * r
+            );
+            rock.mesh.rotation.set(i * 0.5, i * 0.8, 0);
+            g.add(rock.group);
+        }
+        this.scene.add(g);
+    }
+
+    _buildLushTerraces(cx, cy_base, cz, radius, height, seed) {
+        const g = new THREE.Group();
+        g.position.set(cx, cy_base, cz);
+        const steps = 6;
+        const heightPerStep = height / steps;
+
+        for (let i = 0; i < steps; i++) {
+            const stepRadius = radius * (1.0 - (i * 0.12));
+            const yPos = i * heightPerStep;
+            
+            const step = toonMesh(new THREE.CylinderGeometry(stepRadius, stepRadius + 1.2, heightPerStep, 10), PALETTE.grass);
+            step.mesh.position.y = yPos + heightPerStep / 2;
+            g.add(step.group);
+
+            // Waterfall segment
+            const water = toonMesh(new THREE.BoxGeometry(stepRadius * 0.22, heightPerStep + 0.5, 0.6), PALETTE.riverShallow);
+            water.mesh.position.set(stepRadius - 0.2, yPos + heightPerStep / 2, 0);
+            g.add(water.group);
+        }
+        this.scene.add(g);
+    }
+
+    _buildObsidianFang(cx, cy_base, cz, radius, height, seed) {
+        const g = new THREE.Group();
+        g.position.set(cx, cy_base, cz);
+
+        const volcano = toonMesh(new THREE.ConeGeometry(radius, height, 8), 0x222222);
+        volcano.mesh.position.y = height / 2;
+        g.add(volcano.group);
+
+        for (let i = 0; i < 3; i++) {
+            const rRatio = 0.65 - i * 0.15;
+            const vein = toonMesh(new THREE.TorusGeometry(radius * rRatio, radius * 0.08, 8, 16), 0xff4500, {
+                emissive: 0xff2200,
+                emissiveIntensity: 1.0
+            });
+            vein.mesh.rotation.x = Math.PI / 2 + (i * 0.1);
+            vein.mesh.position.y = height * (0.3 + i * 0.22);
+            g.add(vein.group);
+        }
+        this.scene.add(g);
+    }
+
+    _buildCrystalSpine(cx, cy_base, cz, radius, height, seed) {
+        const g = new THREE.Group();
+        g.position.set(cx, cy_base, cz);
+        const crystalColor = 0xaaccff;
+
+        for (let i = 0; i < 8; i++) {
+            const crystalGeo = new THREE.OctahedronGeometry(radius * 0.28, 0);
+            const crystal = toonMesh(crystalGeo, crystalColor, {
+                transparent: true,
+                opacity: 0.85,
+                emissive: crystalColor,
+                emissiveIntensity: 0.15
+            });
+            
+            const scaleY = 1.5 + (i % 3) * 0.8;
+            crystal.mesh.scale.set(1.0, scaleY, 1.0);
+            
+            const angle = (i / 8) * Math.PI * 2;
+            const dist = radius * 0.35;
+            crystal.mesh.position.set(
+                Math.cos(angle) * dist,
+                (radius * 0.2) * scaleY,
+                Math.sin(angle) * dist
+            );
+            
+            crystal.mesh.rotation.z = Math.cos(angle) * 0.3;
+            crystal.mesh.rotation.x = Math.sin(angle) * 0.3;
+            crystal.mesh.rotation.y = i * 0.7;
+            g.add(crystal.group);
+        }
+        this.scene.add(g);
+    }
+
+    _buildFloatingIslands(cx, cy_base, cz, radius, height, seed) {
+        const g = new THREE.Group();
+        g.position.set(cx, cy_base, cz);
+
+        const islands = [
+            { x: 0, y: height, z: 0, r: radius * 0.5 },
+            { x: -radius * 0.6, y: height * 0.8, z: radius * 0.35, r: radius * 0.35 },
+            { x: radius * 0.55, y: height * 1.1, z: -radius * 0.25, r: radius * 0.4 }
+        ];
+
+        islands.forEach(data => {
+            const base = toonMesh(new THREE.ConeGeometry(data.r, data.r * 2.0, 7), 0x666677);
+            base.mesh.rotation.x = Math.PI;
+            base.mesh.position.set(data.x, data.y - data.r, data.z);
+            g.add(base.group);
+
+            const top = toonMesh(new THREE.CylinderGeometry(data.r * 0.9, data.r, 0.4, 7), PALETTE.grass);
+            top.mesh.position.set(data.x, data.y, data.z);
+            g.add(top.group);
+        });
+
+        const bridge = toonMesh(new THREE.CylinderGeometry(radius * 0.04, radius * 0.04, height * 0.75, 8), 0xee88ff, {
+            transparent: true,
+            opacity: 0.7,
+            emissive: 0xee88ff,
+            emissiveIntensity: 0.5
+        });
+        bridge.mesh.position.set(-radius * 0.3, height * 0.9, radius * 0.18);
+        bridge.mesh.rotation.z = Math.PI / 4;
+        bridge.mesh.rotation.y = -Math.PI / 6;
+        g.add(bridge.group);
+
+        this.scene.add(g);
+    }
+
+    _buildForestMaw(cx, cy_base, cz, radius, height, seed) {
+        const g = new THREE.Group();
+        g.position.set(cx, cy_base, cz);
+
+        const cave = toonMesh(new THREE.SphereGeometry(radius * 0.7, 16, 12, 0, Math.PI, 0, Math.PI / 2), 0x555544);
+        cave.mesh.rotation.x = -Math.PI / 2;
+        g.add(cave.group);
+
+        const darkHole = toonMesh(new THREE.CircleGeometry(radius * 0.62, 16), 0x000000);
+        darkHole.mesh.position.y = 0.04;
+        darkHole.mesh.rotation.x = -Math.PI / 2;
+        g.add(darkHole.group);
+
+        for (let i = 0; i < 6; i++) {
+            const angle = (i / 6) * Math.PI;
+            const tx = Math.cos(angle) * (radius * 0.75);
+            const tz = Math.sin(angle) * (radius * 0.75);
+            const ty = this.getTerrainHeight(cx + tx, cz + tz) - cy_base;
+
+            const treeGroup = new THREE.Group();
+            treeGroup.position.set(tx, ty, tz);
+
+            const trunk = toonMesh(new THREE.CylinderGeometry(radius * 0.04, radius * 0.06, radius * 0.35, 5), PALETTE.wood[0]);
+            trunk.mesh.position.y = radius * 0.17;
+            const leaves = toonMesh(new THREE.DodecahedronGeometry(radius * 0.22), PALETTE.foliage[i % 3]);
+            leaves.mesh.position.y = radius * 0.4;
+            
+            treeGroup.add(trunk.group);
+            treeGroup.add(leaves.group);
+
+            treeGroup.scale.setScalar(0.7 + (i % 3) * 0.2);
+            g.add(treeGroup);
+        }
+        this.scene.add(g);
     }
 
     _northMountains() {
