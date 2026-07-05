@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { WORLD } from './config.js';
+import { WORLD, PALETTE } from './config.js';
 import { createHumanAvatar, createAlienAvatar, createUFO, createNameTag } from './AvatarFactory.js';
 import { WorldBuilder } from './WorldBuilder.js';
 import { TerrainSystem } from './TerrainSystem.js';
@@ -24,6 +24,7 @@ class Game {
 
         this._renderer();
         this.scene = new THREE.Scene();
+        this.scene.background = new THREE.Color(PALETTE.fog);
         this.terrain = new TerrainSystem();
         this.terrain.build(this.scene);
         const built = new WorldBuilder(this.scene, data, this.terrain).build();

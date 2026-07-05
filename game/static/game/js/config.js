@@ -44,99 +44,99 @@ export const CAMERA = {
 
 /** Cohesive natural-world palette */
 export const PALETTE = {
-    // Sky & atmosphere
-    sky: 0x87ceeb,
-    skyTop: 0x3a82c4,
-    skyHorizon: 0xb8ddf5,
-    fog: 0xc8e8f5,
+    // Sky & atmosphere (Soft Ghibli Blue gradients)
+    sky: 0x91E5F2,
+    skyTop: 0x72D8E5,
+    skyHorizon: 0xB5F1F9,
+    fog: 0xB5F1F9,
 
-    // Ground & nature
-    grass: 0x7ab869,
-    grassLight: 0x98cc7f,
-    grassDark: 0x5a9450,
-    grassHighland: 0x6d9e5a,
-    embankment: 0x8aab72,
-    sand: 0xe2d4b0,
-    dirt: 0xb8936a,
+    // Ground & nature (Anime-inspired greens)
+    grass: 0x8CC97D,
+    grassLight: 0xA4D68B,
+    grassDark: 0x79B36A,
+    grassHighland: 0x79B36A,
+    embankment: 0x8CC97D,
+    sand: 0xECE9E1,
+    dirt: 0xB98A67,
 
     // Roads & urban
-    asphalt: 0x6e7b82,
-    asphaltDark: 0x5c6a70,
-    asphaltLight: 0x8a9599,
-    sidewalk: 0xcfcdc5,
-    concrete: 0xbebdb7,
-    concreteLight: 0xe6e4dc,
-    retainingWall: 0xbebdb7,
+    asphalt: 0x6C777B,
+    asphaltDark: 0x6C777B,
+    asphaltLight: 0x7A8488,
+    sidewalk: 0xD0CDC7,
+    concrete: 0xC8C5BE,
+    concreteLight: 0xD0CDC7,
+    retainingWall: 0xC8C5BE,
 
     // Water
-    river: 0x4abfce,
-    riverShallow: 0x6ed4e0,
-    waterDeep: 0x2e6faa,
-    waterFoam: 0xe8f4f8,
+    river: 0x4E90E8,
+    riverShallow: 0x48D2C9,
+    waterDeep: 0x4E90E8,
+    waterFoam: 0xB5F1F9,
 
     // Mountains – layered depth
     mountain: [
-        0x4a6741,  // near — forested dark green
-        0x6a7f60,  // near — lighter green slope
-        0x8a9e80,  // mid — greyish green
-        0x9eaaa0,  // far — atmospheric grey-blue
+        0x79B36A,  // near slope
+        0x8CC97D,  // slope mid
+        0x7A8488,  // grey slope
+        0x6C777B,  // far mountain
     ],
-    mountainSnow: 0xf4f0eb,
-    mountainRock: 0x8a8278,
-    mountainDeep: 0x6a7868,
+    mountainSnow: 0xECE9E1,
+    mountainRock: 0xC8C5BE,
+    mountainDeep: 0x6C777B,
 
     // Bridges
-    bridge: 0xc8beaa,
-    bridgeStone: 0xa89880,
-    bridgeRail: 0x8a8278,
+    bridge: 0xDDD8CF,
+    bridgeStone: 0xC8C5BE,
+    bridgeRail: 0x9C7554,
 
     // Wood
-    wood: [0x8b684d, 0xa57958, 0xc3926d],
+    wood: [0x9C7554, 0xB98A67, 0x9C7554],
 
     // Buildings
     building: {
-        wall: [0xe8e6dd, 0xdbd7ce, 0xcfcbc2],
-        roof: [0x6e7c80, 0xc45252, 0x7ab869, 0x4a8fd0, 0x8b684d],
+        wall: [0xECE9E1, 0xDDD8CF, 0xD2CCC2],
+        roof: [0x6C777B, 0xD66565, 0x79B36A, 0x4E90E8, 0xB98A67],
     },
-    awning: [0xe0a0b0, 0xf5cc50, 0x48ccc0, 0x8870d0],
-    glass: 0xa8e4ee,
-    frostGlass: 0xd8d4cc,
+    awning: [0xF2B0C5, 0xFFD966, 0x48D2C9, 0x8C7CEB],
+    glass: 0xB5F1F9,
+    frostGlass: 0xDDD8CF,
 
     // Props
-    vending: [0x48ccc0, 0x4a8fd0, 0xe0a0b0],
-    pole: 0x6e7b82,
-    wire: 0x28282e,
-    lamp: 0xf5cc50,
+    vending: [0x48D2C9, 0x4E90E8, 0xF2B0C5],
+    pole: 0x7A8488,
+    wire: 0x1e1e28,
+    lamp: 0xFFD966,
 
     // Trees & plants
-    blossom: 0xe0a0b2,
-    blossomTrunk: 0x8b684d,
-    foliage: [0x5a9450, 0x7ab869, 0x98cc7f],
-    pineGreen: 0x3d7040,
-    pineDark: 0x2e5530,
-    willowGreen: 0x7ab060,
+    blossom: 0xF2B0C5,
+    blossomTrunk: 0x9C7554,
+    foliage: [0x79B36A, 0x8CC97D, 0xA4D68B],
+    pineGreen: 0x79B36A,
+    pineDark: 0x6C777B,
+    willowGreen: 0x8CC97D,
 
     // Characters
-    humanSkin: 0xf0d0b0,
-    alienSkin: 0x7ab869,
-    accent: 0xf08b3a,
+    humanSkin: 0xECE9E1,
+    alienSkin: 0x8CC97D,
+    accent: 0xF59A45,
 
     // UI colors
-    mint: 0x48ccc0,
-    orange: 0xf08b3a,
-    red: 0xc45252,
-    blue: 0x4a8fd0,
-    yellow: 0xf5cc50,
-    pink: 0xe0a0b2,
-    purple: 0x8870d0,
+    mint: 0x48D2C9,
+    orange: 0xF59A45,
+    red: 0xD66565,
+    blue: 0x4E90E8,
+    yellow: 0xFFD966,
+    pink: 0xF2B0C5,
+    purple: 0x8C7CEB,
 
     // Transit
-    trainSilver: 0xdbd7ce,
-    trainPeach: 0xf08b3a,
-    busCream: 0xe8e6dd,
-    busOrange: 0xf08b3a,
-    uniformNavy: 0x4a8fd0,
-    trench: 0xdbd7ce,
+    trainSilver: 0xDDD8CF,
+    trainPeach: 0xF59A45,
+    busCream: 0xECE9E1,
+    busOrange: 0xF59A45,
+    uniformNavy: 0x4E90E8,
+    trench: 0xDDD8CF,
 };
 
 export const POI_TYPES = {
