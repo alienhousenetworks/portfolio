@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { WORLD, PALETTE } from './config.js';
-import { preloadCharacterModels } from './CharacterModels.js';
+import { preloadCriticalModels, preloadLazyModels, hasCriticalModels } from './CharacterModels.js';
 import { createHumanAvatar, createAlienAvatar, createUFO, createNameTag } from './AvatarFactory.js';
 import { WorldBuilder } from './WorldBuilder.js';
 import { TerrainSystem } from './TerrainSystem.js';
@@ -62,18 +62,20 @@ class Game {
         if (fill) fill.style.width = '0%';
     }
 
-    _setLoadProgress(pct) {
+    _setLoadProgress(pct, _id, label) {
         const fill = document.querySelector('.loading-bar-fill');
         const title = document.querySelector('#loading-screen .start-title');
         if (fill) fill.style.width = `${Math.round(pct * 100)}%`;
-        if (title) title.textContent = pct < 1 ? 'Loading Characters…' : 'Building World';
+        if (title) title.textContent = label || (pct < 1 ? 'Loading player…' : 'Ready');
     }
 
     async initCharacters() {
         const base = this.data.staticBase || '/static/game/';
-        const result = await preloadCharacterModels(base, pct => this._setLoadProgress(pct));
+        const result = await preloadCriticalModels(base, (pct, id, label) => {
+            this._setLoadProgress(pct, id, label);
+        });
 
-        if (!result.loaded) {
+        if (!hasCriticalModels()) {
             const hint = result.errors[0]?.error?.message?.includes('LFS')
                 ? 'GLB models missing on server. Run: git lfs pull && collectstatic'
                 : 'Character models failed to load. Check browser console.';
@@ -116,6 +118,11 @@ class Game {
         document.getElementById('loading-screen')?.classList.add('hidden');
         document.getElementById('start-screen')?.classList.remove('hidden');
         this.state = 'start';
+
+        preloadLazyModels(base).then(r => {
+            if (r.errors?.length) console.warn('[game] Some background models failed:', r.errors);
+            else console.info('[game] All character models loaded');
+        });
     }
 
     _renderer() {

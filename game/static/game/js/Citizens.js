@@ -55,7 +55,8 @@ export class CitizenManager {
 
         for (let i = 0; i < 12; i++) {
             const spot = spots[(i + 5) % spots.length];
-            const mesh = createAlienAvatar({ modelKey: getAlienModelKey(i), variant: i });
+            const alienKey = getAlienModelKey(i);
+            const mesh = createAlienAvatar({ modelKey: alienKey ?? 'fantasy', variant: i });
             this._placeCitizen(mesh, spot, ALIEN_NAMES[i % ALIEN_NAMES.length], 'alien', ALIEN_LINES[i % ALIEN_LINES.length], i * 0.5 + 2);
         }
 
@@ -261,7 +262,8 @@ export class CitizenManager {
         for (let i = 0; i < aliens; i++) {
             const angle = (i / aliens) * Math.PI * 2 + 0.5;
             const r = baseR + 4 + (i % 3) * 3;
-            const mesh = createAlienAvatar({ modelKey: getAlienModelKey(i), variant: i });
+            const alienKey = getAlienModelKey(i);
+            const mesh = createAlienAvatar({ modelKey: alienKey ?? 'fantasy', variant: i });
             const ax = x + Math.cos(angle) * r;
             const az = z + Math.sin(angle) * r;
             const line = district === 'innovation'
