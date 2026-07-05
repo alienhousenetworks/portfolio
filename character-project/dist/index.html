@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Character Engine - Stage 1</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #1a1a1a;
+        }
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+        }
+        #instructions {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            color: #eee;
+            font-family: system-ui, sans-serif;
+            font-size: 13px;
+            background: rgba(0, 0, 0, 0.65);
+            padding: 10px 14px;
+            border-radius: 6px;
+            pointer-events: none;
+            line-height: 1.5;
+        }
+    </style>
+  <script type="module" crossorigin src="/assets/index-CNmqN30z.js"></script>
+</head>
+<body>
+    <div id="instructions">
+        <strong>Controls</strong><br>
+        WASD / Arrows — Walk<br>
+        Lil-GUI panel — tweak state &amp; speed
+    </div>
+    <div id="canvas-container"></div>
+</body>
+</html>

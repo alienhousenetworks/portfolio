@@ -1,19 +1,9 @@
 import * as THREE from 'three';
 import { PALETTE } from './config.js';
 import { toonMat, toonMesh } from './ToonStyle.js';
-import { buildHumanRig, setupHumanAnimator } from './HumanRig.js';
+import { buildHumanRig, setupHumanAnimator, REFERENCE_OUTFIT } from './HumanRig.js';
 
-const DEFAULT_OUTFIT = {
-    skinTone: 0xffdbac,
-    jacketColor: 0x3b4d36,
-    vestColor: 0x2d3436,
-    shirtColor: 0xffffff,
-    pantsColor: 0x232b38,
-    shoeColor: 0x111111,
-    hairColor: 0x224466,
-    bagColor: 0x3b5998,
-    strapColor: 0x8b5a2b,
-};
+const DEFAULT_OUTFIT = { ...REFERENCE_OUTFIT };
 
 function std(color, opts = {}) {
     return toonMat(color, opts);
@@ -37,25 +27,20 @@ export function createHumanAvatar(opts = {}) {
 
 export function createStudentAvatar(opts = {}) {
     return createHumanAvatar({
+        shirtColor: PALETTE.uniformNavy,
+        shortsColor: 0x1a2030,
+        stripeColor: 0xffffff,
         skinTone: opts.skinTone ?? PALETTE.humanSkin,
-        jacketColor: PALETTE.uniformNavy,
-        vestColor: 0x1a2a4a,
-        pantsColor: 0x1a2030,
-        hairColor: 0x1a1a28,
-        bagColor: 0x6a4a30,
-        strapColor: 0x6a4a30,
         ...opts,
     });
 }
 
 export function createCommuterAvatar(opts = {}) {
     return createHumanAvatar({
+        shirtColor: PALETTE.trench,
+        shortsColor: 0x3a3a48,
+        stripeColor: 0x8a9098,
         skinTone: opts.skinTone ?? PALETTE.humanSkin,
-        jacketColor: PALETTE.trench,
-        vestColor: 0xc8b8a0,
-        pantsColor: 0x3a3a48,
-        hairColor: 0x2a2018,
-        bagColor: 0x2a2a38,
         ...opts,
     });
 }
@@ -63,23 +48,12 @@ export function createCommuterAvatar(opts = {}) {
 export function createWandererAvatar(opts = {}) {
     const g = createHumanAvatar({
         shirtColor: opts.shirtColor ?? 0xf0a040,
-        jacketColor: opts.shirtColor ?? 0xf0a040,
-        pantsColor: 0x4a5a6a,
+        stripeColor: 0xffffff,
+        shortsColor: 0x4a5a6a,
         skinTone: opts.skinTone ?? PALETTE.humanSkin,
-        hairColor: 0x2a2018,
         ...opts,
     });
     g.userData.isWanderer = true;
-
-    const head = g.userData.rigRoot?.getObjectByName('head');
-    if (head) {
-        const phones = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.1, 0.12), std(0x2a2a38));
-        phones.position.set(0, 0.12, 0.02);
-        head.add(phones);
-        const band = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.16, 0.04), std(0x2a2a38));
-        band.position.set(0, 0.22, 0);
-        head.add(band);
-    }
     return g;
 }
 
@@ -112,8 +86,8 @@ export function createBicycle() {
 
 export function createCyclistAvatar(opts = {}) {
     const g = createHumanAvatar({
-        jacketColor: opts.shirtColor ?? 0xe8a0a0,
-        pantsColor: 0x4a5a68,
+        shirtColor: opts.shirtColor ?? 0xe8a0a0,
+        shortsColor: 0x4a5a68,
         skinTone: opts.skinTone ?? PALETTE.humanSkin,
         ...opts,
     });
