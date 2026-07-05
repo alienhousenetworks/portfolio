@@ -30,8 +30,6 @@ export class WorldBuilder {
         this._ground();
         this._mountains();
         this._beach();
-        this._river();
-        this._bridges();
         this._waterfall();
         this._districtZones();
         this._roadGrid();
@@ -61,7 +59,7 @@ export class WorldBuilder {
     }
 
     _inRiver(x, z, margin = 0) {
-        return Math.abs(x - WORLD.riverX) < WORLD.riverWidth / 2 + margin;
+        return false;
     }
 
     _markSite(x, z, w = 24, d = 24, h = 0) {

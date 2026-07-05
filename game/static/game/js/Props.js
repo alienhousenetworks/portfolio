@@ -78,200 +78,135 @@ export function createBicycleParked() {
     return g;
 }
 
-export function createCherryTree() {
-    const g = new THREE.Group();
-    
-    // Create organic, curved trunk
-    const segments = 4;
-    const segH = 0.8;
-    let lastPivot = g;
-    for (let i = 0; i < segments; i++) {
-        const seg = toonMesh(new THREE.CylinderGeometry(0.12 - i * 0.01, 0.18 - i * 0.015, segH, 6), PALETTE.blossomTrunk);
-        seg.mesh.position.y = segH / 2;
-        seg.mesh.rotation.z = (Math.sin(i * 1.5) * 0.15);
-        seg.mesh.rotation.x = (Math.cos(i * 1.2) * 0.1);
-        seg.mesh.castShadow = true;
-        
-        const nextPivot = new THREE.Group();
-        nextPivot.position.y = segH - 0.05;
-        seg.group.add(nextPivot);
-        
-        lastPivot.add(seg.group);
-        lastPivot = nextPivot;
+function blobMesh(radius, x, y, z, color) {
+    const geo = new THREE.SphereGeometry(radius, 14, 14);
+    const pos = geo.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+        const nx = pos.getX(i);
+        const ny = pos.getY(i);
+        const nz = pos.getZ(i);
+        const n = Math.sin(nx * 7) + Math.sin(ny * 6) + Math.sin(nz * 5);
+        const s = 1 + n * 0.04;
+        pos.setXYZ(i, nx * s, ny * s, nz * s);
     }
+    geo.computeVertexNormals();
+    const { group, mesh } = toonMesh(geo, color);
+    group.position.set(x, y, z);
+    return group;
+}
 
-    // Fluffy rounded pink canopy (fewer, larger overlapping spheres for cleaner look)
-    const foliageOffsets = [
-        { x: 0, y: 0.5, z: 0, r: 1.8 },
-        { x: -0.6, y: 0.1, z: 0.4, r: 1.2 },
-        { x: 0.6, y: -0.1, z: -0.4, r: 1.15 }
-    ];
+function createTrunk(height = 6) {
+    const geo = new THREE.CylinderGeometry(0.16, 0.26, height, 8);
+    const pos = geo.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+        const y = pos.getY(i);
+        pos.setX(i, pos.getX(i) + Math.sin(y * 0.5) * 0.1);
+    }
+    geo.computeVertexNormals();
+    const { group, mesh } = toonMesh(geo, PALETTE.wood[0]);
+    mesh.position.y = height / 2;
+    return group;
+}
 
-    foliageOffsets.forEach(fo => {
-        const leaf = toonMesh(new THREE.DodecahedronGeometry(fo.r, 1), PALETTE.blossom);
-        leaf.mesh.position.set(fo.x, fo.y, fo.z);
-        leaf.mesh.scale.set(1.0, 0.9, 1.0);
-        leaf.mesh.castShadow = true;
-        lastPivot.add(leaf.group);
-    });
-
+export function createOak(seed = 0, color = null) {
+    const g = new THREE.Group();
+    const leafColor = color ?? PALETTE.foliage[seed % PALETTE.foliage.length];
+    g.add(createTrunk(6.0));
+    
+    g.add(blobMesh(2.4, 0, 6.5, 0, leafColor));
+    g.add(blobMesh(2.0, -1.5, 5.0, 0, leafColor));
+    g.add(blobMesh(2.0, 1.5, 5.0, 0, leafColor));
+    g.add(blobMesh(1.7, 0, 8.2, 0, leafColor));
     return g;
+}
+
+export function createMaple(seed = 0, color = null) {
+    const g = new THREE.Group();
+    const leafColor = color ?? PALETTE.foliage[seed % PALETTE.foliage.length];
+    g.add(createTrunk(4.5));
+    
+    g.add(blobMesh(2.3, 0, 5.0, 0, leafColor));
+    g.add(blobMesh(2.0, -1.8, 5.0, 0, leafColor));
+    g.add(blobMesh(2.0, 1.8, 5.0, 0, leafColor));
+    g.add(blobMesh(2.0, 0, 6.8, 0, leafColor));
+    g.add(blobMesh(1.7, 0, 3.2, 0, leafColor));
+    return g;
+}
+
+export function createWideTree(seed = 0, color = null) {
+    const g = new THREE.Group();
+    const leafColor = color ?? PALETTE.foliage[seed % PALETTE.foliage.length];
+    g.add(createTrunk(4.5));
+    
+    g.add(blobMesh(2.2, -2.5, 5.0, 0, leafColor));
+    g.add(blobMesh(2.3, -1.2, 5.5, 0, leafColor));
+    g.add(blobMesh(2.5, 0, 5.8, 0, leafColor));
+    g.add(blobMesh(2.3, 1.2, 5.4, 0, leafColor));
+    g.add(blobMesh(2.2, 2.5, 5.0, 0, leafColor));
+    g.add(blobMesh(1.8, 0, 7.2, 0, leafColor));
+    return g;
+}
+
+export function createYoungTree(seed = 0, color = null) {
+    const g = new THREE.Group();
+    const leafColor = color ?? PALETTE.foliage[seed % PALETTE.foliage.length];
+    g.add(createTrunk(3.5));
+    
+    g.add(blobMesh(1.3, 0, 4.0, 0, leafColor));
+    g.add(blobMesh(1.0, -0.8, 3.2, 0, leafColor));
+    g.add(blobMesh(1.0, 0.8, 3.2, 0, leafColor));
+    return g;
+}
+
+export function createFantasyTree(seed = 0, color = null) {
+    const g = new THREE.Group();
+    const leafColor = color ?? PALETTE.foliage[seed % PALETTE.foliage.length];
+    g.add(createTrunk(6.0));
+    
+    g.add(blobMesh(2.1, 0, 7.5, 0, leafColor));
+    g.add(blobMesh(2.0, -1.8, 6.0, 0, leafColor));
+    g.add(blobMesh(2.0, 1.8, 6.0, 0, leafColor));
+    g.add(blobMesh(2.0, -3.0, 4.5, 0, leafColor));
+    g.add(blobMesh(2.0, 3.0, 4.5, 0, leafColor));
+    g.add(blobMesh(2.0, 0, 5.0, 0, leafColor));
+    g.add(blobMesh(1.5, 0, 9.2, 0, leafColor));
+    return g;
+}
+
+export function createCherryTree() {
+    return createOak(0, PALETTE.blossom);
 }
 
 export function createLargeTree(seed = 0) {
-    const g = new THREE.Group();
-
-    // Bare trunk with fungi steps (like foreground in second image)
-    if (seed % 4 === 0) {
-        const trunkCol = 0x8a8e94; // Grey trunk
-        const height = 7.0;
-        const mainTrunk = toonMesh(new THREE.CylinderGeometry(0.18, 0.26, height, 6), trunkCol);
-        mainTrunk.mesh.position.y = height / 2;
-        mainTrunk.mesh.castShadow = true;
-        g.add(mainTrunk.group);
-
-        // Thin bare branches at the top
-        for (let i = 0; i < 3; i++) {
-            const b = toonMesh(new THREE.CylinderGeometry(0.06, 0.1, 1.8, 5), trunkCol);
-            b.mesh.position.set(Math.sin(i * 2) * 0.4, height - 0.8, Math.cos(i * 2) * 0.4);
-            b.mesh.rotation.z = 0.5 * (i === 1 ? -1 : 1);
-            b.mesh.rotation.y = i * 2;
-            g.add(b.group);
-        }
-
-        // Fungi steps (bracket mushrooms on trunk)
-        const fungiColors = [0xF59A45, 0x48D2C9, 0xFFD966];
-        for (let i = 0; i < 5; i++) {
-            const stepH = 1.2 + i * 1.1;
-            const angle = i * 1.8;
-            const f = toonMesh(new THREE.BoxGeometry(0.38, 0.08, 0.38), fungiColors[i % 3]);
-            f.mesh.position.set(Math.cos(angle) * 0.22, stepH, Math.sin(angle) * 0.22);
-            f.mesh.rotation.y = angle;
-            g.add(f.group);
-        }
-        return g;
-    }
-
-    // Default: Fluffy deciduous tree
-    const col = PALETTE.foliage[seed % PALETTE.foliage.length];
-    
-    // Curved trunk
-    const segments = 4;
-    const segH = 0.9;
-    let lastPivot = g;
-    for (let i = 0; i < segments; i++) {
-        const seg = toonMesh(new THREE.CylinderGeometry(0.14 - i * 0.012, 0.22 - i * 0.018, segH, 6), PALETTE.wood[0]);
-        seg.mesh.position.y = segH / 2;
-        seg.mesh.rotation.z = (Math.sin(i * 1.3 + seed) * 0.14);
-        seg.mesh.rotation.x = (Math.cos(i * 1.1 + seed) * 0.09);
-        seg.mesh.castShadow = true;
-        
-        const nextPivot = new THREE.Group();
-        nextPivot.position.y = segH - 0.05;
-        seg.group.add(nextPivot);
-        
-        lastPivot.add(seg.group);
-        lastPivot = nextPivot;
-    }
-
-    // Large fluffy round single-clump canopy
-    const foliageOffsets = [
-        { x: 0, y: 0.5, z: 0, r: 1.9 },
-        { x: -0.7, y: 0.1, z: 0.3, r: 1.35 },
-        { x: 0.7, y: -0.1, z: -0.3, r: 1.25 }
-    ];
-
-    foliageOffsets.forEach(fo => {
-        const leaf = toonMesh(new THREE.DodecahedronGeometry(fo.r, 1), col);
-        leaf.mesh.position.set(fo.x, fo.y, fo.z);
-        leaf.mesh.scale.set(1.05, 0.88, 1.05);
-        leaf.mesh.castShadow = true;
-        lastPivot.add(leaf.group);
-    });
-
-    return g;
+    const type = seed % 5;
+    if (type === 0) return createOak(seed);
+    if (type === 1) return createMaple(seed);
+    if (type === 2) return createWideTree(seed);
+    if (type === 3) return createYoungTree(seed);
+    return createFantasyTree(seed);
 }
 
-/** Stacked conical cypress trees matching reference images */
 export function createPineTree(seed = 0, height = 1.0) {
     const g = new THREE.Group();
-    const h = (6 + (seed % 4)) * height;
+    const h = 6 * height;
     const col = seed % 3 === 0 ? PALETTE.pineDark : PALETTE.pineGreen;
+    g.add(createTrunk(h * 0.35));
 
-    // Slanted trunk
-    const trunkH = h * 0.25;
-    const trunk = toonMesh(new THREE.CylinderGeometry(0.12, 0.2, trunkH, 5), PALETTE.wood[0]);
-    trunk.mesh.position.y = trunkH / 2;
-    trunk.mesh.castShadow = true;
-    g.add(trunk.group);
-
-    // Multi-layered stacked cones of decreasing radius and height (Cypress Style)
     const tiers = 5;
-    for (let t = 0; t < tiers; t++) {
-        const ratio = t / (tiers - 1);
-        const coneRadius = 1.6 * (1.0 - ratio * 0.85);
-        const coneHeight = 2.2 * (1.0 - ratio * 0.7);
-        const tierY = trunkH + ratio * (h * 0.65);
-
-        const tierCone = toonMesh(new THREE.ConeGeometry(coneRadius, coneHeight, 5), col);
-        tierCone.mesh.position.set(
-            Math.sin(t * 1.5 + seed) * 0.08,
-            tierY + coneHeight / 2,
-            Math.cos(t * 1.5 + seed) * 0.08
-        );
-        tierCone.mesh.rotation.y = t * 1.2 + seed;
-        tierCone.mesh.castShadow = true;
-        g.add(tierCone.group);
+    for (let i = 0; i < tiers; i++) {
+        const radius = (1.8 - i * 0.25) * height;
+        const coneH = 2.0 * height;
+        const { group, mesh } = toonMesh(new THREE.ConeGeometry(radius, coneH, 10), col);
+        group.position.set(0, h * 0.25 + i * 1.0, 0);
+        g.add(group);
     }
     return g;
 }
 
-/** Willow tree with weeping tendrils */
 export function createWillowTree(seed = 0) {
-    const g = new THREE.Group();
-    
-    const segments = 5;
-    const segH = 1.0;
-    let lastPivot = g;
-    for (let i = 0; i < segments; i++) {
-        const seg = toonMesh(new THREE.CylinderGeometry(0.16 - i * 0.01, 0.24 - i * 0.015, segH, 6), PALETTE.wood[0]);
-        seg.mesh.position.y = segH / 2;
-        seg.mesh.rotation.z = -0.06 + Math.cos(i * 1.2) * 0.08;
-        seg.mesh.castShadow = true;
-        
-        const nextPivot = new THREE.Group();
-        nextPivot.position.y = segH - 0.05;
-        seg.group.add(nextPivot);
-        
-        lastPivot.add(seg.group);
-        lastPivot = nextPivot;
-    }
-
-    const foliageOffsets = [
-        { x: 0, y: 0.4, z: 0, r: 1.8 },
-        { x: -0.7, y: -0.1, z: 0.5, r: 1.3 },
-        { x: 0.7, y: -0.1, z: -0.5, r: 1.2 }
-    ];
-
-    foliageOffsets.forEach(fo => {
-        const leaf = toonMesh(new THREE.DodecahedronGeometry(fo.r, 1), PALETTE.willowGreen);
-        leaf.mesh.position.set(fo.x, fo.y, fo.z);
-        leaf.mesh.scale.set(1.1, 0.88, 1.1);
-        leaf.mesh.castShadow = true;
-        lastPivot.add(leaf.group);
-    });
-
-    for (let i = 0; i < 6; i++) {
-        const angle = (i / 6) * Math.PI * 2;
-        const r = 1.5 + (seed + i) % 3 * 0.3;
-        const drape = toonMesh(new THREE.CylinderGeometry(0.03, 0.01, 2.2, 4), PALETTE.willowGreen, { outline: false });
-        drape.mesh.position.set(Math.cos(angle) * r, -0.3, Math.sin(angle) * r);
-        drape.mesh.rotation.z = Math.cos(angle) * 0.2;
-        drape.mesh.rotation.x = Math.sin(angle) * 0.2;
-        lastPivot.add(drape.group);
-    }
-    return g;
+    return createFantasyTree(seed, PALETTE.willowGreen);
 }
+
 
 /** Mountain rock cluster */
 export function createRockCluster(seed = 0) {

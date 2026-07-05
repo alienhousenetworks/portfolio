@@ -23,9 +23,6 @@ export class TerrainSystem {
     }
 
     getHeightAt(x, z) {
-        // River zone
-        if (Math.abs(x - WORLD.riverX) < WORLD.riverWidth / 2 + 2) return 0.15;
-
         // Stairs override
         for (const s of this.stairs) {
             if (this._inRect(x, z, s)) {
@@ -44,13 +41,11 @@ export class TerrainSystem {
 
         // Smooth curve height
         const d = Math.abs(x);
-        const d_start = WORLD.riverWidth / 2 + 2; // 21
         const d_end = 65; // Transition up to 7.5 height
 
-        if (d < d_start) return 0.15;
         if (d > d_end) return 7.5;
 
-        const t = (d - d_start) / (d_end - d_start);
+        const t = d / d_end;
         const smoothT = 0.5 - 0.5 * Math.cos(t * Math.PI); // Cosine curve for height
         return THREE.MathUtils.lerp(0.15, 7.5, smoothT);
     }
@@ -60,9 +55,6 @@ export class TerrainSystem {
     }
 
     canTraverse(fromX, fromZ, fromY, toX, toZ) {
-        const inRiver = (x) => Math.abs(x - WORLD.riverX) < WORLD.riverWidth / 2 + 1;
-        if (inRiver(toX) && !inRiver(fromX)) return false;
-
         const toY = this.getHeightAt(toX, toZ);
         const dy = toY - fromY;
         if (Math.abs(dy) <= MAX_STEP) return true;
@@ -154,69 +146,61 @@ export class TerrainSystem {
     }
 
     _buildCurvedHills(scene) {
-        const segmentsX = 120;
-        const segmentsZ = 120;
+        const segmentsX = 160;
+        const segmentsZ = 160;
         const depth = WORLD.size;
+        const width = WORLD.size;
 
-        // We build two curved terrains: Left bank and Right bank
-        [-1, 1].forEach(side => {
-            const xMin = side < 0 ? -WORLD.size / 2 : WORLD.riverWidth / 2 + 2;
-            const xMax = side < 0 ? -(WORLD.riverWidth / 2 + 2) : WORLD.size / 2;
-            const width = xMax - xMin;
+        // 1. Sandy Base Geometry
+        const sandGeo = new THREE.PlaneGeometry(width, depth, segmentsX, segmentsZ);
+        sandGeo.rotateX(-Math.PI / 2);
 
-            // 1. Sandy Base Geometry
-            const sandGeo = new THREE.PlaneGeometry(width, depth, segmentsX, segmentsZ);
-            sandGeo.rotateX(-Math.PI / 2);
+        const pos = sandGeo.attributes.position;
+        for (let i = 0; i < pos.count; i++) {
+            const vx = pos.getX(i);
+            const vz = pos.getZ(i);
+            const vy = this.getHeightAt(vx, vz);
+            pos.setY(i, vy);
+        }
+        sandGeo.computeVertexNormals();
 
-            const pos = sandGeo.attributes.position;
-            for (let i = 0; i < pos.count; i++) {
-                const vx = pos.getX(i) + (xMin + xMax) / 2;
-                const vz = pos.getZ(i);
-                const vy = this.getHeightAt(vx, vz);
-                pos.setX(i, vx);
-                pos.setY(i, vy);
+        const sandMesh = new THREE.Mesh(sandGeo, toonMat(PALETTE.sand));
+        sandMesh.receiveShadow = true;
+        scene.add(sandMesh);
+
+        // 2. Grass Cap Geometry
+        const grassGeo = new THREE.PlaneGeometry(width, depth, segmentsX, segmentsZ);
+        grassGeo.rotateX(-Math.PI / 2);
+
+        const grassPos = grassGeo.attributes.position;
+        const eps = 0.5;
+
+        for (let i = 0; i < grassPos.count; i++) {
+            const vx = grassPos.getX(i);
+            const vz = grassPos.getZ(i);
+            const vy = this.getHeightAt(vx, vz);
+
+            // Compute local slope to decide if we show grass or hide it
+            const hL = this.getHeightAt(vx - eps, vz);
+            const hR = this.getHeightAt(vx + eps, vz);
+            const hD = this.getHeightAt(vx, vz - eps);
+            const hU = this.getHeightAt(vx, vz + eps);
+            const slopeX = (hR - hL) / (2 * eps);
+            const slopeZ = (hU - hD) / (2 * eps);
+            const slope = Math.sqrt(slopeX * slopeX + slopeZ * slopeZ);
+
+            if (slope > 0.16 || vy < 0.25) {
+                // Hide vertex below sand
+                grassPos.setY(i, -10);
+            } else {
+                grassPos.setY(i, vy + 0.05); // slightly above sand to prevent z-fighting
             }
-            sandGeo.computeVertexNormals();
+        }
+        grassGeo.computeVertexNormals();
 
-            const sandMesh = new THREE.Mesh(sandGeo, toonMat(PALETTE.sand));
-            sandMesh.receiveShadow = true;
-            scene.add(sandMesh);
-
-            // 2. Grass Cap Geometry
-            const grassGeo = new THREE.PlaneGeometry(width, depth, segmentsX, segmentsZ);
-            grassGeo.rotateX(-Math.PI / 2);
-
-            const grassPos = grassGeo.attributes.position;
-            const eps = 0.5;
-
-            for (let i = 0; i < grassPos.count; i++) {
-                const vx = grassPos.getX(i) + (xMin + xMax) / 2;
-                const vz = grassPos.getZ(i);
-                const vy = this.getHeightAt(vx, vz);
-
-                // Compute local slope to decide if we show grass or hide it
-                const hL = this.getHeightAt(vx - eps, vz);
-                const hR = this.getHeightAt(vx + eps, vz);
-                const hD = this.getHeightAt(vx, vz - eps);
-                const hU = this.getHeightAt(vx, vz + eps);
-                const slopeX = (hR - hL) / (2 * eps);
-                const slopeZ = (hU - hD) / (2 * eps);
-                const slope = Math.sqrt(slopeX * slopeX + slopeZ * slopeZ);
-
-                grassPos.setX(i, vx);
-                if (slope > 0.16 || vy < 0.3) {
-                    // Hide vertex below sand by setting Y to -10
-                    grassPos.setY(i, -10);
-                } else {
-                    grassPos.setY(i, vy + 0.05); // slightly above sand to prevent z-fighting
-                }
-            }
-            grassGeo.computeVertexNormals();
-
-            const grassMesh = new THREE.Mesh(grassGeo, toonMat(PALETTE.grass));
-            grassMesh.receiveShadow = true;
-            scene.add(grassMesh);
-        });
+        const grassMesh = new THREE.Mesh(grassGeo, toonMat(PALETTE.grass));
+        grassMesh.receiveShadow = true;
+        scene.add(grassMesh);
     }
 
     _buildStairs(scene) {
