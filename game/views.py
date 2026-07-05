@@ -444,11 +444,6 @@ def world(request):
             'humans': [
                 {'id': 'male', 'file': 'models/quaternius_cc0-male-character-1354.glb', 'animated': True},
                 {'id': 'female', 'file': 'models/quaternius_cc0-female-character-1350.glb', 'animated': True},
-                {'id': 'dezyne', 'file': 'models/dezyne_3d-man-462.glb', 'animated': False},
-            ],
-            'aliens': [
-                {'id': 'fantasy', 'file': 'models/pixellabs-dark-fantasy-3330.glb', 'animated': False},
-                {'id': 'creature', 'file': 'models/pixellabs-glb-3347.glb', 'animated': False},
             ],
         },
     }

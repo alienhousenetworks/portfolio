@@ -2,80 +2,31 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { PLAYER } from './config.js';
 
-/** GLB character catalog — files live in static/game/models/ */
+/** Only two lightweight rigged humans — all characters use these (~2.4 MB total). */
 export const MODEL_CATALOG = {
-    humans: {
-        male: {
-            file: 'models/quaternius_cc0-male-character-1354.glb',
-            animated: true,
-            rigged: true,
-            role: 'locomotion',
-            targetHeight: PLAYER.height,
-            priority: 'critical',
-            sizeMB: 1.2,
-        },
-        female: {
-            file: 'models/quaternius_cc0-female-character-1350.glb',
-            animated: true,
-            rigged: true,
-            role: 'locomotion',
-            targetHeight: 1.65,
-            priority: 'critical',
-            sizeMB: 1.2,
-        },
-        dezyne: {
-            file: 'models/dezyne_3d-man-462.glb',
-            animated: false,
-            rigged: true,
-            role: 'statue',
-            targetHeight: PLAYER.height,
-            priority: 'lazy',
-            sizeMB: 44,
-        },
+    male: {
+        file: 'models/quaternius_cc0-male-character-1354.glb',
+        targetHeight: PLAYER.height,
+        sizeMB: 1.2,
     },
-    aliens: {
-        fantasy: {
-            file: 'models/pixellabs-dark-fantasy-3330.glb',
-            animated: false,
-            rigged: false,
-            role: 'statue',
-            targetHeight: 1.9,
-            priority: 'lazy',
-            sizeMB: 32,
-        },
-        creature: {
-            file: 'models/pixellabs-glb-3347.glb',
-            animated: false,
-            rigged: false,
-            role: 'statue',
-            targetHeight: 1.85,
-            priority: 'lazy',
-            sizeMB: 46,
-        },
+    female: {
+        file: 'models/quaternius_cc0-female-character-1350.glb',
+        targetHeight: 1.65,
+        sizeMB: 1.2,
     },
 };
 
-const HUMAN_KEYS = Object.keys(MODEL_CATALOG.humans);
-const ALIEN_KEYS = Object.keys(MODEL_CATALOG.aliens);
-const CRITICAL_IDS = ['human:male', 'human:female'];
+export const ALIEN_TINTS = [
+    0x88ccaa, 0xaa88cc, 0xccaa88, 0x88aacc, 0xaacc88, 0xcc88aa,
+];
 
+const MODEL_KEYS = Object.keys(MODEL_CATALOG);
 const _cache = new Map();
 const _loader = new GLTFLoader();
-let _lazyPromise = null;
 
 function resolveUrl(base, file) {
     const root = base.endsWith('/') ? base : `${base}/`;
     return `${root}${file}`;
-}
-
-function catalogEntries(filter) {
-    const all = [
-        ...Object.entries(MODEL_CATALOG.humans).map(([id, cfg]) => ({ id: `human:${id}`, key: id, type: 'human', cfg })),
-        ...Object.entries(MODEL_CATALOG.aliens).map(([id, cfg]) => ({ id: `alien:${id}`, key: id, type: 'alien', cfg })),
-    ];
-    if (filter === 'critical') return all.filter(e => e.cfg.priority === 'critical');
-    if (filter === 'lazy') return all.filter(e => e.cfg.priority === 'lazy');
-    return all;
 }
 
 function glbLoadError(url, buffer) {
@@ -84,21 +35,17 @@ function glbLoadError(url, buffer) {
     if (magic === 'glTF') return null;
     const preview = new TextDecoder().decode(bytes.slice(0, 160));
     if (preview.startsWith('version https://git-lfs')) {
-        return new Error(
-            `Git LFS pointer at ${url} — on VPS run: git lfs pull or rsync models from Mac`
-        );
+        return new Error(`Git LFS pointer at ${url} — rsync models from Mac to VPS`);
     }
     if (preview.trimStart().startsWith('<!DOCTYPE') || preview.trimStart().startsWith('<html')) {
-        return new Error(`HTML error page returned for ${url} — check static file path on server`);
+        return new Error(`HTML error page at ${url}`);
     }
-    return new Error(`Invalid GLB at ${url} (expected glTF magic, got "${magic}")`);
+    return new Error(`Invalid GLB at ${url}`);
 }
 
 async function fetchAndParseGlb(url) {
     const res = await fetch(url);
-    if (!res.ok) {
-        throw new Error(`Failed to fetch ${url}: HTTP ${res.status}`);
-    }
+    if (!res.ok) throw new Error(`Failed to fetch ${url}: HTTP ${res.status}`);
     const buffer = await res.arrayBuffer();
     const bad = glbLoadError(url, buffer);
     if (bad) throw bad;
@@ -112,13 +59,9 @@ const HIDDEN_MESH = /collision|hitbox|cube|box|placeholder|root\s*mesh/i;
 function stripHelperMeshes(root) {
     const toRemove = [];
     root.traverse(obj => {
-        if (!obj.isMesh) return;
-        const name = obj.name || '';
-        if (HIDDEN_MESH.test(name)) toRemove.push(obj);
+        if (obj.isMesh && HIDDEN_MESH.test(obj.name || '')) toRemove.push(obj);
     });
-    toRemove.forEach(obj => {
-        obj.parent?.remove(obj);
-    });
+    toRemove.forEach(obj => obj.parent?.remove(obj));
 }
 
 function prepareMeshes(root) {
@@ -129,9 +72,7 @@ function prepareMeshes(root) {
         obj.receiveShadow = true;
         if (obj.material) {
             const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-            mats.forEach(m => {
-                if (m.map) m.map.colorSpace = THREE.SRGBColorSpace;
-            });
+            mats.forEach(m => { if (m.map) m.map.colorSpace = THREE.SRGBColorSpace; });
         }
     });
 }
@@ -140,26 +81,20 @@ function normalizeHeight(root, targetHeight) {
     const box = new THREE.Box3().setFromObject(root);
     const size = new THREE.Vector3();
     box.getSize(size);
-    const h = size.y || 1;
-    const scale = targetHeight / h;
-    root.scale.setScalar(scale);
-
+    root.scale.setScalar(targetHeight / (size.y || 1));
     const box2 = new THREE.Box3().setFromObject(root);
     root.position.y -= box2.min.y;
-    return scale;
 }
 
 function findClip(clips, kind) {
     const rules = {
-        stand: [/_standing$/i, /_idle$/i, /\|man_standing$/i, /\|female_standing$/i],
-        idle: [/_idle$/i, /_standing$/i],
-        walk: [/_walk$/i, /\|man_walk$/i, /\|female_walk$/i],
+        stand: [/_standing$/i, /_idle$/i],
+        walk: [/_walk$/i],
         run: [/_run$/i, /\|man_run$/i, /\|female_run$/i],
-        jump: [/_jump$/i, /\|man_jump$/i, /\|female_jump$/i],
-        climb: [/climb/i],
+        jump: [/_jump$/i, /runningjump/i],
+        climb: [/climb/i, /_walk$/i],
     };
-    const patterns = rules[kind] || [];
-    for (const pattern of patterns) {
+    for (const pattern of rules[kind] || []) {
         const hit = clips.find(c => pattern.test(c.name));
         if (hit) return hit;
     }
@@ -173,144 +108,90 @@ function setupAnimator(root, clips) {
         const clip = findClip(clips, kind);
         if (clip) actions[kind] = mixer.clipAction(clip);
     });
-    if (!actions.stand) {
-        const idleClip = findClip(clips, 'idle');
-        if (idleClip) actions.stand = mixer.clipAction(idleClip);
-    }
+    if (!actions.stand && clips[0]) actions.stand = mixer.clipAction(clips[0]);
     actions.idle = actions.stand;
     if (actions.stand) actions.stand.play();
     return { mixer, actions };
 }
 
-async function loadEntry(baseUrl, entry, onProgress) {
-    const { id, cfg } = entry;
-    if (_cache.has(id)) return null;
-
-    const url = resolveUrl(baseUrl, cfg.file);
-    const label = id.split(':')[1];
-    onProgress?.(0, id, `Loading ${label} (~${cfg.sizeMB}MB)…`);
-
-    try {
-        const gltf = await fetchAndParseGlb(url);
-        const scene = gltf.scene;
-        prepareMeshes(scene);
-        normalizeHeight(scene, cfg.targetHeight);
-        _cache.set(id, {
-            scene,
-            animations: gltf.animations || [],
-            animated: cfg.animated && gltf.animations.length > 0,
-            rigged: cfg.rigged,
-            role: cfg.role,
-            targetHeight: cfg.targetHeight,
-        });
-        return null;
-    } catch (err) {
-        console.error(`[CharacterModels] ${id}:`, err.message || err);
-        return { id, url, error: err };
-    }
-}
-
-async function loadBatch(baseUrl, entries, onProgress, sequential = false) {
+export async function preloadCharacterModels(baseUrl, onProgress) {
+    const entries = MODEL_KEYS.map(key => ({ key, cfg: MODEL_CATALOG[key] }));
     const errors = [];
     let done = 0;
-    const total = entries.length;
 
-    const runOne = async (entry) => {
-        const err = await loadEntry(baseUrl, entry, onProgress);
-        if (err) errors.push(err);
-        done += 1;
-        onProgress?.(done / total, entry.id, null);
-    };
+    await Promise.all(entries.map(async ({ key, cfg }) => {
+        const id = `human:${key}`;
+        if (_cache.has(id)) { done += 1; onProgress?.(done / entries.length, key, null); return; }
 
-    if (sequential) {
-        for (const entry of entries) {
-            await runOne(entry);
+        const url = resolveUrl(baseUrl, cfg.file);
+        onProgress?.(done / entries.length, key, `Loading ${key} (~${cfg.sizeMB}MB)…`);
+        try {
+            const gltf = await fetchAndParseGlb(url);
+            prepareMeshes(gltf.scene);
+            normalizeHeight(gltf.scene, cfg.targetHeight);
+            _cache.set(id, {
+                scene: gltf.scene,
+                animations: gltf.animations || [],
+                targetHeight: cfg.targetHeight,
+            });
+        } catch (err) {
+            console.error(`[CharacterModels] ${key}:`, err.message || err);
+            errors.push({ key, error: err });
+        } finally {
+            done += 1;
+            onProgress?.(done / entries.length, key, null);
         }
-    } else {
-        await Promise.all(entries.map(runOne));
-    }
+    }));
 
-    return { loaded: _cache.size, total, errors };
+    return { loaded: _cache.size, total: entries.length, errors };
 }
 
-/** Load only player + welcome models first (~2.4 MB) so the game can start quickly. */
-export async function preloadCriticalModels(baseUrl, onProgress) {
-    const entries = catalogEntries('critical').filter(e => !_cache.has(e.id));
-    return loadBatch(baseUrl, entries, onProgress, false);
+/** @deprecated alias */
+export const preloadCriticalModels = preloadCharacterModels;
+export function preloadLazyModels() {
+    return Promise.resolve({ loaded: _cache.size, total: 0, errors: [] });
 }
 
-/** Load heavy models in background after the game has started (~127 MB). */
-export function preloadLazyModels(baseUrl, onProgress) {
-    if (_lazyPromise) return _lazyPromise;
-
-    _lazyPromise = (async () => {
-        const entries = catalogEntries('lazy').filter(e => !_cache.has(e.id));
-        if (!entries.length) return { loaded: _cache.size, total: 0, errors: [] };
-        console.info('[CharacterModels] Background loading heavy models…');
-        return loadBatch(baseUrl, entries, onProgress, true);
-    })();
-
-    return _lazyPromise;
-}
-
-/** @deprecated Use preloadCriticalModels + preloadLazyModels */
-export async function preloadCharacterModels(baseUrl, onProgress) {
-    await preloadCriticalModels(baseUrl, onProgress);
-    return preloadLazyModels(baseUrl, onProgress);
-}
-
-export function isModelLoaded(type, modelKey) {
-    return _cache.has(`${type}:${modelKey}`);
-}
-
-/** Rigged Quaternius models — real stand / walk / run on skeleton */
 export function getAnimatedHumanKey(index = 0) {
-    const key = index % 2 === 0 ? 'male' : 'female';
-    if (isModelLoaded('human', key)) return key;
-    if (isModelLoaded('human', 'male')) return 'male';
-    if (isModelLoaded('human', 'female')) return 'female';
-    return 'male';
-}
-
-/** Statue / display models — stand still only (no walk clips) */
-export function getStatueHumanKey(index = 0) {
-    if (isModelLoaded('human', 'dezyne')) return 'dezyne';
-    return getAnimatedHumanKey(index);
+    return index % 2 === 0 ? 'male' : 'female';
 }
 
 export function getHumanModelKey(index = 0) {
     return getAnimatedHumanKey(index);
 }
 
-export function getStatueAlienKey(index = 0) {
-    const preferred = ALIEN_KEYS[index % ALIEN_KEYS.length];
-    if (isModelLoaded('alien', preferred)) return preferred;
-    return null;
+export function getAlienModelKey(index = 0) {
+    return getAnimatedHumanKey(index + 1);
 }
 
-export function getAlienModelKey(index = 0) {
-    return getStatueAlienKey(index);
+export function isModelLoaded(key) {
+    return _cache.has(`human:${key}`);
+}
+
+export function hasCriticalModels() {
+    return isModelLoaded('male');
+}
+
+function applyTint(model, color, strength = 0.3) {
+    const tint = new THREE.Color(color);
+    model.traverse(obj => {
+        if (!obj.isMesh || !obj.material) return;
+        const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+        mats.forEach(m => { if (m.color) m.color.lerp(tint, strength); });
+    });
 }
 
 export function createCharacterInstance(type, modelKey, opts = {}) {
-    let cacheKey = `${type}:${modelKey}`;
+    const humanKey = modelKey === 'male' || modelKey === 'female'
+        ? modelKey
+        : getAnimatedHumanKey(opts.variant ?? 0);
 
-    if (!_cache.has(cacheKey)) {
-        if (type === 'alien') {
-            const fallback = opts.variant % 2 === 0 ? 'female' : 'male';
-            if (isModelLoaded('human', fallback)) {
-                cacheKey = `human:${fallback}`;
-            }
-        } else if (type === 'human') {
-            if (isModelLoaded('human', 'male')) cacheKey = 'human:male';
-            else if (isModelLoaded('human', 'female')) cacheKey = 'human:female';
-        }
-    }
-
-    const cached = _cache.get(cacheKey);
+    const cached = _cache.get(`human:${humanKey}`);
     if (!cached) {
-        console.warn(`[CharacterModels] Model not loaded: ${type}:${modelKey}`);
-        return createFallbackMarker();
+        console.warn(`[CharacterModels] Model not loaded: ${humanKey}`);
+        const g = new THREE.Group();
+        g.userData.isFallback = true;
+        return g;
     }
 
     const root = new THREE.Group();
@@ -318,56 +199,28 @@ export function createCharacterInstance(type, modelKey, opts = {}) {
     const model = cached.scene.clone(true);
     root.add(model);
 
-    const usingFallback = cacheKey !== `${type}:${modelKey}`;
-    if (usingFallback && type === 'alien') {
-        model.traverse(obj => {
-            if (obj.isMesh && obj.material) {
-                const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-                mats.forEach(m => {
-                    if (m.color) m.color.lerp(new THREE.Color(0x88ccaa), 0.35);
-                });
-            }
-        });
-        root.userData.isAlienPlaceholder = true;
-    }
-
-    const targetH = opts.targetHeight ?? cached.targetHeight;
     if (opts.targetHeight && Math.abs(opts.targetHeight - cached.targetHeight) > 0.01) {
-        const ratio = opts.targetHeight / cached.targetHeight;
-        model.scale.multiplyScalar(ratio);
+        model.scale.multiplyScalar(opts.targetHeight / cached.targetHeight);
     }
 
-    root.userData.modelKey = modelKey;
+    const tint = opts.tint ?? (type === 'alien' ? ALIEN_TINTS[(opts.variant ?? 0) % ALIEN_TINTS.length] : null);
+    if (tint) applyTint(model, tint, opts.tintStrength ?? (type === 'alien' ? 0.38 : 0.2));
+
+    root.userData.modelKey = humanKey;
     root.userData.characterType = type;
     root.userData.isHuman = type === 'human';
     root.userData.isAlien = type === 'alien';
-    root.userData.isRigged = cached.rigged;
-    root.userData.isStaticModel = !cached.animated;
-    root.userData.role = cached.role;
+    root.userData.isRigged = true;
+    root.userData.isStaticModel = false;
 
-    if (opts.tint && model) {
-        const tint = new THREE.Color(opts.tint);
-        model.traverse(obj => {
-            if (!obj.isMesh || !obj.material) return;
-            const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-            mats.forEach(m => { if (m.color) m.color.lerp(tint, opts.tintStrength ?? 0.25); });
-        });
-    }
-
-    if (cached.animated && cached.animations.length) {
+    if (cached.animations.length) {
         const { mixer, actions } = setupAnimator(model, cached.animations);
         root.userData.mixer = mixer;
         root.userData.actions = actions;
-        root.userData._activeAction = actions.idle ?? null;
+        root.userData._activeAction = actions.stand ?? null;
     }
 
     return root;
-}
-
-function createFallbackMarker() {
-    const g = new THREE.Group();
-    g.userData.isFallback = true;
-    return g;
 }
 
 export function fadeCharacterAction(avatar, name, duration = 0.2) {
@@ -386,17 +239,4 @@ export function fadeCharacterAction(avatar, name, duration = 0.2) {
 
 export function updateCharacterAnimator(avatar, dt) {
     if (avatar.userData.mixer) avatar.userData.mixer.update(dt);
-}
-
-export function animateStaticWalk(avatar, walkT, intensity = 1) {
-    if (!avatar.userData.isStaticModel) return;
-    const baseY = avatar.userData._baseY ?? avatar.position.y;
-    if (avatar.userData._baseY == null) avatar.userData._baseY = baseY;
-    avatar.position.y = baseY + Math.sin(walkT * 10) * 0.025 * intensity;
-    const body = avatar.children[0];
-    if (body) body.rotation.z = Math.sin(walkT * 5) * 0.04 * intensity;
-}
-
-export function hasCriticalModels() {
-    return CRITICAL_IDS.every(id => _cache.has(id));
 }

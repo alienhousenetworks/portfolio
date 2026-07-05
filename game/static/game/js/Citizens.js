@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { WORLD } from './config.js';
-import { getAnimatedHumanKey, getStatueAlienKey } from './CharacterModels.js';
+import { getAnimatedHumanKey } from './CharacterModels.js';
 import {
-    createHumanAvatar, createStatueHuman, createAlienAvatar, createNameTag,
+    createHumanAvatar, createAlienAvatar, createNameTag,
     createStudentAvatar, createCommuterAvatar, createWandererAvatar, createCyclistAvatar,
     setCharacterPose, tickAnimator, updateLocomotionPose,
     animateWanderer, animateCyclist,
@@ -56,12 +56,12 @@ export class CitizenManager {
 
         for (let i = 0; i < 12; i++) {
             const spot = spots[(i + 5) % spots.length];
-            const mesh = createAlienAvatar({ modelKey: getStatueAlienKey(i) ?? 'fantasy', variant: i });
+            const mesh = createAlienAvatar({ variant: i });
             this._placeCitizen(mesh, spot, ALIEN_NAMES[i % ALIEN_NAMES.length], 'alien', ALIEN_LINES[i % ALIEN_LINES.length], i * 0.5 + 2);
         }
 
         teamMembers.slice(0, 6).forEach((m, i) => {
-            const mesh = createAlienAvatar({ modelKey: getStatueAlienKey(i + 1) ?? 'fantasy', variant: i + 1 });
+            const mesh = createAlienAvatar({ variant: i + 1 });
             mesh.position.set(-12 + i * 4, this._groundY(-12 + i * 4, WORLD.parkZ - 12 - i), WORLD.parkZ - 12 - i);
             mesh.visible = false;
             mesh.add(createNameTag(m.name));
@@ -142,7 +142,7 @@ export class CitizenManager {
             { x: WORLD.parkX, z: WORLD.parkZ + 14, line: 'The fountain sounds so peaceful.' },
         ];
         parkSpots.forEach((spot, i) => {
-            const mesh = createStatueHuman({ modelKey: getAnimatedHumanKey(i + 1), variant: i + 1 });
+            const mesh = createHumanAvatar({ variant: i + 1 });
             mesh.position.set(spot.x, this._groundY(spot.x, spot.z), spot.z);
             mesh.add(createNameTag(['Sora', 'Hana', 'Ren'][i]));
             this.scene.add(mesh);
@@ -178,8 +178,8 @@ export class CitizenManager {
         buildings.forEach((b, i) => {
             const isAlien = b.hostType === 'alien';
             const mesh = isAlien
-                ? createAlienAvatar({ modelKey: getStatueAlienKey(i) ?? 'fantasy', variant: i })
-                : createStatueHuman({ modelKey: getAnimatedHumanKey(i), variant: i });
+                ? createAlienAvatar({ variant: i })
+                : createHumanAvatar({ variant: i });
 
             mesh.position.set(b.hostX, this._groundY(b.hostX, b.hostZ), b.hostZ);
             mesh.rotation.y = Math.atan2(b.x - b.hostX, b.z - b.hostZ);
@@ -262,7 +262,7 @@ export class CitizenManager {
         for (let i = 0; i < aliens; i++) {
             const angle = (i / aliens) * Math.PI * 2 + 0.5;
             const r = baseR + 4 + (i % 3) * 3;
-            const mesh = createAlienAvatar({ modelKey: getStatueAlienKey(i) ?? 'fantasy', variant: i });
+            const mesh = createAlienAvatar({ variant: i });
             const ax = x + Math.cos(angle) * r;
             const az = z + Math.sin(angle) * r;
             const line = district === 'innovation'

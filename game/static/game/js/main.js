@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { WORLD, PALETTE } from './config.js';
-import { preloadCriticalModels, preloadLazyModels, hasCriticalModels } from './CharacterModels.js';
+import { preloadCharacterModels, hasCriticalModels } from './CharacterModels.js';
 import { createHumanAvatar, createAlienAvatar, createUFO, createNameTag } from './AvatarFactory.js';
 import { WorldBuilder } from './WorldBuilder.js';
 import { TerrainSystem } from './TerrainSystem.js';
@@ -73,7 +73,7 @@ class Game {
 
     async initCharacters() {
         const base = this.data.staticBase || '/static/game/';
-        const result = await preloadCriticalModels(base, (pct, id, label) => {
+        const result = await preloadCharacterModels(base, (pct, id, label) => {
             this._setLoadProgress(pct, id, label);
         });
 
@@ -102,7 +102,7 @@ class Game {
         this.welcomeHuman.add(createNameTag(welcome.humanName || 'Human Ambassador'));
         this.scene.add(this.welcomeHuman);
 
-        this.welcomeAlien = createAlienAvatar({ modelKey: 'fantasy', variant: 0 });
+        this.welcomeAlien = createAlienAvatar({ variant: 0 });
         this.welcomeAlien.visible = false;
         this.welcomeAlien.add(createNameTag(welcome.alienName || 'Alien Ambassador'));
         this.scene.add(this.welcomeAlien);
@@ -121,12 +121,6 @@ class Game {
         document.getElementById('start-screen')?.classList.remove('hidden');
         this.state = 'start';
 
-        preloadLazyModels(base, (pct, id, label) => {
-            if (label) console.info('[game]', label);
-        }).then(r => {
-            if (r.errors?.length) console.warn('[game] Some background models failed:', r.errors);
-            else console.info('[game] All character models loaded');
-        });
     }
 
     _renderer() {
