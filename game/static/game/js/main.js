@@ -377,6 +377,10 @@ class Game {
             this.citizens.update(dt);
         }
 
+        if (this.terrain && this.terrain.update) {
+            this.terrain.update(dt);
+        }
+
         // Animate clouds drifting
         this._animateClouds(dt);
 
