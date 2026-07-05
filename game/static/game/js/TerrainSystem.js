@@ -201,27 +201,7 @@ export class TerrainSystem {
         return best;
     }
 
-    _createNoiseTexture(color1, color2, size = 128) {
-        const canvas = document.createElement('canvas');
-        canvas.width = size;
-        canvas.height = size;
-        const ctx = canvas.getContext('2d');
-        for (let x = 0; x < size; x++) {
-            for (let y = 0; y < size; y++) {
-                ctx.fillStyle = Math.random() > 0.45 ? color1 : color2;
-                ctx.fillRect(x, y, 1, 1);
-            }
-        }
-        const texture = new THREE.CanvasTexture(canvas);
-        texture.wrapS = THREE.RepeatWrapping;
-        texture.wrapT = THREE.RepeatWrapping;
-        return texture;
-    }
-
     _buildCurvedHills(scene) {
-        const grassTex = this._createNoiseTexture('#6fcf85', '#5ebf75');
-        grassTex.repeat.set(50, 50);
-
         // 1. Build flat ground base (colored sand/shore in center, grass on sides)
         const groundGeo = new THREE.PlaneGeometry(WORLD.size, WORLD.size, 40, 40);
         groundGeo.rotateX(-Math.PI / 2);
@@ -231,20 +211,18 @@ export class TerrainSystem {
         for (let i = 0; i < pos.count; i++) {
             const vx = pos.getX(i);
             const d = Math.abs(vx);
-            let colHex = PALETTE.grass;
+            let colHex = '#74c688'; // Light Ghibli green
             if (d < 45) {
-                colHex = PALETTE.sand;
+                colHex = '#f5eada'; // Light sand
             }
             const c = new THREE.Color(colHex);
             colors.push(c.r, c.g, c.b);
         }
         groundGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
 
-        const baseMat = new THREE.MeshStandardMaterial({
+        const baseMat = new THREE.MeshToonMaterial({
             vertexColors: true,
-            map: grassTex,
-            roughness: 0.9,
-            metalness: 0.1
+            gradientMap: getGradientMap()
         });
         this.grassMaterials.push(baseMat);
 
@@ -265,20 +243,18 @@ export class TerrainSystem {
                 const vy = hp.getY(i) + h.hy;
                 
                 if (ny > 0.58 && vy > 0.25) {
-                    const c = new THREE.Color(PALETTE.grass);
+                    const c = new THREE.Color('#74c688');
                     hillColors.push(c.r, c.g, c.b);
                 } else {
-                    const c = new THREE.Color(PALETTE.sand);
+                    const c = new THREE.Color('#f5eada');
                     hillColors.push(c.r, c.g, c.b);
                 }
             }
             hillGeo.setAttribute('color', new THREE.Float32BufferAttribute(hillColors, 3));
 
-            const hillMat = new THREE.MeshStandardMaterial({
+            const hillMat = new THREE.MeshToonMaterial({
                 vertexColors: true,
-                map: grassTex,
-                roughness: 0.9,
-                metalness: 0.1
+                gradientMap: getGradientMap()
             });
             this.grassMaterials.push(hillMat);
 
@@ -291,22 +267,16 @@ export class TerrainSystem {
     }
 
     _buildSteppingStones(scene) {
-        const stoneTex = this._createNoiseTexture('#9e9e9e', '#8a8a8a');
-        stoneTex.repeat.set(2, 2);
-
         const stoneGeo = new THREE.BoxGeometry(2.0, 0.12, 1.5);
-        const stoneMat = new THREE.MeshStandardMaterial({
-            map: stoneTex,
-            roughness: 0.8,
-            metalness: 0.2
+        const stoneMat = new THREE.MeshToonMaterial({
+            color: 0xc8c6c0,
+            gradientMap: getGradientMap()
         });
 
-        // Arrange stones along beautiful paths leading to central valley or main buildings
+        // Optimized paths (fewer stones for 60fps)
         const stonePaths = [
-            // Center valley path
-            { startZ: 80, endZ: -80, count: 18, offset: 0 },
-            // Left hill path
-            { startZ: 100, endZ: -40, count: 12, offset: -48 }
+            { startZ: 80, endZ: -80, count: 10, offset: 0 },
+            { startZ: 100, endZ: -40, count: 8, offset: -48 }
         ];
 
         stonePaths.forEach(path => {
@@ -327,14 +297,11 @@ export class TerrainSystem {
     }
 
     _buildHedges(scene) {
-        const hedgeTex = this._createNoiseTexture('#2d5a1e', '#1e3f13');
-        hedgeTex.repeat.set(5, 5);
-        const hedgeMat = new THREE.MeshStandardMaterial({
-            map: hedgeTex,
-            roughness: 0.95
+        const hedgeMat = new THREE.MeshToonMaterial({
+            color: 0x5ea96a,
+            gradientMap: getGradientMap()
         });
 
-        // Hedges bordering different district sectors
         const hedgeBoxes = [
             { x: -50, z: -70, w: 25, h: 2.8, d: 2 },
             { x: 50, z: -50, w: 30, h: 2.8, d: 2 },
@@ -355,11 +322,12 @@ export class TerrainSystem {
 
     _buildWildflowers(scene) {
         const flowerGeo = new THREE.IcosahedronGeometry(0.24, 1);
-        const yellowMat = new THREE.MeshStandardMaterial({ color: 0xffeb3b, roughness: 0.9, emissive: 0xffeb3b, emissiveIntensity: 0.1 });
-        const purpleMat = new THREE.MeshStandardMaterial({ color: 0x9c27b0, roughness: 0.9, emissive: 0x9c27b0, emissiveIntensity: 0.1 });
-        const magentaMat = new THREE.MeshStandardMaterial({ color: 0xd63693, roughness: 0.8, emissive: 0x4a0a2f, emissiveIntensity: 0.2 });
+        const yellowMat = new THREE.MeshToonMaterial({ color: 0xffeb3b, gradientMap: getGradientMap() });
+        const purpleMat = new THREE.MeshToonMaterial({ color: 0x9c27b0, gradientMap: getGradientMap() });
+        const magentaMat = new THREE.MeshToonMaterial({ color: 0xd63693, gradientMap: getGradientMap() });
 
-        const count = 180;
+        // Reduced count for optimization
+        const count = 60;
         const instancedYellow = new THREE.InstancedMesh(flowerGeo, yellowMat, count);
         const instancedPurple = new THREE.InstancedMesh(flowerGeo, purpleMat, count);
         const instancedMagenta = new THREE.InstancedMesh(flowerGeo, magentaMat, count);
@@ -367,7 +335,6 @@ export class TerrainSystem {
         const dummy = new THREE.Object3D();
 
         for (let i = 0; i < count; i++) {
-            // Distribute across the hillsides
             const hill = this.hills[i % this.hills.length];
             const angle = (i * 2.39) % (Math.PI * 2);
             const r = (0.2 + Math.random() * 0.6) * hill.r;
@@ -388,35 +355,29 @@ export class TerrainSystem {
                 instancedMagenta.setMatrixAt(i, dummy.matrix);
             }
         }
-        instancedYellow.castShadow = true;
-        instancedPurple.castShadow = true;
-        instancedMagenta.castShadow = true;
         scene.add(instancedYellow, instancedPurple, instancedMagenta);
     }
 
     _buildButterflies(scene) {
-        // Build 12 animated butterfly groups
-        for (let i = 0; i < 12; i++) {
+        // Reduced count (5 instead of 12) for higher performance
+        for (let i = 0; i < 5; i++) {
             const bGroup = new THREE.Group();
-            
-            // Random colors (pink, blue, yellow)
             const colors = [0xff88cc, 0x88ccff, 0xffcc88];
             const col = colors[i % colors.length];
 
             const wingGeo = new THREE.PlaneGeometry(0.35, 0.45);
-            wingGeo.translate(0.175, 0, 0); // pivot on edge
+            wingGeo.translate(0.175, 0, 0);
             const wingMat = new THREE.MeshBasicMaterial({ color: col, side: THREE.DoubleSide });
 
             const wingL = new THREE.Mesh(wingGeo, wingMat);
             wingL.rotation.y = 0.5;
             const wingR = new THREE.Mesh(wingGeo, wingMat);
-            wingR.scale.x = -1; // Mirror
+            wingR.scale.x = -1;
             wingR.rotation.y = -0.5;
 
             bGroup.add(wingL);
             bGroup.add(wingR);
 
-            // Position randomly in the valley / hills
             const baseX = (Math.random() - 0.5) * 80;
             const baseZ = (Math.random() - 0.5) * 80;
             const baseY = this.getHeightAt(baseX, baseZ) + 2.0 + Math.random() * 3.0;
