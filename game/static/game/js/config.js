@@ -1,6 +1,6 @@
 export const WORLD = {
     size: 700,
-    groundY: 0,
+    groundY: 0.15,
     roadWidth: 10,
     roadSpacing: 50,
     bound: 320,
@@ -12,6 +12,14 @@ export const WORLD = {
     riverLength: 620,
     mountainY: 0,
 };
+
+/** River bridge decks — keep in sync with WorldBuilder._buildBridge */
+export const BRIDGES = [
+    { x: 0, z: -130, deckY: 2.35, halfW: 27, halfD: 5.5 },
+    { x: 0, z: -40, deckY: 2.35, halfW: 27, halfD: 5.5 },
+    { x: 0, z: 65, deckY: 2.35, halfW: 27, halfD: 5.5 },
+    { x: 0, z: 170, deckY: 2.35, halfW: 27, halfD: 5.5 },
+];
 
 /** NPC / citizen stature — compact scale for the toon city */
 export const CITIZEN = {
@@ -30,7 +38,8 @@ export const PLAYER = {
     radius: 0.22,
     walkSpeed: 7,
     runSpeed: 13,
-    maxStepHeight: 1.2,   // max height player can auto-step onto a block top
+    maxStepHeight: 1.2,
+    bridgeStepHeight: 2.6, // max step onto bridge deck / ramps
 };
 
 export const PHYSICS = {

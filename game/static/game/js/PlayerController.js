@@ -242,10 +242,10 @@ export class PlayerController {
             this.onGround = false;
         }
 
-        // Smooth height transition for all climbing/slopes (GTA style)
-        if (this.vy <= 0 && Math.abs(terrainY - curY) < 3.0) {
-            const ySmooth = 12; // smooth factor
-            this.avatar.position.y += (terrainY - this.avatar.position.y) * (1 - Math.exp(-ySmooth * dt));
+        // Smooth height transition — use walkable floor (terrain + bridges + blocks)
+        if (this.vy <= 0 && Math.abs(floorY - curY) < 3.5) {
+            const ySmooth = 12;
+            this.avatar.position.y += (floorY - this.avatar.position.y) * (1 - Math.exp(-ySmooth * dt));
             this.onGround = true;
             this.vy = 0;
         } else {
@@ -276,8 +276,8 @@ export class PlayerController {
             const hd = c.d / 2 + r;
             if (Math.abs(x - c.x) < hw && Math.abs(z - c.z) < hd) {
                 const top = (c.floorY || 0) + (c.h || 0);
-                // Only count blocks that are below or near the player
-                if (top <= y + PLAYER.maxStepHeight + 0.5) {
+                const stepLimit = this._stepLimit(c, y);
+                if (top <= y + stepLimit + 0.5 || y >= top - 0.2) {
                     if (best === null || top > best) best = top;
                 }
             }
@@ -289,26 +289,29 @@ export class PlayerController {
      * Check if movement to (x,z) at current height y is blocked.
      * Allows stepping UP onto a block if its top is within maxStepHeight.
      */
+    _stepLimit(c, y) {
+        if (c.isBridge || c.isBridgeRamp) return PLAYER.bridgeStepHeight;
+        return PLAYER.maxStepHeight;
+    }
+
     _blockedWithStep(x, z, y) {
         const r = PLAYER.radius;
         for (const c of this.colliders) {
             const hw = c.w / 2 + r;
             const hd = c.d / 2 + r;
             if (Math.abs(x - c.x) < hw && Math.abs(z - c.z) < hd) {
-                // Is this a stair-traversal exception?
                 if (c.d > 100 && this.terrain?.isOnStair(x, z)) continue;
+                if (this.terrain?.isOnBridge(x, z) && (c.isBridge || c.isBridgeRamp)) continue;
 
                 const blockFloor = c.floorY || 0;
                 const blockTop = blockFloor + (c.h || 0);
+                const stepLimit = this._stepLimit(c, y);
 
-                // If the block top is within step-up range AND player is approaching from below top
-                if (blockTop <= y + PLAYER.maxStepHeight && blockTop > blockFloor) {
-                    // Allow: player can step up onto this block
+                if (blockTop <= y + stepLimit && blockTop > blockFloor + 0.05) {
                     continue;
                 }
 
-                // If player is above the block top (standing on it), allow movement
-                if (y >= blockTop - 0.1) continue;
+                if (y >= blockTop - 0.15) continue;
 
                 return true;
             }
@@ -332,7 +335,8 @@ export class PlayerController {
             );
         }
         for (const [tx, tz] of candidates) {
-            if (!this._blockedWithStep(tx, tz, 0)) return { x: tx, z: tz };
+            const ty = this.terrain ? this.terrain.getHeightAt(tx, tz) : WORLD.groundY;
+            if (!this._blockedWithStep(tx, tz, ty)) return { x: tx, z: tz };
         }
         return { x, z };
     }

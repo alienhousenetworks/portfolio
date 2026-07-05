@@ -840,8 +840,33 @@ export class WorldBuilder {
             z: z,
             w: deckW + 2,
             d: 10,
-            h: deckTopY,      // height of bridge top surface
-            floorY: 0,        // bridge sits at world origin
+            h: deckTopY,
+            floorY: 0,
+            isBridge: true,
+        });
+
+        // Walkable ramps on east/west bridge ends
+        [-1, 1].forEach(side => {
+            const rampX = worldRx + side * (deckW / 2 + 4.5);
+            const ramp = toonMesh(
+                new THREE.BoxGeometry(9, deckTopY / 2, 8.5),
+                PALETTE.bridge,
+            );
+            ramp.mesh.position.set(rampX - worldRx, deckTopY / 4, 0);
+            ramp.mesh.rotation.z = side * -0.22;
+            ramp.mesh.castShadow = true;
+            ramp.mesh.receiveShadow = true;
+            g.add(ramp.group);
+
+            this.colliders.push({
+                x: rampX,
+                z: z,
+                w: 9,
+                d: 10,
+                h: deckTopY,
+                floorY: 0,
+                isBridgeRamp: true,
+            });
         });
     }
 

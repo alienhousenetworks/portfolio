@@ -229,6 +229,7 @@ export class CitizenManager {
         const stature = mesh.userData.targetHeight ?? citizenHeight(phase);
         mesh.userData.targetHeight = stature;
         mesh.add(createNameTag(name, stature));
+        if (isRiggedAvatar(mesh)) setCharacterPose(mesh, 'idle', 0);
         this.scene.add(mesh);
         this.citizens.push({
             mesh, name, type,
@@ -301,7 +302,9 @@ export class CitizenManager {
             }
 
             if (c.speed === 0) {
-                if (isRiggedAvatar(c.mesh)) setCharacterPose(c.mesh, 'idle', 0.2);
+                if (isRiggedAvatar(c.mesh) && c.mesh.userData.pose !== 'idle') {
+                    setCharacterPose(c.mesh, 'idle', 0.2);
+                }
                 return;
             }
 

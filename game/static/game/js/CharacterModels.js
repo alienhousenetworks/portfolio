@@ -202,6 +202,8 @@ function normalizeHeight(root, targetHeight) {
     root.position.y -= box2.min.y;
 }
 
+const BAD_POSE_CLIP = /stand|clap|punch|wave|tpose|t-pose/i;
+
 function findClip(clips, kind) {
     const rules = {
         idle: [/Man_Idle/i, /Female_Idle/i, /_idle$/i],
@@ -213,7 +215,7 @@ function findClip(clips, kind) {
         climb: [/climb/i, /Man_Walk/i, /Female_Walk/i],
     };
     for (const pattern of rules[kind] || []) {
-        const hit = clips.find(c => pattern.test(c.name));
+        const hit = clips.find(c => pattern.test(c.name) && !BAD_POSE_CLIP.test(c.name));
         if (hit) return hit;
     }
     return null;
@@ -226,13 +228,16 @@ function setupAnimator(root, clips) {
         const clip = findClip(clips, kind);
         if (clip) actions[kind] = mixer.clipAction(clip);
     });
-    // Prefer relaxed idle — standing clips often raise arms (T-pose wave)
-    const start = actions.idle ?? actions.walk
-        ?? (clips.find(c => /idle/i.test(c.name)) ? mixer.clipAction(clips.find(c => /idle/i.test(c.name))) : null)
-        ?? (clips[0] ? mixer.clipAction(clips[0]) : null);
+    const pickClip = (pred) => clips.find(c => pred(c.name) && !BAD_POSE_CLIP.test(c.name));
+    const idleClip = pickClip(n => /idle/i.test(n))
+        ?? pickClip(n => /walk/i.test(n));
+    const start = actions.idle
+        ?? (idleClip ? mixer.clipAction(idleClip) : null)
+        ?? actions.walk;
     if (start) {
         actions.idle = actions.idle ?? start;
-        start.play();
+        start.reset().setEffectiveWeight(1).play();
+        mixer.update(0);
     }
     return { mixer, actions, clips: clips.map(c => c.name) };
 }

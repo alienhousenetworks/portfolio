@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { WORLD, PALETTE } from './config.js';
+import { WORLD, PALETTE, BRIDGES } from './config.js';
 import { toonMat, toonMesh, getGradientMap } from './ToonStyle.js';
 
 const MAX_STEP = 2.2;
@@ -79,6 +79,30 @@ export class TerrainSystem {
     }
 
     getHeightAt(x, z) {
+        // Bridge decks override river ground
+        for (const b of BRIDGES) {
+            if (Math.abs(x - b.x) <= b.halfW && Math.abs(z - b.z) <= b.halfD) {
+                return b.deckY;
+            }
+        }
+
+        // Bridge approach ramps (ground → deck) on east/west ends
+        for (const b of BRIDGES) {
+            if (Math.abs(z - b.z) > b.halfD + 1.5) continue;
+            for (const side of [-1, 1]) {
+                const innerX = b.x + side * b.halfW;
+                const outerX = b.x + side * (b.halfW + 9);
+                const onRamp = side > 0
+                    ? (x >= innerX && x <= outerX)
+                    : (x <= innerX && x >= outerX);
+                if (!onRamp) continue;
+                const t = side > 0
+                    ? (x - innerX) / (outerX - innerX)
+                    : (innerX - x) / (innerX - outerX);
+                return THREE.MathUtils.lerp(0.15, b.deckY, THREE.MathUtils.clamp(t, 0, 1));
+            }
+        }
+
         // Stairs override
         for (const s of this.stairs) {
             if (this._inRect(x, z, s)) {
@@ -95,21 +119,35 @@ export class TerrainSystem {
             if (h != null) return h;
         }
 
-        // Calculate height based on overlapping submerged sphere hills
-        let maxH = 0.15;
+        // Submerged sphere hills — only the exposed grassy cap is walkable
+        const MIN_GROUND = 0.12;
+        let maxH = MIN_GROUND;
         for (const h of this.hills) {
             const dx = x - h.x;
             const dz = z - h.z;
             const distSq = dx * dx + dz * dz;
             const rSq = h.r * h.r;
-            if (distSq < rSq) {
-                const y = h.hy + Math.sqrt(rSq - distSq);
-                if (y > maxH) {
-                    maxH = y;
-                }
-            }
+            if (distSq >= rSq) continue;
+
+            const rise = Math.sqrt(rSq - distSq);
+            const ny = rise / h.r;
+            if (ny < 0.55) continue;
+
+            const y = h.hy + rise;
+            if (y < MIN_GROUND) continue;
+            if (y > maxH) maxH = y;
         }
+
+        // Keep sakura park walkable and level
+        if (Math.hypot(x - WORLD.parkX, z - WORLD.parkZ) < WORLD.parkRadius) {
+            maxH = Math.min(maxH, 0.22);
+        }
+
         return maxH;
+    }
+
+    isOnBridge(x, z) {
+        return BRIDGES.some(b => Math.abs(x - b.x) <= b.halfW && Math.abs(z - b.z) <= b.halfD);
     }
 
     isOnStair(x, z) {
@@ -122,6 +160,9 @@ export class TerrainSystem {
         if (Math.abs(dy) <= MAX_STEP) return true;
         if (this.isOnStair(fromX, fromZ) || this.isOnStair(toX, toZ)) {
             return Math.abs(dy) <= STAIR_MAX_STEP;
+        }
+        if (this.isOnBridge(fromX, fromZ) || this.isOnBridge(toX, toZ)) {
+            return Math.abs(dy) <= STAIR_MAX_STEP + 0.5;
         }
         if (dy < 0 && Math.abs(dy) <= 1.2) return true;
         return false;
