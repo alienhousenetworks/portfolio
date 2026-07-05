@@ -61,7 +61,8 @@ export class CitizenManager {
         }
 
         teamMembers.slice(0, 6).forEach((m, i) => {
-            const mesh = createAlienAvatar({ modelKey: getAlienModelKey(i + 1), variant: i + 1 });
+            const teamKey = getAlienModelKey(i + 1);
+            const mesh = createAlienAvatar({ modelKey: teamKey ?? 'fantasy', variant: i + 1 });
             mesh.position.set(-12 + i * 4, this._groundY(-12 + i * 4, WORLD.parkZ - 12 - i), WORLD.parkZ - 12 - i);
             mesh.visible = false;
             mesh.add(createNameTag(m.name));
@@ -178,7 +179,7 @@ export class CitizenManager {
         buildings.forEach((b, i) => {
             const isAlien = b.hostType === 'alien';
             const mesh = isAlien
-                ? createAlienAvatar({ modelKey: getAlienModelKey(i), variant: i })
+                ? createAlienAvatar({ modelKey: getAlienModelKey(i) ?? 'fantasy', variant: i })
                 : createHumanAvatar({ modelKey: getHumanModelKey(i), variant: i });
 
             mesh.position.set(b.hostX, this._groundY(b.hostX, b.hostZ), b.hostZ);
