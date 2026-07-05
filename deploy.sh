@@ -2,8 +2,6 @@
 set -e
 cd "$(dirname "$0")"
 
-# First invocation: pull latest code then re-exec so THIS script runs its newest version.
-# (Otherwise git pull updates deploy.sh on disk but the old script keeps running in memory.)
 if [ -z "${DEPLOY_REEXEC:-}" ]; then
     echo "==> Pulling latest code..."
     git pull origin main
@@ -14,33 +12,28 @@ fi
 source venv/bin/activate
 echo "==> Deploying from $(pwd)"
 
-if ! command -v git-lfs >/dev/null 2>&1; then
-    echo "ERROR: git-lfs is not installed."
-    echo "Run: sudo apt install git-lfs && git lfs install"
-    exit 1
+# Try git-lfs if available (optional — models may need rsync from Mac instead)
+if command -v git-lfs >/dev/null 2>&1; then
+    git lfs install --local 2>/dev/null || git lfs install
+    echo "==> Trying git lfs pull..."
+    git lfs pull || echo "WARN: git lfs pull failed — will verify local files"
+else
+    echo "WARN: git-lfs not installed — GLB models must already exist or be rsync'd from Mac"
+    echo "      See: scripts/sync-models-to-vps.sh"
 fi
-git lfs install --local 2>/dev/null || git lfs install
 
-echo "==> Downloading GLB models from Git LFS..."
-git lfs pull
-
-SAMPLE="game/static/game/models/quaternius_cc0-male-character-1354.glb"
-if ! head -c 4 "$SAMPLE" | grep -q glTF; then
-    echo "ERROR: $SAMPLE is still an LFS pointer (not a real GLB)."
-    echo "Try: git lfs fetch --all && git lfs checkout"
-    exit 1
-fi
-echo "==> GLB models OK ($(wc -c < "$SAMPLE") bytes for sample file)"
+bash scripts/ensure-glb-models.sh
 
 echo "==> Collecting static files..."
 rm -rf staticfiles/game/models
 python manage.py collectstatic --noinput
 
-if ! head -c 4 staticfiles/game/models/quaternius_cc0-male-character-1354.glb | grep -q glTF; then
-    echo "ERROR: staticfiles still has LFS pointers after collectstatic."
+SAMPLE="staticfiles/game/models/quaternius_cc0-male-character-1354.glb"
+if ! head -c 4 "$SAMPLE" | grep -q glTF; then
+    echo "ERROR: staticfiles still has invalid GLB files."
     exit 1
 fi
-echo "==> staticfiles/game/models OK"
+echo "==> staticfiles/game/models OK ($(wc -c < "$SAMPLE") bytes)"
 
 sudo systemctl restart portfolio
 echo "Deploy complete. Hard-refresh /game/ in browser (Cmd+Shift+R)."
