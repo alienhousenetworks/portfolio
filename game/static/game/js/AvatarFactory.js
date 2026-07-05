@@ -19,31 +19,42 @@ function limb(name, geo, mat, parent, pos, rot = [0, 0, 0]) {
 }
 
 function buildHumanBase(g, opts = {}) {
-    const skin = std(opts.skinTone ?? PALETTE.humanSkin);
+    const skin = std(opts.skinTone ?? 0xffdbac);
     const skinDark = std(
-        new THREE.Color(opts.skinTone ?? PALETTE.humanSkin).multiplyScalar(0.85).getHex()
+        new THREE.Color(opts.skinTone ?? 0xffdbac).multiplyScalar(0.85).getHex()
     );
-    // Force the black shirt and red pants style from reference image
-    const shirt = std(0x1a1a24);
-    const pants = std(0xd66565);
-    const shoe = std(0x1a1a22);
-    const hairCol = std(0x3a3a48);
+    
+    // Ghibli/Anime style palette from reference image
+    const jacketCol = std(0x3b4d36); // Camo green jacket
+    const vestCol = std(0x2d3436);   // Dark grey vest
+    const shirtCol = std(0xffffff);  // White shirt collar
+    const pantsCol = std(0x232b38);  // Dark blue/grey pants
+    const shoeCol = std(0x111111);   // Black sneakers
+    const hairCol = std(0x224466);   // Cool blue styled hair
+    const leatherCol = std(0x8b5a2b); // Messenger bag strap
+    const bagCol = std(0x3b5998);     // Blue bag
 
-    // Torso
-    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.5, 0.22), shirt);
+    // Torso (Jacket base)
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.52, 0.24), jacketCol);
     torso.position.y = 1.18;
     torso.castShadow = true;
     g.add(torso);
 
-    // Yellow chest shield/logo
-    const logo = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.08, 0.02), std(0xffd966));
-    logo.position.set(0.06, 1.26, 0.115);
-    g.add(logo);
+    // Inner grey vest
+    const vest = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.5, 0.25), vestCol);
+    vest.position.set(0, 1.17, 0.01);
+    g.add(vest);
 
-    // Yellow collar crew neck
-    const collar = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.03, 0.14), std(0xffd966));
-    collar.position.set(0, 1.435, 0);
-    g.add(collar);
+    // White shirt collar peaking out
+    const collarL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.12, 0.04), shirtCol);
+    collarL.position.set(-0.06, 1.42, 0.11);
+    collarL.rotation.z = -0.3;
+    g.add(collarL);
+
+    const collarR = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.12, 0.04), shirtCol);
+    collarR.position.set(0.06, 1.42, 0.11);
+    collarR.rotation.z = 0.3;
+    g.add(collarR);
 
     const neck = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.1), skin);
     neck.position.y = 1.48;
@@ -54,19 +65,18 @@ function buildHumanBase(g, opts = {}) {
     head.castShadow = true;
     g.add(head);
 
-    // Spiky Hair Base
-    const hairBase = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.16, 0.3), hairCol);
-    hairBase.position.set(0, 1.86, -0.02);
+    // Blue styled Ghibli haircut (undercut spikes)
+    const hairBase = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.18, 0.3), hairCol);
+    hairBase.position.set(0, 1.86, -0.01);
     g.add(hairBase);
 
-    // Add spiky hair strands (boxy bangs/sideburns)
     const spikes = [
-        { size: [0.08, 0.16, 0.08], pos: [-0.07, 1.76, 0.14], rot: [0.2, 0, -0.3] },
-        { size: [0.08, 0.18, 0.08], pos: [0.01, 1.73, 0.14], rot: [0.25, 0.1, -0.15] },
-        { size: [0.08, 0.14, 0.08], pos: [0.08, 1.77, 0.13], rot: [0.18, 0.2, 0.2] },
-        { size: [0.08, 0.15, 0.08], pos: [-0.15, 1.74, 0.03], rot: [0, 0, 0.35] },
-        { size: [0.08, 0.15, 0.08], pos: [0.15, 1.74, 0.03], rot: [0, 0, -0.35] },
-        { size: [0.1, 0.12, 0.1], pos: [0, 1.68, -0.15], rot: [-0.3, 0, 0] }
+        { size: [0.09, 0.16, 0.09], pos: [-0.07, 1.76, 0.14], rot: [0.2, 0, -0.3] },
+        { size: [0.09, 0.18, 0.09], pos: [0.01, 1.73, 0.14], rot: [0.25, 0.1, -0.15] },
+        { size: [0.09, 0.14, 0.09], pos: [0.08, 1.77, 0.13], rot: [0.18, 0.2, 0.2] },
+        { size: [0.08, 0.15, 0.08], pos: [-0.15, 1.76, 0.04], rot: [0, 0, 0.35] },
+        { size: [0.08, 0.15, 0.08], pos: [0.15, 1.76, 0.04], rot: [0, 0, -0.35] },
+        { size: [0.12, 0.14, 0.12], pos: [0, 1.68, -0.14], rot: [-0.3, 0, 0] }
     ];
     spikes.forEach(s => {
         const spike = new THREE.Mesh(new THREE.BoxGeometry(...s.size), hairCol);
@@ -75,18 +85,18 @@ function buildHumanBase(g, opts = {}) {
         g.add(spike);
     });
 
-    // Headphones (White cups + black band)
-    const earmuffL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.18, 0.14), std(0xffffff));
-    earmuffL.position.set(-0.16, 1.68, 0);
-    g.add(earmuffL);
+    // Glasses frame (White/grey frames)
+    const glassFrame = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.08, 0.03), std(0xcccccc));
+    glassFrame.position.set(0, 1.7, 0.15);
+    g.add(glassFrame);
 
-    const earmuffR = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.18, 0.14), std(0xffffff));
-    earmuffR.position.set(0.16, 1.68, 0);
-    g.add(earmuffR);
-
-    const band = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.04, 0.06), std(0x1a1a24));
-    band.position.set(0, 1.88, 0);
-    g.add(band);
+    // Earpods (Small white cylinders in ears)
+    [-0.155, 0.155].forEach(x => {
+        const pod = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.08, 8), std(0xffffff));
+        pod.position.set(x, 1.66, 0.02);
+        pod.rotation.x = 0.2;
+        g.add(pod);
+    });
 
     // Eyes
     [-0.07, 0.07].forEach(x => {
@@ -98,37 +108,43 @@ function buildHumanBase(g, opts = {}) {
         g.add(ep);
     });
 
-    const legL = limb('legL', new THREE.BoxGeometry(0.12, 0.42, 0.12), pants, g, [-0.1, 0.88, 0]);
+    // Legs
+    const legL = limb('legL', new THREE.BoxGeometry(0.12, 0.42, 0.12), pantsCol, g, [-0.1, 0.88, 0]);
     legL.children[0].position.y = -0.2;
-    const footL = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.08, 0.2), shoe);
+    const footL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.08, 0.22), shoeCol);
     footL.position.set(0, -0.42, 0.04);
     legL.add(footL);
 
-    const legR = limb('legR', new THREE.BoxGeometry(0.12, 0.42, 0.12), pants, g, [0.1, 0.88, 0]);
+    const legR = limb('legR', new THREE.BoxGeometry(0.12, 0.42, 0.12), pantsCol, g, [0.1, 0.88, 0]);
     legR.children[0].position.y = -0.2;
     const footR = footL.clone();
     legR.add(footR);
 
-    // Arms with yellow stripes
-    const armL = limb('armL', new THREE.BoxGeometry(0.1, 0.3, 0.1), shirt, g, [-0.26, 1.22, 0], [0, 0, 0.12]);
+    // Arms
+    const armL = limb('armL', new THREE.BoxGeometry(0.1, 0.3, 0.1), jacketCol, g, [-0.27, 1.22, 0], [0, 0, 0.12]);
     armL.children[0].position.y = -0.14;
-    const stripeL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.04, 0.12), std(0xffd966));
-    stripeL.position.set(0, -0.08, 0);
-    armL.add(stripeL);
-
     const foreL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.24, 0.08), skinDark);
     foreL.position.set(0, -0.36, 0);
     foreL.name = 'foreL';
     armL.add(foreL);
 
-    const armR = limb('armR', new THREE.BoxGeometry(0.1, 0.3, 0.1), shirt, g, [0.26, 1.22, 0], [0, 0, -0.12]);
+    const armR = limb('armR', new THREE.BoxGeometry(0.1, 0.3, 0.1), jacketCol, g, [0.27, 1.22, 0], [0, 0, -0.12]);
     armR.children[0].position.y = -0.14;
-    const stripeR = stripeL.clone();
-    armR.add(stripeR);
-
     const foreR = foreL.clone();
     foreR.name = 'foreR';
     armR.add(foreR);
+
+    // Messenger Shoulder Bag
+    const bag = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.2, 0.26), bagCol);
+    bag.position.set(0.24, 1.05, 0.04);
+    bag.rotation.y = 0.15;
+    g.add(bag);
+
+    // Messenger Strap running across chest from left shoulder to right hip
+    const strap = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.55, 0.03), leatherCol);
+    strap.position.set(0.06, 1.26, 0.06);
+    strap.rotation.z = -0.65;
+    g.add(strap);
 
     g.userData.walkParts = ['legL', 'legR', 'armL', 'armR'];
     g.userData.isHuman = true;
