@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { SkeletonUtils } from 'three/addons/utils/SkeletonUtils.js';
+import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 import { PLAYER } from './config.js';
 import { toonMat } from './ToonStyle.js';
 
@@ -125,7 +125,7 @@ function cloneMaterials(mesh) {
 
 /** Skinned GLB must use SkeletonUtils — plain .clone() leaves invisible bodies. */
 function cloneSkinnedModel(source) {
-    const model = SkeletonUtils.clone(source);
+    const model = cloneSkeleton(source);
     model.traverse(obj => {
         if (!obj.isMesh) return;
         cloneMaterials(obj);
