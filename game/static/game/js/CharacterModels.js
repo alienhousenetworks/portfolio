@@ -137,7 +137,8 @@ function setupAnimator(root, clips) {
     });
     if (!actions.idle && actions.stand) actions.idle = actions.stand;
     if (!actions.stand && actions.idle) actions.stand = actions.idle;
-    const start = actions.idle ?? actions.stand ?? actions.walk ?? clips[0] && mixer.clipAction(clips[0]);
+    const start = actions.idle ?? actions.stand ?? actions.walk
+        ?? (clips[0] ? mixer.clipAction(clips[0]) : null);
     if (start) {
         actions.idle = actions.idle ?? start;
         actions.stand = actions.stand ?? start;
