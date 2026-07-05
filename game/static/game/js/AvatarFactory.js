@@ -23,15 +23,27 @@ function buildHumanBase(g, opts = {}) {
     const skinDark = std(
         new THREE.Color(opts.skinTone ?? PALETTE.humanSkin).multiplyScalar(0.85).getHex()
     );
-    const shirt = std(opts.shirtColor ?? 0x3a5a8a);
-    const pants = std(opts.pantsColor ?? 0x2e3340);
+    // Force the black shirt and red pants style from reference image
+    const shirt = std(0x1a1a24);
+    const pants = std(0xd66565);
     const shoe = std(0x1a1a22);
-    const hairCol = std(opts.hairColor ?? 0x2a2018);
+    const hairCol = std(0x3a3a48);
 
+    // Torso
     const torso = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.5, 0.22), shirt);
     torso.position.y = 1.18;
     torso.castShadow = true;
     g.add(torso);
+
+    // Yellow chest shield/logo
+    const logo = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.08, 0.02), std(0xffd966));
+    logo.position.set(0.06, 1.26, 0.115);
+    g.add(logo);
+
+    // Yellow collar crew neck
+    const collar = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.03, 0.14), std(0xffd966));
+    collar.position.set(0, 1.435, 0);
+    g.add(collar);
 
     const neck = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.1), skin);
     neck.position.y = 1.48;
@@ -42,10 +54,41 @@ function buildHumanBase(g, opts = {}) {
     head.castShadow = true;
     g.add(head);
 
-    const hair = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.14, 0.3), hairCol);
-    hair.position.set(0, 1.86, -0.02);
-    g.add(hair);
+    // Spiky Hair Base
+    const hairBase = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.16, 0.3), hairCol);
+    hairBase.position.set(0, 1.86, -0.02);
+    g.add(hairBase);
 
+    // Add spiky hair strands (boxy bangs/sideburns)
+    const spikes = [
+        { size: [0.08, 0.16, 0.08], pos: [-0.07, 1.76, 0.14], rot: [0.2, 0, -0.3] },
+        { size: [0.08, 0.18, 0.08], pos: [0.01, 1.73, 0.14], rot: [0.25, 0.1, -0.15] },
+        { size: [0.08, 0.14, 0.08], pos: [0.08, 1.77, 0.13], rot: [0.18, 0.2, 0.2] },
+        { size: [0.08, 0.15, 0.08], pos: [-0.15, 1.74, 0.03], rot: [0, 0, 0.35] },
+        { size: [0.08, 0.15, 0.08], pos: [0.15, 1.74, 0.03], rot: [0, 0, -0.35] },
+        { size: [0.1, 0.12, 0.1], pos: [0, 1.68, -0.15], rot: [-0.3, 0, 0] }
+    ];
+    spikes.forEach(s => {
+        const spike = new THREE.Mesh(new THREE.BoxGeometry(...s.size), hairCol);
+        spike.position.set(...s.pos);
+        spike.rotation.set(...s.rot);
+        g.add(spike);
+    });
+
+    // Headphones (White cups + black band)
+    const earmuffL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.18, 0.14), std(0xffffff));
+    earmuffL.position.set(-0.16, 1.68, 0);
+    g.add(earmuffL);
+
+    const earmuffR = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.18, 0.14), std(0xffffff));
+    earmuffR.position.set(0.16, 1.68, 0);
+    g.add(earmuffR);
+
+    const band = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.04, 0.06), std(0x1a1a24));
+    band.position.set(0, 1.88, 0);
+    g.add(band);
+
+    // Eyes
     [-0.07, 0.07].forEach(x => {
         const ew = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.04, 0.02), std(0xf5f5f0));
         ew.position.set(x, 1.7, 0.14);
@@ -66,8 +109,13 @@ function buildHumanBase(g, opts = {}) {
     const footR = footL.clone();
     legR.add(footR);
 
+    // Arms with yellow stripes
     const armL = limb('armL', new THREE.BoxGeometry(0.1, 0.3, 0.1), shirt, g, [-0.26, 1.22, 0], [0, 0, 0.12]);
     armL.children[0].position.y = -0.14;
+    const stripeL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.04, 0.12), std(0xffd966));
+    stripeL.position.set(0, -0.08, 0);
+    armL.add(stripeL);
+
     const foreL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.24, 0.08), skinDark);
     foreL.position.set(0, -0.36, 0);
     foreL.name = 'foreL';
@@ -75,6 +123,9 @@ function buildHumanBase(g, opts = {}) {
 
     const armR = limb('armR', new THREE.BoxGeometry(0.1, 0.3, 0.1), shirt, g, [0.26, 1.22, 0], [0, 0, -0.12]);
     armR.children[0].position.y = -0.14;
+    const stripeR = stripeL.clone();
+    armR.add(stripeR);
+
     const foreR = foreL.clone();
     foreR.name = 'foreR';
     armR.add(foreR);
@@ -89,68 +140,15 @@ export function createHumanAvatar(opts = {}) {
 }
 
 export function createStudentAvatar(opts = {}) {
-    const g = buildHumanBase(new THREE.Group(), {
-        shirtColor: PALETTE.uniformNavy,
-        pantsColor: 0x2a3040,
-        skinTone: opts.skinTone ?? PALETTE.humanSkin,
-        ...opts,
-    });
-
-    const blazer = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.52, 0.24), std(PALETTE.uniformNavy));
-    blazer.position.y = 1.18;
-    g.add(blazer);
-
-    const collar = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.08, 0.26), std(0xffffff));
-    collar.position.set(0, 1.38, 0.02);
-    g.add(collar);
-
-    const satchel = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.32, 0.12), std(0x6a4a30));
-    satchel.position.set(0.22, 1.0, 0.08);
-    satchel.rotation.y = -0.3;
-    g.add(satchel);
-    g.userData.hasSatchel = true;
-
-    return g;
+    return buildHumanBase(new THREE.Group(), opts);
 }
 
 export function createCommuterAvatar(opts = {}) {
-    const g = buildHumanBase(new THREE.Group(), {
-        shirtColor: 0x4a5a6a,
-        pantsColor: 0x3a3a48,
-        skinTone: opts.skinTone ?? PALETTE.humanSkin,
-        ...opts,
-    });
-
-    const coat = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.9, 0.28), std(PALETTE.trench));
-    coat.position.y = 1.05;
-    g.add(coat);
-
-    const phone = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.14, 0.04), std(0x3a4a5a, { emissive: 0x6a9ad8, emissiveIntensity: 0.2 }));
-    phone.position.set(0.18, 1.05, 0.18);
-    phone.rotation.x = -0.4;
-    g.add(phone);
-
-    g.userData.isCommuter = true;
-    g.userData.walkParts = [];
-    return g;
+    return buildHumanBase(new THREE.Group(), opts);
 }
 
 export function createWandererAvatar(opts = {}) {
-    const g = buildHumanBase(new THREE.Group(), {
-        shirtColor: opts.shirtColor ?? 0xf0a040,
-        pantsColor: 0x4a5a6a,
-        skinTone: opts.skinTone ?? PALETTE.humanSkin,
-        ...opts,
-    });
-
-    const headphones = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.12, 0.3), std(0x3a3a48));
-    headphones.position.set(0, 1.82, 0);
-    g.add(headphones);
-
-    const band = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.2, 0.06), std(0x3a3a48));
-    band.position.set(0, 1.95, 0);
-    g.add(band);
-
+    const g = buildHumanBase(new THREE.Group(), opts);
     g.userData.isWanderer = true;
     g.userData.canPhase = 0;
     return g;

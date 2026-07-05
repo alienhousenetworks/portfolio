@@ -5,7 +5,7 @@ import { toonMat, toonMesh } from './ToonStyle.js';
 const MAX_STEP = 2.2;
 const STAIR_MAX_STEP = 2.5;
 
-/** Hillside terraces + stairs — height query & walkability for the residential slopes. */
+/** Curved hills + stairs — height query & walkability for the residential slopes. */
 export class TerrainSystem {
     constructor() {
         this.terraces = [];
@@ -17,15 +17,16 @@ export class TerrainSystem {
 
     build(scene) {
         this._defineZones();
-        this._buildTerraces(scene);
+        this._buildCurvedHills(scene);
         this._buildStairs(scene);
-        this._buildRetainingWalls(scene);
         return this;
     }
 
     getHeightAt(x, z) {
+        // River zone
         if (Math.abs(x - WORLD.riverX) < WORLD.riverWidth / 2 + 2) return 0.15;
 
+        // Stairs override
         for (const s of this.stairs) {
             if (this._inRect(x, z, s)) {
                 const t = s.axis === 'z'
@@ -35,12 +36,23 @@ export class TerrainSystem {
             }
         }
 
+        // Slopes override
         for (const sl of this.slopes) {
             const h = this._heightOnSlope(x, z, sl);
             if (h != null) return h;
         }
 
-        return this._terraceHeight(x, z);
+        // Smooth curve height
+        const d = Math.abs(x);
+        const d_start = WORLD.riverWidth / 2 + 2; // 21
+        const d_end = 65; // Transition up to 7.5 height
+
+        if (d < d_start) return 0.15;
+        if (d > d_end) return 7.5;
+
+        const t = (d - d_start) / (d_end - d_start);
+        const smoothT = 0.5 - 0.5 * Math.cos(t * Math.PI); // Cosine curve for height
+        return THREE.MathUtils.lerp(0.15, 7.5, smoothT);
     }
 
     isOnStair(x, z) {
@@ -48,7 +60,6 @@ export class TerrainSystem {
     }
 
     canTraverse(fromX, fromZ, fromY, toX, toZ) {
-        // Block entry into river zone
         const inRiver = (x) => Math.abs(x - WORLD.riverX) < WORLD.riverWidth / 2 + 1;
         if (inRiver(toX) && !inRiver(fromX)) return false;
 
@@ -69,26 +80,6 @@ export class TerrainSystem {
     }
 
     _defineZones() {
-        const bands = [
-            { min: 38, max: 999, h: 7.5 },
-            { min: 28, max: 38, h: 5.5 },
-            { min: 20, max: 28, h: 3.8 },
-            { min: 14, max: 20, h: 2.4 },
-            { min: 8, max: 14, h: 1.2 },
-        ];
-
-        [-1, 1].forEach(sign => {
-            bands.forEach(b => {
-                this.terraces.push({
-                    xMin: sign > 0 ? WORLD.riverWidth / 2 + b.min : -(WORLD.riverWidth / 2 + b.max),
-                    xMax: sign > 0 ? WORLD.riverWidth / 2 + b.max : -(WORLD.riverWidth / 2 + b.min),
-                    zMin: -280, zMax: 280,
-                    height: b.h,
-                    side: sign,
-                });
-            });
-        });
-
         const rw = WORLD.riverWidth / 2 + 21;
         const west = (edgeX, z0, z1, y0, y1) => ({ x: -edgeX, z0, z1, y0, y1 });
         const east = (edgeX, z0, z1, y0, y1) => ({ x: edgeX, z0, z1, y0, y1 });
@@ -137,19 +128,6 @@ export class TerrainSystem {
         ];
     }
 
-    _terraceHeight(x, z) {
-        const ax = Math.abs(x);
-        if (ax < WORLD.riverWidth / 2 + 8) return 0.15;
-
-        let best = 0;
-        for (const t of this.terraces) {
-            if (x >= t.xMin && x <= t.xMax && z >= t.zMin && z <= t.zMax) {
-                best = Math.max(best, t.height);
-            }
-        }
-        return best;
-    }
-
     _inRect(x, z, r) {
         return x >= r.xMin && x <= r.xMax && z >= r.zMin && z <= r.zMax;
     }
@@ -175,29 +153,69 @@ export class TerrainSystem {
         return best;
     }
 
-    _buildTerraces(scene) {
-        const grass = toonMat(PALETTE.grass);
-        const seen = new Set();
+    _buildCurvedHills(scene) {
+        const segmentsX = 120;
+        const segmentsZ = 120;
+        const depth = WORLD.size;
 
-        this.terraces.forEach(t => {
-            const key = `${t.side}_${t.height}`;
-            if (seen.has(key)) return;
-            seen.add(key);
+        // We build two curved terrains: Left bank and Right bank
+        [-1, 1].forEach(side => {
+            const xMin = side < 0 ? -WORLD.size / 2 : WORLD.riverWidth / 2 + 2;
+            const xMax = side < 0 ? -(WORLD.riverWidth / 2 + 2) : WORLD.size / 2;
+            const width = xMax - xMin;
 
-            const w = t.xMax - t.xMin;
-            const d = 560;
-            const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, 0.35, d), grass);
-            mesh.position.set((t.xMin + t.xMax) / 2, t.height - 0.12, 0);
-            mesh.receiveShadow = true;
-            scene.add(mesh);
+            // 1. Sandy Base Geometry
+            const sandGeo = new THREE.PlaneGeometry(width, depth, segmentsX, segmentsZ);
+            sandGeo.rotateX(-Math.PI / 2);
 
-            const edge = new THREE.Mesh(
-                new THREE.BoxGeometry(w + 0.4, 0.5, d),
-                toonMat(PALETTE.embankment)
-            );
-            edge.position.set((t.xMin + t.xMax) / 2, t.height - 0.35, 0);
-            edge.receiveShadow = true;
-            scene.add(edge);
+            const pos = sandGeo.attributes.position;
+            for (let i = 0; i < pos.count; i++) {
+                const vx = pos.getX(i) + (xMin + xMax) / 2;
+                const vz = pos.getZ(i);
+                const vy = this.getHeightAt(vx, vz);
+                pos.setX(i, vx);
+                pos.setY(i, vy);
+            }
+            sandGeo.computeVertexNormals();
+
+            const sandMesh = new THREE.Mesh(sandGeo, toonMat(PALETTE.sand));
+            sandMesh.receiveShadow = true;
+            scene.add(sandMesh);
+
+            // 2. Grass Cap Geometry
+            const grassGeo = new THREE.PlaneGeometry(width, depth, segmentsX, segmentsZ);
+            grassGeo.rotateX(-Math.PI / 2);
+
+            const grassPos = grassGeo.attributes.position;
+            const eps = 0.5;
+
+            for (let i = 0; i < grassPos.count; i++) {
+                const vx = grassPos.getX(i) + (xMin + xMax) / 2;
+                const vz = grassPos.getZ(i);
+                const vy = this.getHeightAt(vx, vz);
+
+                // Compute local slope to decide if we show grass or hide it
+                const hL = this.getHeightAt(vx - eps, vz);
+                const hR = this.getHeightAt(vx + eps, vz);
+                const hD = this.getHeightAt(vx, vz - eps);
+                const hU = this.getHeightAt(vx, vz + eps);
+                const slopeX = (hR - hL) / (2 * eps);
+                const slopeZ = (hU - hD) / (2 * eps);
+                const slope = Math.sqrt(slopeX * slopeX + slopeZ * slopeZ);
+
+                grassPos.setX(i, vx);
+                if (slope > 0.16 || vy < 0.3) {
+                    // Hide vertex below sand by setting Y to -10
+                    grassPos.setY(i, -10);
+                } else {
+                    grassPos.setY(i, vy + 0.05); // slightly above sand to prevent z-fighting
+                }
+            }
+            grassGeo.computeVertexNormals();
+
+            const grassMesh = new THREE.Mesh(grassGeo, toonMat(PALETTE.grass));
+            grassMesh.receiveShadow = true;
+            scene.add(grassMesh);
         });
     }
 
@@ -266,60 +284,5 @@ export class TerrainSystem {
         });
 
         return g;
-    }
-
-    _buildRetainingWalls(scene) {
-        const rw = WORLD.riverWidth / 2 + 21;
-        const wallMat = toonMat(PALETTE.retainingWall);
-        const gaps = this.stairs.map(s => ({
-            x: (s.xMin + s.xMax) / 2,
-            z: (s.zMin + s.zMax) / 2,
-            z0: s.zMin, z1: s.zMax,
-            w: s.xMax - s.xMin + 2,
-            d: s.zMax - s.zMin + 2,
-        }));
-
-        const walls = [
-            { x: -(rw + 14), z0: -280, z1: 280, h: 2.4 },
-            { x: -(rw + 20), z0: -280, z1: 280, h: 3.8 },
-            { x: -(rw + 28), z0: -280, z1: 280, h: 5.5 },
-            { x: -(rw + 38), z0: -280, z1: 280, h: 7.5 },
-            { x: rw + 14, z0: -280, z1: 280, h: 2.4 },
-            { x: rw + 20, z0: -280, z1: 280, h: 3.8 },
-            { x: rw + 28, z0: -280, z1: 280, h: 5.5 },
-            { x: rw + 38, z0: -280, z1: 280, h: 7.5 },
-        ];
-
-        walls.forEach(w => {
-            const segments = this._splitWallSegments(w, gaps);
-            segments.forEach(seg => {
-                const len = seg.z1 - seg.z0;
-                if (len < 4) return;
-                const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.8, len), wallMat);
-                mesh.position.set(w.x, w.h - 0.5, (seg.z0 + seg.z1) / 2);
-                mesh.castShadow = true;
-                mesh.receiveShadow = true;
-                scene.add(mesh);
-
-                this.wallColliders.push({ x: w.x, z: (seg.z0 + seg.z1) / 2, w: 1.2, d: len });
-            });
-        });
-    }
-
-    _splitWallSegments(wall, gaps) {
-        const segs = [{ z0: wall.z0, z1: wall.z1 }];
-        gaps.forEach(g => {
-            if (Math.abs(g.x - wall.x) > 6) return;
-            const next = [];
-            segs.forEach(s => {
-                const gz0 = g.z - g.d / 2, gz1 = g.z + g.d / 2;
-                if (gz1 < s.z0 || gz0 > s.z1) { next.push(s); return; }
-                if (s.z0 < gz0 - 1) next.push({ z0: s.z0, z1: gz0 - 1 });
-                if (s.z1 > gz1 + 1) next.push({ z0: gz1 + 1, z1: s.z1 });
-            });
-            segs.length = 0;
-            segs.push(...next);
-        });
-        return segs;
     }
 }
