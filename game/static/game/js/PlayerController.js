@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { PLAYER, WORLD, CAMERA, PHYSICS } from './config.js';
-import { animateHumanWalk } from './AvatarFactory.js';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { fadeHumanAction, updateHumanAnimator } from './AvatarFactory.js';
 
 const MOVE_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
 
@@ -31,68 +30,8 @@ export class PlayerController {
         // Player height scale
         this.playerHeight = PLAYER.height;
 
-        // Animation mixer & actions for gltf character.glb
-        this.mixer = null;
-        this.actions = {};
-        this.activeAction = null;
-        this.previousAction = null;
-
-        this._loadGLTFCharacter();
         this._input();
         this._listenHeightSlider();
-    }
-
-    _loadGLTFCharacter() {
-        const loader = new GLTFLoader();
-        loader.load('/static/game/character.glb', (gltf) => {
-            // Remove boxy procedural elements from avatar group
-            while (this.avatar.children.length > 0) {
-                this.avatar.remove(this.avatar.children[0]);
-            }
-
-            const model = gltf.scene;
-            model.traverse((object) => {
-                if (object.isMesh) {
-                    object.castShadow = true;
-                    object.receiveShadow = true;
-                }
-            });
-            this.avatar.add(model);
-
-            // Animation mixer
-            this.mixer = new THREE.AnimationMixer(model);
-
-            gltf.animations.forEach((clip) => {
-                const name = clip.name.toLowerCase();
-                if (name.includes('idle')) this.actions['idle'] = this.mixer.clipAction(clip);
-                if (name.includes('walk')) this.actions['walk'] = this.mixer.clipAction(clip);
-                if (name.includes('jump')) this.actions['jump'] = this.mixer.clipAction(clip);
-                if (name.includes('climb')) this.actions['climb'] = this.mixer.clipAction(clip);
-            });
-
-            if (this.actions['jump']) this.actions['jump'].setLoop(THREE.LoopOnce);
-            if (this.actions['climb']) this.actions['climb'].setLoop(THREE.LoopOnce);
-
-            this.activeAction = this.actions['idle'];
-            if (this.activeAction) this.activeAction.play();
-        }, undefined, (err) => {
-            console.warn('gltf character.glb not found, falling back to procedural box avatar', err);
-        });
-    }
-
-    fadeToAction(name, duration = 0.2) {
-        this.previousAction = this.activeAction;
-        this.activeAction = this.actions[name];
-
-        if (this.previousAction !== this.activeAction && this.activeAction) {
-            if (this.previousAction) this.previousAction.fadeOut(duration);
-            this.activeAction
-                .reset()
-                .setEffectiveTimeScale(1)
-                .setEffectiveWeight(1)
-                .fadeIn(duration)
-                .play();
-        }
     }
 
     _listenHeightSlider() {
@@ -313,33 +252,26 @@ export class PlayerController {
             this.avatar.position.y = newY;
         }
 
-        // Update GLTF animation mixer if available
-        if (this.mixer) {
-            this.mixer.update(dt);
+        // Skeletal animation (bone-driven human rig)
+        if (this.avatar.userData.mixer) {
+            updateHumanAnimator(this.avatar, dt);
 
             let nextAnim = 'idle';
-            const isStair = this.terrain && this.terrain.isOnStair(this.avatar.position.x, this.avatar.position.z);
+            const isStair = this.terrain?.isOnStair(this.avatar.position.x, this.avatar.position.z);
 
-            if (isStair && this.actions['climb']) {
+            if (isStair && this.avatar.userData.actions?.climb) {
                 nextAnim = 'climb';
-            } else if (!this.onGround && this.actions['jump']) {
+            } else if (!this.onGround && this.avatar.userData.actions?.jump) {
                 nextAnim = 'jump';
-            } else if (this.velocity.lengthSq() > 0.1 && this.actions['walk']) {
-                nextAnim = 'walk';
+            } else if (this.velocity.lengthSq() > 0.1) {
+                nextAnim = this.isRunning && this.avatar.userData.actions?.run ? 'run' : 'walk';
             }
 
-            this.fadeToAction(nextAnim);
-        }
+            fadeHumanAction(this.avatar, nextAnim, 0.18);
 
-        // Walk animation (fallback to procedural when GLTF mixer is absent)
-        if (!this.mixer) {
-            if (this.avatar.userData.isHuman && this.velocity.lengthSq() > 0.5) {
-                animateHumanWalk(this.avatar, this.walkCycle, this.isRunning ? 1.1 : 0.9);
-            } else if (this.avatar.userData.walkParts) {
-                (this.avatar.userData.walkParts || []).forEach(name => {
-                    const part = this.avatar.getObjectByName(name);
-                    if (part) part.rotation.x = THREE.MathUtils.lerp(part.rotation.x, 0, 0.15);
-                });
+            const action = this.avatar.userData.actions?.[nextAnim];
+            if (action) {
+                action.timeScale = nextAnim === 'run' ? 1.35 : nextAnim === 'climb' ? 1.1 : 1;
             }
         }
 

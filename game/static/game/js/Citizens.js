@@ -3,7 +3,8 @@ import { WORLD } from './config.js';
 import {
     createHumanAvatar, createAlienAvatar, createNameTag,
     createStudentAvatar, createCommuterAvatar, createWandererAvatar, createCyclistAvatar,
-    animateHumanWalk, animateWanderer, animateCyclist,
+    fadeHumanAction, updateHumanAnimator,
+    animateWanderer, animateCyclist,
 } from './AvatarFactory.js';
 
 const HUMAN_NAMES = ['Alex', 'Jordan', 'Sam', 'Riley', 'Casey', 'Morgan', 'Taylor', 'Jamie', 'Quinn', 'Avery'];
@@ -304,10 +305,14 @@ export class CitizenManager {
 
     update(dt) {
         this.citizens.filter(c => !c.isTeam || c.mesh.visible).forEach(c => {
+            if (c.mesh.userData.mixer) updateHumanAnimator(c.mesh, dt);
+
             if (c.isTeam || c.isHost || c.isParkVisitor || c.speed === 0) {
                 if (c.isWanderer) {
                     c.wanderT = (c.wanderT || 0) + dt;
                     animateWanderer(c.mesh, c.wanderT);
+                } else if (c.mesh.userData.mixer) {
+                    fadeHumanAction(c.mesh, 'idle', 0.2);
                 }
                 return;
             }
@@ -337,8 +342,11 @@ export class CitizenManager {
 
                 if (c.isCyclist) {
                     animateCyclist(c.mesh, c.walkT, c.speed / 2);
+                } else if (c.mesh.userData.mixer) {
+                    updateHumanAnimator(c.mesh, dt);
+                    fadeHumanAction(c.mesh, c.speed > 1.8 ? 'run' : 'walk', 0.15);
                 } else if (c.mesh.userData.isHuman) {
-                    animateHumanWalk(c.mesh, c.walkT, c.type === 'student' ? 0.75 : 0.85);
+                    fadeHumanAction(c.mesh, 'walk', 0.15);
                 } else {
                     (c.mesh.userData.walkParts || []).forEach((partName, i) => {
                         const p = c.mesh.getObjectByName(partName);
