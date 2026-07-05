@@ -13,6 +13,20 @@ export class TerrainSystem {
         this.slopes = [];
         this.wallColliders = [];
         this.stairMeshes = [];
+        
+        // Procedural rolling hills (submerged spheres matching the designs)
+        this.hills = [
+            { x: -65, z: -120, r: 46, hy: -36 },
+            { x: 70, z: -100, r: 42, hy: -32 },
+            { x: -80, z: 60, r: 52, hy: -41 },
+            { x: 80, z: 90, r: 48, hy: -38 },
+            { x: -130, z: -20, r: 60, hy: -49 },
+            { x: 130, z: 110, r: 56, hy: -46 },
+            { x: -50, z: -190, r: 42, hy: -32 },
+            { x: 50, z: -170, r: 42, hy: -32 },
+            { x: -45, z: 160, r: 36, hy: -27 },
+            { x: 45, z: 150, r: 36, hy: -27 },
+        ];
     }
 
     build(scene) {
@@ -39,15 +53,21 @@ export class TerrainSystem {
             if (h != null) return h;
         }
 
-        // Smooth curve height
-        const d = Math.abs(x);
-        const d_end = 65; // Transition up to 7.5 height
-
-        if (d > d_end) return 7.5;
-
-        const t = d / d_end;
-        const smoothT = 0.5 - 0.5 * Math.cos(t * Math.PI); // Cosine curve for height
-        return THREE.MathUtils.lerp(0.15, 7.5, smoothT);
+        // Calculate height based on overlapping submerged sphere hills
+        let maxH = 0.15;
+        for (const h of this.hills) {
+            const dx = x - h.x;
+            const dz = z - h.z;
+            const distSq = dx * dx + dz * dz;
+            const rSq = h.r * h.r;
+            if (distSq < rSq) {
+                const y = h.hy + Math.sqrt(rSq - distSq);
+                if (y > maxH) {
+                    maxH = y;
+                }
+            }
+        }
+        return maxH;
     }
 
     isOnStair(x, z) {
@@ -146,61 +166,60 @@ export class TerrainSystem {
     }
 
     _buildCurvedHills(scene) {
-        const segmentsX = 160;
-        const segmentsZ = 160;
-        const depth = WORLD.size;
-        const width = WORLD.size;
-
-        // 1. Sandy Base Geometry
-        const sandGeo = new THREE.PlaneGeometry(width, depth, segmentsX, segmentsZ);
-        sandGeo.rotateX(-Math.PI / 2);
-
-        const pos = sandGeo.attributes.position;
+        // 1. Build flat ground base (colored sand/shore in center, grass on sides)
+        const groundGeo = new THREE.PlaneGeometry(WORLD.size, WORLD.size, 40, 40);
+        groundGeo.rotateX(-Math.PI / 2);
+        const pos = groundGeo.attributes.position;
+        const colors = [];
         for (let i = 0; i < pos.count; i++) {
             const vx = pos.getX(i);
-            const vz = pos.getZ(i);
-            const vy = this.getHeightAt(vx, vz);
-            pos.setY(i, vy);
-        }
-        sandGeo.computeVertexNormals();
-
-        const sandMesh = new THREE.Mesh(sandGeo, toonMat(PALETTE.sand));
-        sandMesh.receiveShadow = true;
-        scene.add(sandMesh);
-
-        // 2. Grass Cap Geometry
-        const grassGeo = new THREE.PlaneGeometry(width, depth, segmentsX, segmentsZ);
-        grassGeo.rotateX(-Math.PI / 2);
-
-        const grassPos = grassGeo.attributes.position;
-        const eps = 0.5;
-
-        for (let i = 0; i < grassPos.count; i++) {
-            const vx = grassPos.getX(i);
-            const vz = grassPos.getZ(i);
-            const vy = this.getHeightAt(vx, vz);
-
-            // Compute local slope to decide if we show grass or hide it
-            const hL = this.getHeightAt(vx - eps, vz);
-            const hR = this.getHeightAt(vx + eps, vz);
-            const hD = this.getHeightAt(vx, vz - eps);
-            const hU = this.getHeightAt(vx, vz + eps);
-            const slopeX = (hR - hL) / (2 * eps);
-            const slopeZ = (hU - hD) / (2 * eps);
-            const slope = Math.sqrt(slopeX * slopeX + slopeZ * slopeZ);
-
-            if (slope > 0.16 || vy < 0.25) {
-                // Hide vertex below sand
-                grassPos.setY(i, -10);
-            } else {
-                grassPos.setY(i, vy + 0.05); // slightly above sand to prevent z-fighting
+            const d = Math.abs(vx);
+            let colHex = PALETTE.grass;
+            if (d < 45) {
+                colHex = PALETTE.sand;
             }
+            const c = new THREE.Color(colHex);
+            colors.push(c.r, c.g, c.b);
         }
-        grassGeo.computeVertexNormals();
+        groundGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+        const baseMesh = new THREE.Mesh(groundGeo, new THREE.MeshToonMaterial({
+            vertexColors: true,
+            gradientMap: getGradientMap()
+        }));
+        baseMesh.position.y = 0.15;
+        baseMesh.receiveShadow = true;
+        scene.add(baseMesh);
 
-        const grassMesh = new THREE.Mesh(grassGeo, toonMat(PALETTE.grass));
-        grassMesh.receiveShadow = true;
-        scene.add(grassMesh);
+        // 2. Build submerged sphere rolling hills
+        this.hills.forEach(h => {
+            const hillGeo = new THREE.SphereGeometry(h.r, 32, 24);
+            const hp = hillGeo.attributes.position;
+            const hn = hillGeo.attributes.normal;
+            const hillColors = [];
+
+            for (let i = 0; i < hp.count; i++) {
+                const ny = hn.getY(i);
+                const vy = hp.getY(i) + h.hy;
+                
+                // Top surfaces pointing upwards are grass green, sides are sandy slopes
+                if (ny > 0.58 && vy > 0.25) {
+                    const c = new THREE.Color(PALETTE.grass);
+                    hillColors.push(c.r, c.g, c.b);
+                } else {
+                    const c = new THREE.Color(PALETTE.sand);
+                    hillColors.push(c.r, c.g, c.b);
+                }
+            }
+            hillGeo.setAttribute('color', new THREE.Float32BufferAttribute(hillColors, 3));
+            const hillMesh = new THREE.Mesh(hillGeo, new THREE.MeshToonMaterial({
+                vertexColors: true,
+                gradientMap: getGradientMap()
+            }));
+            hillMesh.position.set(h.x, h.hy, h.z);
+            hillMesh.castShadow = true;
+            hillMesh.receiveShadow = true;
+            scene.add(hillMesh);
+        });
     }
 
     _buildStairs(scene) {
