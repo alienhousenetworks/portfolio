@@ -158,19 +158,29 @@ export function createVilla(cx, cz, seed) {
 }
 
 export function createApartment(cx, cz, seed) {
-    const floors = 4 + seed % 2;
-    const b = base(cx, cz, 16, 14, floors * 3, wall(seed), seed);
-    for (let f = 1; f < floors; f++) {
-        for (let c = 0; c < 3; c++) {
-            const win = toonMesh(new THREE.PlaneGeometry(1.3, 1.8), PALETTE.glass);
-            win.mesh.position.set(-4 + c * 4, f * 3, b.d / 2 + 0.04);
-            b.group.add(win.group);
+    const group = new THREE.Group();
+    group.position.set(cx, 0, cz);
+    const floorColor = 0xeeeeee;
+    const glassColor = 0x4488cc;
+
+    const numFloors = 6 + (seed % 4);
+    const floorHeight = 2.5;
+
+    for (let i = 0; i < numFloors; i++) {
+        // Floor slab
+        const slab = toonMesh(new THREE.CylinderGeometry(8, 8, 0.5, 32), floorColor);
+        slab.mesh.position.y = i * floorHeight;
+        group.add(slab.group);
+
+        // Glass body for the floor
+        if (i < numFloors - 1) {
+            const windowMesh = toonMesh(new THREE.CylinderGeometry(7.5, 7.5, floorHeight - 0.5, 32), glassColor, { transparent: true, opacity: 0.7 });
+            windowMesh.mesh.position.y = (i * floorHeight) + (floorHeight / 2) + 0.25;
+            group.add(windowMesh.group);
         }
     }
-    const tank = createRooftopTank();
-    tank.position.set(0, b.h + 0.6, 0);
-    b.group.add(tank);
-    return finish(b, cx, cz);
+
+    return finish({ group, w: 16, d: 16, h: numFloors * floorHeight }, cx, cz);
 }
 
 export function createStudentHousing(cx, cz, seed) {
@@ -236,24 +246,58 @@ export function createSchool(cx, cz, seed) {
 }
 
 export function createLibrary(cx, cz, seed) {
-    const b = base(cx, cz, 22, 18, 10, wall(seed), seed);
-    [-8, 8].forEach(x => {
-        const col = toonMesh(new THREE.BoxGeometry(0.5, 10, 0.5), PALETTE.concrete);
-        col.mesh.position.set(x, 5, b.d / 2 + 1);
-        b.group.add(col.group);
-    });
-    return finish(b, cx, cz);
+    const group = new THREE.Group();
+    group.position.set(cx, 0, cz);
+    const stoneColor = 0xddddcc;
+
+    // Base/Steps
+    const baseM = toonMesh(new THREE.BoxGeometry(22, 2, 12), stoneColor);
+    baseM.mesh.position.y = 1;
+    group.add(baseM.group);
+
+    // Pillars
+    const pillarGeo = new THREE.CylinderGeometry(0.5, 0.5, 10, 16);
+    for (let i = -9; i <= 9; i += 3) {
+        const pillarFront = toonMesh(pillarGeo, stoneColor);
+        pillarFront.mesh.position.set(i, 7, 4.5);
+        group.add(pillarFront.group);
+    }
+
+    // Main Hall (behind pillars)
+    const hall = toonMesh(new THREE.BoxGeometry(20, 10, 8), stoneColor);
+    hall.mesh.position.set(0, 7, -1);
+    group.add(hall.group);
+
+    // Roof (Pediment)
+    const roofCone = new THREE.ConeGeometry(12, 5, 4);
+    const roof = toonMesh(roofCone, stoneColor);
+    roof.mesh.rotation.y = Math.PI / 4;
+    roof.mesh.position.set(0, 14.5, 0);
+    roof.mesh.scale.set(1, 1, 0.6);
+    group.add(roof.group);
+
+    return finish({ group, w: 22, d: 12, h: 17 }, cx, cz);
 }
 
 export function createGlassTower(cx, cz, seed) {
-    const floors = 5 + (seed % 3);
-    const b = base(cx, cz, 18, 18, floors * 3.2, PALETTE.concreteLight, seed);
-    for (let f = 1; f < floors; f++) {
-        const panel = toonMesh(new THREE.PlaneGeometry(b.w * 0.85, 2.5), PALETTE.glass, { transparent: true, opacity: 0.9 });
-        panel.mesh.position.set(0, f * 3.2, b.d / 2 + 0.04);
-        b.group.add(panel.group);
-    }
-    return finish(b, cx, cz);
+    const group = new THREE.Group();
+    group.position.set(cx, 0, cz);
+    const floors = 6 + (seed % 3);
+    const height = floors * 4.5;
+    
+    const geometry = new THREE.BoxGeometry(10, height, 10);
+    const { group: bGroup, mesh } = toonMesh(geometry, 0x113355, { transparent: true, opacity: 0.9 });
+    mesh.position.y = height / 2;
+    group.add(bGroup);
+
+    // Structural grid overlay
+    const edges = new THREE.EdgesGeometry(geometry);
+    const lineMaterial = new THREE.LineBasicMaterial({ color: INK, linewidth: 2 });
+    const wireframe = new THREE.LineSegments(edges, lineMaterial);
+    wireframe.position.y = height / 2;
+    group.add(wireframe);
+
+    return finish({ group, w: 10, d: 10, h: height }, cx, cz);
 }
 
 // ── Industrial ───────────────────────────────────────────
@@ -278,19 +322,58 @@ export function createIndustrial(cx, cz, seed) {
 // ── Legacy service buildings (game POIs) ───────────────────
 
 export function createOfficeTower(cx, cz, floors, accent = 0xe8e6dd) {
-    const b = base(cx, cz, 18, 16, floors * 3.4, accent, 0);
-    for (let row = 1; row < floors; row++) {
-        for (let col = 0; col < 4; col++) {
-            const win = toonMesh(new THREE.PlaneGeometry(1.5, 2), PALETTE.glass);
-            win.mesh.position.set(-5.5 + col * 3.7, row * 3.4, b.d / 2 + 0.04);
-            b.group.add(win.group);
-        }
-    }
-    return finish(b, cx, cz);
+    const group = new THREE.Group();
+    group.position.set(cx, 0, cz);
+    const height = floors * 4.5;
+    
+    const geometry = new THREE.BoxGeometry(14, height, 12);
+    const { group: bGroup, mesh } = toonMesh(geometry, 0x113355, { transparent: true, opacity: 0.9 });
+    mesh.position.y = height / 2;
+    group.add(bGroup);
+
+    // Structural grid overlay
+    const edges = new THREE.EdgesGeometry(geometry);
+    const lineMaterial = new THREE.LineBasicMaterial({ color: INK, linewidth: 2 });
+    const wireframe = new THREE.LineSegments(edges, lineMaterial);
+    wireframe.position.y = height / 2;
+    group.add(wireframe);
+
+    return finish({ group, w: 14, d: 12, h: height }, cx, cz);
+}
+
+export function createClockTower(cx, cz, seed = 0) {
+    const group = new THREE.Group();
+    group.position.set(cx, 0, cz);
+    const brickColor = 0xaa7755;
+    const darkRoofColor = 0x222222;
+    const clockFaceColor = 0xffffff;
+
+    // Main Tower Shaft
+    const shaft = toonMesh(new THREE.BoxGeometry(6, 35, 6), brickColor);
+    shaft.mesh.position.y = 17.5;
+    group.add(shaft.group);
+
+    // Clock Section
+    const clockSection = toonMesh(new THREE.BoxGeometry(7, 8, 7), brickColor);
+    clockSection.mesh.position.y = 39;
+    group.add(clockSection.group);
+
+    // Clock Face
+    const face = toonMesh(new THREE.CylinderGeometry(2, 2, 0.2, 32), clockFaceColor);
+    face.mesh.rotation.x = Math.PI / 2;
+    face.mesh.position.set(0, 39, 3.6);
+    group.add(face.group);
+
+    // Spire/Roof
+    const spire = toonMesh(new THREE.ConeGeometry(4, 15, 4), darkRoofColor);
+    spire.mesh.rotation.y = Math.PI / 4;
+    spire.mesh.position.y = 50.5;
+    group.add(spire.group);
+
+    return finish({ group, w: 7, d: 7, h: 58 }, cx, cz);
 }
 
 export function createTechCampus(cx, cz, data = {}) {
-    // Fixed: was incorrectly calling createGlassTower with 4 args; it only takes (cx, cz, seed)
     const seed = data.seed || 0;
     const r = createGlassTower(cx, cz, seed);
     if (data.title) r.group.userData.label = data.title;
@@ -303,7 +386,7 @@ export function createMarketingStudio(cx, cz, data = {}) {
 }
 
 export function createConsultingOffice(cx, cz, data = {}) {
-    const r = createOfficeTower(cx, cz, 4, 0xdbd7ce);
+    const r = createClockTower(cx, cz, data.seed || 0);
     return { ...r, style: 'consulting' };
 }
 
