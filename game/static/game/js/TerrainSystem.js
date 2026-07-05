@@ -46,14 +46,12 @@ export class TerrainSystem {
     update(dt) {
         this.time += dt;
 
-        // 1. Realistic Lawn Color Cycling (breeze/lighting wave)
-        const intensity = 0.5 + Math.sin(this.time * 0.8) * 0.15;
+        // 1. Realistic Lawn Color Cycling (breeze/lighting wave) - Light Sage/Matcha Shades
         this.grassMaterials.forEach(mat => {
             if (mat.color) {
-                // Blend grass color between rich emerald, soft matcha, and forest green
-                const colA = new THREE.Color('#4c8c2b');
-                const colB = new THREE.Color('#65C271');
-                const colC = new THREE.Color('#3a6b1d');
+                const colA = new THREE.Color('#74c688');
+                const colB = new THREE.Color('#83d596');
+                const colC = new THREE.Color('#67b97b');
                 
                 const finalCol = new THREE.Color().lerpColors(colA, colB, (Math.sin(this.time * 0.5) + 1.0) / 2.0);
                 finalCol.lerp(colC, (Math.cos(this.time * 0.3) + 1.0) / 4.0);
@@ -194,9 +192,9 @@ export class TerrainSystem {
             if (len < 1) continue;
             const t = THREE.MathUtils.clamp(((x - x1) * dx + (z - z1) * dz) / (len * len), 0, 1);
             const px = x1 + dx * t, pz = z1 + dz * t;
-            const dist = Math.hypot(x - px, z - pz);
-            if (dist < bestDist) {
-                bestDist = dist;
+            const Math_dist = Math.hypot(x - px, z - pz);
+            if (Math_dist < bestDist) {
+                bestDist = Math_dist;
                 best = THREE.MathUtils.lerp(h1, h2, t);
             }
         }
@@ -221,7 +219,7 @@ export class TerrainSystem {
     }
 
     _buildCurvedHills(scene) {
-        const grassTex = this._createNoiseTexture('#4c8c2b', '#3a6b1d');
+        const grassTex = this._createNoiseTexture('#6fcf85', '#5ebf75');
         grassTex.repeat.set(50, 50);
 
         // 1. Build flat ground base (colored sand/shore in center, grass on sides)
