@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { SkeletonUtils } from 'three/addons/utils/SkeletonUtils.js';
 import { PLAYER } from './config.js';
+import { toonMat } from './ToonStyle.js';
 
 /** Single rig per gender — Quaternius CC0 GLB with full locomotion + emote clips. */
 export const MODEL_CATALOG = {
@@ -71,7 +73,7 @@ async function fetchAndParseGlb(url) {
     });
 }
 
-const HIDDEN_MESH = /collision|hitbox|cube|box|placeholder|root\s*mesh/i;
+const HIDDEN_MESH = /collision|hitbox|placeholder|root\s*mesh/i;
 
 function stripHelperMeshes(root) {
     const toRemove = [];
@@ -99,7 +101,96 @@ function prepareMeshes(root) {
         if (!obj.isMesh) return;
         obj.castShadow = true;
         obj.receiveShadow = true;
+        obj.visible = true;
+        if (obj.isSkinnedMesh) obj.frustumCulled = false;
     });
+}
+
+function cloneMaterials(mesh) {
+    if (!mesh.material) return;
+    if (Array.isArray(mesh.material)) {
+        mesh.material = mesh.material.map(m => {
+            const c = m.clone();
+            if (m.name) c.name = m.name;
+            if (c.map) c.map.colorSpace = THREE.SRGBColorSpace;
+            return c;
+        });
+    } else {
+        const c = mesh.material.clone();
+        if (mesh.material.name) c.name = mesh.material.name;
+        if (c.map) c.map.colorSpace = THREE.SRGBColorSpace;
+        mesh.material = c;
+    }
+}
+
+/** Skinned GLB must use SkeletonUtils — plain .clone() leaves invisible bodies. */
+function cloneSkinnedModel(source) {
+    const model = SkeletonUtils.clone(source);
+    model.traverse(obj => {
+        if (!obj.isMesh) return;
+        cloneMaterials(obj);
+        obj.castShadow = true;
+        obj.receiveShadow = true;
+        obj.visible = true;
+        if (obj.isSkinnedMesh) {
+            obj.frustumCulled = false;
+            obj.skeleton?.update();
+        }
+    });
+    model.visible = true;
+    model.updateMatrixWorld(true);
+    return model;
+}
+
+function countMeshes(root) {
+    let n = 0;
+    root.traverse(obj => { if (obj.isMesh && obj.visible) n += 1; });
+    return n;
+}
+
+function createProceduralBody(gender = 'male', type = 'human') {
+    const body = new THREE.Group();
+    body.name = 'proceduralBody';
+    const skin = toonMat(type === 'alien' ? 0x88ccaa : 0xece9e1);
+    const shirt = toonMat(type === 'alien' ? 0x6a9a88 : 0x4e90e8);
+    const pants = toonMat(0x2a2a3a);
+    const hair = toonMat(0x3d3224);
+    const dress = toonMat(0x8c7ceb);
+
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.52, 0.24), shirt);
+    torso.position.y = gender === 'female' ? 1.05 : 1.08;
+    torso.castShadow = true;
+    body.add(torso);
+
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.17, 10, 10), skin);
+    head.position.y = gender === 'female' ? 1.42 : 1.45;
+    head.castShadow = true;
+    body.add(head);
+
+    const hairMesh = new THREE.Mesh(new THREE.SphereGeometry(0.18, 10, 8, 0, Math.PI * 2, 0, Math.PI * 0.55), hair);
+    hairMesh.position.y = gender === 'female' ? 1.48 : 1.5;
+    body.add(hairMesh);
+
+    if (gender === 'female') {
+        const skirt = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.28, 0.42, 8), dress);
+        skirt.position.y = 0.78;
+        skirt.castShadow = true;
+        body.add(skirt);
+    } else {
+        const legs = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.48, 0.22), pants);
+        legs.position.y = 0.58;
+        legs.castShadow = true;
+        body.add(legs);
+    }
+
+    [-0.14, 0.14].forEach(x => {
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.42, 0.1), pants);
+        leg.position.set(x, 0.21, 0);
+        leg.castShadow = true;
+        body.add(leg);
+    });
+
+    return body;
 }
 
 function normalizeHeight(root, targetHeight) {
@@ -226,7 +317,7 @@ export function isModelLoaded(key) {
 }
 
 export function hasCriticalModels() {
-    return isModelLoaded('male') && isModelLoaded('female');
+    return isModelLoaded('male') || isModelLoaded('female');
 }
 
 const SLOT_ALIASES = {
@@ -271,21 +362,39 @@ function applyTint(model, color, strength = 0.3) {
 }
 
 export function createCharacterInstance(type, modelKey, opts = {}) {
-    const humanKey = modelKey === 'male' || modelKey === 'female'
+    let humanKey = modelKey === 'male' || modelKey === 'female'
         ? modelKey
         : getBodyKeyForGender('male');
 
-    const cached = _cache.get(`human:${humanKey}`);
-    if (!cached) {
-        console.warn(`[CharacterModels] Model not loaded: ${humanKey}`);
-        const g = new THREE.Group();
-        g.userData.isFallback = true;
-        return g;
+    let cached = _cache.get(`human:${humanKey}`);
+    if (!cached && humanKey === 'female') {
+        humanKey = 'male';
+        cached = _cache.get('human:male');
+    }
+    if (!cached && humanKey === 'male') {
+        cached = _cache.get('human:female');
+        if (cached) humanKey = 'female';
     }
 
     const root = new THREE.Group();
     root.name = `${type}Avatar`;
-    const model = cached.scene.clone(true);
+    root.userData.modelKey = humanKey;
+    root.userData.gender = humanKey;
+    root.userData.characterType = type;
+    root.userData.isHuman = type === 'human';
+    root.userData.isAlien = type === 'alien';
+
+    if (!cached) {
+        console.warn(`[CharacterModels] No GLB loaded — procedural body for ${humanKey}`);
+        const fallback = createProceduralBody(humanKey, type);
+        root.add(fallback);
+        root.userData.isFallback = true;
+        root.userData.isRigged = false;
+        root.userData.isStaticModel = true;
+        return root;
+    }
+
+    const model = cloneSkinnedModel(cached.scene);
     root.add(model);
 
     if (opts.targetHeight && Math.abs(opts.targetHeight - cached.targetHeight) > 0.01) {
@@ -295,23 +404,26 @@ export function createCharacterInstance(type, modelKey, opts = {}) {
     const tint = opts.tint ?? (type === 'alien' ? ALIEN_TINTS[(opts.variant ?? 0) % ALIEN_TINTS.length] : null);
     if (tint) applyTint(model, tint, opts.tintStrength ?? (type === 'alien' ? 0.42 : 0));
 
-    root.userData.modelKey = humanKey;
-    root.userData.gender = humanKey;
-    root.userData.characterType = type;
-    root.userData.isHuman = type === 'human';
-    root.userData.isAlien = type === 'alien';
-    root.userData.isRigged = true;
+    root.userData.isRigged = countMeshes(model) > 0;
     root.userData.isStaticModel = false;
+    root.userData.isFallback = false;
 
-    if (cached.animations.length) {
+    if (root.userData.isRigged && cached.animations.length) {
         const { mixer, actions } = setupAnimator(model, cached.animations);
         root.userData.mixer = mixer;
         root.userData.actions = actions;
         root.userData._activeAction = actions.idle ?? actions.stand ?? null;
+    } else {
+        console.warn(`[CharacterModels] Rig empty after clone — procedural body for ${humanKey}`);
+        root.remove(model);
+        root.add(createProceduralBody(humanKey, type));
+        root.userData.isFallback = true;
+        root.userData.isRigged = false;
+        root.userData.isStaticModel = true;
     }
 
     const presetIdx = opts.outfitPreset ?? (opts.variant ?? 0) % OUTFIT_PRESETS.length;
-    applyOutfitPreset(root, presetIdx);
+    if (root.userData.isRigged) applyOutfitPreset(root, presetIdx);
 
     return root;
 }

@@ -101,12 +101,14 @@ class Game {
         this.chunks.markAlwaysVisible(this.player);
 
         const welcome = this.data.welcome || {};
-        this.welcomeHuman = createHumanAvatar();
+        this.welcomeHuman = createHumanAvatar({
+            gender: 'male', modelKey: 'male', name: welcome.humanName, outfitPreset: 1,
+        });
         this.welcomeHuman.visible = false;
         this.welcomeHuman.add(createNameTag(welcome.humanName || 'Human Ambassador'));
         this.scene.add(this.welcomeHuman);
 
-        this.welcomeAlien = createAlienAvatar({ variant: 0 });
+        this.welcomeAlien = createAlienAvatar({ variant: 0, modelKey: 'female', name: welcome.alienName });
         this.welcomeAlien.visible = false;
         this.welcomeAlien.add(createNameTag(welcome.alienName || 'Alien Ambassador'));
         this.scene.add(this.welcomeAlien);

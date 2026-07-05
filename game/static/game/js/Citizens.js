@@ -235,6 +235,8 @@ export class CitizenManager {
 
     _placeCitizen(mesh, spot, name, type, line, phase, speed = null) {
         mesh.position.set(spot.x, this._groundY(spot.x, spot.z), spot.z);
+        mesh.visible = true;
+        mesh.traverse(child => { child.visible = true; });
         mesh.add(createNameTag(name));
         this.scene.add(mesh);
         this.citizens.push({
