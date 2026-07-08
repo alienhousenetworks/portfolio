@@ -272,9 +272,24 @@ def training_subfield_detail(request, slug):
     }
     return render(request, 'core/training_packages.html', context)
 
+from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.admin.views.decorators import staff_member_required
+from django.http import HttpResponse, JsonResponse
+from django.db.models import Sum, Q
+import razorpay
+
+def get_razorpay_keys(site_config=None):
+    if not site_config:
+        site_config = SiteConfiguration.objects.first()
+    key_id = site_config.razorpay_key_id if site_config and site_config.razorpay_key_id else settings.RAZORPAY_KEY_ID
+    key_secret = site_config.razorpay_key_secret if site_config and site_config.razorpay_key_secret else settings.RAZORPAY_KEY_SECRET
+    return key_id, key_secret
+
 def training_enroll(request, package_id):
     """
-    Handles student enrollment with referral logic.
+    Handles student enrollment, calculates prices, creates Razorpay Order,
+    and forwards to the payment page.
     """
     package = get_object_or_404(TrainingPackage, id=package_id)
     sub_field = package.sub_field
@@ -285,32 +300,49 @@ def training_enroll(request, package_id):
         if form.is_valid():
             enrollment = form.save(commit=False)
             
-            # Logic for referral and price calculation
-            referral = form.cleaned_data['referral_code_text'] # This is a ReferralCode object due to clean_ method
-            
+            referral = form.cleaned_data['referral_code_text']
             enrollment.package = package
             enrollment.sub_field = sub_field
             enrollment.field = field
             enrollment.referral_code = referral
             
-            # Snapshots of prices
+            # Pricing logic snapshot
             enrollment.original_price = package.price
             discount = (package.price * referral.discount_percentage) / 100
             enrollment.discount_applied = discount
             enrollment.final_price = package.price - discount
-            
+            enrollment.payment_status = 'PENDING'
             enrollment.save()
             
-            # Track usage
-            referral.usage_count += 1
-            referral.save()
+            # Initialize Razorpay and create order
+            site_config = SiteConfiguration.objects.first()
+            key_id, key_secret = get_razorpay_keys(site_config)
+            client = razorpay.Client(auth=(key_id, key_secret))
+            amount_in_paisa = int(enrollment.final_price * 100)
             
-            messages.success(request, f"CONGRATULATIONS {enrollment.full_name.upper()}! YOUR ENROLLMENT PROTOCOL IS INITIATED.")
-            return render(request, 'core/training_success.html', {'enrollment': enrollment})
+            try:
+                razorpay_order = client.order.create(dict(
+                    amount=amount_in_paisa,
+                    currency='INR',
+                    payment_capture='1'
+                ))
+                enrollment.razorpay_order_id = razorpay_order['id']
+                enrollment.save()
+                
+                context = {
+                    'enrollment': enrollment,
+                    'razorpay_order_id': razorpay_order['id'],
+                    'razorpay_amount': amount_in_paisa,
+                    'razorpay_key_id': key_id,
+                    'config': site_config,
+                }
+                return render(request, 'core/training_payment.html', context)
+            except Exception as e:
+                messages.error(request, f"Error generating payment link: {str(e)}")
+                return render(request, 'core/training_failed.html', {'error': str(e)})
         else:
-            messages.error(request, "SYSTEM ERROR: DATA CORRUPTION IN FORM SUBMISSION. PLEASE VERIFY DETAILS.")
+            messages.error(request, "Form submission details are invalid. Please verify.")
     else:
-        # Pre-fill hidden fields
         form = TrainingEnrollmentForm(initial={
             'field': field,
             'sub_field': sub_field,
@@ -323,6 +355,55 @@ def training_enroll(request, package_id):
         'config': SiteConfiguration.objects.first(),
     }
     return render(request, 'core/training_enrollment.html', context)
+
+@csrf_exempt
+def training_payment_callback(request):
+    """
+    Handles payment verification callback from Razorpay.
+    """
+    if request.method == 'POST':
+        payment_id = request.POST.get('razorpay_payment_id', '')
+        order_id = request.POST.get('razorpay_order_id', '')
+        signature = request.POST.get('razorpay_signature', '')
+        
+        try:
+            enrollment = TrainingEnrollment.objects.get(razorpay_order_id=order_id)
+            
+            # Verify signature
+            key_id, key_secret = get_razorpay_keys()
+            client = razorpay.Client(auth=(key_id, key_secret))
+            params_dict = {
+                'razorpay_order_id': order_id,
+                'razorpay_payment_id': payment_id,
+                'razorpay_signature': signature
+            }
+            client.utility.verify_payment_signature(params_dict)
+            
+            # Update to Completed/Paid
+            enrollment.razorpay_payment_id = payment_id
+            enrollment.razorpay_signature = signature
+            enrollment.payment_status = 'COMPLETED'
+            enrollment.save()
+            
+            # Track referral usage now that payment succeeded
+            if enrollment.referral_code:
+                enrollment.referral_code.usage_count += 1
+                enrollment.referral_code.save()
+                
+            messages.success(request, f"Payment verified successfully! Welcome to the course, {enrollment.full_name}.")
+            return render(request, 'core/training_success.html', {'enrollment': enrollment})
+            
+        except Exception as e:
+            try:
+                enrollment = TrainingEnrollment.objects.get(razorpay_order_id=order_id)
+                enrollment.payment_status = 'FAILED'
+                enrollment.save()
+            except Exception:
+                pass
+            messages.error(request, f"Payment verification failed: {str(e)}")
+            return render(request, 'core/training_failed.html', {'error': str(e)})
+            
+    return HttpResponse("Invalid request method", status=400)
 
 def validate_referral(request):
     """
@@ -346,3 +427,58 @@ def validate_referral(request):
         })
     except (ReferralCode.DoesNotExist, TrainingPackage.DoesNotExist):
         return JsonResponse({'valid': False, 'message': 'Invalid or inactive referral code.'})
+
+@staff_member_required
+def lms_dashboard(request):
+    """
+    LMS dashboard view, accessible only by staff side users.
+    Allows managing status and viewing enrollments.
+    """
+    enrollments_list = TrainingEnrollment.objects.select_related('field', 'sub_field', 'package').all()
+    
+    # Search
+    q_search = request.GET.get('search', '').strip()
+    if q_search:
+        enrollments_list = enrollments_list.filter(
+            Q(full_name__icontains=q_search) |
+            Q(email__icontains=q_search) |
+            Q(phone__icontains=q_search)
+        )
+        
+    # Filter
+    status_filter = request.GET.get('status', '').strip()
+    if status_filter:
+        enrollments_list = enrollments_list.filter(payment_status=status_filter)
+        
+    # Stats
+    total_enrolled = enrollments_list.count()
+    total_paid = enrollments_list.filter(payment_status='COMPLETED').count()
+    total_revenue = enrollments_list.filter(payment_status='COMPLETED').aggregate(Sum('final_price'))['final_price__sum'] or 0.00
+    total_pending = enrollments_list.filter(payment_status='PENDING').count()
+    
+    context = {
+        'enrollments': enrollments_list,
+        'search': q_search,
+        'status_filter': status_filter,
+        'total_enrolled': total_enrolled,
+        'total_paid': total_paid,
+        'total_revenue': total_revenue,
+        'total_pending': total_pending,
+        'config': SiteConfiguration.objects.first(),
+    }
+    return render(request, 'core/lms_dashboard.html', context)
+
+@staff_member_required
+def update_enrollment_status(request, pk):
+    """
+    AJAX view to update enrollment payment status.
+    """
+    if request.method == 'POST':
+        enrollment = get_object_or_404(TrainingEnrollment, id=pk)
+        new_status = request.POST.get('status', '').strip()
+        if new_status in ['PENDING', 'COMPLETED', 'FAILED']:
+            enrollment.payment_status = new_status
+            enrollment.save()
+            return JsonResponse({'status': 'success', 'message': 'Status updated successfully'})
+        return JsonResponse({'status': 'error', 'message': 'Invalid status'}, status=400)
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)

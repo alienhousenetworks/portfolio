@@ -112,6 +112,10 @@ class SiteConfigurationAdmin(admin.ModelAdmin):
             'fields': ('meta_description', 'meta_keywords'),
             'description': "<strong>Impacts:</strong> Controls how your site appears in Google Search results."
         }),
+        ("Razorpay Integration", {
+            'fields': ('razorpay_key_id', 'razorpay_key_secret'),
+            'description': "<strong>Impacts:</strong> Credentials for initiating and verifying student payments."
+        }),
     )
     
     def has_add_permission(self, request):

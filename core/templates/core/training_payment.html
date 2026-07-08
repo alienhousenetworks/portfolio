@@ -1,0 +1,93 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Initiating Payment | {{ config.site_name }}{% endblock %}
+
+{% block content %}
+<div class="pt-40 pb-20 px-6 min-h-screen flex items-center justify-center">
+    <div class="max-w-md w-full text-center p-8 border border-zinc-800 bg-zinc-900/40 rounded-xl shadow-xl">
+        <div class="mb-6">
+            <div class="w-16 h-16 rounded-full bg-zinc-850 flex items-center justify-center mx-auto mb-4 animate-bounce">
+                <i data-lucide="credit-card" class="w-8 h-8 text-zinc-350"></i>
+            </div>
+            <h1 class="font-sans font-bold text-2xl text-white mb-2">
+                Processing Secure Payment
+            </h1>
+            <p class="font-mono text-zinc-400 text-xs uppercase tracking-wider">
+                Do not close or refresh this page
+            </p>
+        </div>
+
+        <div class="space-y-4 mb-8 text-left bg-zinc-950/60 p-5 rounded-lg border border-zinc-850 text-sm">
+            <div class="flex justify-between pb-2 border-b border-zinc-900">
+                <span class="text-zinc-500">Student</span>
+                <span class="text-white font-medium">{{ enrollment.full_name }}</span>
+            </div>
+            <div class="flex justify-between pb-2 border-b border-zinc-900">
+                <span class="text-zinc-500">Course / Tier</span>
+                <span class="text-white font-medium">{{ enrollment.package.name }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-zinc-500">Amount</span>
+                <span class="text-white font-bold">₹{{ enrollment.final_price }}</span>
+            </div>
+        </div>
+
+        <!-- Razorpay payment trigger button -->
+        <button id="pay-btn" class="w-full py-3.5 bg-zinc-200 text-zinc-950 font-sans font-bold text-sm tracking-wider uppercase rounded-lg hover:bg-white transition-all shadow-md">
+            Pay Now
+        </button>
+
+        <form id="razorpay-form" action="{% url 'training_payment_callback' %}" method="POST" style="display: none;">
+            {% csrf_token %}
+            <input type="hidden" name="razorpay_payment_id" id="razorpay_payment_id">
+            <input type="hidden" name="razorpay_order_id" id="razorpay_order_id" value="{{ razorpay_order_id }}">
+            <input type="hidden" name="razorpay_signature" id="razorpay_signature">
+        </form>
+    </div>
+</div>
+
+<!-- Razorpay Checkout Integration -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+    const options = {
+        "key": "{{ razorpay_key_id }}",
+        "amount": "{{ razorpay_amount }}",
+        "currency": "INR",
+        "name": "{{ config.site_name|default:'ALIENHOUSE' }}",
+        "description": "Training Course Enrollment - {{ enrollment.package.name }}",
+        "image": "{% if config.logo %}{{ config.logo.url }}{% endif %}",
+        "order_id": "{{ razorpay_order_id }}",
+        "handler": function (response){
+            document.getElementById('razorpay_payment_id').value = response.razorpay_payment_id;
+            document.getElementById('razorpay_order_id').value = response.razorpay_order_id;
+            document.getElementById('razorpay_signature').value = response.razorpay_signature;
+            document.getElementById('razorpay-form').submit();
+        },
+        "prefill": {
+            "name": "{{ enrollment.full_name }}",
+            "email": "{{ enrollment.email }}",
+            "contact": "{{ enrollment.phone }}"
+        },
+        "theme": {
+            "color": "#18181b"
+        }
+    };
+    
+    const rzp1 = new Razorpay(options);
+    
+    rzp1.on('payment.failed', function (response){
+        alert("Payment failed: " + response.error.description);
+    });
+
+    document.getElementById('pay-btn').onclick = function(e){
+        rzp1.open();
+        e.preventDefault();
+    }
+
+    // Auto open checkout on page load
+    window.onload = function() {
+        rzp1.open();
+    };
+</script>
+{% endblock %}

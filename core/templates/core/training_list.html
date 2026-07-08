@@ -5,121 +5,104 @@
 
 {% block content %}
 <div class="pt-32 pb-20 px-4 sm:px-6">
-    <div class="max-w-7xl mx-auto">
+    <div class="max-w-6xl mx-auto">
         <!-- Page Header -->
-        <div class="mb-12 lg:mb-16 text-center lg:text-left">
-            <h1 class="font-orbitron font-black text-4xl sm:text-5xl lg:text-7xl text-white mb-6 tracking-tighter">
-                TRAINING <span class="text-alien">PROTOCOLS</span>
+        <div class="mb-12 text-center">
+            <h1 class="font-sans font-bold text-3xl sm:text-5xl text-white mb-4 tracking-tight">
+                Training Protocols
             </h1>
-            <p class="font-mono text-alien opacity-70 tracking-widest text-xs sm:text-sm uppercase">
-                // Select Field of Operation to Begin Specialization
+            <p class="font-mono text-zinc-400 tracking-wider text-xs sm:text-sm uppercase">
+                Select a specialization field below to begin
             </p>
         </div>
 
         <!-- Fields Grid -->
-        <div class="grid grid-cols-1 gap-8 lg:gap-12">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
             {% for field in fields %}
             <!-- Interactive Field Card -->
             <div id="field-card-{{ field.id }}" 
                  onclick="openModal('dialog-{{ field.id }}')"
-                 class="alien-card group relative bg-alien-dark/40 border border-alien/10 p-6 sm:p-8 hover:border-alien/40 hover:bg-alien/5 cursor-pointer transition-all duration-500 overflow-hidden">
+                 class="group relative bg-zinc-900/40 border border-zinc-800/80 rounded-xl p-6 sm:p-8 hover:border-zinc-700 hover:bg-zinc-800/30 cursor-pointer transition-all duration-300 shadow-md flex flex-col justify-between">
                 
-                <!-- Decorative Grid Background for Card -->
-                <div class="absolute inset-0 bg-grid-pattern opacity-5 pointer-events-none"></div>
-                
-                <!-- HUD Corners (animated via alien-card hover class in base.html) -->
-                <div class="hud-corner hud-tl"></div>
-                <div class="hud-corner hud-tr"></div>
-                <div class="hud-corner hud-bl"></div>
-                <div class="hud-corner hud-br"></div>
-
-                <!-- Card Content -->
-                <div class="relative z-10">
+                <div>
                     <!-- Icon & Sector Info -->
-                    <div class="flex items-start justify-between mb-8">
-                        <div class="p-3 sm:p-4 bg-alien/5 text-alien group-hover:bg-alien group-hover:text-black transition-all duration-500">
-                            <i data-lucide="{{ field.icon|default:'zap' }}" class="w-6 h-6 sm:w-8 sm:h-8"></i>
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="p-3 bg-zinc-800/60 text-zinc-300 rounded-lg group-hover:bg-zinc-200 group-hover:text-zinc-950 transition-all duration-300">
+                            <i data-lucide="{{ field.icon|default:'zap' }}" class="w-6 h-6"></i>
                         </div>
-                        <span class="font-mono text-[10px] text-alien/30 tracking-[0.3em] uppercase">
+                        <span class="font-mono text-[10px] text-zinc-500 tracking-wider uppercase">
                             Sector: {{ forloop.counter|stringformat:"02d" }}
                         </span>
                     </div>
 
                     <!-- Field Title -->
-                    <h2 class="font-orbitron font-bold text-2xl sm:text-3xl text-white mb-4 tracking-tight group-hover:text-alien transition-colors uppercase">
+                    <h2 class="font-sans font-bold text-xl sm:text-2xl text-white mb-3 group-hover:text-zinc-200 transition-colors uppercase">
                         {{ field.name }}
                     </h2>
                     
                     <!-- Field Description -->
-                    <div class="text-gray-400 font-rajdhani text-base sm:text-lg leading-relaxed border-l-2 border-alien/20 group-hover:border-alien/50 transition-colors duration-500 pl-4 mb-4">
+                    <div class="text-zinc-400 font-sans text-sm sm:text-base leading-relaxed border-l-2 border-zinc-700 group-hover:border-zinc-500 transition-colors duration-300 pl-4 mb-6">
                         {{ field.description|safe }}
                     </div>
+                </div>
 
-                    <!-- Action Trigger Button -->
-                    <div class="mt-8 flex items-center justify-between pt-5 border-t border-alien/10 group-hover:border-alien/30 transition-colors">
-                        <span class="font-orbitron font-bold text-xs sm:text-sm text-alien tracking-widest uppercase">
-                            // VIEW_SPECIALIZATIONS
-                        </span>
-                        <div class="p-2 bg-alien/5 text-alien group-hover:bg-alien group-hover:text-black border border-alien/20 group-hover:border-transparent transition-all duration-300">
-                            <i data-lucide="plus" class="w-4 h-4"></i>
-                        </div>
+                <!-- Action Trigger Button -->
+                <div class="mt-6 flex items-center justify-between pt-4 border-t border-zinc-800/60 group-hover:border-zinc-700/80 transition-colors">
+                    <span class="font-sans font-semibold text-xs text-zinc-400 tracking-wider uppercase group-hover:text-white transition-colors">
+                        View Specializations
+                    </span>
+                    <div class="p-2 bg-zinc-800/60 text-zinc-400 group-hover:bg-zinc-200 group-hover:text-zinc-950 rounded-md border border-zinc-700 group-hover:border-transparent transition-all duration-300">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
                     </div>
                 </div>
             </div>
             {% empty %}
             <!-- Fallback Empty State -->
-            <div class="col-span-full border border-red-500/20 bg-red-500/5 p-12 text-center">
-                <i data-lucide="alert-triangle" class="w-12 h-12 text-red-500 mx-auto mb-4"></i>
-                <p class="font-orbitron text-white text-xl uppercase tracking-widest">No Training Sectors Found</p>
-                <p class="font-mono text-red-400 mt-2">// SYSTEM MALFUNCTION: DATA_NOT_FOUND</p>
+            <div class="col-span-full border border-zinc-800 bg-zinc-900/20 p-12 text-center rounded-xl">
+                <i data-lucide="alert-triangle" class="w-12 h-12 text-zinc-500 mx-auto mb-4"></i>
+                <p class="font-sans text-white text-lg font-medium tracking-wide uppercase">No Training Sectors Found</p>
+                <p class="font-mono text-zinc-500 mt-2 text-xs">// DATA_NOT_FOUND</p>
             </div>
             {% endfor %}
         </div>
     </div>
 </div>
 
-<!-- Dialogue Popup Modals (High Stacking Context, completely outside layouts to prevent clipping/layering issues) -->
+<!-- Dialogue Popup Modals -->
 <div id="modals-container" class="relative z-[999999]">
     {% for field in fields %}
     <dialog id="dialog-{{ field.id }}" 
             aria-labelledby="dialog-title-{{ field.id }}"
             closedby="any"
-            class="fixed inset-0 m-auto bg-[#020202] border border-alien/30 p-6 sm:p-10 w-[90%] max-w-2xl h-fit max-h-[80vh] overflow-y-auto text-white shadow-[0_0_50px_rgba(0,255,65,0.25)] outline-none opacity-0 backdrop:bg-black/90 backdrop:backdrop-blur-md z-[999999] backdrop:z-[999998]">
+            class="fixed inset-0 m-auto bg-zinc-950 border border-zinc-800 rounded-xl p-6 sm:p-8 w-[90%] max-w-lg h-fit max-h-[85vh] overflow-y-auto text-white shadow-2xl outline-none opacity-0 backdrop:bg-black/80 backdrop:backdrop-blur-sm z-[999999] backdrop:z-[999998]">
         
-        <!-- HUD Corners -->
-        <div class="hud-corner hud-tl"></div>
-        <div class="hud-corner hud-tr"></div>
-        <div class="hud-corner hud-bl"></div>
-        <div class="hud-corner hud-br"></div>
-
         <!-- Close button -->
         <button onclick="event.stopPropagation(); closeModal('dialog-{{ field.id }}')" 
-                class="absolute top-4 right-4 p-2 text-alien/60 hover:text-alien hover:bg-alien/10 border border-transparent hover:border-alien/30 transition-all duration-300">
-            <i data-lucide="x" class="w-6 h-6"></i>
+                class="absolute top-4 right-4 p-2 text-zinc-400 hover:text-white hover:bg-zinc-900 border border-transparent rounded-lg transition-all duration-300">
+            <i data-lucide="x" class="w-5 h-5"></i>
         </button>
 
         <!-- Modal Content -->
-        <div class="relative z-10 pt-4">
-            <div class="mb-6 border-b border-alien/10 pb-4">
-                <span id="dialog-title-{{ field.id }}" class="font-mono text-[10px] text-alien/50 tracking-[0.3em] uppercase block mb-1">// {{ field.name }}</span>
-                <h2 class="font-orbitron font-bold text-xl sm:text-2xl text-white uppercase tracking-wider">
-                    SELECT SPECIALIZATION
+        <div class="relative z-10 pt-2">
+            <div class="mb-6 border-b border-zinc-800 pb-4">
+                <span id="dialog-title-{{ field.id }}" class="font-mono text-[10px] text-zinc-500 tracking-wider uppercase block mb-1">// {{ field.name }}</span>
+                <h2 class="font-sans font-bold text-lg sm:text-xl text-white uppercase tracking-wide">
+                    Select Specialization
                 </h2>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 gap-3">
                 {% for sub in field.sub_fields.all %}
                 {% if sub.is_active %}
                 <a id="modal-subfield-link-{{ sub.id }}" 
                    href="{% url 'training_subfield_detail' sub.slug %}" 
-                   class="flex items-center justify-between p-5 bg-alien/5 border border-alien/30 border-l-4 border-l-alien hover:border-alien hover:bg-alien/20 group/sub transition-all duration-300 shadow-[0_4px_12px_rgba(0,255,65,0.05)]">
+                   class="flex items-center justify-between p-4 bg-zinc-900/60 border border-zinc-800/80 rounded-lg hover:border-zinc-700 hover:bg-zinc-800 group/sub transition-all duration-300">
                     <div class="flex items-center gap-3">
-                        <span class="font-mono text-sm text-alien group-hover/sub:scale-110 transition-transform select-none">></span>
-                        <span class="font-orbitron font-bold text-sm sm:text-base text-white group-hover/sub:text-alien transition-colors tracking-wide">
+                        <span class="font-sans font-semibold text-sm text-zinc-200 group-hover/sub:text-white transition-colors">
                             {{ sub.name }}
                         </span>
                     </div>
-                    <i data-lucide="arrow-right" class="w-5 h-5 text-alien opacity-85 group-hover/sub:opacity-100 transition-all translate-x-0 group-hover/sub:translate-x-1.5 duration-300"></i>
+                    <i data-lucide="arrow-right" class="w-4 h-4 text-zinc-400 group-hover/sub:text-white transition-all translate-x-0 group-hover/sub:translate-x-1 duration-300"></i>
                 </a>
                 {% endif %}
                 {% endfor %}
@@ -139,8 +122,8 @@
         // GSAP animate in
         gsap.killTweensOf(dialog);
         gsap.fromTo(dialog, 
-            { scale: 0.9, opacity: 0, y: 30 },
-            { scale: 1, opacity: 1, y: 0, duration: 0.4, ease: "power3.out" }
+            { scale: 0.95, opacity: 0, y: 15 },
+            { scale: 1, opacity: 1, y: 0, duration: 0.3, ease: "power2.out" }
         );
     }
 
@@ -151,11 +134,11 @@
         // GSAP animate out
         gsap.killTweensOf(dialog);
         gsap.to(dialog, {
-            scale: 0.9,
+            scale: 0.95,
             opacity: 0,
-            y: 30,
-            duration: 0.3,
-            ease: "power3.in",
+            y: 15,
+            duration: 0.2,
+            ease: "power2.in",
             onComplete: () => {
                 dialog.close();
             }
@@ -165,18 +148,14 @@
     document.addEventListener('DOMContentLoaded', () => {
         // Handle close/cancel animations and click outside fallback
         document.querySelectorAll('dialog').forEach(dialog => {
-            // Handle cancel event (Esc key) to animate out nicely
             dialog.addEventListener('cancel', (e) => {
                 e.preventDefault();
                 closeModal(dialog.id);
             });
 
-            // Prevent event bubbling when clicking inside the dialog
             dialog.addEventListener('click', (event) => {
-                // If the target is the dialog tag itself, it's the backdrop
                 if (event.target !== dialog) return;
                 
-                // Fallback for browsers without closedby support (like Safari)
                 const rect = dialog.getBoundingClientRect();
                 const isDialogContent = (
                     rect.top <= event.clientY &&
@@ -192,4 +171,3 @@
     });
 </script>
 {% endblock %}
-

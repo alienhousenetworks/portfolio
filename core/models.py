@@ -47,6 +47,11 @@ class SiteConfiguration(models.Model):
     meta_description = models.TextField(blank=True, null=True, help_text="A brief summary of your site (150-160 characters) for Google search results.")
     meta_keywords = models.CharField(max_length=255, blank=True, null=True, help_text="Comma-separated keywords (e.g., AI, Technology, Software).")
 
+    # Razorpay Credentials Config
+    razorpay_key_id = models.CharField(max_length=255, blank=True, null=True, help_text="Razorpay Key ID for payments.")
+    razorpay_key_secret = models.CharField(max_length=255, blank=True, null=True, help_text="Razorpay Key Secret for payment verification.")
+
+
     def save(self, *args, **kwargs):
         try:
             if self.logo:
@@ -1084,6 +1089,11 @@ class TrainingEnrollment(models.Model):
         ('FAILED', 'Failed'),
     ]
     payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='PENDING')
+
+    # 🔑 Razorpay transaction fields
+    razorpay_order_id = models.CharField(max_length=255, blank=True, null=True)
+    razorpay_payment_id = models.CharField(max_length=255, blank=True, null=True)
+    razorpay_signature = models.CharField(max_length=255, blank=True, null=True)
 
     enrollment_date = models.DateTimeField(auto_now_add=True)
 

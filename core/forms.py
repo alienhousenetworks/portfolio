@@ -62,7 +62,7 @@ class TrainingEnrollmentForm(forms.ModelForm):
         required=True, 
         label="Referral Code",
         widget=forms.TextInput(attrs={
-            'class': 'w-full bg-black/50 border border-alien/20 rounded-none px-4 py-3 text-white placeholder-gray-600 focus:outline-none border-alien transition-all font-mono text-sm mb-4',
+            'class': 'w-full bg-zinc-900/40 border border-zinc-800 rounded-lg px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500 transition-all text-sm mb-4',
             'placeholder': 'ENTER REFERRAL CODE (MANDATORY)'
         }),
         help_text="A valid referral code is required for enrollment."
@@ -85,11 +85,11 @@ class TrainingEnrollmentForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Apply standard alien class to all visible fields
-        alien_class = 'w-full bg-black/50 border border-alien/20 rounded-none px-4 py-3 text-white placeholder-gray-600 focus:outline-none border-alien transition-all font-mono text-sm mb-4'
+        # Apply standard clean class to all visible fields
+        clean_class = 'w-full bg-zinc-900/40 border border-zinc-800 rounded-lg px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500 transition-all text-sm mb-4'
         for field_name, field in self.fields.items():
             if not isinstance(field.widget, forms.HiddenInput):
-                field.widget.attrs.update({'class': alien_class})
+                field.widget.attrs.update({'class': clean_class})
                 if 'placeholder' not in field.widget.attrs:
                     field.widget.attrs['placeholder'] = field.label.upper()
 

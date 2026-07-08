@@ -5,96 +5,88 @@
 
 {% block content %}
 <div class="pt-32 pb-20 px-4 sm:px-6">
-    <div class="max-w-7xl mx-auto">
+    <div class="max-w-6xl mx-auto">
         <!-- Navigation Back Button -->
         <div class="mb-8">
             <a id="back-to-protocols-btn" 
                href="{% url 'training_list' %}" 
-               class="inline-flex items-center gap-2 text-alien font-mono text-xs hover:text-white border border-alien/20 hover:border-alien/80 bg-alien/5 hover:bg-alien/10 px-4 py-2.5 transition-all group">
-                <i data-lucide="arrow-left" class="w-4 h-4 group-hover:-translate-x-1 transition-transform"></i> 
-                BACK_TO_PROTOCOLS
+               class="inline-flex items-center gap-2 text-zinc-300 font-sans text-xs font-semibold hover:text-white border border-zinc-800 hover:border-zinc-700 bg-zinc-900/60 hover:bg-zinc-850 px-4 py-2 rounded-lg transition-all">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i> 
+                Back to Protocols
             </a>
         </div>
 
         <!-- Page Header -->
         <div class="mb-12 text-center max-w-4xl mx-auto">
-            <h1 class="font-orbitron font-black text-3xl sm:text-4xl lg:text-7xl text-white mb-6 tracking-tighter uppercase">
-                {{ sub_field.name }} <span class="text-alien">PACKAGES</span>
+            <h1 class="font-sans font-bold text-3xl sm:text-5xl text-white mb-4 tracking-tight uppercase">
+                {{ sub_field.name }} Packages
             </h1>
-            <p class="font-mono text-alien opacity-70 tracking-widest text-xs sm:text-sm uppercase">
-                // Select Tier to Initiate Enrollment
+            <p class="font-mono text-zinc-400 tracking-wider text-xs sm:text-sm uppercase">
+                Select a tier to initiate enrollment
             </p>
         </div>
 
         {% if sub_field.description %}
-        <!-- Subfield Specialization Description -->
-        <div class="text-left bg-alien-dark/30 border-l-2 border-alien/20 hover:border-alien/60 p-5 sm:p-6 mb-16 transition-colors duration-500 max-w-7xl mx-auto">
-            <p class="font-mono text-[10px] text-alien opacity-50 uppercase tracking-widest mb-4">// SPECIALIZATION_PROTOCOL_OVERVIEW</p>
-            <div class="text-gray-300 font-rajdhani text-base sm:text-lg leading-relaxed">
+        <!-- Subfield Specialization Overview -->
+        <div class="text-left bg-zinc-900/30 border-l-2 border-zinc-700 p-5 sm:p-6 mb-12 rounded-r-xl transition-all duration-300 max-w-6xl mx-auto">
+            <p class="font-mono text-[10px] text-zinc-500 uppercase tracking-wider mb-2">// SPECIALIZATION_PROTOCOL_OVERVIEW</p>
+            <div class="text-zinc-300 font-sans text-sm sm:text-base leading-relaxed">
                 {{ sub_field.description|safe }}
             </div>
         </div>
         {% endif %}
 
         <!-- Tier Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
             {% for package in packages %}
             <div id="package-card-{{ package.id }}" 
-                 class="alien-card relative group bg-alien-dark/50 border border-alien/20 p-6 sm:p-8 flex flex-col h-full hover:border-alien/60 transition-all duration-500 overflow-hidden shadow-[0_0_20px_rgba(0,255,65,0.05)]">
+                 class="relative group bg-zinc-900/40 border border-zinc-800/80 rounded-xl p-6 sm:p-8 flex flex-col justify-between h-full hover:border-zinc-700 hover:bg-zinc-850/30 transition-all duration-300 shadow-md">
                 
-                <!-- Decorative Grid Background -->
-                <div class="absolute inset-0 bg-grid-pattern opacity-5 pointer-events-none"></div>
-
-                <!-- HUD Corners (animated via alien-card hover class in base.html) -->
-                <div class="hud-corner hud-tl"></div>
-                <div class="hud-corner hud-tr"></div>
-                <div class="hud-corner hud-bl"></div>
-                <div class="hud-corner hud-br"></div>
-
-                <!-- Package Badge -->
-                <div class="absolute top-0 right-0 px-4 py-1 bg-alien text-black font-mono text-[10px] uppercase font-black tracking-widest">
-                    {{ package.name }}
-                </div>
-
-                <!-- Header Details -->
-                <div class="mb-10">
-                    <h2 class="font-orbitron font-bold text-2xl text-white mb-4 group-hover:text-alien transition-colors uppercase tracking-tight">
+                <div>
+                    <!-- Package Badge -->
+                    <div class="absolute top-0 right-0 px-4 py-1.5 bg-zinc-850 text-zinc-300 rounded-tr-xl rounded-bl-xl font-mono text-[9px] uppercase font-bold tracking-wider border-l border-b border-zinc-800">
                         {{ package.name }}
-                    </h2>
-                    <div class="flex items-baseline gap-2">
-                        <span class="font-orbitron text-4xl font-extrabold text-white">
-                            ₹{{ package.price|floatformat:0 }}
-                        </span>
-                        <span class="text-gray-500 font-mono text-xs uppercase tracking-widest">
-                            / {{ package.duration }}
-                        </span>
                     </div>
-                </div>
 
-                <!-- Features List -->
-                <div class="flex-grow space-y-4 mb-10">
-                    {% for feature in package.get_features %}
-                    {% if feature %}
-                    <div class="flex items-start gap-3">
-                        <i data-lucide="check-circle-2" class="w-5 h-5 text-alien shrink-0 mt-0.5"></i>
-                        <span class="text-gray-300 font-rajdhani text-base sm:text-lg leading-tight">{{ feature }}</span>
+                    <!-- Header Details -->
+                    <div class="mb-8 pt-2">
+                        <h2 class="font-sans font-bold text-xl text-white mb-3 group-hover:text-zinc-200 transition-colors uppercase tracking-tight">
+                            {{ package.name }}
+                        </h2>
+                        <div class="flex items-baseline gap-2">
+                            <span class="font-sans text-3xl font-extrabold text-white">
+                                ₹{{ package.price|floatformat:0 }}
+                            </span>
+                            <span class="text-zinc-500 font-mono text-xs uppercase tracking-wider">
+                                / {{ package.duration }}
+                            </span>
+                        </div>
                     </div>
-                    {% endif %}
-                    {% endfor %}
+
+                    <!-- Features List -->
+                    <div class="space-y-3.5 mb-8">
+                        {% for feature in package.get_features %}
+                        {% if feature %}
+                        <div class="flex items-start gap-2.5">
+                            <i data-lucide="check" class="w-4 h-4 text-zinc-400 shrink-0 mt-1"></i>
+                            <span class="text-zinc-350 font-sans text-sm sm:text-base leading-snug">{{ feature }}</span>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
                 </div>
 
                 <!-- CTA Button -->
                 <a href="{% url 'training_enroll' package.id %}"
-                   class="group/btn relative w-full py-4 text-center font-orbitron font-bold text-sm tracking-[0.2em] uppercase overflow-hidden border border-alien transition-all duration-500 hover:text-black">
-                    <div class="absolute inset-0 bg-alien translate-x-[-101%] group-hover/btn:translate-x-0 transition-transform duration-500 ease-out"></div>
-                    <span class="relative z-10">INITIATE_ENROLLMENT</span>
+                   class="w-full py-3 rounded-lg text-center font-sans font-bold text-sm tracking-wider uppercase border border-zinc-700 bg-zinc-900 hover:bg-zinc-200 hover:text-zinc-950 transition-all duration-350">
+                    Initiate Enrollment
                 </a>
             </div>
             {% empty %}
             <!-- Fallback Empty State -->
-            <div class="col-span-full text-center py-20 border border-dashed border-alien/20">
-                <i data-lucide="package-search" class="w-12 h-12 text-alien opacity-30 mx-auto mb-4"></i>
-                <p class="font-mono text-alien/40">// NO_ACTIVE_PACKAGES_FOUND_FOR_SUB_SECTOR</p>
+            <div class="col-span-full text-center py-16 border border-dashed border-zinc-800 rounded-xl">
+                <i data-lucide="package" class="w-12 h-12 text-zinc-650 mx-auto mb-4"></i>
+                <p class="font-mono text-zinc-500">// NO_ACTIVE_PACKAGES_FOUND</p>
             </div>
             {% endfor %}
         </div>

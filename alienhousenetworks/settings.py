@@ -278,3 +278,8 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Razorpay Credentials
+RAZORPAY_KEY_ID = config('RAZORPAY_KEY_ID', default='rzp_test_dummykeyid')
+RAZORPAY_KEY_SECRET = config('RAZORPAY_KEY_SECRET', default='dummypaymentsecret')
+

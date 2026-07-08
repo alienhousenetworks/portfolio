@@ -4,177 +4,169 @@
 {% block title %}Enrollment | {{ package.name }} | {{ config.site_name }}{% endblock %}
 
 {% block content %}
-<div class="pt-32 pb-20 px-6">
+<div class="pt-32 pb-20 px-4 sm:px-6">
     <div class="max-w-4xl mx-auto">
         <!-- Header -->
         <div class="mb-12 text-center">
-            <h1 class="font-orbitron font-black text-4xl lg:text-6xl text-white mb-4 tracking-tighter">
-                ENROLLMENT <span class="text-alien">PROGRAMS</span>
+            <h1 class="font-sans font-bold text-3xl sm:text-5xl text-white mb-3 tracking-tight">
+                Enrollment Form
             </h1>
-            <p class="font-mono text-alien opacity-70 tracking-widest uppercase">
-                // SECURE DATA TRANSMISSION CHANNEL INITIATED
+            <p class="font-mono text-zinc-450 tracking-wider uppercase text-xs">
+                // Secure Registration Portal
             </p>
         </div>
 
         <!-- Enrollment Form -->
-        <form method="post" class="space-y-12">
+        <form method="post" class="space-y-8">
             {% csrf_token %}
             {{ form.field }}
             {{ form.sub_field }}
             {{ form.package }}
 
             <!-- Section 1: Selected Package Info -->
-            <div
-                class="bg-alien/5 border border-alien/20 p-6 flex flex-col md:flex-row justify-between items-center gap-6">
-                <div class="flex items-center gap-4">
-                    <div class="p-3 bg-alien text-black">
+            <div class="bg-zinc-900/40 border border-zinc-800 rounded-xl p-6 flex flex-col sm:flex-row justify-between items-center gap-6">
+                <div class="flex items-center gap-4 w-full sm:w-auto">
+                    <div class="p-3 bg-zinc-800 text-zinc-250 rounded-lg">
                         <i data-lucide="package" class="w-6 h-6"></i>
                     </div>
                     <div>
-                        <p class="font-mono text-[10px] text-alien opacity-50 uppercase tracking-widest">
-                            SELECTED_MISSION</p>
-                        <h3 class="font-orbitron font-bold text-xl text-white uppercase">{{ package.sub_field.name }} :
-                            {{ package.name }}</h3>
+                        <p class="font-mono text-[9px] text-zinc-500 uppercase tracking-wider">
+                            Selected Specialization
+                        </p>
+                        <h3 class="font-sans font-bold text-lg text-white uppercase mt-0.5">
+                            {{ package.sub_field.name }} : {{ package.name }}
+                        </h3>
                     </div>
                 </div>
-                <div class="text-right">
-                    <p class="font-mono text-[10px] text-alien opacity-50 uppercase tracking-widest">BASE_PRICE</p>
-                    <p class="font-orbitron font-black text-2xl text-white" id="base-price">₹{{
-                        package.price|floatformat:2 }}</p>
+                <div class="text-left sm:text-right w-full sm:w-auto border-t border-zinc-800/80 pt-4 sm:pt-0 sm:border-0">
+                    <p class="font-mono text-[9px] text-zinc-500 uppercase tracking-wider">Base Price</p>
+                    <p class="font-sans font-extrabold text-xl text-white mt-0.5" id="base-price">
+                        ₹{{ package.price|floatformat:2 }}
+                    </p>
                 </div>
             </div>
 
             <!-- Section 2: Personal Information -->
-            <div class="relative p-8 border border-white/10 bg-alien-dark/40 overflow-hidden">
-                <div class="hud-corner hud-tl opacity-30"></div>
-                <div class="hud-corner hud-tr opacity-30"></div>
-                <h3 class="font-orbitron text-xl text-alien mb-8 uppercase tracking-widest flex items-center gap-2">
-                    <i data-lucide="user" class="w-5 h-5"></i> PERSONAL_IDENTIFICATION
+            <div class="p-6 sm:p-8 rounded-xl border border-zinc-800 bg-zinc-900/20">
+                <h3 class="font-sans font-bold text-base text-white mb-6 uppercase tracking-wider flex items-center gap-2.5">
+                    <i data-lucide="user" class="w-4 h-4 text-zinc-400"></i> Personal Identification
                 </h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
-                    <div class="space-y-1">
-                        <label class="text-[10px] font-mono text-gray-500 ml-1 uppercase">Full Name*</label>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                    <div class="space-y-1.5">
+                        <label class="text-[11px] font-sans font-medium text-zinc-400 ml-1 uppercase">Full Name*</label>
                         {{ form.full_name }}
                     </div>
-                    <div class="space-y-1">
-                        <label class="text-[10px] font-mono text-gray-500 ml-1 uppercase">Email Address*</label>
+                    <div class="space-y-1.5">
+                        <label class="text-[11px] font-sans font-medium text-zinc-400 ml-1 uppercase">Email Address*</label>
                         {{ form.email }}
                     </div>
-                    <div class="space-y-1">
-                        <label class="text-[10px] font-mono text-gray-500 ml-1 uppercase">Phone Number*</label>
+                    <div class="space-y-1.5">
+                        <label class="text-[11px] font-sans font-medium text-zinc-400 ml-1 uppercase">Phone Number*</label>
                         {{ form.phone }}
                     </div>
-                    <div class="space-y-1">
-                        <label class="text-[10px] font-mono text-gray-500 ml-1 uppercase">Date of Birth</label>
+                    <div class="space-y-1.5">
+                        <label class="text-[11px] font-sans font-medium text-zinc-400 ml-1 uppercase">Date of Birth</label>
                         {{ form.date_of_birth }}
                     </div>
                 </div>
             </div>
 
             <!-- Section 3: Academic Information -->
-            <div class="relative p-8 border border-white/10 bg-alien-dark/40 overflow-hidden">
-                <div class="hud-corner hud-tl opacity-30"></div>
-                <div class="hud-corner hud-tr opacity-30"></div>
-                <h3 class="font-orbitron text-xl text-alien mb-8 uppercase tracking-widest flex items-center gap-2">
-                    <i data-lucide="graduation-cap" class="w-5 h-5"></i> ACADEMIC_CREDENTIALS
+            <div class="p-6 sm:p-8 rounded-xl border border-zinc-800 bg-zinc-900/20">
+                <h3 class="font-sans font-bold text-base text-white mb-6 uppercase tracking-wider flex items-center gap-2.5">
+                    <i data-lucide="graduation-cap" class="w-4 h-4 text-zinc-400"></i> Academic Credentials
                 </h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
-                    <div class="col-span-1 md:col-span-2 space-y-1">
-                        <label class="text-[10px] font-mono text-gray-500 ml-1 uppercase">College Name*</label>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                    <div class="col-span-1 md:col-span-2 space-y-1.5">
+                        <label class="text-[11px] font-sans font-medium text-zinc-400 ml-1 uppercase">College Name*</label>
                         {{ form.college_name }}
                     </div>
-                    <div class="space-y-1">
-                        <label class="text-[10px] font-mono text-gray-500 ml-1 uppercase">Degree*</label>
+                    <div class="space-y-1.5">
+                        <label class="text-[11px] font-sans font-medium text-zinc-400 ml-1 uppercase">Degree*</label>
                         {{ form.degree }}
                     </div>
-                    <div class="space-y-1">
-                        <label class="text-[10px] font-mono text-gray-500 ml-1 uppercase">Branch / Stream*</label>
+                    <div class="space-y-1.5">
+                        <label class="text-[11px] font-sans font-medium text-zinc-400 ml-1 uppercase">Branch / Stream*</label>
                         {{ form.branch }}
                     </div>
-                    <div class="space-y-1 col-span-1 md:col-span-2">
-                        <label class="text-[10px] font-mono text-gray-500 ml-1 uppercase">Year of Study*</label>
+                    <div class="space-y-1.5 col-span-1 md:col-span-2">
+                        <label class="text-[11px] font-sans font-medium text-zinc-400 ml-1 uppercase">Year of Study*</label>
                         {{ form.year_of_study }}
                     </div>
                 </div>
             </div>
 
             <!-- Section 4: Professional Info -->
-            <div class="relative p-8 border border-white/10 bg-alien-dark/40 overflow-hidden">
-                <div class="hud-corner hud-tl opacity-30"></div>
-                <div class="hud-corner hud-tr opacity-30"></div>
-                <h3 class="font-orbitron text-xl text-alien mb-8 uppercase tracking-widest flex items-center gap-2">
-                    <i data-lucide="briefcase" class="w-5 h-5"></i> PROFESSIONAL_PROFILE
+            <div class="p-6 sm:p-8 rounded-xl border border-zinc-800 bg-zinc-900/20">
+                <h3 class="font-sans font-bold text-base text-white mb-6 uppercase tracking-wider flex items-center gap-2.5">
+                    <i data-lucide="briefcase" class="w-4 h-4 text-zinc-400"></i> Professional Profile
                 </h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
-                    <div class="col-span-1 md:col-span-2 space-y-1">
-                        <label class="text-[10px] font-mono text-gray-500 ml-1 uppercase">Skills Overview</label>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                    <div class="col-span-1 md:col-span-2 space-y-1.5">
+                        <label class="text-[11px] font-sans font-medium text-zinc-400 ml-1 uppercase">Skills Overview</label>
                         {{ form.skills }}
                     </div>
-                    <div class="space-y-1">
-                        <label class="text-[10px] font-mono text-gray-500 ml-1 uppercase">LinkedIn Profile URL</label>
+                    <div class="space-y-1.5">
+                        <label class="text-[11px] font-sans font-medium text-zinc-400 ml-1 uppercase">LinkedIn Profile URL</label>
                         {{ form.linkedin_url }}
                     </div>
-                    <div class="space-y-1">
-                        <label class="text-[10px] font-mono text-gray-500 ml-1 uppercase">GitHub Profile URL</label>
+                    <div class="space-y-1.5">
+                        <label class="text-[11px] font-sans font-medium text-zinc-400 ml-1 uppercase">GitHub Profile URL</label>
                         {{ form.github_url }}
                     </div>
                 </div>
             </div>
 
             <!-- Section 5: Referral & Checkout -->
-            <div class="relative p-8 border border-alien/40 bg-alien/5 overflow-hidden">
-                <div class="hud-corner hud-tl"></div>
-                <div class="hud-corner hud-tr"></div>
-                <h3 class="font-orbitron text-xl text-alien mb-8 uppercase tracking-widest flex items-center gap-2">
-                    <i data-lucide="ticket" class="w-5 h-5"></i> REFERRAL_AND_PAYMENT
+            <div class="p-6 sm:p-8 rounded-xl border border-zinc-800 bg-zinc-900/35">
+                <h3 class="font-sans font-bold text-base text-white mb-6 uppercase tracking-wider flex items-center gap-2.5">
+                    <i data-lucide="ticket" class="w-4 h-4 text-zinc-400"></i> Referral and Payment
                 </h3>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
-                    <div class="md:col-span-2 space-y-4">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                    <div class="lg:col-span-2 space-y-4">
                         <div class="space-y-2">
-                            <label class="text-[10px] font-mono text-alien ml-1 uppercase tracking-widest">Referral
-                                Code*</label>
-                            <div class="relative group">
+                            <label class="text-[11px] font-sans font-medium text-zinc-450 ml-1 uppercase tracking-wider">Referral Code*</label>
+                            <div class="relative flex items-center">
                                 {{ form.referral_code_text }}
                                 <button type="button" id="apply-code"
-                                    class="absolute right-2 top-2 bottom-2 px-4 bg-alien text-black font-orbitron font-bold text-xs uppercase hover:bg-white transition-colors">
-                                    APPLY
+                                    class="absolute right-1.5 top-1.5 bottom-5 px-4 bg-zinc-800 text-zinc-200 font-sans font-bold text-xs uppercase hover:bg-zinc-200 hover:text-zinc-950 rounded-md transition-colors h-[34px]">
+                                    Apply
                                 </button>
                             </div>
-                            <div id="referral-status" class="font-mono text-[10px] mt-2 h-4"></div>
+                            <div id="referral-status" class="font-mono text-[10px] mt-1.5 h-4"></div>
                         </div>
                     </div>
 
-                    <div class="bg-black/80 border border-alien/20 p-6 space-y-4">
-                        <div class="flex justify-between items-center text-xs text-gray-500 font-mono">
-                            <span>BASE_COST</span>
+                    <div class="bg-zinc-950 border border-zinc-850 p-5 rounded-lg space-y-3.5">
+                        <div class="flex justify-between items-center text-xs text-zinc-500 font-mono">
+                            <span>BASE COST</span>
                             <span>₹{{ package.price|floatformat:2 }}</span>
                         </div>
-                        <div class="flex justify-between items-center text-xs text-alien font-mono">
+                        <div class="flex justify-between items-center text-xs text-zinc-300 font-mono">
                             <span>DISCOUNT</span>
                             <span id="discount-amount">₹0.00</span>
                         </div>
-                        <div class="h-px bg-alien/20"></div>
-                        <div class="flex justify-between items-end font-orbitron">
-                            <span class="text-xs text-white opacity-50 mb-1 tracking-widest">PAYABLE</span>
-                            <span class="text-2xl text-white font-black" id="final-price">₹{{
-                                package.price|floatformat:2 }}</span>
+                        <div class="h-px bg-zinc-800"></div>
+                        <div class="flex justify-between items-end font-sans">
+                            <span class="text-xs text-zinc-400 font-medium mb-0.5">Payable</span>
+                            <span class="text-xl text-white font-extrabold" id="final-price">
+                                ₹{{ package.price|floatformat:2 }}
+                            </span>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Submit -->
-            <div class="text-center pt-8">
+            <div class="text-center pt-6">
                 <button type="submit"
-                    class="group/btn relative px-12 py-5 font-orbitron font-black text-lg tracking-[0.3em] uppercase overflow-hidden border-2 border-alien transition-all duration-500 hover:text-black hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(0,255,65,0.2)]">
-                    <div
-                        class="absolute inset-0 bg-alien translate-x-[-101%] group-hover/btn:translate-x-0 transition-transform duration-500 ease-out">
-                    </div>
-                    <span class="relative z-10">CONFIRM_MISSION_ENROLLMENT</span>
+                    class="w-full sm:w-auto px-10 py-4 font-sans font-bold text-base tracking-wider uppercase bg-zinc-200 text-zinc-950 rounded-lg hover:bg-white transition-all shadow-md active:scale-[0.98]">
+                    Confirm Enrollment
                 </button>
-                <p class="mt-6 font-mono text-[10px] text-gray-600 uppercase tracking-widest">By confirming, you agree
-                    to alienhouse training protocols.</p>
+                <p class="mt-4 font-mono text-[9px] text-zinc-600 uppercase tracking-widest">
+                    By confirming, you agree to alienhouse training protocols.
+                </p>
             </div>
         </form>
     </div>
@@ -189,17 +181,16 @@
         const finalPriceSpan = document.getElementById('final-price');
         const packageId = parseInt("{{ package.id }}", 10);
 
-
         applyBtn.addEventListener('click', async function () {
             const code = codeInput.value.trim();
             if (!code) {
                 statusDiv.innerText = '// ERROR: CODE_REQUIRED';
-                statusDiv.className = 'font-mono text-[10px] mt-2 text-red-500';
+                statusDiv.className = 'font-mono text-[10px] mt-1.5 text-red-400';
                 return;
             }
 
             statusDiv.innerText = '// PROCESSING...';
-            statusDiv.className = 'font-mono text-[10px] mt-2 text-alien animate-pulse';
+            statusDiv.className = 'font-mono text-[10px] mt-1.5 text-zinc-400 animate-pulse';
 
             try {
                 const response = await fetch(`/api/training/validate-referral/?code=${code}&package_id=${packageId}`);
@@ -207,21 +198,21 @@
 
                 if (data.valid) {
                     statusDiv.innerText = `// SUCCESS: DISCOUNT_${data.discount_percent}%_APPLIED`;
-                    statusDiv.className = 'font-mono text-[10px] mt-2 text-alien';
+                    statusDiv.className = 'font-mono text-[10px] mt-1.5 text-green-400';
                     discountSpan.innerText = `₹${data.discount_amount.toFixed(2)}`;
                     finalPriceSpan.innerText = `₹${data.final_price.toFixed(2)}`;
 
                     // Subtle UI feedback
-                    gsap.to(finalPriceSpan, { scale: 1.2, duration: 0.2, yoyo: true, repeat: 1 });
+                    gsap.to(finalPriceSpan, { scale: 1.1, duration: 0.15, yoyo: true, repeat: 1 });
                 } else {
                     statusDiv.innerText = `// ERROR: ${data.message.toUpperCase()}`;
-                    statusDiv.className = 'font-mono text-[10px] mt-2 text-red-500';
+                    statusDiv.className = 'font-mono text-[10px] mt-1.5 text-red-400';
                     discountSpan.innerText = '₹0.00';
                     finalPriceSpan.innerText = '₹{{ package.price|floatformat:2 }}';
                 }
             } catch (error) {
                 statusDiv.innerText = '// ERROR: UPLINK_FAILURE';
-                statusDiv.className = 'font-mono text-[10px] mt-2 text-red-500';
+                statusDiv.className = 'font-mono text-[10px] mt-1.5 text-red-400';
             }
         });
     });

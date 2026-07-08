@@ -1,0 +1,191 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}LMS Management Dashboard | {{ config.site_name }}{% endblock %}
+
+{% block content %}
+<div class="pt-28 pb-20 px-4 sm:px-6 min-h-screen bg-zinc-950">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+            <div>
+                <h1 class="font-sans font-extrabold text-2xl sm:text-3xl text-white tracking-tight">
+                    LMS Student Management
+                </h1>
+                <p class="text-zinc-500 font-mono text-xs uppercase mt-1 tracking-wider">
+                    // Staff Console
+                </p>
+            </div>
+            
+            <a href="{% url 'training_list' %}" class="inline-flex items-center gap-2 text-zinc-300 font-sans text-xs font-semibold hover:text-white border border-zinc-800 hover:border-zinc-700 bg-zinc-900/60 px-4 py-2 rounded-lg transition-all">
+                <i data-lucide="eye" class="w-4 h-4"></i>
+                View Frontend Courses
+            </a>
+        </div>
+
+        <!-- Metrics Row -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <!-- Metric Card 1 -->
+            <div class="bg-zinc-900/40 border border-zinc-800 rounded-xl p-5 shadow-sm">
+                <p class="text-xs font-mono text-zinc-500 uppercase tracking-wider">Total Registrations</p>
+                <h3 class="text-2xl font-bold text-white mt-1">{{ total_enrolled }}</h3>
+            </div>
+            <!-- Metric Card 2 -->
+            <div class="bg-zinc-900/40 border border-zinc-800 rounded-xl p-5 shadow-sm">
+                <p class="text-xs font-mono text-green-500 uppercase tracking-wider">Paid / Completed</p>
+                <h3 class="text-2xl font-bold text-green-400 mt-1">{{ total_paid }}</h3>
+            </div>
+            <!-- Metric Card 3 -->
+            <div class="bg-zinc-900/40 border border-zinc-800 rounded-xl p-5 shadow-sm">
+                <p class="text-xs font-mono text-yellow-500 uppercase tracking-wider">Pending Payments</p>
+                <h3 class="text-2xl font-bold text-yellow-500 mt-1">{{ total_pending }}</h3>
+            </div>
+            <!-- Metric Card 4 -->
+            <div class="bg-zinc-900/40 border border-zinc-800 rounded-xl p-5 shadow-sm">
+                <p class="text-xs font-mono text-blue-500 uppercase tracking-wider">Total Revenue</p>
+                <h3 class="text-2xl font-bold text-blue-400 mt-1">₹{{ total_revenue|floatformat:2 }}</h3>
+            </div>
+        </div>
+
+        <!-- Filter & Search Controls -->
+        <div class="bg-zinc-900/25 border border-zinc-800 rounded-xl p-5 mb-6">
+            <form method="GET" class="flex flex-col md:flex-row gap-4 items-end justify-between">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full md:w-auto md:flex-grow">
+                    <!-- Search Input -->
+                    <div class="space-y-1.5">
+                        <label class="text-[11px] font-sans font-medium text-zinc-450 uppercase ml-1">Search Student</label>
+                        <div class="relative">
+                            <input type="text" name="search" value="{{ search }}" placeholder="Name, email, or phone..." 
+                                   class="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-9 pr-4 py-2.5 text-sm text-white placeholder-zinc-550 focus:outline-none focus:border-zinc-500">
+                            <i data-lucide="search" class="w-4 h-4 text-zinc-500 absolute left-3 top-3.5"></i>
+                        </div>
+                    </div>
+
+                    <!-- Status Filter -->
+                    <div class="space-y-1.5">
+                        <label class="text-[11px] font-sans font-medium text-zinc-450 uppercase ml-1">Payment Status</label>
+                        <select name="status" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-zinc-500">
+                            <option value="">All Statuses</option>
+                            <option value="PENDING" {% if status_filter == 'PENDING' %}selected{% endif %}>Pending</option>
+                            <option value="COMPLETED" {% if status_filter == 'COMPLETED' %}selected{% endif %}>Completed</option>
+                            <option value="FAILED" {% if status_filter == 'FAILED' %}selected{% endif %}>Failed</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex gap-2 w-full md:w-auto">
+                    <button type="submit" class="flex-grow sm:flex-none px-6 py-2.5 bg-zinc-200 text-zinc-950 font-sans font-bold text-sm rounded-lg hover:bg-white transition-colors">
+                        Apply Filters
+                    </button>
+                    <a href="{% url 'lms_dashboard' %}" class="flex-grow sm:flex-none px-4 py-2.5 border border-zinc-800 text-zinc-400 font-sans font-medium text-sm rounded-lg hover:text-white hover:bg-zinc-900/50 transition-all text-center">
+                        Clear
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Student Records Table -->
+        <div class="bg-zinc-900/40 border border-zinc-800 rounded-xl overflow-hidden shadow-sm">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-zinc-800 bg-zinc-900/30 text-xs font-mono text-zinc-500 uppercase">
+                            <th class="p-4 sm:p-5">Student / Contact</th>
+                            <th class="p-4 sm:p-5">Specialization</th>
+                            <th class="p-4 sm:p-5">Package / Price</th>
+                            <th class="p-4 sm:p-5">Razorpay Info</th>
+                            <th class="p-4 sm:p-5">Payment Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-zinc-850">
+                        {% for item in enrollments %}
+                        <tr class="text-sm hover:bg-zinc-900/20 transition-colors">
+                            <!-- Contact Details -->
+                            <td class="p-4 sm:p-5">
+                                <div class="font-sans font-semibold text-white">{{ item.full_name }}</div>
+                                <div class="text-xs text-zinc-450 mt-0.5">{{ item.email }}</div>
+                                <div class="text-xs text-zinc-550 mt-0.5 font-mono">{{ item.phone }}</div>
+                            </td>
+                            <!-- Specialization Course details -->
+                            <td class="p-4 sm:p-5">
+                                <div class="text-zinc-200 font-medium">{{ item.sub_field.name }}</div>
+                                <div class="text-[11px] text-zinc-500 uppercase font-mono tracking-wider mt-0.5">
+                                    {{ item.field.name }}
+                                </div>
+                            </td>
+                            <!-- Pricing details -->
+                            <td class="p-4 sm:p-5">
+                                <div class="text-zinc-200 font-semibold">₹{{ item.final_price }}</div>
+                                <div class="text-xs text-zinc-500 line-through mt-0.5">₹{{ item.original_price }}</div>
+                                {% if item.referral_code %}
+                                <div class="text-[10px] text-zinc-450 bg-zinc-850 px-2 py-0.5 rounded border border-zinc-800/80 inline-block mt-1 font-mono">
+                                    CODE: {{ item.referral_code.code }}
+                                </div>
+                                {% endif %}
+                            </td>
+                            <!-- Order/Transaction Details -->
+                            <td class="p-4 sm:p-5 font-mono text-xs">
+                                <div class="text-zinc-400">Order: {{ item.razorpay_order_id|default:'N/A' }}</div>
+                                <div class="text-zinc-500 mt-0.5">Pay ID: {{ item.razorpay_payment_id|default:'N/A' }}</div>
+                            </td>
+                            <!-- Status Modifier Dropdown -->
+                            <td class="p-4 sm:p-5">
+                                <div class="flex items-center gap-2">
+                                    <select onchange="updateStatus('{{ item.id }}', this.value)" 
+                                            class="status-select bg-zinc-950 border border-zinc-800 rounded px-2.5 py-1 text-xs focus:outline-none focus:border-zinc-500 {% if item.payment_status == 'COMPLETED' %}text-green-400{% elif item.payment_status == 'PENDING' %}text-yellow-500{% else %}text-red-400{% endif %}">
+                                        <option value="PENDING" {% if item.payment_status == 'PENDING' %}selected{% endif %}>Pending</option>
+                                        <option value="COMPLETED" {% if item.payment_status == 'COMPLETED' %}selected{% endif %}>Completed</option>
+                                        <option value="FAILED" {% if item.payment_status == 'FAILED' %}selected{% endif %}>Failed</option>
+                                    </select>
+                                    <span id="loading-{{ item.id }}" class="hidden text-zinc-500 font-mono text-[10px]">Updating...</span>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="p-12 text-center text-zinc-500">
+                                <i data-lucide="users-2" class="w-12 h-12 text-zinc-700 mx-auto mb-3"></i>
+                                <p class="font-sans text-sm font-medium">No student registrations matching search criteria found.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function updateStatus(id, newStatus) {
+        const loadingSpan = document.getElementById(`loading-${id}`);
+        if(loadingSpan) loadingSpan.classList.remove('hidden');
+
+        try {
+            const response = await fetch(`/admin/lms-dashboard/update-status/${id}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: new URLSearchParams({
+                    'status': newStatus
+                })
+            });
+            const data = await response.json();
+            
+            if(data.status === 'success') {
+                // Flash green feedback
+                const selectElement = loadingSpan.previousElementSibling;
+                selectElement.className = `status-select bg-zinc-950 border border-zinc-800 rounded px-2.5 py-1 text-xs focus:outline-none focus:border-zinc-500 ${newStatus === 'COMPLETED' ? 'text-green-400' : newStatus === 'PENDING' ? 'text-yellow-500' : 'text-red-400'}`;
+            } else {
+                alert(`Error: ${data.message}`);
+            }
+        } catch (error) {
+            alert('Failed to execute update uplink request');
+        } finally {
+            if(loadingSpan) loadingSpan.classList.add('hidden');
+        }
+    }
+</script>
+{% endblock %}

@@ -15,6 +15,10 @@ urlpatterns = [
     path('training/', views.training_list, name='training_list'),
     path('training/subfield/<slug:slug>/', views.training_subfield_detail, name='training_subfield_detail'),
     path('training/enroll/<int:package_id>/', views.training_enroll, name='training_enroll'),
+    path('training/payment/callback/', views.training_payment_callback, name='training_payment_callback'),
     path('api/training/validate-referral/', views.validate_referral, name='validate_referral'),
-# 
+    
+    # LMS Dashboard (Staff/Admin Only)
+    path('admin/lms-dashboard/', views.lms_dashboard, name='lms_dashboard'),
+    path('admin/lms-dashboard/update-status/<int:pk>/', views.update_enrollment_status, name='update_enrollment_status'),
 ]
