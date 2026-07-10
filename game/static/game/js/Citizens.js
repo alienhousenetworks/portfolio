@@ -6,7 +6,7 @@ import {
     setCharacterPose, tickAnimator, updateLocomotionPose,
     animateCyclist,
 } from './AvatarFactory.js';
-import { isRiggedAvatar } from './CharacterAnimator.js';
+import { isRiggedAvatar, playEmote } from './CharacterAnimator.js';
 import { getBodyKeyForCitizen, floorYForAvatar, refreshGroundLift, getGroundLift } from './CharacterModels.js';
 
 const HUMAN_NAMES = ['Alex', 'Jordan', 'Sam', 'Riley', 'Casey', 'Morgan', 'Taylor', 'Jamie', 'Quinn', 'Avery'];

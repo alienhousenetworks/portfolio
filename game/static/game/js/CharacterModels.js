@@ -527,7 +527,6 @@ export function addGlassesToHead(model) {
         color: 0xe0f7fc,
         transparent: true,
         opacity: 0.3,
-        roughness: 0.1,
     });
 
     // Make beautiful round glasses matching the sketches
