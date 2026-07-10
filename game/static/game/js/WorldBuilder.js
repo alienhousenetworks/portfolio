@@ -62,6 +62,7 @@ export class WorldBuilder {
         this._buildingRows();
         this._streetProps();
         this._createDetailedShops();
+        this._createCentralTeaStall();
         this._crosswalks();
         this._wireNetwork();
         this._surroundingNature();
@@ -756,6 +757,42 @@ export class WorldBuilder {
         wire(-90, 6, -50, -90, 6, 50, 0.4);
         wire(-66, 6, -50, -66, 6, 50, 0.4);
         wire(-90, 6, 0, -30, 6, 0, 0.5);
+    }
+
+    _createCentralTeaStall() {
+        const g = new THREE.Group();
+        const woodMat = toonMat(0x8a7a68);
+        const counter = toonMesh(new THREE.BoxGeometry(2.8, 1.0, 1.4), woodMat);
+        counter.mesh.position.y = 0.5;
+        g.add(counter.group);
+
+        // Espresso machine / tea kettle block
+        const kettle = toonMesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), 0xb8c0bc);
+        kettle.mesh.position.set(-0.6, 1.1, 0.2);
+        g.add(kettle.group);
+
+        // Coffee cups
+        for (let i = 0; i < 3; i++) {
+            const cup = toonMesh(new THREE.CylinderGeometry(0.1, 0.08, 0.15, 6), 0xf8f8f0);
+            cup.mesh.position.set(0.3 + i * 0.3, 1.075, 0.3);
+            g.add(cup.group);
+        }
+
+        // Roof pillars
+        [[-1.3, -0.6], [1.3, -0.6], [-1.3, 0.6], [1.3, 0.6]].forEach(([px, pz]) => {
+            const pillar = toonMesh(new THREE.BoxGeometry(0.08, 2.4, 0.08), woodMat);
+            pillar.mesh.position.set(px, 1.2, pz);
+            g.add(pillar.group);
+        });
+
+        // Cloth canopy (soft orange/yellow tea stall colors)
+        const canopy = toonMesh(new THREE.BoxGeometry(3.0, 0.15, 1.6), 0xffbb33);
+        canopy.mesh.position.y = 2.4;
+        g.add(canopy.group);
+
+        g.position.set(0, 0, -22);
+        this.scene.add(g);
+        this.colliders.push({ x: 0, z: -22, w: 3.0, d: 1.8, h: 2.5, floorY: 0 });
     }
 
     // ─── Back-compat stubs (main.js calls these directly sometimes) ─────────────

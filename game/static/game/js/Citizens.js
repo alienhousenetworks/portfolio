@@ -103,7 +103,8 @@ export class CitizenManager {
             { name: 'Hiro', role: 'Flower Shopkeeper', x: -15, z: 46, line: 'Welcome to my flower shop! Fresh sakura and roses today!' },
             { name: 'Kenji', role: 'Chai Seller', x: -35, z: 46, line: 'Best hot tea in town! Made with local spices.' },
             { name: 'Ami', role: 'Shoe Shopkeeper', x: -95, z: 70, line: 'Looking for comfortable walking shoes? Try these!' },
-            { name: 'Saki', role: 'Restaurant Hostess', x: 20, z: -64, line: 'Table for two? We serve the best ramen and sushi!' }
+            { name: 'Saki', role: 'Restaurant Hostess', x: 20, z: -64, line: 'Table for two? We serve the best ramen and sushi!' },
+            { name: 'Ren', role: 'Barista', x: 0, z: -24, line: 'Fresh hot chai and matcha coffee! Welcome to the Atrium Cafe!' }
         ];
 
         shops.forEach((s, i) => {
@@ -344,7 +345,15 @@ export class CitizenManager {
             }
 
             if (c.speed === 0) {
-                if (isRiggedAvatar(c.mesh) && c.mesh.userData.pose !== 'idle') {
+                if (c.type === 'shopkeeper' || c.isHost) {
+                    if (!c.lastEmoteTime) c.lastEmoteTime = 0;
+                    c.lastEmoteTime += dt;
+                    if (c.lastEmoteTime > 5.0) {
+                        playEmote(c.mesh, 0.2);
+                        c.lastEmoteTime = 0;
+                    }
+                }
+                if (isRiggedAvatar(c.mesh) && c.mesh.userData.pose !== 'idle' && c.mesh.userData.pose !== 'emote') {
                     setCharacterPose(c.mesh, 'idle', 0.2);
                 }
                 return;

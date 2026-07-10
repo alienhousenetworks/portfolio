@@ -24,18 +24,18 @@ export class TerrainSystem {
             new THREE.Color('#a8dfc0'),
         ];
         
-        // Procedural rolling hills (submerged spheres matching the designs)
+        // Procedural rolling hills pushed outside the city core to prevent overlaps
         this.hills = [
-            { x: -65, z: -120, r: 46, hy: -36 },
-            { x: 70, z: -100, r: 42, hy: -32 },
-            { x: -80, z: 60, r: 52, hy: -41 },
-            { x: 80, z: 90, r: 48, hy: -38 },
-            { x: -130, z: -20, r: 60, hy: -49 },
-            { x: 130, z: 110, r: 56, hy: -46 },
-            { x: -50, z: -190, r: 42, hy: -32 },
-            { x: 50, z: -170, r: 42, hy: -32 },
-            { x: -45, z: 160, r: 36, hy: -27 },
-            { x: 45, z: 150, r: 36, hy: -27 },
+            { x: -75, z: -160, r: 46, hy: -30 }, 
+            { x: 75, z: -150, r: 42, hy: -26 },  
+            { x: -140, z: 120, r: 52, hy: -35 }, 
+            { x: 140, z: 130, r: 48, hy: -32 },  
+            { x: -170, z: -20, r: 60, hy: -40 }, 
+            { x: 170, z: 110, r: 56, hy: -36 },  
+            { x: -80, z: -210, r: 42, hy: -26 }, 
+            { x: 80, z: -190, r: 42, hy: -26 },  
+            { x: -85, z: 180, r: 36, hy: -22 },  
+            { x: 85, z: 170, r: 36, hy: -22 },   
         ];
     }
 

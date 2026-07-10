@@ -42,12 +42,26 @@ export function createBench() {
 
 export function createFlowerPot(seed = 0) {
     const g = new THREE.Group();
-    const pot = toonMesh(new THREE.BoxGeometry(0.45, 0.4, 0.45), PALETTE.concrete);
-    pot.mesh.position.y = 0.2;
+    // Clay pot
+    const pot = toonMesh(new THREE.CylinderGeometry(0.35, 0.25, 0.5, 8), 0xb98a67);
+    pot.mesh.position.y = 0.25;
     g.add(pot.group);
-    const flower = toonMesh(new THREE.BoxGeometry(0.5, 0.35, 0.5), [PALETTE.pink, PALETTE.yellow, PALETTE.purple][seed % 3]);
-    flower.mesh.position.y = 0.55;
-    g.add(flower.group);
+
+    // Green leafy base
+    const foliage = toonMesh(new THREE.SphereGeometry(0.4, 8, 8), 0x5ab860);
+    foliage.mesh.position.y = 0.55;
+    foliage.mesh.scale.set(1.2, 0.8, 1.2);
+    g.add(foliage.group);
+
+    // Small individual colored flower petals
+    const petalColors = [0xf8b0c0, 0xffd966, 0x8c7ceb, 0xd66565];
+    const col = petalColors[seed % petalColors.length];
+    for (let i = 0; i < 5; i++) {
+        const petal = toonMesh(new THREE.SphereGeometry(0.12, 6, 6), col);
+        const angle = (i / 5) * Math.PI * 2;
+        petal.mesh.position.set(Math.cos(angle) * 0.26, 0.65 + (i % 2) * 0.06, Math.sin(angle) * 0.26);
+        g.add(petal.group);
+    }
     return g;
 }
 
