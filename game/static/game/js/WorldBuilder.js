@@ -63,6 +63,10 @@ export class WorldBuilder {
             colliders: this.colliders,
             buildings: this.data.buildings || [],
             _cloudMeshes: this._cloudMeshes || [],
+            // EnvironmentSystem hooks
+            skyMesh: this._skyMesh || null,
+            lights: this._lightHandles || null,
+            groundGrass: this._groundGrass || null,
         };
     }
 
@@ -79,6 +83,7 @@ export class WorldBuilder {
     // ─── Sky ────────────────────────────────────────────────────────────────
     _skyDome() {
         const geo = new THREE.SphereGeometry(620, 32, 14, 0, Math.PI * 2, 0, Math.PI / 2);
+        geo.computeBoundingSphere();
         const cols = [];
         const pos = geo.attributes.position;
         for (let i = 0; i < pos.count; i++) {
@@ -89,9 +94,12 @@ export class WorldBuilder {
             cols.push(r, g, b);
         }
         geo.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
-        this.scene.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
-            vertexColors: true, side: THREE.BackSide,
-        })));
+        this._skyMesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
+            vertexColors: true, side: THREE.BackSide, fog: false,
+        }));
+        this._skyMesh.name = 'skyDome';
+        this._skyMesh.userData.isSkyDome = true;
+        this.scene.add(this._skyMesh);
         this.scene.fog = new THREE.Fog(0x7adede, 110, 360);
     }
 
@@ -118,17 +126,19 @@ export class WorldBuilder {
         }
     }
 
-    _lights() { setupCityLighting(this.scene); }
+    _lights() { this._lightHandles = setupCityLighting(this.scene); }
 
     // ─── Ground (larger city slab) ──────────────────────────────────────────
     _ground() {
+        const grassMat = toonMat(0x90c87a);
         const outer = new THREE.Mesh(
             new THREE.PlaneGeometry(WORLD.size, WORLD.size),
-            toonMat(0x90c87a)
+            grassMat
         );
         outer.rotation.x = -Math.PI / 2;
         outer.receiveShadow = true;
         this.scene.add(outer);
+        this._groundGrass = outer;
 
         const cityW = CITY_HX * 2;
         const cityD = CITY_HZ * 2;

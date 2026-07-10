@@ -14,6 +14,7 @@ import { TransitRideController } from './TransitRide.js';
 import { DISTRICT_DEFS, MAP_LEGEND, POI_MAP_COLORS, getDistrictAt } from './Districts.js';
 import { getZoneAt, getZoneLabel } from './CityZones.js';
 import { TransitPicker } from './TransitPicker.js';
+import { EnvironmentSystem } from './EnvironmentSystem.js';
 
 class Game {
     constructor(data) {
@@ -35,6 +36,18 @@ class Game {
         this.world = built;
         this.pois = built.pois;
         this.colliders = built.colliders;
+
+        this.environment = new EnvironmentSystem(this.scene, {
+            renderer: this.renderer,
+            handles: {
+                skyMesh: built.skyMesh,
+                lights: built.lights,
+                groundGrass: built.groundGrass,
+            },
+        });
+        this.environment.init().then((state) => {
+            console.info('[env]', state.label, state.location);
+        });
 
         this.transit = new TransitSystem(this.scene);
         const stops = this.transit.build();
@@ -463,6 +476,7 @@ class Game {
             this.terrain.update(dt);
         }
 
+        this.environment?.update(dt);
         this._animateClouds?.(dt);
         this.renderer.render(this.scene, this.camera);
     }

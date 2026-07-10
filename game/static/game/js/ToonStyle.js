@@ -89,10 +89,13 @@ export function sketchLines(parent, points, color = INK, opacity = 0.3) {
     return line;
 }
 
-/** Soft cozy anime-inspired ambient lighting */
+/** Soft cozy anime-inspired ambient lighting (handles for EnvironmentSystem) */
 export function setupCityLighting(scene) {
-    scene.add(new THREE.AmbientLight(0xfff5e4, 0.75));
-    scene.add(new THREE.HemisphereLight(0x91E5F2, 0x8CC97D, 0.45));
+    const ambient = new THREE.AmbientLight(0xfff5e4, 0.75);
+    scene.add(ambient);
+
+    const hemi = new THREE.HemisphereLight(0x91E5F2, 0x8CC97D, 0.45);
+    scene.add(hemi);
 
     const sun = new THREE.DirectionalLight(0xfff0c8, 1.8);
     sun.position.set(-80, 160, 70);
@@ -113,5 +116,13 @@ export function setupCityLighting(scene) {
     fill.position.set(80, 60, -100);
     scene.add(fill);
 
-    return { sun, fill };
+    // Warm street-level glow for night (intensity driven by EnvironmentSystem)
+    const nightGlow = new THREE.PointLight(0xffaa66, 0, 180, 1.4);
+    nightGlow.position.set(0, 12, 0);
+    nightGlow.visible = false;
+    scene.add(nightGlow);
+
+    const handles = { ambient, hemi, sun, fill, nightGlow };
+    scene.userData.envLights = handles;
+    return handles;
 }
