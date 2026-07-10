@@ -686,3 +686,100 @@ export function scatterStreetProps(scene, x, z, zone, seed, getHeight) {
 
     if (props.length) scene.add(g);
 }
+
+export function createBus(color = 0xF59A45) {
+    const g = new THREE.Group();
+
+    // Main Bus Body
+    const body = toonMesh(new THREE.BoxGeometry(2.2, 2.0, 6.5), color);
+    body.mesh.position.y = 1.25;
+    body.mesh.castShadow = true;
+    body.mesh.receiveShadow = true;
+    g.add(body.group);
+
+    // Roof
+    const roof = toonMesh(new THREE.BoxGeometry(2.2, 0.25, 6.5), 0xfafafa);
+    roof.mesh.position.set(0, 2.3, 0);
+    g.add(roof.group);
+
+    // Windows Band (Dark glass)
+    const glass = toonMesh(new THREE.BoxGeometry(2.24, 0.7, 5.8), 0x223338);
+    glass.mesh.position.set(0, 1.6, 0.1);
+    g.add(glass.group);
+
+    // Front Windshield
+    const windshield = toonMesh(new THREE.BoxGeometry(2.0, 0.7, 0.1), 0x223338);
+    windshield.mesh.position.set(0, 1.6, -3.21);
+    g.add(windshield.group);
+
+    // Wheels (4 cylinders)
+    const wheelGeo = new THREE.CylinderGeometry(0.48, 0.48, 0.4, 12);
+    wheelGeo.rotateZ(Math.PI / 2);
+    const wheelMat = toonMat(0x1a1a1a);
+
+    const positions = [
+        [-1.0, 0.48, -2.0], [1.0, 0.48, -2.0],
+        [-1.0, 0.48, 2.0], [1.0, 0.48, 2.0]
+    ];
+    positions.forEach(([wx, wy, wz]) => {
+        const wh = new THREE.Mesh(wheelGeo, wheelMat);
+        wh.position.set(wx, wy, wz);
+        wh.castShadow = true;
+        g.add(wh);
+    });
+
+    // Headlights
+    [-0.8, 0.8].forEach(sx => {
+        const hl = toonMesh(new THREE.BoxGeometry(0.24, 0.18, 0.1), 0xfff3a8, { emissive: 0xfff3a8, emissiveIntensity: 0.5 });
+        hl.mesh.position.set(sx, 0.7, -3.26);
+        g.add(hl.group);
+    });
+
+    return g;
+}
+
+export function createMetro() {
+    const g = new THREE.Group();
+
+    // Main Train Carriage Body
+    const body = toonMesh(new THREE.BoxGeometry(2.0, 2.0, 8.5), 0xd0d4d8);
+    body.mesh.position.y = 1.35;
+    body.mesh.castShadow = true;
+    body.mesh.receiveShadow = true;
+    g.add(body.group);
+
+    // Roof
+    const roof = toonMesh(new THREE.BoxGeometry(1.9, 0.2, 8.5), 0xa0a4a8);
+    roof.mesh.position.set(0, 2.4, 0);
+    g.add(roof.group);
+
+    // Subway Stripe (Tokyo Green style)
+    const stripe = toonMesh(new THREE.BoxGeometry(2.04, 0.22, 8.4), 0x79B36A);
+    stripe.mesh.position.set(0, 1.0, 0);
+    g.add(stripe.group);
+
+    // Windows Band (Dark glass)
+    const glass = toonMesh(new THREE.BoxGeometry(2.04, 0.65, 7.8), 0x223338);
+    glass.mesh.position.set(0, 1.7, 0);
+    g.add(glass.group);
+
+    // Wheels Bogies (Black cylinders)
+    const wheelGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.35, 12);
+    wheelGeo.rotateZ(Math.PI / 2);
+    const wheelMat = toonMat(0x1a1a1a);
+
+    const positions = [
+        [-0.9, 0.42, -2.8], [0.9, 0.42, -2.8],
+        [-0.9, 0.42, -1.8], [0.9, 0.42, -1.8],
+        [-0.9, 0.42, 1.8], [0.9, 0.42, 1.8],
+        [-0.9, 0.42, 2.8], [0.9, 0.42, 2.8]
+    ];
+    positions.forEach(([wx, wy, wz]) => {
+        const wh = new THREE.Mesh(wheelGeo, wheelMat);
+        wh.position.set(wx, wy, wz);
+        wh.castShadow = true;
+        g.add(wh);
+    });
+
+    return g;
+}

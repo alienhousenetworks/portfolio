@@ -1,16 +1,16 @@
 export const WORLD = {
-    size: 700,
+    size: 540,
     groundY: 0.15,
     roadWidth: 10,
     roadSpacing: 50,
-    bound: 320,
+    bound: 240,
     parkX: 0,
     parkZ: 80,
     parkRadius: 38,
     parkLawnRadius: 55,
     riverX: 0,
     riverWidth: 38,
-    riverLength: 620,
+    riverLength: 500,
     mountainY: 0,
 };
 

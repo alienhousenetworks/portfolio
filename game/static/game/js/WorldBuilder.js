@@ -12,7 +12,7 @@ import {
     createCherryTree, createLargeTree, createBambooCluster, createFountain,
     createBench, createCrosswalk, createSidewalk, scatterStreetProps,
     createPineTree, createWillowTree, createRockCluster, createBridgeLamp,
-    createStreetWall,
+    createStreetWall, createBus, createMetro,
 } from './Props.js';
 
 export class WorldBuilder {
@@ -54,6 +54,7 @@ export class WorldBuilder {
         this._urbanGreenery();
         this._riverForest();
         this._urbanDetails();
+        this._placeVehicles();
         this._pois();
         if (this.terrain) this.colliders.push(...this.terrain.wallColliders);
         return {
@@ -69,7 +70,7 @@ export class WorldBuilder {
     }
 
     _inPark(x, z, margin = 0) {
-        return Math.hypot(x - WORLD.parkX, z - WORLD.parkZ) < WORLD.parkRadius + margin;
+        return false;
     }
 
     _inRiver(x, z, margin = 0) {
@@ -164,12 +165,23 @@ export class WorldBuilder {
         mesh.receiveShadow = true;
         this.scene.add(mesh);
 
-        // Subtle pastel grass variation patches
+        // Concrete paved base slab for the city center (no grass/lawn inside)
+        const cityBaseGeo = new THREE.PlaneGeometry(330, 330);
+        cityBaseGeo.rotateX(-Math.PI / 2);
+        const cityBase = new THREE.Mesh(cityBaseGeo, toonMat(0xc4ccc9)); // Light teal-grey concrete
+        cityBase.position.set(0, 0.015, 0);
+        cityBase.receiveShadow = true;
+        this.scene.add(cityBase);
+
+        // Subtle pastel grass variation patches (only outside the city limits)
         for (let i = 0; i < 90; i++) {
             const s = i * 17 + 3;
             const px = ((s * 41) % 580) - 290;
             const pz = ((s * 67) % 580) - 290;
             if (this._inRiver(px, pz, 20)) continue;
+            // Skip inside the central paved city
+            if (Math.abs(px) < 165 && Math.abs(pz) < 165) continue;
+
             const col = i % 3 === 0 ? PALETTE.grassLight : (i % 3 === 1 ? PALETTE.grassDark : PALETTE.grassHighland);
             const patch = new THREE.Mesh(
                 new THREE.PlaneGeometry(15 + (s % 20), 12 + (s % 15)),
@@ -1383,13 +1395,16 @@ export class WorldBuilder {
             this.scene.add(tree);
         }
 
-        // Scattered trees in residential hills
+        // Scattered trees in residential hills (only outside the city limits)
         for (let i = 0; i < 45; i++) {
             const s = i * 19 + 5;
             const x = ((s * 43) % 280) - 140;
             const z = ((s * 71) % 280) - 140;
             if (this._inRiver(x, z, 20) || this._inPark(x, z, 25)) continue;
             if (this._isOccupied(x, z)) continue;
+            // Skip inside the central paved city
+            if (Math.abs(x) < 165 && Math.abs(z) < 165) continue;
+
             const tree = i % 5 === 0 ? createCherryTree() : createLargeTree(i);
             tree.position.set(x, this.getTerrainHeight(x, z), z);
             this.scene.add(tree);
@@ -1506,6 +1521,46 @@ export class WorldBuilder {
             id, type, position: new THREE.Vector3(x, ty, z), radius,
             title, subtitle, content, marker, district,
             mapLabel: title.length > 10 ? title.slice(0, 9) + '…' : title,
+        });
+     }
+
+    _placeVehicles() {
+        // Place static bus and metro carriage props inside the paved city streets
+        
+        // 1. Orange City Bus parked at (x: -15, z: -35)
+        const bus1 = createBus(0xF59A45);
+        const b1y = this.getTerrainHeight(-15, -35);
+        bus1.position.set(-15, b1y, -35);
+        bus1.rotation.y = Math.PI / 2; // Facing East/West
+        this.scene.add(bus1);
+        this.colliders.push({
+            x: -15, z: -35,
+            w: 6.5, d: 2.2, h: 2.5,
+            floorY: b1y
+        });
+
+        // 2. Green City Bus parked at (x: 35, z: 65)
+        const bus2 = createBus(0x79B36A);
+        const b2y = this.getTerrainHeight(35, 65);
+        bus2.position.set(35, b2y, 65);
+        bus2.rotation.y = 0; // Facing North/South
+        this.scene.add(bus2);
+        this.colliders.push({
+            x: 35, z: 65,
+            w: 2.2, d: 6.5, h: 2.5,
+            floorY: b2y
+        });
+
+        // 3. Silver Metro Train Carriage sitting on street side rails at (x: -65, z: 15)
+        const metro = createMetro();
+        const my = this.getTerrainHeight(-65, 15);
+        metro.position.set(-65, my, 15);
+        metro.rotation.y = Math.PI / 2;
+        this.scene.add(metro);
+        this.colliders.push({
+            x: -65, z: 15,
+            w: 8.5, d: 2.0, h: 2.5,
+            floorY: my
         });
     }
 }
