@@ -129,17 +129,17 @@ class Game {
 
     _renderer() {
         const el = document.getElementById('game-canvas');
-        this.renderer = new THREE.WebGLRenderer({ antialias: true });
+        this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
         this.renderer.setSize(innerWidth, innerHeight);
         this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
         this.renderer.shadowMap.enabled = true;
-        this.renderer.shadowMap.type = THREE.BasicShadowMap;
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         this.renderer.outputColorSpace = THREE.SRGBColorSpace;
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
         this.renderer.toneMappingExposure = 1.05;
         el.appendChild(this.renderer.domElement);
 
-        this.camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.5, 800);
+        this.camera = new THREE.PerspectiveCamera(58, innerWidth / innerHeight, 0.5, 900);
         this.camera.position.set(0, 8, 60);
 
         addEventListener('resize', () => {
@@ -181,7 +181,14 @@ class Game {
             this.playerCtrl.syncCameraToPlayer();
             this.playerCtrl.enable();
             document.getElementById('hud')?.classList.add('visible');
+            document.getElementById('side-toolbar')?.classList.add('visible');
             document.querySelector('.back-link')?.classList.add('visible');
+            document.getElementById('height-control')?.classList.add('visible');
+            const hint = document.getElementById('physics-hint');
+            if (hint) {
+                hint.classList.add('visible');
+                setTimeout(() => hint.classList.add('fade-out'), 7000);
+            }
         });
     }
 
@@ -351,25 +358,42 @@ class Game {
         const w = c.width, h = c.height, sc = w / 400;
         const cx = w / 2, cy = h / 2;
 
-        ctx.fillStyle = '#1e2a1e';
+        // Soft green grass base
+        ctx.fillStyle = '#a6d88f';
         ctx.fillRect(0, 0, w, h);
 
-        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-        ctx.lineWidth = 1;
+        // Grid roads
+        ctx.strokeStyle = '#8a9498';
+        ctx.lineWidth = Math.max(2, WORLD.roadWidth * sc);
         for (let i = -3; i <= 3; i++) {
             const off = i * WORLD.roadSpacing * sc;
             ctx.beginPath(); ctx.moveTo(cx + off, 0); ctx.lineTo(cx + off, h); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(0, cy + off); ctx.lineTo(w, cy + off); ctx.stroke();
         }
 
+        // River (blue)
+        const rcx = cx + WORLD.riverX * sc;
+        ctx.fillStyle = '#5aabde';
+        ctx.fillRect(rcx - WORLD.riverWidth * sc / 2, 0, WORLD.riverWidth * sc, h);
+
+        // River center dashes
+        ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+        ctx.lineWidth = 1.2;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(rcx, 0);
+        ctx.lineTo(rcx, h);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
         Object.values(DISTRICT_DEFS).forEach(d => {
             if (d.id === 'downtown') return;
             const dx = cx + d.x * sc, dy = cy + d.z * sc, r = d.radius * sc;
-            ctx.fillStyle = d.color + '33';
+            ctx.fillStyle = d.color + '28';
             ctx.beginPath();
             ctx.arc(dx, dy, r, 0, 6.28);
             ctx.fill();
-            ctx.strokeStyle = d.color + '88';
+            ctx.strokeStyle = d.color + '80';
             ctx.lineWidth = 1;
             ctx.stroke();
             ctx.fillStyle = d.color;
@@ -387,22 +411,24 @@ class Game {
             ctx.arc(mx, my, item.type === 'hq' ? 5 : 3.5, 0, 6.28);
             ctx.fill();
             if (item.mapLabel && ['hq', 'service', 'project', 'contact'].includes(item.type)) {
-                ctx.fillStyle = 'rgba(255,255,255,0.85)';
+                ctx.fillStyle = 'rgba(30,42,56,0.8)';
                 ctx.font = '7px sans-serif';
                 ctx.textAlign = 'left';
                 ctx.fillText(item.mapLabel, mx + 5, my + 2);
             }
         });
 
+        // Player dot
         const px = cx + this.player.position.x * sc;
         const py = cy + this.player.position.z * sc;
-        ctx.fillStyle = '#fff';
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 1;
+        ctx.fillStyle = '#1e2a38';
         ctx.beginPath();
-        ctx.arc(px, py, 4, 0, 6.28);
+        ctx.arc(px, py, 5.5, 0, 6.28);
         ctx.fill();
-        ctx.stroke();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(px, py, 3.5, 0, 6.28);
+        ctx.fill();
     }
 
     _loop() {
@@ -437,6 +463,7 @@ class Game {
         this.renderer.render(this.scene, this.camera);
     }
 }
+
 
 function loadGameData() {
     const el = document.getElementById('game-data');

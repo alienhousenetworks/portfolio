@@ -5,16 +5,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ config.site_name|default:"ALIENHOUSE" }} | City Explorer</title>
-    <link rel="stylesheet" href="{% static 'game/css/world.css' %}?v=22">
+    <link rel="stylesheet" href="{% static 'game/css/world.css' %}?v=23">
     <script type="importmap">
     {
         "imports": {
             "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
             "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
-            "./Props.js": "/static/game/js/Props.js?v=42",
-            "./WorldBuilder.js": "/static/game/js/WorldBuilder.js?v=42",
-            "./Buildings.js": "/static/game/js/Buildings.js?v=42",
-            "./CinematicIntro.js": "/static/game/js/CinematicIntro.js?v=42"
+            "./Props.js": "/static/game/js/Props.js?v=43",
+            "./WorldBuilder.js": "/static/game/js/WorldBuilder.js?v=43",
+            "./Buildings.js": "/static/game/js/Buildings.js?v=43",
+            "./CinematicIntro.js": "/static/game/js/CinematicIntro.js?v=43"
         }
     }
     </script>
@@ -44,6 +44,7 @@
     <div id="game-canvas"></div>
     <a href="{% url 'index' %}" class="back-link">&larr; Back to site</a>
 
+    <!-- Main HUD panels -->
     <div id="hud">
         <div class="hud-panel hud-top-left"><div class="hud-label">Position</div><div id="coord-display">0, 0</div></div>
         <div class="hud-panel hud-top-right"><div class="hud-label">Area</div><div id="zone-display">—</div></div>
@@ -55,6 +56,27 @@
         <div class="hud-panel hud-bottom-right">
             <div class="hud-label">City</div><div id="site-display">{{ config.site_name|default:"ALIENHOUSE" }}</div>
             <div class="hud-label" style="margin-top:6px">Outfit</div><div id="outfit-display">Classic</div>
+        </div>
+    </div>
+
+    <!-- Right-side toolbar (abeto.co style) -->
+    <div id="side-toolbar">
+        <button class="toolbar-btn" id="btn-toolbar-map" title="Toggle minimap">🗺️</button>
+        <button class="toolbar-btn" id="btn-toolbar-outfit" title="Change outfit [C]">👕</button>
+        <button class="toolbar-btn" id="btn-toolbar-emote" title="Emote [G]">💬</button>
+        <button class="toolbar-btn" id="btn-toolbar-jump" title="Jump [Space]">⬆️</button>
+    </div>
+
+    <!-- Emote popup (abeto.co style) -->
+    <div class="side-popup" id="emote-popup">
+        <div class="side-popup-title">Emotes</div>
+        <div class="side-popup-row">
+            <button class="emote-btn" data-emote="wave" title="Wave">👋</button>
+            <button class="emote-btn" data-emote="dance" title="Dance">💃</button>
+            <button class="emote-btn" data-emote="cheer" title="Cheer">🙌</button>
+            <button class="emote-btn" data-emote="think" title="Think">🤔</button>
+            <button class="emote-btn" data-emote="love" title="Love">❤️</button>
+            <button class="emote-btn" data-emote="cool" title="Cool">😎</button>
         </div>
     </div>
 
@@ -95,13 +117,13 @@
     <div id="dialogue-box">
         <div class="dialogue-speaker"></div>
         <div class="dialogue-text"></div>
-        <div class="dialogue-continue">Click or E to continue</div>
+        <div class="dialogue-continue">Click or press E to continue ›</div>
     </div>
 
     <div id="transit-picker">
         <button id="transit-picker-close" class="info-panel-close">✕</button>
-        <div id="transit-picker-title" class="info-panel-title">Choose Destination City</div>
-        <div id="transit-picker-sub" class="info-panel-subtitle">Transit stop</div>
+        <div id="transit-picker-title" class="info-panel-title transit-title">Choose Destination City</div>
+        <div id="transit-picker-sub" class="info-panel-subtitle transit-sub">Transit stop</div>
         <input id="transit-search" type="text" placeholder="Search cities, services, about us..." autocomplete="off" />
         <div id="transit-dest-list"></div>
         <button id="transit-picker-cancel" class="transit-cancel-btn">Cancel</button>
@@ -115,11 +137,11 @@
     </div>
 
     {{ game_data|json_script:"game-data" }}
-    <script type="module" src="{% static 'game/js/main.js' %}?v=38"></script>
+    <script type="module" src="{% static 'game/js/main.js' %}?v=39"></script>
 
-    <!-- Height slider logic -->
     <script>
     document.addEventListener('DOMContentLoaded', () => {
+        // ── Height slider ──────────────────────────────────────────
         const slider = document.getElementById('height-slider');
         const valueEl = document.getElementById('height-value');
         const control = document.getElementById('height-control');
@@ -130,7 +152,6 @@
             window.dispatchEvent(new CustomEvent('player-height-change', { detail: { height: h } }));
         });
 
-        // Show height control only when playing
         const observer = new MutationObserver(() => {
             const hud = document.getElementById('hud');
             if (hud?.classList.contains('visible')) {
@@ -144,6 +165,67 @@
         setTimeout(() => {
             document.getElementById('physics-hint')?.classList.add('fade-out');
         }, 8000);
+
+        // ── Side toolbar ───────────────────────────────────────────
+        const toolbar = document.getElementById('side-toolbar');
+        const emotePopup = document.getElementById('emote-popup');
+
+        // Show toolbar when HUD is visible
+        const hudObserver = new MutationObserver(() => {
+            if (hud?.classList.contains('visible')) {
+                toolbar?.classList.add('visible');
+            }
+        });
+        if (hud) hudObserver.observe(hud, { attributes: true });
+
+        // Map toggle button — toggle minimap visibility
+        document.getElementById('btn-toolbar-map')?.addEventListener('click', () => {
+            const mapPanel = document.querySelector('.hud-map-panel');
+            if (mapPanel) {
+                mapPanel.style.display = mapPanel.style.display === 'none' ? '' : 'none';
+                document.getElementById('btn-toolbar-map')?.classList.toggle('active');
+            }
+        });
+
+        // Outfit button — trigger C key press (cycle outfit)
+        document.getElementById('btn-toolbar-outfit')?.addEventListener('click', () => {
+            document.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyC', bubbles: true }));
+            const btn = document.getElementById('btn-toolbar-outfit');
+            btn?.classList.add('active');
+            setTimeout(() => btn?.classList.remove('active'), 300);
+        });
+
+        // Emote button — toggle emote popup (abeto.co style)
+        document.getElementById('btn-toolbar-emote')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            emotePopup?.classList.toggle('active');
+            document.getElementById('btn-toolbar-emote')?.classList.toggle('active');
+        });
+
+        // Emote buttons in popup — trigger G emote
+        document.querySelectorAll('.emote-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyG', bubbles: true }));
+                emotePopup?.classList.remove('active');
+                document.getElementById('btn-toolbar-emote')?.classList.remove('active');
+            });
+        });
+
+        // Jump button
+        document.getElementById('btn-toolbar-jump')?.addEventListener('click', () => {
+            document.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space', bubbles: true }));
+            setTimeout(() => {
+                document.dispatchEvent(new KeyboardEvent('keyup', { code: 'Space', bubbles: true }));
+            }, 100);
+        });
+
+        // Close emote popup when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!emotePopup?.contains(e.target) && e.target.id !== 'btn-toolbar-emote') {
+                emotePopup?.classList.remove('active');
+                document.getElementById('btn-toolbar-emote')?.classList.remove('active');
+            }
+        });
     });
     </script>
 </body>
