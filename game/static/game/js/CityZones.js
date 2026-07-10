@@ -54,8 +54,8 @@ export function getZoneAt(x, z) {
 
     // Small central plaza
     if (Math.hypot(x - WORLD.parkX, z - WORLD.parkZ) < WORLD.parkRadius + 6) return ZONE_TYPES.PARK;
-    // River on far west of expanded city
-    if (x < (WORLD.riverX ?? -155) + 18 && az < 160) return ZONE_TYPES.WATERFRONT;
+    // River west of city slab
+    if (x < (WORLD.riverX ?? -180) + 18 && az < 180) return ZONE_TYPES.WATERFRONT;
     if (z > 220 && ax < 100) return ZONE_TYPES.BEACH;
     if (z < -220 && x < -80) return ZONE_TYPES.BAMBOO;
     if (z < -220 && x > 80) return ZONE_TYPES.INDUSTRIAL;

@@ -4,7 +4,7 @@
  * tree-tunnel streets (buildings sit behind the trees).
  */
 import * as THREE from 'three';
-import { WORLD, PALETTE } from './config.js';
+import { WORLD, PALETTE, isCityFlat } from './config.js';
 import { toonMat, toonMesh, setupCityLighting, INK } from './ToonStyle.js';
 import { buildJapaneseBuilding, buildJapaneseCorner, createVendingMachine } from './Buildings.js';
 import {
@@ -145,12 +145,13 @@ export class WorldBuilder {
         curb.mesh.position.y = 0.1;
         this.scene.add(curb.group);
 
-        // River along far west edge of the expanded city
-        const riverGeo = new THREE.PlaneGeometry(22, cityD + 20);
+        // River west of the city slab (no overlap with roads/buildings)
+        const riverX = WORLD.riverX ?? -(CITY_HX + 20);
+        const riverGeo = new THREE.PlaneGeometry(WORLD.riverWidth ?? 28, cityD + 40);
         const riverMat = toonMat(0x7ac4d0, { transparent: true, opacity: 0.85 });
         const river = new THREE.Mesh(riverGeo, riverMat);
         river.rotation.x = -Math.PI / 2;
-        river.position.set(WORLD.riverX, 0.03, 0);
+        river.position.set(riverX, 0.03, 0);
         this.scene.add(river);
     }
 
@@ -173,8 +174,9 @@ export class WorldBuilder {
         if (Math.abs(z - ROAD.south.z) < ROAD.south.w / 2 + ROAD.sw + 3 + pad
             && x >= ROAD.south.x1 - pad && x <= ROAD.south.x2 + pad) return true;
 
-        // River
-        if (x < WORLD.riverX + 14) return true;
+        // River (west of city)
+        const riverX = WORLD.riverX ?? -(CITY_HX + 20);
+        if (x < riverX + (WORLD.riverWidth ?? 28) / 2 + 4) return true;
 
         return false;
     }
@@ -693,20 +695,22 @@ export class WorldBuilder {
 
     // ─── Surrounding nature ─────────────────────────────────────────────────
     _surroundingNature() {
-        // Outer ring of trees past the larger city edge
+        // Outer ring of trees — strictly outside city + clear margin
+        const minDist = Math.hypot(CITY_HX, CITY_HZ) + (WORLD.cityClearMargin ?? 28) + 10;
         for (let i = 0; i < 140; i++) {
             const seed = i * 31 + 7;
             const angle = (seed * 0.618033) * Math.PI * 2;
-            const dist = 175 + (seed % 90);
+            const dist = minDist + 15 + (seed % 95);
             const x = Math.cos(angle) * dist;
             const z = Math.sin(angle) * dist;
+            if (isCityFlat(x, z, WORLD.cityClearMargin ?? 28)) continue;
             const gy = this.getTerrainHeight(x, z);
             const tree = this._pickTree(seed);
             tree.position.set(x, gy, z);
             this.scene.add(tree);
         }
 
-        // Soft green pockets in large blocks (not on roads)
+        // Soft green pockets in city blocks (street trees only — not hills)
         const pockets = [
             [-55, -45], [55, -45], [-55, 45], [55, 45],
             [-100, -45], [100, -45], [-100, 45], [100, 45],
@@ -716,12 +720,11 @@ export class WorldBuilder {
         pockets.forEach(([x, z], i) => {
             if (this._isRoadOrPark(x, z, 4)) return;
             for (let k = 0; k < 3; k++) {
+                const tx = x + ((k * 7 + 3) % 5 - 2) * 2.2;
+                const tz = z + ((k * 11 + 5) % 5 - 2) * 2.2;
+                if (this._isRoadOrPark(tx, tz, 2)) continue;
                 const tree = this._pickTree(i * 10 + k);
-                tree.position.set(
-                    x + ((k * 7 + 3) % 5 - 2) * 2.2,
-                    0,
-                    z + ((k * 11 + 5) % 5 - 2) * 2.2
-                );
+                tree.position.set(tx, 0, tz);
                 tree.scale.setScalar(0.85 + (k % 3) * 0.1);
                 this.scene.add(tree);
             }
@@ -739,29 +742,51 @@ export class WorldBuilder {
     }
 
     _backgroundHills() {
+        // Decorative silhouette hills — centers far outside city so spheres never clip slab
         const hillMat = toonMat(0x70a458);
         const hillDark = toonMat(0x568040);
+        const clearX = CITY_HX + (WORLD.cityClearMargin ?? 28);
+        const clearZ = CITY_HZ + (WORLD.cityClearMargin ?? 28);
 
         const hill = (cx, cz, rx, ry, rz, mat = hillMat) => {
+            // Reject any hill that would intersect the city AABB
+            const dx = Math.max(Math.abs(cx) - clearX, 0);
+            const dz = Math.max(Math.abs(cz) - clearZ, 0);
+            const reach = Math.hypot(rx, rz);
+            if (dx * dx + dz * dz < reach * reach * 0.25) {
+                // Push further out along the dominant axis
+                if (Math.abs(cx) >= Math.abs(cz)) {
+                    cx = Math.sign(cx || 1) * (clearX + rx + 25);
+                } else {
+                    cz = Math.sign(cz || 1) * (clearZ + rz + 25);
+                }
+            }
             const m = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), mat);
             m.scale.set(rx, ry, rz);
-            m.position.set(cx, ry * -0.3, cz);
+            // Sit on ground outside city — no upward bulge into urban area
+            m.position.set(cx, ry * -0.35, cz);
             m.receiveShadow = true;
             m.castShadow = true;
             this.scene.add(m);
         };
 
-        hill(-55, -195, 48, 14, 38);
-        hill(15, -200, 60, 20, 46);
-        hill(85, -188, 44, 12, 34);
-        hill(-15, -190, 35, 10, 28, hillDark);
-        hill(-45, 198, 50, 16, 40);
-        hill(28, 208, 58, 18, 44);
-        hill(95, 192, 42, 13, 32);
-        hill(195, -35, 36, 16, 55);
-        hill(188, 42, 40, 13, 50);
-        hill(-192, -28, 38, 18, 54);
-        hill(-185, 48, 42, 13, 50, hillDark);
+        // North
+        hill(-70, -270, 52, 16, 42);
+        hill(25, -285, 65, 22, 50);
+        hill(110, -265, 48, 14, 38);
+        hill(-20, -255, 38, 12, 32, hillDark);
+        // South
+        hill(-55, 275, 54, 18, 44);
+        hill(40, 290, 60, 20, 48);
+        hill(115, 270, 46, 14, 36);
+        // East
+        hill(275, -45, 42, 18, 58);
+        hill(285, 55, 46, 16, 54);
+        hill(270, 145, 40, 14, 48);
+        // West (past river)
+        hill(-285, -40, 44, 20, 58);
+        hill(-295, 55, 48, 16, 54, hillDark);
+        hill(-275, 145, 40, 14, 48);
     }
 
     // ─── POIs ───────────────────────────────────────────────────────────────

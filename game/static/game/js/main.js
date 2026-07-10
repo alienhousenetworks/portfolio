@@ -384,9 +384,9 @@ class Game {
         ctx.fillStyle = '#a8b4b0';
         ctx.fillRect(cx - 165 * sc, cy - 145 * sc, 330 * sc, 290 * sc);
 
-        // 3. River along the West side
+        // 3. River west of city slab
         ctx.fillStyle = '#7ac4d0';
-        ctx.fillRect(cx - 168 * sc, cy - 150 * sc, 18 * sc, 300 * sc);
+        ctx.fillRect(cx - 194 * sc, cy - 150 * sc, 18 * sc, 300 * sc);
 
         // 4. Few roads only (tree-avenue layout)
         ctx.fillStyle = '#6a747c';

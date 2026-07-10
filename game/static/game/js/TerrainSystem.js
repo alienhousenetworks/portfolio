@@ -1,11 +1,11 @@
 import * as THREE from 'three';
-import { WORLD, PALETTE, BRIDGES } from './config.js';
+import { WORLD, PALETTE, BRIDGES, isCityFlat } from './config.js';
 import { toonMat, toonMesh, getGradientMap } from './ToonStyle.js';
 
 const MAX_STEP = 2.2;
 const STAIR_MAX_STEP = 2.5;
 
-/** Curved hills + stairs — height query & walkability for the residential slopes. */
+/** Curved hills + stairs — only OUTSIDE the city (flat slab stays clear). */
 export class TerrainSystem {
     constructor() {
         this.terraces = [];
@@ -23,19 +23,26 @@ export class TerrainSystem {
             new THREE.Color('#d4f2e0'),
             new THREE.Color('#a8dfc0'),
         ];
-        
-        // Procedural rolling hills pushed outside the city core to prevent overlaps
+
+        // Rolling hills — centers + radius fully outside city slab + clear margin
+        // city ~±165 x ±145; margin 28 → keep |x|-r > 193 or |z|-r > 173
         this.hills = [
-            { x: -75, z: -160, r: 46, hy: -30 }, 
-            { x: 75, z: -150, r: 42, hy: -26 },  
-            { x: -140, z: 120, r: 52, hy: -35 }, 
-            { x: 140, z: 130, r: 48, hy: -32 },  
-            { x: -170, z: -20, r: 60, hy: -40 }, 
-            { x: 170, z: 110, r: 56, hy: -36 },  
-            { x: -80, z: -210, r: 42, hy: -26 }, 
-            { x: 80, z: -190, r: 42, hy: -26 },  
-            { x: -85, z: 180, r: 36, hy: -22 },  
-            { x: 85, z: 170, r: 36, hy: -22 },   
+            // North band
+            { x: -90, z: -250, r: 48, hy: -30 },
+            { x: 20, z: -265, r: 55, hy: -34 },
+            { x: 110, z: -245, r: 46, hy: -28 },
+            // South band
+            { x: -80, z: 250, r: 48, hy: -30 },
+            { x: 30, z: 265, r: 55, hy: -34 },
+            { x: 120, z: 248, r: 44, hy: -28 },
+            // West band (beyond river / city)
+            { x: -250, z: -60, r: 50, hy: -32 },
+            { x: -260, z: 50, r: 48, hy: -30 },
+            { x: -245, z: 150, r: 42, hy: -26 },
+            // East band
+            { x: 250, z: -50, r: 50, hy: -32 },
+            { x: 260, z: 60, r: 48, hy: -30 },
+            { x: 245, z: 150, r: 42, hy: -26 },
         ];
     }
 
@@ -82,12 +89,21 @@ export class TerrainSystem {
         return Math.hypot(x - WORLD.parkX, z - WORLD.parkZ) < (WORLD.parkLawnRadius ?? WORLD.parkRadius + 15);
     }
 
+    /** City slab + small pad: always flat (no hills / slopes / embankments). */
+    _isCityFlat(x, z) {
+        return isCityFlat(x, z, WORLD.cityClearMargin ?? 28);
+    }
+
     /** Walkable height on open lawn / hills (no bridge decks). */
     _lawnHeightAt(x, z) {
+        // Hard rule: nothing raises the ground inside the city
+        if (this._isCityFlat(x, z)) return WORLD.groundY;
         if (this._isParkLawn(x, z)) return WORLD.groundY;
 
         for (const s of this.stairs) {
             if (this._inRect(x, z, s)) {
+                // Never apply stairs that sit inside the city
+                if (this._isCityFlat((s.xMin + s.xMax) / 2, (s.zMin + s.zMax) / 2)) continue;
                 const t = s.axis === 'z'
                     ? (z - s.zMin) / (s.zMax - s.zMin)
                     : (x - s.xMin) / (s.xMax - s.xMin);
@@ -102,6 +118,9 @@ export class TerrainSystem {
 
         let maxH = WORLD.groundY;
         for (const h of this.hills) {
+            // Skip any hill whose footprint would still touch the city (safety)
+            if (this._hillTouchesCity(h)) continue;
+
             const dx = x - h.x;
             const dz = z - h.z;
             const distSq = dx * dx + dz * dz;
@@ -118,6 +137,15 @@ export class TerrainSystem {
         }
 
         return maxH;
+    }
+
+    _hillTouchesCity(h) {
+        const hx = (WORLD.cityHalfX ?? 165) + (WORLD.cityClearMargin ?? 28);
+        const hz = (WORLD.cityHalfZ ?? 145) + (WORLD.cityClearMargin ?? 28);
+        // Axis-aligned distance from hill center to city AABB, then compare to radius
+        const dx = Math.max(Math.abs(h.x) - hx, 0);
+        const dz = Math.max(Math.abs(h.z) - hz, 0);
+        return (dx * dx + dz * dz) < (h.r * h.r);
     }
 
     getHeightAt(x, z, currentY = null) {
@@ -208,51 +236,15 @@ export class TerrainSystem {
     }
 
     _defineZones() {
-        const rw = WORLD.riverWidth / 2 + 21;
-        const west = (edgeX, z0, z1, y0, y1) => ({ x: -edgeX, z0, z1, y0, y1 });
-        const east = (edgeX, z0, z1, y0, y1) => ({ x: edgeX, z0, z1, y0, y1 });
+        // No embankment stairs inside the city — only short hillside paths far outside.
+        this.stairs = [];
 
-        const stairDefs = [
-            west(rw + 14, -170, -140, 1.2, 2.4),
-            west(rw + 14, -55, -25, 1.2, 2.4),
-            west(rw + 14, 35, 65, 1.2, 2.4),
-            west(rw + 14, 140, 170, 1.2, 2.4),
-            west(rw + 20, -130, -100, 2.4, 3.8),
-            west(rw + 20, 0, 30, 2.4, 3.8),
-            west(rw + 20, 100, 130, 2.4, 3.8),
-            west(rw + 28, -95, -65, 3.8, 5.5),
-            west(rw + 28, 55, 85, 3.8, 5.5),
-            west(rw + 38, -75, -45, 5.5, 7.5),
-            west(rw + 38, 70, 100, 5.5, 7.5),
-            east(rw + 14, -160, -130, 1.2, 2.4),
-            east(rw + 14, -45, -15, 1.2, 2.4),
-            east(rw + 14, 45, 75, 1.2, 2.4),
-            east(rw + 14, 150, 180, 1.2, 2.4),
-            east(rw + 20, -110, -80, 2.4, 3.8),
-            east(rw + 20, 15, 45, 2.4, 3.8),
-            east(rw + 20, 110, 140, 2.4, 3.8),
-            east(rw + 28, -85, -55, 3.8, 5.5),
-            east(rw + 28, 60, 90, 3.8, 5.5),
-            east(rw + 38, -65, -35, 5.5, 7.5),
-            east(rw + 38, 75, 105, 5.5, 7.5),
-        ];
-
-        stairDefs.forEach(def => {
-            const w = 3.2;
-            this.stairs.push({
-                xMin: def.x - w / 2, xMax: def.x + w / 2,
-                zMin: Math.min(def.z0, def.z1), zMax: Math.max(def.z0, def.z1),
-                y0: def.y0, y1: def.y1,
-                axis: def.axis || 'z',
-                x: def.x,
-            });
-        });
-
+        // Outer nature paths only (all points outside city + margin)
         this.slopes = [
-            { pts: [[-200, -180, 7.5], [-160, -140, 6.2], [-120, -110, 4.8], [-80, -90, 3.2]], w: 9 },
-            { pts: [[200, -170, 7.5], [165, -130, 6.2], [130, -100, 4.8], [95, -80, 3.2]], w: 9 },
-            { pts: [[-190, 150, 7.5], [-150, 120, 6.2], [-110, 100, 4.8], [-70, 85, 3.2]], w: 8 },
-            { pts: [[190, 140, 7.5], [155, 115, 6.2], [120, 95, 4.8], [85, 80, 3.2]], w: 8 },
+            { pts: [[-250, -220, 6.5], [-235, -200, 5.0], [-220, -180, 3.0]], w: 8 },
+            { pts: [[250, -210, 6.5], [235, -190, 5.0], [220, -170, 3.0]], w: 8 },
+            { pts: [[-250, 200, 6.5], [-235, 180, 5.0], [-220, 165, 3.0]], w: 8 },
+            { pts: [[250, 195, 6.5], [235, 175, 5.0], [220, 160, 3.0]], w: 8 },
         ];
     }
 
@@ -282,26 +274,27 @@ export class TerrainSystem {
     }
 
     _buildCurvedHills(scene) {
-        // 1. Build flat ground base (colored sand/shore in center, grass on sides)
-        const groundGeo = new THREE.PlaneGeometry(WORLD.size, WORLD.size, 64, 64);
+        // Flat city slab + rolling hills only outside (baked into ground plane)
+        const groundGeo = new THREE.PlaneGeometry(WORLD.size, WORLD.size, 80, 80);
         groundGeo.rotateX(-Math.PI / 2);
-        
+
         const pos = groundGeo.attributes.position;
         const colors = [];
         for (let i = 0; i < pos.count; i++) {
             const vx = pos.getX(i);
             const vz = pos.getZ(i);
-            const surfaceY = this._lawnHeightAt(vx, vz);
+            // Force city vertices flat — no hill deformation under buildings/roads
+            const surfaceY = this._isCityFlat(vx, vz) ? WORLD.groundY : this._lawnHeightAt(vx, vz);
             pos.setY(i, surfaceY);
 
-            const d = Math.abs(vx);
             let colHex = '#b8e6c8';
-            if (d < 45) {
-                colHex = '#f5efe4';
+            if (this._isCityFlat(vx, vz)) {
+                // Neutral underlay under city slab (mostly hidden by concrete plane)
+                colHex = '#a8b4b0';
             } else if (this._isParkLawn(vx, vz)) {
                 colHex = '#c8edd6';
             } else if (Math.random() < 0.35) {
-                const shades = ['#c8edd6', '#d4f2e0', '#a8dfc0'];
+                const shades = ['#c8edd6', '#d4f2e0', '#a8dfc0', '#90c87a'];
                 colHex = shades[Math.floor(Math.random() * shades.length)];
             }
             const c = new THREE.Color(colHex);
@@ -321,28 +314,28 @@ export class TerrainSystem {
         baseMesh.position.y = 0;
         baseMesh.receiveShadow = true;
         scene.add(baseMesh);
-        // Hill shapes are baked into the deformed ground plane above — no extra spheres
-        // (separate spheres caused avatars to appear submerged inside green geometry).
     }
 
     _buildSteppingStones(scene) {
+        // Nature paths only — outside the city
         const stoneGeo = new THREE.BoxGeometry(2.0, 0.12, 1.5);
         const stoneMat = new THREE.MeshToonMaterial({
             color: 0xc8c6c0,
             gradientMap: getGradientMap()
         });
 
-        // Optimized paths (fewer stones for 60fps)
         const stonePaths = [
-            { startZ: 80, endZ: -80, count: 10, offset: 0 },
-            { startZ: 100, endZ: -40, count: 8, offset: -48 }
+            { startZ: -230, endZ: -190, count: 6, offset: -230 },
+            { startZ: 190, endZ: 230, count: 6, offset: 230 },
+            { startZ: -220, endZ: -180, count: 5, offset: 230 },
         ];
 
         stonePaths.forEach(path => {
             for (let i = 0; i < path.count; i++) {
-                const t = i / (path.count - 1);
+                const t = path.count <= 1 ? 0 : i / (path.count - 1);
                 const z = path.startZ + t * (path.endZ - path.startZ);
                 const x = path.offset + Math.sin(z * 0.05) * 5;
+                if (this._isCityFlat(x, z)) continue;
                 const y = this.getHeightAt(x, z) + 0.04;
 
                 const stone = new THREE.Mesh(stoneGeo, stoneMat);
@@ -356,19 +349,21 @@ export class TerrainSystem {
     }
 
     _buildHedges(scene) {
+        // Nature hedges outside city only (avenue hedges live in WorldBuilder)
         const hedgeMat = new THREE.MeshToonMaterial({
             color: 0x8ecfa0,
             gradientMap: getGradientMap()
         });
 
         const hedgeBoxes = [
-            { x: -50, z: -70, w: 25, h: 2.8, d: 2 },
-            { x: 50, z: -50, w: 30, h: 2.8, d: 2 },
-            { x: -80, z: 90, w: 20, h: 3.2, d: 2 },
-            { x: 80, z: 60, w: 20, h: 3.2, d: 2 }
+            { x: -230, z: -200, w: 22, h: 2.4, d: 2 },
+            { x: 230, z: -190, w: 24, h: 2.4, d: 2 },
+            { x: -230, z: 200, w: 20, h: 2.6, d: 2 },
+            { x: 230, z: 190, w: 20, h: 2.6, d: 2 },
         ];
 
         hedgeBoxes.forEach(hb => {
+            if (this._isCityFlat(hb.x, hb.z)) return;
             const geo = new THREE.BoxGeometry(hb.w, hb.h, hb.d);
             const hedge = new THREE.Mesh(geo, hedgeMat);
             const y = this.getHeightAt(hb.x, hb.z) + hb.h / 2;
@@ -402,9 +397,13 @@ export class TerrainSystem {
             const r = (0.35 + (i % 7) * 0.08) * hill.r;
             const x = hill.x + Math.cos(angle) * r;
             const z = hill.z + Math.sin(angle) * r;
-            const y = this.getHeightAt(x, z);
-
-            dummy.position.set(x, y, z);
+            // Never scatter grass into the city
+            if (this._isCityFlat(x, z)) {
+                dummy.position.set(hill.x, WORLD.groundY, hill.z);
+            } else {
+                const y = this.getHeightAt(x, z);
+                dummy.position.set(x, y, z);
+            }
             dummy.scale.set(
                 0.55 + (i % 4) * 0.12,
                 0.7 + (i % 5) * 0.1,
@@ -444,8 +443,12 @@ export class TerrainSystem {
             const hill = this.hills[i % this.hills.length];
             const angle = (i * 2.39) % (Math.PI * 2);
             const r = (0.2 + Math.random() * 0.6) * hill.r;
-            const x = hill.x + Math.cos(angle) * r;
-            const z = hill.z + Math.sin(angle) * r;
+            let x = hill.x + Math.cos(angle) * r;
+            let z = hill.z + Math.sin(angle) * r;
+            if (this._isCityFlat(x, z)) {
+                x = hill.x;
+                z = hill.z;
+            }
             const y = this.getHeightAt(x, z) + 0.1;
 
             dummy.position.set(x, y, z);
@@ -484,8 +487,10 @@ export class TerrainSystem {
             bGroup.add(wingL);
             bGroup.add(wingR);
 
-            const baseX = (Math.random() - 0.5) * 80;
-            const baseZ = (Math.random() - 0.5) * 80;
+            // Flutter over outer nature, not over the city core
+            const hill = this.hills[i % this.hills.length];
+            const baseX = hill.x + (Math.random() - 0.5) * 30;
+            const baseZ = hill.z + (Math.random() - 0.5) * 30;
             const baseY = this.getHeightAt(baseX, baseZ) + 2.0 + Math.random() * 3.0;
 
             bGroup.position.set(baseX, baseY, baseZ);
