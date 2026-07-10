@@ -31,41 +31,41 @@ const ROAD = {
 // Exact building layouts from the City of Harmonia map
 const HARMONIA_BUILDINGS = [
     // --- Showroom & Retail Drive (S) ---
-    // Above road (Z = -86)
-    { id: 'S1', x: -100, z: -86, w: 10, d: 10, h: 9, style: 'showroom', yaw: 0 },
-    { id: 'S8_1', x: -75, z: -86, w: 12, d: 10, h: 10, style: 'showroom', yaw: 0 },
-    { id: 'S3', x: -50, z: -86, w: 10, d: 10, h: 8, style: 'showroom', yaw: 0 },
-    { id: 'S8_2', x: -25, z: -86, w: 12, d: 10, h: 11, style: 'showroom', yaw: 0 },
-    { id: 'S5', x: 0, z: -86, w: 10, d: 10, h: 9, style: 'showroom', yaw: 0 },
-    { id: 'S6', x: 25, z: -86, w: 12, d: 10, h: 10, style: 'showroom', yaw: 0 },
-    { id: 'S7', x: 50, z: -86, w: 12, d: 10, h: 8, style: 'showroom', yaw: 0 },
-    { id: 'I3_1', x: 80, z: -86, w: 14, d: 10, h: 12, style: 'showroom', yaw: 0 },
+    // Above road (Z = -75, road+sidewalk edge is at Z = -81.7)
+    { id: 'S1', x: -100, z: -86.7, w: 10, d: 10, h: 9, style: 'showroom', yaw: 0 },
+    { id: 'S8_1', x: -75, z: -86.7, w: 12, d: 10, h: 10, style: 'showroom', yaw: 0 },
+    { id: 'S3', x: -50, z: -86.7, w: 10, d: 10, h: 8, style: 'showroom', yaw: 0 },
+    { id: 'S8_2', x: -25, z: -86.7, w: 12, d: 10, h: 11, style: 'showroom', yaw: 0 },
+    { id: 'S5', x: 0, z: -86.7, w: 10, d: 10, h: 9, style: 'showroom', yaw: 0 },
+    { id: 'S6', x: 25, z: -86.7, w: 12, d: 10, h: 10, style: 'showroom', yaw: 0 },
+    { id: 'S7', x: 50, z: -86.7, w: 12, d: 10, h: 8, style: 'showroom', yaw: 0 },
+    { id: 'I3_1', x: 80, z: -86.7, w: 14, d: 10, h: 12, style: 'showroom', yaw: 0 },
 
-    // Below road (Z = -64)
-    { id: 'R18', x: -30, z: -64, w: 10, d: 10, h: 8, style: 'residential', yaw: Math.PI },
-    { id: 'S8_3', x: -5, z: -64, w: 12, d: 10, h: 10, style: 'showroom', yaw: Math.PI },
-    { id: 'S7_2', x: 20, z: -64, w: 12, d: 10, h: 9, style: 'showroom', yaw: Math.PI },
-    { id: 'S1_2', x: 45, z: -64, w: 10, d: 10, h: 8, style: 'showroom', yaw: Math.PI },
-    { id: 'C10_1', x: 60, z: -64, w: 6, d: 6, h: 5, style: 'cafe', yaw: Math.PI },
+    // Below road (Z = -75, road+sidewalk edge is at Z = -68.3)
+    { id: 'R18', x: -30, z: -63.3, w: 10, d: 10, h: 8, style: 'residential', yaw: Math.PI },
+    { id: 'S8_3', x: -5, z: -63.3, w: 12, d: 10, h: 10, style: 'showroom', yaw: Math.PI },
+    { id: 'S7_2', x: 20, z: -63.3, w: 12, d: 10, h: 9, style: 'showroom', yaw: Math.PI },
+    { id: 'S1_2', x: 45, z: -63.3, w: 10, d: 10, h: 8, style: 'showroom', yaw: Math.PI },
+    { id: 'C10_1', x: 60, z: -63.3, w: 6, d: 6, h: 5, style: 'cafe', yaw: Math.PI },
 
     // --- West Block (left of Mohr Ave X = -45) ---
     // Column next to river (X = -85)
-    { id: 'I1_1', x: -85, z: -50, w: 12, d: 12, h: 14, style: 'showroom', yaw: Math.PI/2 },
-    { id: 'I3_2', x: -85, z: -25, w: 12, d: 12, h: 10, style: 'showroom', yaw: Math.PI/2 },
-    { id: 'I3_3', x: -85, z: 5, w: 16, d: 16, h: 15, style: 'showroom', yaw: Math.PI/2 },
-    { id: 'I4_1', x: -85, z: 35, w: 12, d: 12, h: 9, style: 'showroom', yaw: Math.PI/2 },
+    { id: 'I1_1', x: -75, z: -50, w: 12, d: 12, h: 14, style: 'showroom', yaw: Math.PI/2 },
+    { id: 'I3_2', x: -75, z: -25, w: 12, d: 12, h: 10, style: 'showroom', yaw: Math.PI/2 },
+    { id: 'I3_3', x: -75, z: 5, w: 16, d: 16, h: 15, style: 'showroom', yaw: Math.PI/2 },
+    { id: 'I4_1', x: -75, z: 35, w: 12, d: 12, h: 9, style: 'showroom', yaw: Math.PI/2 },
 
-    // Column next to Mohr Ave (X = -65)
-    { id: 'R1_1', x: -65, z: -50, w: 10, d: 10, h: 8, style: 'residential', yaw: -Math.PI/2 },
-    { id: 'R2_1', x: -65, z: -20, w: 10, d: 10, h: 9, style: 'residential', yaw: -Math.PI/2 },
-    { id: 'R3_1', x: -65, z: 15, w: 10, d: 10, h: 10, style: 'residential', yaw: -Math.PI/2 },
+    // Column next to Mohr Ave (Mohr Ave west sidewalk edge is X = -51.2)
+    { id: 'R1_1', x: -56.2, z: -50, w: 10, d: 10, h: 8, style: 'residential', yaw: -Math.PI/2 },
+    { id: 'R2_1', x: -56.2, z: -20, w: 10, d: 10, h: 9, style: 'residential', yaw: -Math.PI/2 },
+    { id: 'R3_1', x: -56.2, z: 15, w: 10, d: 10, h: 10, style: 'residential', yaw: -Math.PI/2 },
     { id: 'I4_2', x: -75, z: 50, w: 12, d: 12, h: 9, style: 'showroom', yaw: 0 },
     { id: 'I1_2', x: -55, z: 75, w: 14, d: 10, h: 11, style: 'showroom', yaw: 0 },
 
-    // --- Central Left Block (between Mohr Ave X = -45 and Floral Way) ---
-    { id: 'R2_2', x: -28, z: -48, w: 10, d: 10, h: 8, style: 'residential', yaw: Math.PI/4 },
-    { id: 'R20_1', x: -32, z: -24, w: 10, d: 10, h: 9, style: 'residential', yaw: Math.PI/4 },
-    { id: 'R20_2', x: -32, z: 0, w: 10, d: 10, h: 9, style: 'residential', yaw: Math.PI/4 },
+    // --- Central Left Block (Mohr Ave east sidewalk edge is X = -38.8) ---
+    { id: 'R2_2', x: -33.8, z: -48, w: 10, d: 10, h: 8, style: 'residential', yaw: Math.PI/4 },
+    { id: 'R20_1', x: -33.8, z: -24, w: 10, d: 10, h: 9, style: 'residential', yaw: Math.PI/4 },
+    { id: 'R20_2', x: -33.8, z: 0, w: 10, d: 10, h: 9, style: 'residential', yaw: Math.PI/4 },
     { id: 'R1_2', x: -24, z: 24, w: 10, d: 10, h: 8, style: 'residential', yaw: -Math.PI/4 },
     { id: 'R5_1', x: -24, z: 46, w: 10, d: 10, h: 9, style: 'residential', yaw: -Math.PI/4 },
     { id: 'R7_1', x: -10, z: 12, w: 10, d: 10, h: 9, style: 'residential', yaw: 0 },
@@ -81,48 +81,48 @@ const HARMONIA_BUILDINGS = [
     { id: 'S7_3', x: 28, z: -45, w: 12, d: 12, h: 9, style: 'showroom', yaw: Math.PI },
     { id: 'C1_2', x: 42, z: -45, w: 6, d: 6, h: 5, style: 'cafe', yaw: Math.PI },
 
-    // --- Central Bottom Area (above Bazaar road Z = 55) ---
-    { id: 'M2_1', x: -28, z: 40, w: 8, d: 8, h: 7, style: 'market', yaw: 0 },
-    { id: 'M2_2', x: -12, z: 40, w: 8, d: 8, h: 7, style: 'market', yaw: 0 },
-    { id: 'M1_1', x: 12, z: 40, w: 8, d: 8, h: 7, style: 'market', yaw: 0 },
-    { id: 'M2_3', x: 28, z: 40, w: 8, d: 8, h: 7, style: 'market', yaw: 0 },
+    // --- Central Bottom Area (above Bazaar road Z = 55, edge at Z = 48.3) ---
+    { id: 'M2_1', x: -28, z: 44.3, w: 8, d: 8, h: 7, style: 'market', yaw: 0 },
+    { id: 'M2_2', x: -12, z: 44.3, w: 8, d: 8, h: 7, style: 'market', yaw: 0 },
+    { id: 'M1_1', x: 12, z: 44.3, w: 8, d: 8, h: 7, style: 'market', yaw: 0 },
+    { id: 'M2_3', x: 28, z: 44.3, w: 8, d: 8, h: 7, style: 'market', yaw: 0 },
 
-    // --- Bottom Row (below Bazaar road Z = 55) ---
-    { id: 'G2_1', x: -95, z: 70, w: 10, d: 10, h: 8, style: 'market', yaw: 0 },
-    { id: 'R1_3', x: -95, z: 86, w: 10, d: 10, h: 8, style: 'residential', yaw: 0 },
-    { id: 'R22_1', x: -80, z: 70, w: 10, d: 10, h: 9, style: 'residential', yaw: 0 },
-    { id: 'R14_1', x: -80, z: 86, w: 10, d: 10, h: 8, style: 'residential', yaw: 0 },
-    { id: 'R15_1', x: -65, z: 86, w: 10, d: 10, h: 8, style: 'residential', yaw: 0 },
-    { id: 'G3_1', x: -65, z: 70, w: 10, d: 10, h: 8, style: 'market', yaw: 0 },
-    { id: 'R16_1', x: -50, z: 86, w: 10, d: 10, h: 8, style: 'residential', yaw: 0 },
-    { id: 'G4_1', x: -50, z: 70, w: 10, d: 10, h: 8, style: 'market', yaw: 0 },
-    { id: 'G5_1', x: -35, z: 70, w: 10, d: 10, h: 8, style: 'market', yaw: 0 },
-    { id: 'R17_1', x: -35, z: 86, w: 10, d: 10, h: 8, style: 'residential', yaw: 0 },
-    { id: 'G5_2', x: -20, z: 70, w: 10, d: 10, h: 8, style: 'market', yaw: 0 },
-    { id: 'R20_3', x: -20, z: 86, w: 10, d: 10, h: 9, style: 'residential', yaw: 0 },
-    { id: 'G4_2', x: -5, z: 70, w: 10, d: 10, h: 8, style: 'market', yaw: 0 },
-    { id: 'R19_1', x: 5, z: 86, w: 10, d: 10, h: 8, style: 'residential', yaw: 0 },
-    { id: 'G8_1', x: 10, z: 70, w: 10, d: 10, h: 8, style: 'market', yaw: 0 },
-    { id: 'R20_4', x: 25, z: 70, w: 10, d: 10, h: 9, style: 'residential', yaw: 0 },
+    // --- Bottom Row (below Bazaar road Z = 55, edge at Z = 61.7) ---
+    { id: 'G2_1', x: -95, z: 66.7, w: 10, d: 10, h: 8, style: 'market', yaw: 0 },
+    { id: 'R1_3', x: -95, z: 77.0, w: 10, d: 10, h: 8, style: 'residential', yaw: 0 },
+    { id: 'R22_1', x: -80, z: 66.7, w: 10, d: 10, h: 9, style: 'residential', yaw: 0 },
+    { id: 'R14_1', x: -80, z: 77.0, w: 10, d: 10, h: 8, style: 'residential', yaw: 0 },
+    { id: 'R15_1', x: -65, z: 77.0, w: 10, d: 10, h: 8, style: 'residential', yaw: 0 },
+    { id: 'G3_1', x: -65, z: 66.7, w: 10, d: 10, h: 8, style: 'market', yaw: 0 },
+    { id: 'R16_1', x: -50, z: 77.0, w: 10, d: 10, h: 8, style: 'residential', yaw: 0 },
+    { id: 'G4_1', x: -50, z: 66.7, w: 10, d: 10, h: 8, style: 'market', yaw: 0 },
+    { id: 'G5_1', x: -35, z: 66.7, w: 10, d: 10, h: 8, style: 'market', yaw: 0 },
+    { id: 'R17_1', x: -35, z: 77.0, w: 10, d: 10, h: 8, style: 'residential', yaw: 0 },
+    { id: 'G5_2', x: -20, z: 66.7, w: 10, d: 10, h: 8, style: 'market', yaw: 0 },
+    { id: 'R20_3', x: -20, z: 77.0, w: 10, d: 10, h: 9, style: 'residential', yaw: 0 },
+    { id: 'G4_2', x: -5, z: 66.7, w: 10, d: 10, h: 8, style: 'market', yaw: 0 },
+    { id: 'R19_1', x: 5, z: 77.0, w: 10, d: 10, h: 8, style: 'residential', yaw: 0 },
+    { id: 'G8_1', x: 10, z: 66.7, w: 10, d: 10, h: 8, style: 'market', yaw: 0 },
+    { id: 'R20_4', x: 25, z: 66.7, w: 10, d: 10, h: 9, style: 'residential', yaw: 0 },
 
     // --- East Block (Tech Hub District Y) ---
     // Below Promenade
-    { id: 'T5_1', x: 32, z: -12, w: 10, d: 10, h: 8, style: 'tech', yaw: -Math.PI/2 },
-    { id: 'T5_2', x: 32, z: 14, w: 10, d: 10, h: 8, style: 'tech', yaw: -Math.PI/2 },
+    { id: 'T5_1', x: 33.8, z: -12, w: 10, d: 10, h: 8, style: 'tech', yaw: -Math.PI/2 },
+    { id: 'T5_2', x: 33.8, z: 14, w: 10, d: 10, h: 8, style: 'tech', yaw: -Math.PI/2 },
 
-    // Inside Tech Hub grid
-    { id: 'T11_1', x: 65, z: -48, w: 12, d: 12, h: 11, style: 'tech', yaw: -Math.PI/2 },
-    { id: 'T11_2', x: 100, z: -48, w: 12, d: 12, h: 11, style: 'tech', yaw: -Math.PI/2 },
-    { id: 'T13_1', x: 80, z: -24, w: 14, d: 14, h: 13, style: 'tech', yaw: -Math.PI/2 },
-    { id: 'T10_1', x: 115, z: -24, w: 10, d: 10, h: 10, style: 'tech', yaw: -Math.PI/2 },
-    { id: 'T10_2', x: 65, z: 0, w: 10, d: 10, h: 10, style: 'tech', yaw: -Math.PI/2 },
-    { id: 'T11_3', x: 80, z: 0, w: 12, d: 12, h: 11, style: 'tech', yaw: -Math.PI/2 },
-    { id: 'T10_3', x: 100, z: 0, w: 10, d: 10, h: 10, style: 'tech', yaw: -Math.PI/2 },
-    { id: 'T19_1', x: 80, z: 24, w: 16, d: 16, h: 15, style: 'tech', yaw: -Math.PI/2 },
-    { id: 'T10_4', x: 115, z: 24, w: 10, d: 10, h: 10, style: 'tech', yaw: -Math.PI/2 },
+    // Inside Tech Hub grid (Tech Lane 1 at X = 45, Tech Lane 2 at X = 90)
+    { id: 'T11_1', x: 57.2, z: -48, w: 12, d: 12, h: 11, style: 'tech', yaw: -Math.PI/2 },
+    { id: 'T11_2', x: 77.8, z: -48, w: 12, d: 12, h: 11, style: 'tech', yaw: -Math.PI/2 },
+    { id: 'T13_1', x: 77.8, z: -24, w: 14, d: 14, h: 13, style: 'tech', yaw: -Math.PI/2 },
+    { id: 'T10_1', x: 102.2, z: -24, w: 10, d: 10, h: 10, style: 'tech', yaw: -Math.PI/2 },
+    { id: 'T10_2', x: 57.2, z: 0, w: 10, d: 10, h: 10, style: 'tech', yaw: -Math.PI/2 },
+    { id: 'T11_3', x: 77.8, z: 0, w: 12, d: 12, h: 11, style: 'tech', yaw: -Math.PI/2 },
+    { id: 'T10_3', x: 102.2, z: 0, w: 10, d: 10, h: 10, style: 'tech', yaw: -Math.PI/2 },
+    { id: 'T19_1', x: 77.8, z: 24, w: 16, d: 16, h: 15, style: 'tech', yaw: -Math.PI/2 },
+    { id: 'T10_4', x: 102.2, z: 24, w: 10, d: 10, h: 10, style: 'tech', yaw: -Math.PI/2 },
     { id: 'T11_4', x: 95, z: 66, w: 18, d: 18, h: 16, style: 'tech', yaw: 0 },
-    { id: 'I1_3', x: 105, z: -76, w: 12, d: 12, h: 12, style: 'showroom', yaw: 0 },
-    { id: 'H_1', x: 124, z: -64, w: 8, d: 8, h: 15, style: 'tech', yaw: 0 }
+    { id: 'I1_3', x: 102.2, z: -76, w: 12, d: 12, h: 12, style: 'showroom', yaw: 0 },
+    { id: 'H_1', x: 116.2, z: -64, w: 8, d: 8, h: 15, style: 'tech', yaw: 0 }
 ];
 
 export class WorldBuilder {
