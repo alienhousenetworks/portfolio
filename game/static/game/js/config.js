@@ -16,10 +16,10 @@ export const WORLD = {
 
 /** River bridge decks — keep in sync with WorldBuilder._buildBridge */
 export const BRIDGES = [
-    { x: 0, z: -130, deckY: 2.35, halfW: 27, halfD: 5.5 },
-    { x: 0, z: -40, deckY: 2.35, halfW: 27, halfD: 5.5 },
-    { x: 0, z: 65, deckY: 2.35, halfW: 27, halfD: 5.5 },
-    { x: 0, z: 170, deckY: 2.35, halfW: 27, halfD: 5.5 },
+    { x: -115, z: -130, deckY: 2.35, halfW: 27, halfD: 5.5 },
+    { x: -115, z: -40, deckY: 2.35, halfW: 27, halfD: 5.5 },
+    { x: -115, z: 65, deckY: 2.35, halfW: 27, halfD: 5.5 },
+    { x: -115, z: 170, deckY: 2.35, halfW: 27, halfD: 5.5 },
 ];
 
 /** NPC / citizen stature — compact scale for the toon city */
