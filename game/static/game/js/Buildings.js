@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { PALETTE } from './config.js';
 import { toonMesh, INK } from './ToonStyle.js';
 import { pickBuildingType } from './CityZones.js';
-import { createAirConditioner, createRooftopTank, createHangingSign } from './Props.js';
+import { createAirConditioner, createRooftopTank, createHangingSign, createDetailedVendingMachine, createDetailedUtilityPole } from './Props.js';
 
 function wall(seed, off = 0) {
     return PALETTE.building.wall[(seed + off) % PALETTE.building.wall.length];
@@ -11,20 +11,152 @@ function roof(seed, off = 0) {
     return PALETTE.building.roof[(seed + off) % PALETTE.building.roof.length];
 }
 
+function addWindows(group, w, h, d, seed) {
+    const winColor = PALETTE.glass;
+    const frameColor = 0x3a3a40;
+    
+    // Windows on front side (z = d/2)
+    const frontRows = Math.max(1, Math.floor(h / 3));
+    const frontCols = Math.max(1, Math.floor(w / 3.5));
+    
+    for (let r = 0; r < frontRows; r++) {
+        for (let c = 0; c < frontCols; c++) {
+            // skip first floor center for doors
+            if (r === 0 && Math.abs(c - (frontCols - 1) / 2) < 0.8) continue;
+            
+            const wx = -w/2 + (c + 0.5) * (w / frontCols);
+            const wy = 1.4 + r * 2.6;
+            if (wy >= h - 0.8) continue;
+
+            const winG = new THREE.Group();
+            winG.position.set(wx, wy, d/2 + 0.02);
+
+            // Outer frame
+            const frame = toonMesh(new THREE.BoxGeometry(1.2, 1.4, 0.06), frameColor, { outline: false });
+            winG.add(frame.group);
+
+            // Glass pane
+            const glass = toonMesh(new THREE.BoxGeometry(1.0, 1.2, 0.02), winColor, { transparent: true, opacity: 0.7, outline: false });
+            glass.mesh.position.z = 0.03;
+            winG.add(glass.group);
+
+            // Grid lines (horizontal/vertical)
+            const gridH = toonMesh(new THREE.BoxGeometry(1.0, 0.04, 0.02), frameColor, { outline: false });
+            gridH.mesh.position.z = 0.04;
+            winG.add(gridH.group);
+            const gridV = toonMesh(new THREE.BoxGeometry(0.04, 1.2, 0.02), frameColor, { outline: false });
+            gridV.mesh.position.z = 0.04;
+            winG.add(gridV.group);
+
+            // Window ledge/sill
+            const sill = toonMesh(new THREE.BoxGeometry(1.4, 0.08, 0.2), 0xdddddd);
+            sill.mesh.position.set(0, -0.74, 0.08);
+            winG.add(sill.group);
+
+            group.add(winG);
+        }
+    }
+
+    // Windows on sides (x = -w/2 and x = w/2)
+    const sideCols = Math.max(1, Math.floor(d / 3.5));
+    for (let r = 0; r < frontRows; r++) {
+        for (let c = 0; c < sideCols; c++) {
+            const wz = -d/2 + (c + 0.5) * (d / sideCols);
+            const wy = 1.4 + r * 2.6;
+            if (wy >= h - 0.8) continue;
+
+            [-w/2, w/2].forEach(wx => {
+                const winG = new THREE.Group();
+                winG.position.set(wx + (wx < 0 ? -0.02 : 0.02), wy, wz);
+                winG.rotation.y = wx < 0 ? -Math.PI/2 : Math.PI/2;
+
+                const frame = toonMesh(new THREE.BoxGeometry(1.0, 1.2, 0.06), frameColor, { outline: false });
+                winG.add(frame.group);
+
+                const glass = toonMesh(new THREE.BoxGeometry(0.8, 1.0, 0.02), winColor, { transparent: true, opacity: 0.7, outline: false });
+                glass.mesh.position.z = 0.03;
+                winG.add(glass.group);
+
+                const sill = toonMesh(new THREE.BoxGeometry(1.2, 0.08, 0.2), 0xdddddd);
+                sill.mesh.position.set(0, -0.64, 0.08);
+                winG.add(sill.group);
+
+                group.add(winG);
+            });
+        }
+    }
+}
+
+function addWallDetails(group, w, h, d, seed) {
+    // Air Conditioner units
+    const numAc = (seed % 2) + 1;
+    for (let i = 0; i < numAc; i++) {
+        const ac = createAirConditioner();
+        const side = seed % 2 === 0 ? 1 : -1;
+        const acX = (w / 2 + 0.3) * side;
+        const acY = 2.0 + (i * 2.5) + (seed % 2) * 0.5;
+        const acZ = -d / 4 + i * 2.0;
+        if (acY < h - 0.8) {
+            ac.position.set(acX, acY, acZ);
+            ac.rotation.y = side > 0 ? Math.PI / 2 : -Math.PI / 2;
+            group.add(ac);
+
+            // AC drainage pipe running down
+            const pipe = toonMesh(new THREE.CylinderGeometry(0.03, 0.03, acY, 4), 0xbbbbbb, { outline: false });
+            pipe.mesh.position.set(acX, acY / 2, acZ + 0.4);
+            group.add(pipe.group);
+        }
+    }
+
+    // Thick industrial conduit pipe on back or side wall
+    const pipeX = -w / 2 + 0.15;
+    const pipeZ = -d / 2 + 0.5;
+    const conduit = toonMesh(new THREE.CylinderGeometry(0.06, 0.06, h, 6), 0x777777);
+    conduit.mesh.position.set(pipeX, h / 2, pipeZ);
+    group.add(conduit.group);
+}
+
 function shopFront(g, w, h, d, seed, signColor = PALETTE.orange) {
     const awning = PALETTE.awning;
-    const stripeW = w / 5;
-    for (let i = 0; i < 5; i++) {
-        const s = toonMesh(new THREE.BoxGeometry(stripeW, 0.2, 2.2), awning[i % awning.length]);
-        s.mesh.position.set(-w / 2 + stripeW / 2 + i * stripeW, h + 0.05, d / 2 + 1);
-        g.add(s.group);
+    const stripeW = w / 7;
+    const awningG = new THREE.Group();
+    awningG.position.set(0, h * 0.65, d / 2 + 0.7);
+    
+    for (let i = 0; i < 7; i++) {
+        const s = toonMesh(new THREE.BoxGeometry(stripeW, 0.15, 1.4), awning[i % awning.length]);
+        s.mesh.position.set(-w / 2 + stripeW / 2 + i * stripeW, 0, 0);
+        s.mesh.rotation.x = 0.25; // Sloped down
+        awningG.add(s.group);
     }
+    g.add(awningG);
+
     const sign = createHangingSign('', signColor);
-    sign.position.set(0, h, d / 2 + 0.4);
+    sign.position.set(0, h * 0.72, d / 2 + 0.2);
     g.add(sign);
-    const shutter = toonMesh(new THREE.BoxGeometry(w * 0.7, h * 0.5, 0.12), PALETTE.asphaltLight);
-    shutter.mesh.position.set(0, h * 0.32, d / 2 + 0.06);
-    g.add(shutter.group);
+
+    // Roll-up shutter door with slats
+    const shutterW = w * 0.6;
+    const shutterH = h * 0.55;
+    const shutterG = new THREE.Group();
+    shutterG.position.set(0, shutterH / 2, d / 2 + 0.06);
+    
+    const numSlats = 12;
+    for (let i = 0; i < numSlats; i++) {
+        const slat = toonMesh(new THREE.BoxGeometry(shutterW, shutterH / numSlats - 0.02, 0.06), PALETTE.asphaltLight, { outline: false });
+        slat.mesh.position.y = -shutterH / 2 + (i + 0.5) * (shutterH / numSlats);
+        shutterG.add(slat.group);
+    }
+    g.add(shutterG);
+
+    // Side windows on storefront
+    const glassW = (w - shutterW) / 2 - 0.4;
+    if (glassW > 0.5) {
+        [-1, 1].forEach(side => {
+            const win = toonMesh(new THREE.BoxGeometry(glassW, h * 0.6, 0.08), PALETTE.glass);
+            win.mesh.position.set(side * (shutterW / 2 + glassW / 2 + 0.2), h * 0.3, d / 2 + 0.06);
+            g.add(win.group);
+        });
+    }
 }
 
 /**
@@ -39,6 +171,11 @@ function base(cx, cz, w, d, h, wallColor, seed) {
     body.mesh.castShadow = true;
     body.mesh.receiveShadow = true;
     g.add(body.group);
+
+    // Add anime windows and details
+    addWindows(g, w, h, d, seed);
+    addWallDetails(g, w, h, d, seed);
+
     return { group: g, w, d, h };
 }
 
@@ -401,34 +538,13 @@ export function createProjectShowcase(cx, cz, data = {}) {
 // ── Street utilities ─────────────────────────────────────
 
 export function createVendingMachine(x, z, seed = 0) {
-    const g = new THREE.Group();
-    g.position.set(x, 0, z);
-    const color = PALETTE.vending[seed % PALETTE.vending.length];
-    const body = toonMesh(new THREE.BoxGeometry(1, 2.1, 0.85), color);
-    body.mesh.position.y = 1.05;
-    g.add(body.group);
-    const screen = toonMesh(new THREE.BoxGeometry(0.65, 0.9, 0.06), PALETTE.blue);
-    screen.mesh.position.set(0, 1.2, 0.44);
-    g.add(screen.group);
-    return g;
+    const v = createDetailedVendingMachine(seed);
+    v.position.set(x, 0, z);
+    return v;
 }
 
 export function createUtilityPole(x, z) {
-    const g = new THREE.Group();
-    g.position.set(x, 0, z);
-    const pole = toonMesh(new THREE.BoxGeometry(0.1, 7, 0.1), PALETTE.pole);
-    pole.mesh.position.y = 3.5;
-    g.add(pole.group);
-    const wireMat = new THREE.LineBasicMaterial({ color: INK });
-    for (let i = 0; i < 3; i++) {
-        const pts = [
-            new THREE.Vector3(-3 + i * 2, 6.5, 0),
-            new THREE.Vector3(4, 6.8, 10),
-            new THREE.Vector3(12, 6.3, 18),
-        ];
-        g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), wireMat));
-    }
-    return g;
+    return createDetailedUtilityPole(x, z);
 }
 
 // ── Building factory ───────────────────────────────────────

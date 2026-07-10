@@ -316,9 +316,318 @@ export function createCat() {
 
 export function createTrafficCone() {
     const g = new THREE.Group();
-    const cone = toonMesh(new THREE.ConeGeometry(0.18, 0.45, 6), PALETTE.orange, { outline: false });
-    cone.mesh.position.y = 0.22;
+    // Square base
+    const base = toonMesh(new THREE.BoxGeometry(0.35, 0.05, 0.35), 0x222222, { outline: false });
+    base.mesh.position.y = 0.025;
+    g.add(base.group);
+    
+    // Cone
+    const cone = toonMesh(new THREE.ConeGeometry(0.16, 0.5, 8), PALETTE.orange, { outline: false });
+    cone.mesh.position.y = 0.25;
     g.add(cone.group);
+
+    // White stripe
+    const stripe = toonMesh(new THREE.CylinderGeometry(0.09, 0.11, 0.12, 8), 0xffffff, { outline: false });
+    stripe.mesh.position.y = 0.25;
+    g.add(stripe.group);
+    return g;
+}
+
+export function createKeiTruck() {
+    const g = new THREE.Group();
+    
+    // Wheels (4)
+    const wheelGeo = new THREE.CylinderGeometry(0.3, 0.3, 0.22, 12);
+    const wheelMatColor = 0x222222;
+    const wheelPositions = [
+        [-0.6, 0.3, 0.9],
+        [0.6, 0.3, 0.9],
+        [-0.6, 0.3, -0.9],
+        [0.6, 0.3, -0.9]
+    ];
+    wheelPositions.forEach(([wx, wy, wz]) => {
+        const w = toonMesh(wheelGeo, wheelMatColor, { outline: false });
+        w.mesh.rotation.z = Math.PI / 2;
+        w.mesh.position.set(wx, wy, wz);
+        g.add(w.group);
+    });
+
+    // Chassis / Base
+    const chassis = toonMesh(new THREE.BoxGeometry(1.3, 0.15, 2.8), 0x333333);
+    chassis.mesh.position.set(0, 0.4, 0);
+    g.add(chassis.group);
+
+    // Front Cabin (White)
+    const cab = toonMesh(new THREE.BoxGeometry(1.3, 1.1, 0.9), 0xffffff);
+    cab.mesh.position.set(0, 1.05, 0.9);
+    g.add(cab.group);
+
+    // Windshield (glass)
+    const windshield = toonMesh(new THREE.BoxGeometry(1.22, 0.5, 0.05), PALETTE.glass);
+    windshield.mesh.position.set(0, 1.25, 1.36);
+    g.add(windshield.group);
+
+    // Side windows (glass)
+    [-0.66, 0.66].forEach(sx => {
+        const swin = toonMesh(new THREE.BoxGeometry(0.05, 0.45, 0.5), PALETTE.glass);
+        swin.mesh.position.set(sx, 1.2, 0.9);
+        g.add(swin.group);
+    });
+
+    // Flatbed Back / Cargo Bed (Grey)
+    const bed = toonMesh(new THREE.BoxGeometry(1.3, 0.4, 1.7), 0xdddddd);
+    bed.mesh.position.set(0, 0.65, -0.45);
+    g.add(bed.group);
+    
+    // Cargo bed rails/sides
+    const leftRail = toonMesh(new THREE.BoxGeometry(0.05, 0.3, 1.7), 0xcccccc);
+    leftRail.mesh.position.set(-0.625, 0.85, -0.45);
+    g.add(leftRail.group);
+    const rightRail = toonMesh(new THREE.BoxGeometry(0.05, 0.3, 1.7), 0xcccccc);
+    rightRail.mesh.position.set(0.625, 0.85, -0.45);
+    g.add(rightRail.group);
+    const backRail = toonMesh(new THREE.BoxGeometry(1.3, 0.3, 0.05), 0xcccccc);
+    backRail.mesh.position.set(0, 0.85, -1.325);
+    g.add(backRail.group);
+
+    // Headlights
+    [-0.45, 0.45].forEach(sx => {
+        const light = toonMesh(new THREE.BoxGeometry(0.18, 0.12, 0.05), 0xffecc0, { emissive: 0xffecc0, emissiveIntensity: 0.3, outline: false });
+        light.mesh.position.set(sx, 0.75, 1.36);
+        g.add(light.group);
+    });
+
+    // Bumper (Black)
+    const bumper = toonMesh(new THREE.BoxGeometry(1.3, 0.18, 0.15), 0x1a1a1a);
+    bumper.mesh.position.set(0, 0.45, 1.38);
+    g.add(bumper.group);
+
+    return g;
+}
+
+export function createConvexMirror() {
+    const g = new THREE.Group();
+    // Tall orange pole
+    const pole = toonMesh(new THREE.CylinderGeometry(0.07, 0.07, 3.8, 8), 0xf26419);
+    pole.mesh.position.y = 1.9;
+    g.add(pole.group);
+
+    // Mirror back (Orange bowl)
+    const back = toonMesh(new THREE.CylinderGeometry(0.45, 0.45, 0.15, 16), 0xf26419);
+    back.mesh.rotation.x = Math.PI / 2;
+    back.mesh.position.set(0, 3.4, 0.1);
+    g.add(back.group);
+
+    // Mirror face (Silver/glass)
+    const face = toonMesh(new THREE.CylinderGeometry(0.42, 0.42, 0.05, 16), PALETTE.glass, { outline: false });
+    face.mesh.rotation.x = Math.PI / 2;
+    face.mesh.position.set(0, 3.4, 0.18);
+    g.add(face.group);
+
+    // Hood/visor
+    const visor = toonMesh(new THREE.BoxGeometry(0.9, 0.1, 0.25), 0xf26419);
+    visor.mesh.position.set(0, 3.85, 0.18);
+    g.add(visor.group);
+
+    return g;
+}
+
+export function createGreenUtilityBox() {
+    const g = new THREE.Group();
+    // Concrete base
+    const base = toonMesh(new THREE.BoxGeometry(0.8, 0.2, 0.8), 0xd0cdc7);
+    base.mesh.position.y = 0.1;
+    g.add(base.group);
+
+    // Main cabinet (Green)
+    const box = toonMesh(new THREE.BoxGeometry(0.7, 1.2, 0.7), 0x487955);
+    box.mesh.position.y = 0.8;
+    g.add(box.group);
+
+    // Side vents details
+    [-0.36, 0.36].forEach(sx => {
+        const vent = toonMesh(new THREE.BoxGeometry(0.02, 0.5, 0.4), 0x385e42, { outline: false });
+        vent.mesh.position.set(sx, 0.8, 0);
+        g.add(vent.group);
+    });
+
+    // Front door seams/handle
+    const seam = toonMesh(new THREE.BoxGeometry(0.02, 1.0, 0.02), INK, { outline: false });
+    seam.mesh.position.set(0, 0.8, 0.36);
+    g.add(seam.group);
+
+    const handle = toonMesh(new THREE.BoxGeometry(0.04, 0.12, 0.04), 0xd0cdc7, { outline: false });
+    handle.mesh.position.set(0.08, 0.8, 0.37);
+    g.add(handle.group);
+
+    return g;
+}
+
+export function createRecyclingBin() {
+    const g = new THREE.Group();
+    // Blue cylinder
+    const body = toonMesh(new THREE.CylinderGeometry(0.3, 0.3, 0.9, 12), 0x3d70b2);
+    body.mesh.position.y = 0.45;
+    g.add(body.group);
+
+    // Lid (grey dome)
+    const lid = toonMesh(new THREE.SphereGeometry(0.31, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), 0x555555);
+    lid.mesh.position.y = 0.9;
+    g.add(lid.group);
+
+    // Discard holes (black cylinder)
+    const hole = toonMesh(new THREE.CylinderGeometry(0.12, 0.12, 0.1, 10), 0x111111, { outline: false });
+    hole.mesh.rotation.x = Math.PI / 2;
+    hole.mesh.position.set(0, 0.88, 0.2);
+    g.add(hole.group);
+
+    return g;
+}
+
+export function createDetailedVendingMachine(seed = 0) {
+    const g = new THREE.Group();
+    const color = PALETTE.vending[seed % PALETTE.vending.length];
+
+    // Grey/concrete base pad
+    const base = toonMesh(new THREE.BoxGeometry(1.05, 0.12, 0.85), 0xdddddd);
+    base.mesh.position.y = 0.06;
+    g.add(base.group);
+
+    // Main cabinet body
+    const body = toonMesh(new THREE.BoxGeometry(1.0, 2.1, 0.8), color);
+    body.mesh.position.y = 1.11;
+    g.add(body.group);
+
+    // White/Light display area panel on front
+    const panel = toonMesh(new THREE.BoxGeometry(0.85, 1.1, 0.04), 0xf5f5f5);
+    panel.mesh.position.set(0, 1.45, 0.41);
+    g.add(panel.group);
+
+    // Inner window (glass)
+    const glass = toonMesh(new THREE.BoxGeometry(0.8, 0.85, 0.02), PALETTE.glass, { transparent: true, opacity: 0.6 });
+    glass.mesh.position.set(0, 1.55, 0.44);
+    g.add(glass.group);
+
+    // Inside shelves & cans (cylinders)
+    const shelfY = [1.75, 1.45, 1.25];
+    const canColors = [0xd66565, 0x4e90e8, 0x79b36a, 0xffd966, 0x8c7ceb];
+    shelfY.forEach((sy, shIdx) => {
+        // Shelf lines
+        const shelfLine = toonMesh(new THREE.BoxGeometry(0.78, 0.02, 0.15), 0xcccccc, { outline: false });
+        shelfLine.mesh.position.set(0, sy - 0.02, 0.35);
+        g.add(shelfLine.group);
+
+        // Row of cans (4 per shelf)
+        for (let c = 0; c < 4; c++) {
+            const canCol = canColors[(seed + shIdx * 3 + c) % canColors.length];
+            const can = toonMesh(new THREE.CylinderGeometry(0.05, 0.05, 0.15, 6), canCol, { outline: false });
+            can.mesh.position.set(-0.27 + c * 0.18, sy + 0.06, 0.36);
+            g.add(can.group);
+        }
+    });
+
+    // Delivery flap at bottom
+    const delivery = toonMesh(new THREE.BoxGeometry(0.7, 0.3, 0.05), 0x2a2a2a);
+    delivery.mesh.position.set(0, 0.4, 0.41);
+    g.add(delivery.group);
+
+    // Coin slot and return
+    const coinSec = toonMesh(new THREE.BoxGeometry(0.12, 0.35, 0.04), 0x444444);
+    coinSec.mesh.position.set(0.35, 0.75, 0.41);
+    g.add(coinSec.group);
+
+    const redLight = toonMesh(new THREE.BoxGeometry(0.04, 0.04, 0.02), 0xd66565, { emissive: 0xd66565, emissiveIntensity: 0.3, outline: false });
+    redLight.mesh.position.set(0.35, 0.85, 0.44);
+    g.add(redLight.group);
+
+    // Add recycling bin next to it!
+    const bin = createRecyclingBin();
+    bin.position.set(0.8, 0, 0);
+    g.add(bin);
+
+    return g;
+}
+
+export function createStreetWall(length = 10, seed = 0) {
+    const g = new THREE.Group();
+    const wallCol = 0xDDD8CF; // warm grey/white
+
+    // Main wall body
+    const body = toonMesh(new THREE.BoxGeometry(0.5, 1.8, length), wallCol);
+    body.mesh.position.y = 0.9;
+    g.add(body.group);
+
+    // Slate cap on top
+    const cap = toonMesh(new THREE.BoxGeometry(0.65, 0.15, length + 0.15), 0x6c777b);
+    cap.mesh.position.y = 1.8 + 0.075;
+    g.add(cap.group);
+
+    // Posts/Columns along the wall to break up repetition
+    const postInterval = 3.3;
+    const halfLen = length / 2;
+    for (let z = -halfLen; z <= halfLen + 0.01; z += postInterval) {
+        const post = toonMesh(new THREE.BoxGeometry(0.58, 1.9, 0.4), wallCol);
+        post.mesh.position.set(0, 0.95, z);
+        g.add(post.group);
+
+        const postCap = toonMesh(new THREE.BoxGeometry(0.72, 0.15, 0.52), 0x6c777b);
+        postCap.mesh.position.set(0, 1.9 + 0.075, z);
+        g.add(postCap.group);
+    }
+
+    return g;
+}
+
+export function createDetailedUtilityPole(x = 0, z = 0) {
+    const g = new THREE.Group();
+    g.position.set(x, 0, z);
+    
+    // Main concrete pole
+    const pole = toonMesh(new THREE.CylinderGeometry(0.12, 0.18, 7.5, 8), 0xa0a0a0);
+    pole.mesh.position.y = 3.75;
+    g.add(pole.group);
+
+    // Crossbar 1 (Lower)
+    const bar1 = toonMesh(new THREE.BoxGeometry(1.6, 0.1, 0.1), 0x555555);
+    bar1.mesh.position.set(0, 6.2, 0);
+    g.add(bar1.group);
+
+    // Crossbar 2 (Upper)
+    const bar2 = toonMesh(new THREE.BoxGeometry(1.2, 0.1, 0.1), 0x555555);
+    bar2.mesh.position.set(0, 6.8, 0);
+    g.add(bar2.group);
+
+    // Transformer (Cylinder mounted on side)
+    const trans = toonMesh(new THREE.CylinderGeometry(0.25, 0.25, 0.7, 8), 0x888888);
+    trans.mesh.position.set(0.35, 5.5, 0);
+    g.add(trans.group);
+
+    // Bracket connecting transformer to pole
+    const transBrac = toonMesh(new THREE.BoxGeometry(0.2, 0.08, 0.08), 0x444444, { outline: false });
+    transBrac.mesh.position.set(0.18, 5.5, 0);
+    g.add(transBrac.group);
+
+    // Insulators (small white/porcelain cylinders on the crossbars)
+    [-0.6, 0.6].forEach(offset => {
+        const ins = toonMesh(new THREE.CylinderGeometry(0.04, 0.04, 0.12, 6), 0xeeeeee, { outline: false });
+        ins.mesh.position.set(offset, 6.3, 0);
+        g.add(ins.group);
+    });
+    [-0.4, 0.4].forEach(offset => {
+        const ins = toonMesh(new THREE.CylinderGeometry(0.04, 0.04, 0.12, 6), 0xeeeeee, { outline: false });
+        ins.mesh.position.set(offset, 6.9, 0);
+        g.add(ins.group);
+    });
+
+    // Streetlamp extension arm
+    const arm = toonMesh(new THREE.BoxGeometry(0.8, 0.06, 0.06), 0x444444);
+    arm.mesh.position.set(-0.4, 4.5, 0);
+    g.add(arm.group);
+
+    const lamp = toonMesh(new THREE.BoxGeometry(0.25, 0.15, 0.2), 0xffd966, { emissive: 0xffd966, emissiveIntensity: 0.2 });
+    lamp.mesh.position.set(-0.8, 4.4, 0);
+    g.add(lamp.group);
+
     return g;
 }
 
@@ -350,13 +659,24 @@ export function scatterStreetProps(scene, x, z, zone, seed, getHeight) {
     g.position.set(x, y, z);
 
     const props = [];
-    if (seed % 5 === 0) props.push(createStreetLamp());
+    if (seed % 7 === 0) {
+        props.push(createDetailedUtilityPole());
+    } else if (seed % 5 === 0) {
+        props.push(createStreetLamp());
+    }
+    
     if (seed % 4 === 0) props.push(createBench());
-    if (seed % 3 === 0) props.push(createFlowerPot(seed));
-    if (seed % 7 === 0) props.push(createBicycleParked());
+    if (seed % 6 === 0) props.push(createFlowerPot(seed));
+    if (seed % 9 === 0) props.push(createBicycleParked());
     if (seed % 11 === 0) props.push(createMailbox());
+    
+    // Add new anime-style elements:
     if (seed % 13 === 0) props.push(createTrafficCone());
-    if (seed % 17 === 0) props.push(createCat());
+    if (seed % 15 === 0) props.push(createDetailedVendingMachine(seed));
+    if (seed % 17 === 0) props.push(createKeiTruck());
+    if (seed % 19 === 0) props.push(createConvexMirror());
+    if (seed % 21 === 0) props.push(createGreenUtilityBox());
+    if (seed % 23 === 0) props.push(createCat());
 
     props.forEach((p, i) => {
         p.position.set((i % 2) * 3 - 1.5, 0, Math.floor(i / 2) * 2);

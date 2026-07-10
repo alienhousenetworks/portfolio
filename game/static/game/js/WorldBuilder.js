@@ -12,6 +12,7 @@ import {
     createCherryTree, createLargeTree, createBambooCluster, createFountain,
     createBench, createCrosswalk, createSidewalk, scatterStreetProps,
     createPineTree, createWillowTree, createRockCluster, createBridgeLamp,
+    createStreetWall,
 } from './Props.js';
 
 export class WorldBuilder {
@@ -975,6 +976,46 @@ export class WorldBuilder {
 
             if (i % 2 === 0 && Math.abs(offset) > 20) {
                 this._add(createCrosswalk(offset, offset, 'x'), offset, offset);
+            }
+
+            // Place street walls along the edges of the blocks (from offset_z = 12 to 38 within each block spacing)
+            for (let j = -half; j < half; j++) {
+                const blockZ = j * WORLD.roadSpacing + WORLD.roadSpacing / 2;
+                if (this._inPark(offset, blockZ, 25) || this._inRiver(offset, blockZ, 20)) continue;
+                
+                // Left wall of block
+                const wall1 = createStreetWall(26, i + j);
+                const wx1 = offset - WORLD.roadWidth * 0.72;
+                wall1.position.set(wx1, this.getTerrainHeight(wx1, blockZ), blockZ);
+                wall1.rotation.y = 0; // along z axis
+                this._add(wall1, wx1, blockZ);
+
+                // Right wall of block
+                const wall2 = createStreetWall(26, i + j + 2);
+                const wx2 = offset + WORLD.roadWidth * 0.72;
+                wall2.position.set(wx2, this.getTerrainHeight(wx2, blockZ), blockZ);
+                wall2.rotation.y = 0; // along z axis
+                this._add(wall2, wx2, blockZ);
+            }
+
+            for (let j = -half; j < half; j++) {
+                const blockX = j * WORLD.roadSpacing + WORLD.roadSpacing / 2;
+                if (this._inPark(blockX, offset, 25) || this._inRiver(blockX, offset, 20)) continue;
+                if (Math.abs(blockX - WORLD.riverX) < WORLD.riverWidth / 2 + 10) continue;
+
+                // Bottom wall of block
+                const wall1 = createStreetWall(26, i + j + 5);
+                const wz1 = offset - WORLD.roadWidth * 0.72;
+                wall1.position.set(blockX, this.getTerrainHeight(blockX, wz1), wz1);
+                wall1.rotation.y = Math.PI / 2; // along x axis
+                this._add(wall1, blockX, wz1);
+
+                // Top wall of block
+                const wall2 = createStreetWall(26, i + j + 7);
+                const wz2 = offset + WORLD.roadWidth * 0.72;
+                wall2.position.set(blockX, this.getTerrainHeight(blockX, wz2), wz2);
+                wall2.rotation.y = Math.PI / 2; // along x axis
+                this._add(wall2, blockX, wz2);
             }
         }
 
