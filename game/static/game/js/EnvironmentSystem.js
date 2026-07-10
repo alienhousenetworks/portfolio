@@ -75,15 +75,16 @@ export function getTimeOfDay(altitude, date = new Date()) {
 /** Visual recipes: sky gradient (horizon→zenith), fog, lights, exposure, particles */
 const TOD_LOOK = {
     night: {
-        horizon: new THREE.Color(0x0a1028),
-        zenith: new THREE.Color(0x02040e),
-        fog: new THREE.Color(0x0c1228),
-        fogNear: 60, fogFar: 220,
-        ambient: { color: 0x1a2848, intensity: 0.28 },
-        hemi: { sky: 0x1a3058, ground: 0x0a1810, intensity: 0.22 },
-        sun: { color: 0xaaccff, intensity: 0.12 },
-        fill: { color: 0x4466aa, intensity: 0.18 },
-        exposure: 0.72,
+        // City night — deep blue sky but warm lit streets (not pitch black)
+        horizon: new THREE.Color(0x2a2848),
+        zenith: new THREE.Color(0x0c1028),
+        fog: new THREE.Color(0x1a1e38),
+        fogNear: 90, fogFar: 320,
+        ambient: { color: 0x3a4868, intensity: 0.55 },
+        hemi: { sky: 0x3a5078, ground: 0x403020, intensity: 0.42 },
+        sun: { color: 0xb0c8ff, intensity: 0.22 },
+        fill: { color: 0xffb070, intensity: 0.45 },
+        exposure: 0.98,
         particle: 'stars',
     },
     dawn: {
@@ -162,12 +163,12 @@ const TOD_LOOK = {
         horizon: new THREE.Color(0x604080),
         zenith: new THREE.Color(0x101828),
         fog: new THREE.Color(0x403858),
-        fogNear: 70, fogFar: 240,
-        ambient: { color: 0x8090c0, intensity: 0.32 },
-        hemi: { sky: 0x5060a0, ground: 0x203020, intensity: 0.25 },
-        sun: { color: 0xffa080, intensity: 0.25 },
-        fill: { color: 0x5060a0, intensity: 0.22 },
-        exposure: 0.78,
+        fogNear: 80, fogFar: 280,
+        ambient: { color: 0x8090c0, intensity: 0.48 },
+        hemi: { sky: 0x5060a0, ground: 0x403028, intensity: 0.35 },
+        sun: { color: 0xffa080, intensity: 0.35 },
+        fill: { color: 0xffa070, intensity: 0.35 },
+        exposure: 0.9,
         particle: null,
     },
 };
@@ -258,6 +259,9 @@ export class EnvironmentSystem {
         this._particles = null;
         this._particleKind = null;
         this._statusEl = null;
+        this._cityLightMeshes = null;
+        this._streetPointLights = null;
+        this._cityLightsOn = null;
     }
 
     /** Resolve geolocation then apply first look. Safe if permission denied. */
@@ -355,20 +359,50 @@ export class EnvironmentSystem {
             L.fill.color.setHex(tod.fill.color);
             L.fill.intensity = tod.fill.intensity;
         }
-        // Warm night street glow
+        // Warm city glow at night / dusk (readable streets + plaza)
+        const cityNight = this.timeOfDay === 'night' || this.timeOfDay === 'dusk';
+        const nightAmt = this.timeOfDay === 'night' ? 1 : this.timeOfDay === 'dusk' ? 0.55 : 0;
         if (L.nightGlow) {
-            const night = this.timeOfDay === 'night' || this.timeOfDay === 'dusk';
-            L.nightGlow.intensity = night ? 0.55 : 0;
-            L.nightGlow.visible = night;
+            L.nightGlow.intensity = 2.4 * nightAmt;
+            L.nightGlow.visible = nightAmt > 0;
+            L.nightGlow.distance = 240;
+            L.nightGlow.color.setHex(0xffb070);
+        }
+        if (L.nightGlow2) {
+            L.nightGlow2.intensity = 1.8 * nightAmt;
+            L.nightGlow2.visible = nightAmt > 0;
+        }
+        if (L.nightGlow3) {
+            L.nightGlow3.intensity = 1.8 * nightAmt;
+            L.nightGlow3.visible = nightAmt > 0;
+        }
+        if (L.nightHemi) {
+            L.nightHemi.intensity = 0.55 * nightAmt;
+            L.nightHemi.visible = nightAmt > 0;
+        }
+        // Warmer fill from below at night so buildings read clearly
+        if (L.fill && cityNight) {
+            L.fill.color.setHex(0xffc090);
+            L.fill.intensity = Math.max(L.fill.intensity, 0.5 * nightAmt + 0.2);
+            L.fill.position.set(40, 30, 20);
         }
 
         if (this.renderer) {
             this.renderer.toneMappingExposure = tod.exposure;
         }
 
+        // Building windows + street lamps + avenue point lights
+        this._setCityNightLights(cityNight, nightAmt);
+
         // ── Ground grass seasonal tint ──────────────────────────────────
         if (this.handles.groundGrass?.material?.color) {
-            this.handles.groundGrass.material.color.setHex(season.grass);
+            // Night: slightly desaturate / darken grass
+            if (cityNight) {
+                const gCol = new THREE.Color(season.grass).multiplyScalar(0.45);
+                this.handles.groundGrass.material.color.copy(gCol);
+            } else {
+                this.handles.groundGrass.material.color.setHex(season.grass);
+            }
         }
 
         // ── Particles (Japan-style season + time of day) ────────────────
@@ -379,6 +413,111 @@ export class EnvironmentSystem {
         else if (this.season === 'summer' && this.timeOfDay === 'night') kind = 'fireflies';
 
         this._setParticles(kind);
+    }
+
+    /** Collect window / lamp meshes once, then toggle emissive + street PointLights */
+    _collectCityLights() {
+        this._cityLightMeshes = [];
+        this.scene.traverse((obj) => {
+            if (!obj.isMesh) return;
+            const tag = obj.userData?.cityLight || obj.material?.userData?.cityLight;
+            if (tag === 'window' || tag === 'shop' || tag === 'lamp' || tag === 'lampGlow') {
+                this._cityLightMeshes.push(obj);
+            }
+        });
+    }
+
+    _ensureStreetPointLights() {
+        if (this._streetPointLights) return;
+        this._streetPointLights = [];
+        // Warm pools along Main Avenue (N–S) and Cross Blvd (E–W)
+        const spots = [];
+        for (let z = -110; z <= 110; z += 36) {
+            if (Math.abs(z) < 12) continue;
+            spots.push([0, 5.5, z]);
+            spots.push([-7, 5.2, z + 10]);
+            spots.push([7, 5.2, z - 8]);
+        }
+        for (let x = -120; x <= 120; x += 40) {
+            if (Math.abs(x) < 14) continue;
+            spots.push([x, 5.2, 0]);
+            spots.push([x + 8, 5.0, 90]);
+            spots.push([x - 6, 5.0, -90]);
+        }
+        // Plaza ring
+        for (let i = 0; i < 6; i++) {
+            const a = (i / 6) * Math.PI * 2;
+            spots.push([Math.cos(a) * 18, 4.5, Math.sin(a) * 18]);
+        }
+
+        spots.forEach(([x, y, z], i) => {
+            const col = i % 3 === 0 ? 0xffe0a0 : 0xffc070;
+            const pl = new THREE.PointLight(col, 0, 28, 1.6);
+            pl.position.set(x, y, z);
+            pl.visible = false;
+            pl.castShadow = false;
+            this.scene.add(pl);
+            this._streetPointLights.push(pl);
+        });
+    }
+
+    _setCityNightLights(on, amount = 1) {
+        const key = on ? amount : 0;
+        if (this._cityLightsOn === key) return;
+        this._cityLightsOn = key;
+
+        if (!this._cityLightMeshes) this._collectCityLights();
+        this._ensureStreetPointLights();
+
+        const winIntensity = on ? 0.95 * amount : 0;
+        const shopIntensity = on ? 1.15 * amount : 0;
+        const lampIntensity = on ? 1.4 * amount : 0.18;
+        const glowOpacity = on ? 0.45 * amount : 0.1;
+
+        this._cityLightMeshes.forEach((mesh) => {
+            const tag = mesh.userData?.cityLight || mesh.material?.userData?.cityLight;
+            const lit = mesh.userData.litAtNight !== false;
+            const mat = mesh.material;
+            if (!mat) return;
+
+            if (tag === 'window') {
+                if (mat.emissive) {
+                    if (on && lit) {
+                        mat.emissiveIntensity = winIntensity * (0.7 + (Math.abs(mesh.id * 17) % 5) * 0.08);
+                        mat.opacity = 0.92;
+                    } else if (on && !lit) {
+                        mat.emissiveIntensity = 0.05;
+                        mat.opacity = 0.55;
+                    } else {
+                        mat.emissiveIntensity = 0;
+                        mat.opacity = 0.72;
+                    }
+                    mat.needsUpdate = true;
+                }
+            } else if (tag === 'shop') {
+                if (mat.emissive) {
+                    mat.emissiveIntensity = on ? shopIntensity : 0;
+                    mat.opacity = on ? 0.85 : 0.55;
+                    mat.needsUpdate = true;
+                }
+            } else if (tag === 'lamp') {
+                if (mat.emissive) {
+                    mat.emissiveIntensity = lampIntensity;
+                    mat.needsUpdate = true;
+                }
+            } else if (tag === 'lampGlow') {
+                mat.opacity = glowOpacity;
+                mat.needsUpdate = true;
+            }
+        });
+
+        // Avenue point lights — warm pools of light on roads
+        const plIntensity = on ? 1.65 * amount : 0;
+        this._streetPointLights.forEach((pl, i) => {
+            pl.intensity = plIntensity * (0.85 + (i % 4) * 0.08);
+            pl.visible = on && amount > 0.05;
+            pl.distance = on ? 32 : 1;
+        });
     }
 
     _paintSky(skyMesh, horizon, zenith) {

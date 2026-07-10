@@ -4,15 +4,37 @@ import { toonMesh, toonMat, INK } from './ToonStyle.js';
 
 export function createStreetLamp() {
     const g = new THREE.Group();
+    g.userData.isStreetLamp = true;
     const pole = toonMesh(new THREE.BoxGeometry(0.1, 4.2, 0.1), PALETTE.pole);
     pole.mesh.position.y = 2.1;
     g.add(pole.group);
     const arm = toonMesh(new THREE.BoxGeometry(0.8, 0.08, 0.08), PALETTE.pole);
     arm.mesh.position.set(0.35, 4, 0);
     g.add(arm.group);
-    const bulb = toonMesh(new THREE.BoxGeometry(0.35, 0.25, 0.35), PALETTE.yellow, { emissive: PALETTE.yellow, emissiveIntensity: 0.18 });
+    const bulb = toonMesh(new THREE.BoxGeometry(0.35, 0.25, 0.35), PALETTE.yellow, {
+        emissive: PALETTE.yellow, emissiveIntensity: 0.2,
+    });
     bulb.mesh.position.set(0.7, 3.85, 0);
+    bulb.mesh.userData.cityLight = 'lamp';
+    bulb.mesh.userData.litAtNight = true;
+    if (bulb.mesh.material) bulb.mesh.material.userData.cityLight = 'lamp';
     g.add(bulb.group);
+
+    // Soft cone glow (emissive sphere) — brightens strongly at night
+    const glow = new THREE.Mesh(
+        new THREE.SphereGeometry(0.55, 8, 6),
+        new THREE.MeshBasicMaterial({
+            color: 0xffe8a0,
+            transparent: true,
+            opacity: 0.12,
+            depthWrite: false,
+        })
+    );
+    glow.position.set(0.7, 3.85, 0);
+    glow.userData.cityLight = 'lampGlow';
+    glow.userData.litAtNight = true;
+    g.add(glow);
+
     return g;
 }
 

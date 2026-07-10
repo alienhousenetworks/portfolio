@@ -116,13 +116,28 @@ export function setupCityLighting(scene) {
     fill.position.set(80, 60, -100);
     scene.add(fill);
 
-    // Warm street-level glow for night (intensity driven by EnvironmentSystem)
-    const nightGlow = new THREE.PointLight(0xffaa66, 0, 180, 1.4);
-    nightGlow.position.set(0, 12, 0);
+    // City night fill — plaza + avenues (EnvironmentSystem toggles intensity)
+    const nightGlow = new THREE.PointLight(0xffb070, 0, 220, 1.2);
+    nightGlow.position.set(0, 14, 0);
     nightGlow.visible = false;
     scene.add(nightGlow);
 
-    const handles = { ambient, hemi, sun, fill, nightGlow };
+    // Extra warm fills so the city is readable at night (not pitch black)
+    const nightGlow2 = new THREE.PointLight(0xffc888, 0, 160, 1.3);
+    nightGlow2.position.set(0, 10, 55);
+    nightGlow2.visible = false;
+    scene.add(nightGlow2);
+
+    const nightGlow3 = new THREE.PointLight(0xffc888, 0, 160, 1.3);
+    nightGlow3.position.set(0, 10, -55);
+    nightGlow3.visible = false;
+    scene.add(nightGlow3);
+
+    const nightHemi = new THREE.HemisphereLight(0x4a6088, 0xffaa66, 0);
+    nightHemi.visible = false;
+    scene.add(nightHemi);
+
+    const handles = { ambient, hemi, sun, fill, nightGlow, nightGlow2, nightGlow3, nightHemi };
     scene.userData.envLights = handles;
     return handles;
 }

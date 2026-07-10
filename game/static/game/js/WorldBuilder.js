@@ -533,9 +533,12 @@ export class WorldBuilder {
         strip.mesh.position.y = 3.2;
         g.add(strip.group);
 
-        const glassMat = toonMat(accentCol, { emissive: accentCol, emissiveIntensity: 0.35 });
+        const glassMat = toonMat(accentCol, { emissive: accentCol, emissiveIntensity: 0.15 });
         const shop = new THREE.Mesh(new THREE.BoxGeometry(w * 0.72, 2.2, 0.1), glassMat);
         shop.position.set(0, 1.1, d / 2 + 0.02);
+        shop.userData.cityLight = 'shop';
+        shop.userData.litAtNight = true;
+        glassMat.userData.cityLight = 'shop';
         g.add(shop);
 
         const frameMat = toonMat(0x1a1a1a);

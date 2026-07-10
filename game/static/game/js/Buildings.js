@@ -129,11 +129,17 @@ export function buildJapaneseBuilding(w, h, d, seed) {
 }
 
 function _shopFront(g, w, d, seed) {
-    // Large glass storefront at ground level
+    // Large glass storefront at ground level (lit at night by EnvironmentSystem)
     const glassW = w * 0.72;
-    const glassMat = toonMat(JP.shopGlass, { transparent: true, opacity: 0.55 });
+    const glassMat = toonMat(JP.shopGlass, {
+        transparent: true, opacity: 0.55,
+        emissive: 0xffcc88, emissiveIntensity: 0,
+    });
     const glass = new THREE.Mesh(new THREE.BoxGeometry(glassW, 2.5, 0.05), glassMat);
     glass.position.set(0, 1.25, d / 2 + 0.02);
+    glass.userData.cityLight = 'shop';
+    glass.userData.litAtNight = true;
+    glassMat.userData.cityLight = 'shop';
     g.add(glass);
 
     // Dark frame around storefront
@@ -156,7 +162,6 @@ function _shopFront(g, w, d, seed) {
 function _windows(g, w, h, d, seed, floors) {
     const cols = Math.max(1, Math.floor(w / 2.8));
     const frameMat = toonMat(JP.winFrame);
-    const glassMat = toonMat(JP.winGlass, { transparent: true, opacity: 0.72 });
 
     for (let r = 1; r < floors; r++) {
         const wy = r * 3.2 + 1.4;
@@ -164,6 +169,13 @@ function _windows(g, w, h, d, seed, floors) {
 
         for (let c = 0; c < cols; c++) {
             const wx = -w / 2 + (c + 0.5) * (w / cols);
+            // Per-window material so some rooms stay dark at night
+            const lit = ((seed + r * 17 + c * 31) % 5) !== 0;
+            const warm = ((seed + r + c) % 3) === 0 ? 0xffe8a8 : 0xffd080;
+            const glassMat = toonMat(JP.winGlass, {
+                transparent: true, opacity: 0.72,
+                emissive: warm, emissiveIntensity: 0,
+            });
 
             // Front face windows
             const frame = new THREE.Mesh(new THREE.BoxGeometry(1.3, 1.5, 0.07), frameMat);
@@ -172,6 +184,9 @@ function _windows(g, w, h, d, seed, floors) {
 
             const glass = new THREE.Mesh(new THREE.BoxGeometry(1.05, 1.25, 0.05), glassMat);
             glass.position.set(wx, wy, d / 2 + 0.04);
+            glass.userData.cityLight = 'window';
+            glass.userData.litAtNight = lit;
+            glassMat.userData.cityLight = 'window';
             g.add(glass);
 
             // Horizontal grid bar on window
