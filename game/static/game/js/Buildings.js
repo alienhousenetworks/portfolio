@@ -8,12 +8,36 @@ import { toonMesh, toonMat, INK } from './ToonStyle.js';
 
 // ─── Japanese palette ──────────────────────────────────────────────────────
 const JP = {
-    // Wall colors: muted concrete tones
-    walls: [0xc0c4bc, 0xb8beba, 0xc8c4be, 0xa8b8b4, 0xd4cec8, 0xbcc0bc, 0xc4c8bc, 0xb0bcb8],
-    // Roof/parapet
-    roofs: [0x7a8888, 0x8a9898, 0x6e7c7a, 0x5a6a68, 0x7c8880],
+    // Wall colors: light-shaded Japanese anime pastel tones
+    walls: [
+        0xf5d6d8,  // Blossom Pink
+        0xd0ede5,  // Mint green
+        0xd2e5f5,  // Soft sky blue
+        0xf7eec6,  // Vanilla cream
+        0xf9dfcb,  // Light peach
+        0xe3e0f5,  // Soft lavender
+        0xe5e5df,  // Warm linen gray
+        0xdce5d6,  // Sage pastel
+    ],
+    // Roof/parapet: slightly deeper but still soft anime colors
+    roofs: [
+        0xe3a8ac,  // Soft coral
+        0x80cbc4,  // Soft teal
+        0x90caf9,  // Pastel blue
+        0xffdd80,  // Soft gold
+        0xe6a188,  // Light terracotta
+        0xb39ddb,  // Soft lilac
+        0xa5d6a7,  // Soft green
+    ],
     // Accent colors for facade panels
-    accents: [0x48d2c9, 0xd08080, 0xf5c842, 0x88c4c8, 0x5aaa90, 0xcc9966],
+    accents: [
+        0xffa726,  // Pastel orange
+        0xf06292,  // Pastel rose
+        0x26a69a,  // Soft sea green
+        0x5c6bc0,  // Soft indigo
+        0x8d6e63,  // Warm brown
+        0x26c6da,  // Bright sky cyan
+    ],
     // Ground floor shop
     shopGlass: 0x6ab8c8,
     shopFrame: 0x2a3038,

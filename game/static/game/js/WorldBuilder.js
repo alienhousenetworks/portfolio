@@ -446,18 +446,18 @@ export class WorldBuilder {
         const g = new THREE.Group();
         const district = poi.district || '';
 
-        let wallCol = 0xbcc0bc;
-        let accentCol = 0x48d2c9;
+        let wallCol = 0xe5e5df;
+        let accentCol = 0x90caf9;
 
         if (district === 'software') {
-            wallCol = 0x22262d;      // Cool dark tech wall
-            accentCol = 0x00ffff;    // Cyber neon cyan
+            wallCol = 0xd2e5f5;      // Soft sky blue
+            accentCol = 0x26c6da;    // Bright sky cyan
         } else if (district === 'marketing') {
-            wallCol = 0xd4cec8;      // Warm market concrete
-            accentCol = 0xff5533;    // Bright red-orange awning/signs
+            wallCol = 0xf9dfcb;      // Light peach
+            accentCol = 0xffa726;    // Pastel orange
         } else {
-            wallCol = 0xc0c4bc;
-            accentCol = 0xf5c842;
+            wallCol = 0xf7eec6;      // Vanilla cream
+            accentCol = 0xf06292;    // Pastel rose
         }
 
         // Main body
