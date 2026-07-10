@@ -147,12 +147,12 @@ def _build_game_buildings(services, projects, team, site_name):
     buildings = []
     team_list = list(team)
     district_slots = {
-        'software': [(-198, -118), (-170, -118), (-142, -118), (-198, -90), (-170, -62), (-142, -62)],
-        'marketing': [(142, -118), (170, -118), (198, -118), (142, -90), (170, -62), (198, -62)],
-        'consulting': [(-60, -150), (60, -150), (-60, 130), (60, 130)],
+        'software': [(-90, -54), (-90, -30), (-90, -6), (-66, -54), (-66, -30), (-66, -6)],
+        'marketing': [(90, 30), (90, 54), (90, 78), (66, 30), (66, 54), (66, 78)],
+        'consulting': [(-18, -54), (18, -54), (-18, 54), (18, 54)],
     }
     slot_idx = {'software': 0, 'marketing': 0, 'consulting': 0, 'innovation': 0}
-    innovation_slots = [(-155, 145), (-130, 145), (-105, 145), (-155, 175), (-130, 175), (-105, 175)]
+    innovation_slots = [(-42, 30), (-18, 30), (18, 30), (42, 30), (-42, -30), (-18, -30)]
 
     for i, service in enumerate(services):
         district = _categorize_service(service)
@@ -244,9 +244,9 @@ def _build_transit_destinations(buildings, about_us, site_name):
             'name': f'{site_name} HQ — About Us City',
             'category': 'about',
             'x': 0,
-            'z': -115,
+            'z': -78,
             'arrivalX': 0,
-            'arrivalZ': -95,
+            'arrivalZ': -62,
             'description': 'Headquarters, company story, and contact',
             'district': 'hq',
         },
@@ -255,9 +255,9 @@ def _build_transit_destinations(buildings, about_us, site_name):
             'name': 'Contact & Uplink Plaza',
             'category': 'about',
             'x': 0,
-            'z': -60,
+            'z': -30,
             'arrivalX': 0,
-            'arrivalZ': -45,
+            'arrivalZ': -18,
             'description': 'Reach AlienHouse Networks',
             'district': 'hq',
         },
@@ -266,31 +266,31 @@ def _build_transit_destinations(buildings, about_us, site_name):
             'name': 'Central Park — Landing Zone',
             'category': 'about',
             'x': 0,
-            'z': 80,
+            'z': 78,
             'arrivalX': 0,
-            'arrivalZ': 65,
+            'arrivalZ': 62,
             'description': 'Main park and team meetup area',
             'district': 'park',
         },
         {
             'id': 'software-hub',
-            'name': 'Software Development City',
+            'name': 'Code & Tech District',
             'category': 'district',
-            'x': -170,
-            'z': -90,
-            'arrivalX': -170,
-            'arrivalZ': -65,
+            'x': -90,
+            'z': -30,
+            'arrivalX': -90,
+            'arrivalZ': -18,
             'description': 'Tech campuses and engineering offices',
             'district': 'software',
         },
         {
             'id': 'marketing-hub',
-            'name': 'Marketing & Creative City',
+            'name': 'Canal & Market Plaza',
             'category': 'district',
-            'x': 170,
-            'z': -90,
-            'arrivalX': 170,
-            'arrivalZ': -65,
+            'x': 90,
+            'z': 54,
+            'arrivalX': 90,
+            'arrivalZ': 38,
             'description': 'Branding, media, and design studios',
             'district': 'marketing',
         },
@@ -298,23 +298,23 @@ def _build_transit_destinations(buildings, about_us, site_name):
             'id': 'innovation-hub',
             'name': 'Innovation & Projects Park',
             'category': 'district',
-            'x': -130,
-            'z': 165,
-            'arrivalX': -130,
-            'arrivalZ': 145,
+            'x': -18,
+            'z': 30,
+            'arrivalX': -18,
+            'arrivalZ': 18,
             'description': 'Project showcases and R&D',
             'district': 'innovation',
         },
     ]
 
     for i, about in enumerate(about_us[:4]):
-        arr = _arrival_open(0, -115 - i * 5, 22)
+        arr = _arrival_open(0, -78 - i * 8, 22)
         destinations.append({
             'id': f'about-{i}',
             'name': f'About Us — {about.heading}',
             'category': 'about',
             'x': 0,
-            'z': -115 - i * 5,
+            'z': -78 - i * 8,
             'description': about.subheading or 'Learn about our company',
             'district': 'hq',
             **arr,

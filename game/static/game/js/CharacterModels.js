@@ -443,6 +443,9 @@ export function createCharacterInstance(type, modelKey, opts = {}) {
     const model = cloneSkinnedModel(cached.scene);
     root.add(model);
 
+    // Attach procedural anime-style glasses matching the sketch
+    addGlassesToHead(model);
+
     const appliedHeight = opts.targetHeight ?? cached.targetHeight;
     root.userData.targetHeight = appliedHeight;
     if (Math.abs(appliedHeight - cached.targetHeight) > 0.01) {
@@ -500,4 +503,78 @@ export function cycleOutfitPreset(avatar, delta = 1) {
 
 export function updateCharacterAnimator(avatar, dt) {
     if (avatar.userData.mixer) avatar.userData.mixer.update(dt);
+}
+
+export function addGlassesToHead(model) {
+    let headBone = null;
+    model.traverse(obj => {
+        if (obj.isBone && (obj.name === 'Head' || obj.name.toLowerCase().endsWith('head'))) {
+            headBone = obj;
+        }
+    });
+
+    if (!headBone) return;
+
+    // Check if glasses already exist to avoid duplicates
+    if (headBone.getObjectByName('characterGlasses')) return;
+
+    const glassesGroup = new THREE.Group();
+    glassesGroup.name = 'characterGlasses';
+
+    const frameColor = 0x151518; // Black frames
+    const frameMat = toonMat(frameColor);
+    const lensMat = new THREE.MeshToonMaterial({
+        color: 0xe0f7fc,
+        transparent: true,
+        opacity: 0.3,
+        roughness: 0.1,
+    });
+
+    // Make beautiful round glasses matching the sketches
+    const rimRadius = 0.048;
+    const rimTube = 0.006;
+    const rimGeo = new THREE.TorusGeometry(rimRadius, rimTube, 8, 24);
+    const lensGeo = new THREE.CircleGeometry(rimRadius, 24);
+
+    // Left Rim & Lens
+    const leftRim = new THREE.Mesh(rimGeo, frameMat);
+    leftRim.position.set(-0.052, 0, 0);
+    const leftLens = new THREE.Mesh(lensGeo, lensMat);
+    leftLens.position.set(-0.052, 0, 0.002);
+    glassesGroup.add(leftRim);
+    glassesGroup.add(leftLens);
+
+    // Right Rim & Lens
+    const rightRim = new THREE.Mesh(rimGeo, frameMat);
+    rightRim.position.set(0.052, 0, 0);
+    const rightLens = new THREE.Mesh(lensGeo, lensMat);
+    rightLens.position.set(0.052, 0, 0.002);
+    glassesGroup.add(rightRim);
+    glassesGroup.add(rightLens);
+
+    // Bridge
+    const bridgeGeo = new THREE.BoxGeometry(0.03, 0.008, 0.008);
+    const bridge = new THREE.Mesh(bridgeGeo, frameMat);
+    bridge.position.set(0, 0, 0);
+    glassesGroup.add(bridge);
+
+    // Temples (sides going back to ears)
+    const templeLength = 0.1;
+    const templeGeo = new THREE.BoxGeometry(0.005, 0.005, templeLength);
+    
+    const leftTemple = new THREE.Mesh(templeGeo, frameMat);
+    leftTemple.position.set(-0.095, 0, -templeLength/2);
+    leftTemple.rotation.y = 0.05;
+    glassesGroup.add(leftTemple);
+
+    const rightTemple = new THREE.Mesh(templeGeo, frameMat);
+    rightTemple.position.set(0.095, 0, -templeLength/2);
+    rightTemple.rotation.y = -0.05;
+    glassesGroup.add(rightTemple);
+
+    // Position glasses relative to the head bone.
+    glassesGroup.position.set(0, 0.065, 0.075);
+    glassesGroup.rotation.set(0.02, 0, 0);
+
+    headBone.add(glassesGroup);
 }
