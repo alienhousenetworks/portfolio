@@ -16,6 +16,7 @@ import { getZoneAt, getZoneLabel } from './CityZones.js';
 import { TransitPicker } from './TransitPicker.js';
 import { audio } from './AudioManager.js';
 import { EnvironmentSystem } from './EnvironmentSystem.js';
+import { MobileControls } from './MobileControls.js';
 
 class Game {
     constructor(data) {
@@ -68,6 +69,16 @@ class Game {
             () => this.playerCtrl?.enable()
         );
         this.dialogue = new DialogueSystem(data);
+        this.mobileControls = new MobileControls({
+            getPlayerCtrl: () => this.playerCtrl,
+            onInteract: () => {
+                if (this.state === 'playing' && !this.dialogue.active && this.nearestTarget) {
+                    this._interact(this.nearestTarget);
+                } else if (this.dialogue?.active) {
+                    this.dialogue.advance();
+                }
+            },
+        });
         this._ui();
         this._ready = false;
         requestAnimationFrame(() => this._loop());
@@ -211,8 +222,13 @@ class Game {
             document.getElementById('side-toolbar')?.classList.add('visible');
             document.querySelector('.back-link')?.classList.add('visible');
             document.getElementById('height-control')?.classList.add('visible');
+            this.mobileControls?.show();
             const hint = document.getElementById('physics-hint');
             if (hint) {
+                // Mobile: shorter, touch-friendly hint
+                if (this.mobileControls?.isMobileUi()) {
+                    hint.innerHTML = 'Drag right side to look · Joystick to move · <b>RUN</b> / <b>JUMP</b> / <b>E</b>';
+                }
                 hint.classList.add('visible');
                 setTimeout(() => hint.classList.add('fade-out'), 7000);
             }
@@ -266,6 +282,7 @@ class Game {
     _startJourney(dest, stop, mode) {
         this.state = 'riding';
         this.playerCtrl.disable();
+        this.mobileControls?.hide();
         const pos = this.player.position;
         this.ride.startJourney({
             fromX: pos.x,
@@ -291,6 +308,7 @@ class Game {
                 );
                 this.state = 'playing';
                 this.playerCtrl.enable();
+                this.mobileControls?.show();
             },
         });
     }
@@ -343,6 +361,7 @@ class Game {
 
         this.nearestTarget = best;
         const prompt = document.getElementById('interact-prompt');
+        this.mobileControls?.setInteractAvailable(!!best);
         if (best) {
             prompt.classList.add('visible');
             let verb = 'Visit';
@@ -351,7 +370,10 @@ class Game {
                 verb = best.isHost ? 'Learn about' : 'Talk to';
                 label = best.isHost ? (best.hostBuilding || best.panelTitle) : best.title;
             } else if (best.type === 'train_station' || best.type === 'bus_stop') verb = 'Travel to city from';
-            prompt.innerHTML = `<kbd>E</kbd> ${verb} ${label}`;
+            const isMobile = this.mobileControls?.isMobileUi?.();
+            prompt.innerHTML = isMobile
+                ? `<kbd>E</kbd> ${verb} ${label}`
+                : `<kbd>E</kbd> ${verb} ${label}`;
         } else {
             prompt.classList.remove('visible');
         }

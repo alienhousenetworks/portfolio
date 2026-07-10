@@ -59,10 +59,7 @@ export class PlayerController {
             // Jump
             if (e.code === 'Space') {
                 e.preventDefault();
-                if (this.onGround) {
-                    this.vy = PHYSICS.jumpForce;
-                    this.onGround = false;
-                }
+                this.jump();
             }
         });
         addEventListener('keyup', e => {
@@ -70,21 +67,39 @@ export class PlayerController {
             if (e.code.startsWith('Shift')) this.isRunning = false;
         });
 
-        let drag = false, lx = 0, ly = 0;
+        let drag = false, lx = 0, ly = 0, dragPointerId = null;
+        const isUiTouch = (e) => {
+            const t = e.target;
+            return !!(t && (t.closest?.('[data-touch-ui]') || t.closest?.('#mobile-controls') || t.closest?.('#side-toolbar') || t.closest?.('#hud')));
+        };
         const onDown = (e) => {
             if (!this.enabled) return;
+            if (isUiTouch(e)) return;
+            // On multi-touch mobile: only right half of screen orbits camera (left is joystick)
+            if (e.pointerType === 'touch' || e.type?.startsWith('touch')) {
+                const cx0 = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
+                if (cx0 < innerWidth * 0.42) return;
+            }
             this.canvas?.focus();
             drag = true;
+            dragPointerId = e.pointerId ?? null;
             lx = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
             ly = e.clientY ?? e.touches?.[0]?.clientY ?? 0;
         };
-        const onUp = () => { drag = false; };
+        const onUp = (e) => {
+            if (dragPointerId != null && e?.pointerId != null && e.pointerId !== dragPointerId) return;
+            drag = false;
+            dragPointerId = null;
+        };
         const onMove = (e) => {
             if (!this.enabled || !drag) return;
+            if (dragPointerId != null && e.pointerId != null && e.pointerId !== dragPointerId) return;
             const cx = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
             const cy = e.clientY ?? e.touches?.[0]?.clientY ?? 0;
-            this.camYaw -= (cx - lx) * CAMERA.yawSpeed;
-            this.camPitch += (cy - ly) * CAMERA.pitchSpeed;
+            // Slightly faster orbit on touch for mobile feel
+            const touchMul = (e.pointerType === 'touch') ? 1.25 : 1;
+            this.camYaw -= (cx - lx) * CAMERA.yawSpeed * touchMul;
+            this.camPitch += (cy - ly) * CAMERA.pitchSpeed * touchMul;
             this.camPitch = THREE.MathUtils.clamp(this.camPitch, CAMERA.minPitch, CAMERA.maxPitch);
             lx = cx;
             ly = cy;
@@ -104,6 +119,15 @@ export class PlayerController {
         this.canvas?.addEventListener('touchstart', onDown, { passive: false });
         this.canvas?.addEventListener('touchend', onUp);
         this.canvas?.addEventListener('touchmove', onMove, { passive: false });
+    }
+
+    /** Called from Space key or mobile JUMP button */
+    jump() {
+        if (!this.enabled) return false;
+        if (!this.onGround) return false;
+        this.vy = PHYSICS.jumpForce;
+        this.onGround = false;
+        return true;
     }
 
     enable() {
