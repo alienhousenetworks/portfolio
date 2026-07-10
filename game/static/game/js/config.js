@@ -64,48 +64,48 @@ export const CAMERA = {
     positionDamp: 10,
 };
 
-/** Cohesive natural-world palette */
+/** Japanese Anime Town palette — inspired by messenger.abeto.co */
 export const PALETTE = {
-    // Sky & atmosphere (Soft Ghibli Blue gradients)
-    sky: 0x91E5F2,
-    skyTop: 0x72D8E5,
-    skyHorizon: 0xB5F1F9,
-    fog: 0xB5F1F9,
+    // Sky & atmosphere (teal anime sky)
+    sky: 0x5dd8d0,
+    skyTop: 0x3abcba,
+    skyHorizon: 0x82e8e0,
+    fog: 0x7adede,
 
-    // Ground & nature (soft pastel lawn)
-    grass: 0xB8E6C8,
-    grassLight: 0xC8EDD6,
-    grassDark: 0xA8DFC0,
-    grassHighland: 0xB0E4CC,
-    embankment: 0xB8E6C8,
-    sand: 0xECE9E1,
-    dirt: 0xB98A67,
+    // Ground & nature (warm green)
+    grass: 0x90c87a,
+    grassLight: 0xa4d890,
+    grassDark: 0x78b060,
+    grassHighland: 0x7ab868,
+    embankment: 0x88c070,
+    sand: 0xd8d4c8,
+    dirt: 0xb09870,
 
-    // Roads & urban
-    asphalt: 0x6C777B,
-    asphaltDark: 0x6C777B,
-    asphaltLight: 0x7A8488,
-    sidewalk: 0xD0CDC7,
-    concrete: 0xC8C5BE,
-    concreteLight: 0xD0CDC7,
-    retainingWall: 0xC8C5BE,
+    // Roads & urban (muted slate)
+    asphalt: 0x748088,
+    asphaltDark: 0x606e72,
+    asphaltLight: 0x7e9090,
+    sidewalk: 0xbcc4c0,
+    concrete: 0xb8c0bc,
+    concreteLight: 0xc4ccc8,
+    retainingWall: 0xaab4b0,
 
-    // Water
+    // Water (kept)
     river: 0x4E90E8,
     riverShallow: 0x48D2C9,
     waterDeep: 0x4E90E8,
     waterFoam: 0xB5F1F9,
 
-    // Mountains – layered depth
+    // Hills – soft green layers
     mountain: [
-        0x79B36A,  // near slope
-        0x8CC97D,  // slope mid
-        0x7A8488,  // grey slope
-        0x6C777B,  // far mountain
+        0x70a458,  // near
+         0x88c070, // mid
+        0x6a9848,  // far
+        0x588040,  // deep far
     ],
-    mountainSnow: 0xECE9E1,
-    mountainRock: 0xC8C5BE,
-    mountainDeep: 0x6C777B,
+    mountainSnow: 0xd8e0d0,
+    mountainRock: 0xa8b4b0,
+    mountainDeep: 0x4a6050,
 
     // Bridges
     bridge: 0xDDD8CF,
@@ -115,13 +115,13 @@ export const PALETTE = {
     // Wood
     wood: [0x9C7554, 0xB98A67, 0x9C7554],
 
-    // Buildings
+    // Buildings (Japanese concrete palette)
     building: {
-        wall: [0xECE9E1, 0xDDD8CF, 0xD2CCC2],
-        roof: [0x6C777B, 0xD66565, 0x79B36A, 0x4E90E8, 0xB98A67],
+        wall: [0xc0c4bc, 0xb8beba, 0xc4c0b8, 0xa8b8b4, 0xd4cec8],
+        roof: [0x7a8888, 0x6e7c7a, 0x5a6a68, 0x7c8880],
     },
-    awning: [0xF2B0C5, 0xFFD966, 0x48D2C9, 0x8C7CEB],
-    glass: 0xB5F1F9,
+    awning: [0x48d2c9, 0xd08080, 0xf5c842, 0x88c4c8],
+    glass: 0x7ac4d0,
     frostGlass: 0xDDD8CF,
 
     // Props
@@ -130,13 +130,13 @@ export const PALETTE = {
     wire: 0x1e1e28,
     lamp: 0xFFD966,
 
-    // Trees & plants
-    blossom: 0xF2B0C5,
-    blossomTrunk: 0x9C7554,
-    foliage: [0x79B36A, 0x8CC97D, 0xA4D68B],
-    pineGreen: 0x79B36A,
-    pineDark: 0x6C777B,
-    willowGreen: 0x8CC97D,
+    // Trees & plants (anime warm greens)
+    blossom: 0xf8b0c0,
+    blossomTrunk: 0x8a7058,
+    foliage: [0x5ab860, 0x78cc68, 0x9ad080, 0x48a840],
+    pineGreen: 0x58a850,
+    pineDark: 0x3a7838,
+    willowGreen: 0x70bc58,
 
     // Characters
     humanSkin: 0xECE9E1,

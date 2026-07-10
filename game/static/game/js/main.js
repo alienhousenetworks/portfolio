@@ -347,10 +347,14 @@ class Game {
         if (this.state !== 'playing') return;
         const p = this.player.position;
         document.getElementById('coord-display').textContent = `${p.x.toFixed(0)}, ${p.z.toFixed(0)}`;
-        const district = getDistrictAt(p.x, p.z);
-        const zone = getZoneLabel(getZoneAt(p.x, p.z));
-        document.getElementById('zone-display').textContent =
-            this.nearestTarget?.subtitle || (district.id !== 'downtown' ? district.label : zone).toUpperCase();
+        // Simple zone label based on position in the Japanese city grid
+        let zoneLabel = 'OUTSIDE TOWN';
+        if (Math.abs(p.x) < 80 && Math.abs(p.z) < 65) {
+            if (p.z < -16) zoneLabel = p.x < 0 ? 'NORTH-WEST' : 'NORTH-EAST';
+            else if (p.z > 16) zoneLabel = p.x < 0 ? 'SOUTH-WEST' : 'SOUTH-EAST';
+            else zoneLabel = p.x < -38 ? 'WEST ALLEY' : p.x > 38 ? 'EAST ALLEY' : 'MAIN STREET';
+        }
+        document.getElementById('zone-display').textContent = this.nearestTarget?.subtitle || zoneLabel;
         document.getElementById('site-display').textContent = this.data.siteName;
     }
 
@@ -366,53 +370,78 @@ class Game {
         const c = document.getElementById('minimap-canvas');
         if (!c || !this._ready || !this.player || (this.state !== 'playing' && this.state !== 'riding')) return;
         const ctx = c.getContext('2d');
-        const w = c.width, h = c.height, sc = w / 400;
+        const w = c.width, h = c.height;
+        const sc = w / 400;  // world units to pixels (400 world units = full minimap)
         const cx = w / 2, cy = h / 2;
 
-        // Soft green grass base (abeto.co style)
-        ctx.fillStyle = '#a6d88f';
+        // Grass background (anime warm green)
+        ctx.fillStyle = '#90c87a';
         ctx.fillRect(0, 0, w, h);
 
-        // Grid roads (light asphalt)
-        ctx.strokeStyle = '#8a9498';
-        ctx.lineWidth = Math.max(2, WORLD.roadWidth * sc);
-        for (let i = -3; i <= 3; i++) {
-            const off = i * WORLD.roadSpacing * sc;
-            ctx.beginPath(); ctx.moveTo(cx + off, 0); ctx.lineTo(cx + off, h); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(0, cy + off); ctx.lineTo(w, cy + off); ctx.stroke();
-        }
+        // City concrete base (muted teal-grey)
+        const bx = cx - 85 * sc, by = cy - 74 * sc;
+        ctx.fillStyle = '#a8b4b0';
+        ctx.fillRect(bx, by, 170 * sc, 148 * sc);
 
-        // River (blue)
-        const rcx = cx + WORLD.riverX * sc;
-        ctx.fillStyle = '#5aabde';
-        ctx.fillRect(rcx - WORLD.riverWidth * sc / 2, 0, WORLD.riverWidth * sc, h);
+        // Draw roads (asphalt grey)
+        ctx.fillStyle = '#748088';
 
-        // River center dashes
-        ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-        ctx.lineWidth = 1.2;
-        ctx.setLineDash([4, 4]);
+        // Main E-W road (Z=0, width=9)
+        ctx.fillRect(cx - 81 * sc, cy - 4.5 * sc, 162 * sc, 9 * sc);
+        // North E-W road (Z=-32, width=7)
+        ctx.fillRect(cx - 59 * sc, cy - 32 * sc - 3.5 * sc, 118 * sc, 7 * sc);
+        // South E-W road (Z=+32, width=7)
+        ctx.fillRect(cx - 59 * sc, cy + 32 * sc - 3.5 * sc, 118 * sc, 7 * sc);
+        // West N-S road (X=-38, width=7)
+        ctx.fillRect(cx - 38 * sc - 3.5 * sc, cy - 36 * sc, 7 * sc, 72 * sc);
+        // East N-S road (X=+38, width=7)
+        ctx.fillRect(cx + 38 * sc - 3.5 * sc, cy - 36 * sc, 7 * sc, 72 * sc);
+        // Center alley (X=0, width=5)
+        ctx.fillRect(cx - 2.5 * sc, cy - 30 * sc, 5 * sc, 60 * sc);
+
+        // Sidewalks (lighter strip)
+        ctx.fillStyle = '#bcc4c0';
+        ctx.fillRect(cx - 81 * sc, cy - 7 * sc, 162 * sc, 2.4 * sc);
+        ctx.fillRect(cx - 81 * sc, cy + 4.6 * sc, 162 * sc, 2.4 * sc);
+
+        // Lane markings on main road
+        ctx.strokeStyle = '#eec820';
+        ctx.lineWidth = 0.8;
+        ctx.setLineDash([3, 3]);
         ctx.beginPath();
-        ctx.moveTo(rcx, 0);
-        ctx.lineTo(rcx, h);
+        ctx.moveTo(cx - 81 * sc, cy);
+        ctx.lineTo(cx + 81 * sc, cy);
         ctx.stroke();
         ctx.setLineDash([]);
 
-        // District overlays
-        Object.values(DISTRICT_DEFS).forEach(d => {
-            if (d.id === 'downtown') return;
-            const dx = cx + d.x * sc, dy = cy + d.z * sc, r = d.radius * sc;
-            ctx.fillStyle = d.color + '28';
-            ctx.beginPath();
-            ctx.arc(dx, dy, r, 0, 6.28);
-            ctx.fill();
-            ctx.strokeStyle = d.color + '80';
-            ctx.lineWidth = 1;
-            ctx.stroke();
-            ctx.fillStyle = d.color;
-            ctx.font = 'bold 8px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText(d.shortLabel, dx, dy + 3);
+        // Crosswalks at intersections (white dots)
+        ctx.fillStyle = 'rgba(248,248,244,0.7)';
+        [[-38, 0], [38, 0], [0, 0], [-38, -32], [38, -32], [0, -32],
+         [-38, 32], [38, 32], [0, 32]].forEach(([rx, rz]) => {
+            for (let s = -2; s <= 2; s++) {
+                ctx.fillRect(
+                    cx + (rx + s * 1.6) * sc - 0.5,
+                    cy + rz * sc - 3.5 * sc,
+                    1.2, 7 * sc
+                );
+            }
         });
+
+        // District overlays — replaced with city zone labels
+        ctx.font = `bold ${Math.max(6, 7 * sc)}px 'Patrick Hand', sans-serif`;
+        ctx.textAlign = 'center';
+        const zones = [
+            { x: -19, z: -16, label: 'NORTH' },
+            { x: 19, z: -16, label: 'QUARTER' },
+            { x: -19, z: 16, label: 'SOUTH' },
+            { x: 19, z: 16, label: 'WARD' },
+        ];
+        zones.forEach(({ x, z, label }) => {
+            ctx.fillStyle = 'rgba(80,110,90,0.6)';
+            ctx.fillText(label, cx + x * sc, cy + z * sc + 3);
+        });
+
+
 
         // POI dots
         this.interactables.forEach(item => {

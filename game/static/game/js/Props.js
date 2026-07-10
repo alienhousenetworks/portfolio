@@ -783,3 +783,145 @@ export function createMetro() {
 
     return g;
 }
+
+// ─── Japanese Town Props (new) ─────────────────────────────────────────────
+
+/** Round Japanese road sign (like the ones in abeto.co) */
+export function createRoundSign(seed = 0) {
+    const g = new THREE.Group();
+    // Pole
+    const pole = toonMesh(new THREE.BoxGeometry(0.08, 2.8, 0.08), 0x6a6a58);
+    pole.mesh.position.y = 1.4;
+    g.add(pole.group);
+    // Round sign disc
+    const disc = toonMesh(new THREE.CylinderGeometry(0.52, 0.52, 0.08, 16), 0xf8f8f0);
+    disc.mesh.position.y = 2.85;
+    disc.mesh.rotation.x = Math.PI / 2;
+    g.add(disc.group);
+    // Red/orange border ring
+    const ring = toonMesh(new THREE.TorusGeometry(0.52, 0.07, 8, 20), seed % 2 === 0 ? 0xd46858 : 0xe0a030);
+    ring.mesh.position.y = 2.85;
+    g.add(ring.group);
+    // Inner symbol (small block = character representation)
+    const symbol = toonMesh(new THREE.BoxGeometry(0.22, 0.22, 0.04), 0x2a5058, { outline: false });
+    symbol.mesh.position.set(0, 2.85, 0.06);
+    g.add(symbol.group);
+    return g;
+}
+
+/** Japanese traffic cone */
+export function createTrafficCone(seed = 0) {
+    const g = new THREE.Group();
+    const cone = toonMesh(new THREE.ConeGeometry(0.22, 0.7, 8), 0xe05020);
+    cone.mesh.position.y = 0.35;
+    g.add(cone.group);
+    // White stripes
+    [0.15, 0.38].forEach(y => {
+        const band = toonMesh(new THREE.CylinderGeometry(0.22 - y * 0.2, 0.22 - y * 0.15, 0.07, 8), 0xf8f8f0, { outline: false });
+        band.mesh.position.y = y;
+        g.add(band.group);
+    });
+    // Base
+    const base = toonMesh(new THREE.CylinderGeometry(0.28, 0.32, 0.05, 8), 0xd04818, { outline: false });
+    base.mesh.position.y = 0.025;
+    g.add(base.group);
+    return g;
+}
+
+/** Trash/rubbish bin (blue, common in Japanese streets) */
+export function createTrashCan(seed = 0) {
+    const g = new THREE.Group();
+    const colors = [0x5888c8, 0x58a858, 0xd86848];
+    const col = colors[Math.abs(seed) % 3];
+    const body = toonMesh(new THREE.CylinderGeometry(0.3, 0.28, 0.72, 10), col);
+    body.mesh.position.y = 0.36;
+    body.mesh.castShadow = true;
+    g.add(body.group);
+    const lid = toonMesh(new THREE.CylinderGeometry(0.32, 0.32, 0.1, 10), 0x2a3038);
+    lid.mesh.position.y = 0.77;
+    g.add(lid.group);
+    return g;
+}
+
+/** Detailed power/utility pole with crossarms (abeto.co style) */
+export function createPowerPole(seed = 0) {
+    const g = new THREE.Group();
+    const poleH = 6.0 + (seed % 3) * 0.5;
+    // Pole
+    const pole = toonMesh(new THREE.BoxGeometry(0.14, poleH, 0.14), 0x4a4a3a);
+    pole.mesh.position.y = poleH / 2;
+    pole.mesh.castShadow = true;
+    g.add(pole.group);
+    // Cross arm (main)
+    const arm = toonMesh(new THREE.BoxGeometry(2.6, 0.1, 0.1), 0x4a4a3a, { outline: false });
+    arm.mesh.position.y = poleH - 0.6;
+    g.add(arm.group);
+    // Cross arm (secondary, lower)
+    const arm2 = toonMesh(new THREE.BoxGeometry(1.6, 0.09, 0.09), 0x4a4a3a, { outline: false });
+    arm2.mesh.position.y = poleH - 1.6;
+    g.add(arm2.group);
+    // Insulators (small knobs)
+    [-1.2, 0, 1.2].forEach(ox => {
+        const ins = toonMesh(new THREE.CylinderGeometry(0.05, 0.05, 0.15, 6), 0xc8c8c0, { outline: false });
+        ins.mesh.position.set(ox, poleH - 0.55, 0);
+        g.add(ins.group);
+    });
+    return g;
+}
+
+/** Japanese-style parked car (simple, sketch-like) */
+export function createParkedCar(seed = 0) {
+    const g = new THREE.Group();
+    const colors = [0xc8ccc8, 0xd4d0c8, 0x8ab0c0, 0xc8a880, 0xa8c8a0];
+    const col = colors[Math.abs(seed) % 5];
+    // Body
+    const body = toonMesh(new THREE.BoxGeometry(3.8, 0.85, 1.7), col);
+    body.mesh.position.y = 0.72;
+    body.mesh.castShadow = true;
+    g.add(body.group);
+    // Cabin
+    const cabin = toonMesh(new THREE.BoxGeometry(2.0, 0.7, 1.6), col);
+    cabin.mesh.position.set(-0.3, 1.42, 0);
+    cabin.mesh.castShadow = true;
+    g.add(cabin.group);
+    // Windshield (front)
+    const wsf = toonMesh(new THREE.BoxGeometry(0.06, 0.6, 1.4), 0x6ab8c8, { transparent: true, opacity: 0.7, outline: false });
+    wsf.mesh.position.set(0.68, 1.42, 0);
+    g.add(wsf.group);
+    // Windshield (rear)
+    const wsr = toonMesh(new THREE.BoxGeometry(0.06, 0.6, 1.4), 0x6ab8c8, { transparent: true, opacity: 0.5, outline: false });
+    wsr.mesh.position.set(-1.28, 1.42, 0);
+    g.add(wsr.group);
+    // Wheels
+    const wheelMat = toonMat(0x2a2a2a);
+    [[1.1, -0.78], [1.1, 0.78], [-1.1, -0.78], [-1.1, 0.78]].forEach(([wz, wx]) => {
+        const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.28, 12), wheelMat);
+        wheel.rotation.z = Math.PI / 2;
+        wheel.position.set(wx, 0.34, wz);
+        g.add(wheel);
+    });
+    // Headlights
+    const hl = toonMesh(new THREE.BoxGeometry(0.04, 0.18, 0.38), 0xf8f0c8, { outline: false });
+    hl.mesh.position.set(1.92, 0.72, 0.5);
+    g.add(hl.group);
+    const hl2 = hl.group.clone();
+    hl2.position.set(1.92, 0.72, -0.5);
+    g.add(hl2);
+    return g;
+}
+
+/** Mailbox post (red Japanese post box) */
+export function createPostBox() {
+    const g = new THREE.Group();
+    const base = toonMesh(new THREE.CylinderGeometry(0.28, 0.3, 1.1, 10), 0xcc2828);
+    base.mesh.position.y = 0.55;
+    base.mesh.castShadow = true;
+    g.add(base.group);
+    const top = toonMesh(new THREE.CylinderGeometry(0.3, 0.3, 0.28, 10), 0xaa2020);
+    top.mesh.position.y = 1.24;
+    g.add(top.group);
+    const slot = toonMesh(new THREE.BoxGeometry(0.18, 0.04, 0.06), 0x2a2a2a, { outline: false });
+    slot.mesh.position.set(0.26, 0.9, 0);
+    g.add(slot.group);
+    return g;
+}

@@ -1,19 +1,46 @@
+/**
+ * WorldBuilder.js — Japanese Anime Town
+ * One compact city, nature surroundings.
+ * Inspired by messenger.abeto.co street aesthetic.
+ */
 import * as THREE from 'three';
-import { WORLD, PALETTE, POI_TYPES } from './config.js';
-import { DISTRICT_DEFS, getDistrictAt } from './Districts.js';
-import { getZoneAt, propDensity } from './CityZones.js';
+import { WORLD, PALETTE } from './config.js';
+import { toonMat, toonMesh, setupCityLighting, INK } from './ToonStyle.js';
+import { buildJapaneseBuilding, buildJapaneseCorner } from './Buildings.js';
 import {
-    createZoneBuilding, createServiceBuilding,
-    createVendingMachine, createUtilityPole, createSchool,
-    createResidential, createTinyHome, createCafe, createJapaneseModern,
-} from './Buildings.js';
-import { toonMat, toonMesh, sketchLines, setupCityLighting, INK } from './ToonStyle.js';
-import {
-    createCherryTree, createLargeTree, createBambooCluster, createFountain,
-    createBench, createCrosswalk, createSidewalk, scatterStreetProps,
-    createPineTree, createWillowTree, createRockCluster, createBridgeLamp,
-    createStreetWall, createBus, createMetro,
+    createStreetLamp, createBench, createFlowerPot, createMailbox,
+    createBicycleParked, createCherryTree, createLargeTree, createPineTree,
+    createRoundSign, createTrafficCone, createTrashCan, createPowerPole,
+    createParkedCar, createPostBox, createVendingMachine,
 } from './Props.js';
+
+// ─── City layout constants ─────────────────────────────────────────────────
+// Main road at Z=0 (E-W), width 9
+// North road at Z=-32, width 7
+// South road at Z=32, width 7
+// West road at X=-38, width 7
+// East road at X=38, width 7
+// Short alley at X=0 connecting N/S roads, width 5
+
+const ROAD = {
+    main: { z: 0, w: 9 },
+    north: { z: -32, w: 7 },
+    south: { z: 32, w: 7 },
+    west: { x: -38, w: 7 },
+    east: { x: 38, w: 7 },
+    alley: { x: 0, w: 5, z1: -32, z2: 32 },
+    sw: 2.2,  // sidewalk width
+};
+
+// Building row centerlines (where building centers are placed)
+// Calculated as road_edge + sidewalk + half_building_depth
+// We use depth=9 for main rows, depth=8 for inner rows
+const BLD_Z_SOUTH_MAIN = -(ROAD.main.w / 2 + ROAD.sw + 4.5);   // ≈ -11.2
+const BLD_Z_NORTH_MAIN = +(ROAD.main.w / 2 + ROAD.sw + 4.5);   // ≈ +11.2
+const BLD_Z_NORTH_NROAD = -(ROAD.north.z * -1 + ROAD.north.w / 2 + ROAD.sw + 5);  // ≈ -42.5
+const BLD_Z_SOUTH_NROAD = -(ROAD.north.z * -1 - ROAD.north.w / 2 - ROAD.sw - 4);  // ≈ -22
+const BLD_Z_NORTH_SROAD = +(ROAD.south.z - ROAD.south.w / 2 - ROAD.sw - 4);  // ≈ +22
+const BLD_Z_SOUTH_SROAD = +(ROAD.south.z + ROAD.south.w / 2 + ROAD.sw + 5);  // ≈ +42.5
 
 export class WorldBuilder {
     constructor(scene, gameData, terrain = null, chunkManager = null) {
@@ -26,37 +53,19 @@ export class WorldBuilder {
         this.buildingSites = new Set();
     }
 
-    _add(obj, x, z, opts = {}) {
-        this.scene.add(obj);
-        if (this.chunks && !opts.global) {
-            this.chunks.register(obj, x, z, opts);
-        }
-        return obj;
-    }
-
     build() {
         this._skyDome();
         this._clouds();
         this._lights();
-        if (!this.terrain) this._ground();
-        this._mountains();
-        this._beach();
-        this._river();
-        this._bridges();
-        this._waterfall();
-        this._districtZones();
-        this._roadGrid();
-        this._city();
-        this._landmarks();
-        this._dbBuildings();
-        this._parks();
-        this._nature();
-        this._urbanGreenery();
-        this._riverForest();
-        this._urbanDetails();
-        this._placeVehicles();
+        this._ground();
+        this._roadNetwork();
+        this._buildingRows();
+        this._streetProps();
+        this._crosswalks();
+        this._wireNetwork();
+        this._surroundingNature();
         this._pois();
-        if (this.terrain) this.colliders.push(...this.terrain.wallColliders);
+        if (this.terrain) this.colliders.push(...(this.terrain.wallColliders || []));
         return {
             pois: this.pois,
             colliders: this.colliders,
@@ -69,1498 +78,585 @@ export class WorldBuilder {
         return this.terrain ? this.terrain.getHeightAt(x, z) : WORLD.groundY;
     }
 
-    _inPark(x, z, margin = 0) {
-        return false;
-    }
-
-    _inRiver(x, z, margin = 0) {
-        const halfW = WORLD.riverWidth / 2 + margin;
-        return (
-            Math.abs(x - WORLD.riverX) < halfW
-            && Math.abs(z) < WORLD.riverLength / 2 + margin
-        );
-    }
-
-    _markSite(x, z, w = 24, d = 24, h = 0) {
-        this.buildingSites.add(`${Math.round(x)},${Math.round(z)}`);
+    // Stubs for backward-compat (main.js may reference these on terrain)
+    _inPark() { return false; }
+    _inRiver(x, z, margin = 0) { return false; }
+    _markSite(x, z, w = 16, d = 16, h = 0) {
         this.colliders.push({ x, z, w, d, h, floorY: this.getTerrainHeight(x, z) });
     }
 
-    _isOccupied(cx, cz) {
-        for (const key of this.buildingSites) {
-            const [bx, bz] = key.split(',').map(Number);
-            if (Math.hypot(cx - bx, cz - bz) < 20) return true;
-        }
-        return false;
-    }
-
-    // ── Sky dome ────────────────────────────────────────────────────────────
-
+    // ─── Sky ────────────────────────────────────────────────────────────────
     _skyDome() {
-        // Large hemisphere for gradient sky
-        const skyGeo = new THREE.SphereGeometry(580, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2);
-        // Vertex-color gradient: top = deep blue, horizon = lighter
-        const colors = [];
-        const posArr = skyGeo.attributes.position;
-        for (let i = 0; i < posArr.count; i++) {
-            const y = posArr.getY(i);
-            const t = Math.max(0, Math.min(1, y / 580));
-            // lerp from horizon color to zenith
-            const r = THREE.MathUtils.lerp(0.72, 0.23, t);
-            const g = THREE.MathUtils.lerp(0.88, 0.51, t);
-            const b = THREE.MathUtils.lerp(0.96, 0.76, t);
-            colors.push(r, g, b);
+        // Vibrant teal anime sky like abeto.co
+        const geo = new THREE.SphereGeometry(560, 32, 14, 0, Math.PI * 2, 0, Math.PI / 2);
+        const cols = [];
+        const pos = geo.attributes.position;
+        for (let i = 0; i < pos.count; i++) {
+            const t = Math.max(0, Math.min(1, pos.getY(i) / 560));
+            // horizon: bright teal; zenith: slightly deeper
+            const r = THREE.MathUtils.lerp(0.36, 0.12, t);
+            const g = THREE.MathUtils.lerp(0.88, 0.62, t);
+            const b = THREE.MathUtils.lerp(0.84, 0.62, t);
+            cols.push(r, g, b);
         }
-        skyGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-        const skyMat = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide });
-        const sky = new THREE.Mesh(skyGeo, skyMat);
-        sky.rotation.x = 0;
-        this.scene.add(sky);
-
-        this.scene.fog = new THREE.Fog(PALETTE.fog, 120, 420);
+        geo.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+        this.scene.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
+            vertexColors: true, side: THREE.BackSide,
+        })));
+        this.scene.fog = new THREE.Fog(0x7adede, 95, 310);
     }
 
-    // ── Clouds ──────────────────────────────────────────────────────────────
-
+    // ─── Clouds ─────────────────────────────────────────────────────────────
     _clouds() {
         this._cloudMeshes = [];
-        const cloudMat = toonMat(0xfcfcfc, { transparent: true, opacity: 0.88 });
-
+        const cloudMat = toonMat(0xfcfcfc, { transparent: true, opacity: 0.9 });
         for (let i = 0; i < 22; i++) {
             const g = new THREE.Group();
-            const seed = i * 13 + 7;
-            const cx = ((seed * 37 + 11) % 600) - 300;
-            const cz = ((seed * 53 + 19) % 600) - 300;
-            const cy = 85 + (seed % 40);
-
-            const puffs = 3 + (seed % 3);
+            const seed = i * 19 + 5;
+            const cx = ((seed * 53 + 17) % 480) - 240;
+            const cz = ((seed * 71 + 23) % 480) - 240;
+            const cy = 48 + (seed % 24);  // Low clouds — anime style
+            const puffs = 3 + (seed % 4);
             for (let p = 0; p < puffs; p++) {
-                const r = 6 + (seed + p) % 8;
-                const cloud = new THREE.Mesh(
-                    new THREE.SphereGeometry(r, 7, 5),
-                    cloudMat
-                );
-                cloud.scale.set(1.4, 0.55, 1.0);
-                cloud.position.set(p * r * 0.9, (p % 2) * 2 - 1, (p * 3 % 7) - 3);
-                cloud.castShadow = false;
-                g.add(cloud);
+                const r = 9 + (seed + p) % 13;
+                const puff = new THREE.Mesh(new THREE.SphereGeometry(r, 6, 4), cloudMat);
+                puff.scale.set(1.8, 0.38, 1.0);  // Very flat watercolor blobs
+                puff.position.set(p * r * 0.78, (p % 2) * 1.4, (p * 4 % 11) - 5);
+                g.add(puff);
             }
             g.position.set(cx, cy, cz);
             this.scene.add(g);
-            this._cloudMeshes.push({ g, speed: 0.8 + (seed % 10) * 0.12, dir: (seed % 2 === 0 ? 1 : -1) });
+            this._cloudMeshes.push({ g, speed: 0.65 + (seed % 8) * 0.08, dir: seed % 2 === 0 ? 1 : -1 });
         }
     }
 
-    _lights() {
-        setupCityLighting(this.scene);
-    }
+    _lights() { setupCityLighting(this.scene); }
 
-    // ── Ground ──────────────────────────────────────────────────────────────
-
+    // ─── Ground ─────────────────────────────────────────────────────────────
     _ground() {
-        // Main grass plane
-        const geo = new THREE.PlaneGeometry(WORLD.size, WORLD.size, 8, 8);
-        geo.rotateX(-Math.PI / 2);
-        const mesh = new THREE.Mesh(geo, toonMat(PALETTE.grass));
-        mesh.receiveShadow = true;
-        this.scene.add(mesh);
+        // Outer grass (warm green for anime warmth)
+        const outer = new THREE.Mesh(
+            Object.assign(new THREE.PlaneGeometry(WORLD.size, WORLD.size), { rotateX: true }),
+            toonMat(0x90c87a)
+        );
+        outer.rotation.x = -Math.PI / 2;
+        outer.receiveShadow = true;
+        this.scene.add(outer);
 
-        // Concrete paved base slab for the city center (no grass/lawn inside)
-        const cityBaseGeo = new THREE.PlaneGeometry(330, 330);
-        cityBaseGeo.rotateX(-Math.PI / 2);
-        const cityBase = new THREE.Mesh(cityBaseGeo, toonMat(0xc4ccc9)); // Light teal-grey concrete
-        cityBase.position.set(0, 0.015, 0);
-        cityBase.receiveShadow = true;
-        this.scene.add(cityBase);
+        // City concrete base slab (light teal-grey, like the abeto.co streets)
+        const city = new THREE.Mesh(
+            new THREE.PlaneGeometry(170, 148),
+            toonMat(0xa8b4b0)
+        );
+        city.rotation.x = -Math.PI / 2;
+        city.position.y = 0.02;
+        city.receiveShadow = true;
+        this.scene.add(city);
 
-        // Subtle pastel grass variation patches (only outside the city limits)
+        // Slight curb bump at city edge (visual border between grass and city)
+        const curb = toonMesh(new THREE.BoxGeometry(170, 0.12, 148), 0xb8c0bc, { outline: false });
+        curb.mesh.position.y = 0.1;
+        this.scene.add(curb.group);
+    }
+
+    // ─── Road Network ────────────────────────────────────────────────────────
+    _roadNetwork() {
+        const roadMat = toonMat(0x748088);
+        const swMat = toonMat(0xbcc4c0);
+
+        const road = (x, z, w, d) => {
+            const m = new THREE.Mesh(
+                Object.assign(new THREE.PlaneGeometry(w, d), { }),
+                roadMat
+            );
+            m.rotation.x = -Math.PI / 2;
+            m.position.set(x, 0.05, z);
+            m.receiveShadow = true;
+            this.scene.add(m);
+        };
+        const sw = (x, z, w, d) => {
+            const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), swMat);
+            m.rotation.x = -Math.PI / 2;
+            m.position.set(x, 0.07, z);
+            m.receiveShadow = true;
+            this.scene.add(m);
+        };
+
+        // Main E-W road (wider)
+        road(0, 0, 162, 9);
+        sw(0, -6.2, 162, 2.4);
+        sw(0, +6.2, 162, 2.4);
+
+        // North E-W road
+        road(0, -32, 118, 7);
+        sw(0, -32 - 5.2, 118, 2.2);
+        sw(0, -32 + 5.2, 118, 2.2);
+
+        // South E-W road
+        road(0, +32, 118, 7);
+        sw(0, +32 - 5.2, 118, 2.2);
+        sw(0, +32 + 5.2, 118, 2.2);
+
+        // West N-S road
+        road(-38, 0, 7, 72);
+        sw(-38 - 5.2, 0, 2.2, 72);
+        sw(-38 + 5.2, 0, 2.2, 72);
+
+        // East N-S road
+        road(+38, 0, 7, 72);
+        sw(+38 - 5.2, 0, 2.2, 72);
+        sw(+38 + 5.2, 0, 2.2, 72);
+
+        // Center alley (N-S, from north road to south road)
+        road(0, 0, 5.5, 60);
+        sw(-3.8, 0, 1.8, 60);
+        sw(+3.8, 0, 1.8, 60);
+    }
+
+    // ─── Crosswalks & Lane Markings ──────────────────────────────────────────
+    _crosswalks() {
+        const white = toonMat(0xf8f8f4, { transparent: true, opacity: 0.85 });
+        const yellow = toonMat(0xeec820, { transparent: true, opacity: 0.72 });
+
+        // Lane center dashes for main road
+        for (let i = -8; i <= 8; i++) {
+            const m = new THREE.Mesh(new THREE.PlaneGeometry(4, 0.24), yellow);
+            m.rotation.x = -Math.PI / 2;
+            m.position.set(i * 9.2, 0.08, 0);
+            this.scene.add(m);
+        }
+        // N and S roads
+        for (let i = -6; i <= 6; i++) {
+            [-32, 32].forEach(rz => {
+                const m = new THREE.Mesh(new THREE.PlaneGeometry(3.5, 0.2), yellow);
+                m.rotation.x = -Math.PI / 2;
+                m.position.set(i * 8.8, 0.08, rz);
+                this.scene.add(m);
+            });
+        }
+
+        // Crosswalk helper
+        const cw = (cx, cz, isEW) => {
+            for (let s = -3; s <= 3; s++) {
+                const m = new THREE.Mesh(
+                    new THREE.PlaneGeometry(isEW ? 1.5 : 7.5, isEW ? 7.5 : 1.5),
+                    white
+                );
+                m.rotation.x = -Math.PI / 2;
+                m.position.set(
+                    isEW ? cx + s * 2.2 : cx,
+                    0.09,
+                    isEW ? cz : cz + s * 2.2
+                );
+                this.scene.add(m);
+            }
+        };
+
+        // All intersections
+        cw(-38, 0, false);
+        cw(+38, 0, false);
+        cw(0, 0, false);
+        cw(-38, -32, true);
+        cw(+38, -32, true);
+        cw(0, -32, true);
+        cw(-38, +32, true);
+        cw(+38, +32, true);
+        cw(0, +32, true);
+    }
+
+    // ─── Building Rows ───────────────────────────────────────────────────────
+    _buildingRows() {
+        // rowX: buildings lined up along the X axis at constant z
+        // facingAngle: 0 = faces +Z (north), Math.PI = faces -Z (south)
+        const rowX = (x1, x2, zCenter, depth, facingAngle, seedOff) => {
+            let x = x1;
+            let s = seedOff;
+            while (x + 5 < x2) {
+                const w = 7 + Math.abs((s * 1337 + 11) % 11);  // 7-17
+                const h = 5.5 + Math.abs((s * 2711 + 7) % 13);  // 5.5-17.5
+                const d = depth;
+                const cx = x + w / 2;
+                if (cx + w / 2 > x2) break;
+                const bld = buildJapaneseBuilding(w, h, d, s);
+                bld.position.set(cx, 0, zCenter);
+                bld.rotation.y = facingAngle;
+                this.scene.add(bld);
+                this.colliders.push({ x: cx, z: zCenter, w, d, h, floorY: 0 });
+                x += w + 0.45;
+                s++;
+            }
+        };
+
+        // rowZ: buildings along Z axis at constant x
+        const rowZ = (z1, z2, xCenter, depth, facingAngle, seedOff) => {
+            let z = z1;
+            let s = seedOff;
+            while (z + 5 < z2) {
+                const w = 7 + Math.abs((s * 1337 + 11) % 11);
+                const h = 5.5 + Math.abs((s * 2711 + 7) % 13);
+                const d = depth;
+                const cz = z + w / 2;
+                if (cz + w / 2 > z2) break;
+                const bld = buildJapaneseBuilding(w, h, d, s);
+                bld.position.set(xCenter, 0, cz);
+                bld.rotation.y = facingAngle;
+                this.scene.add(bld);
+                this.colliders.push({ x: xCenter, z: cz, w: d, d: w, h, floorY: 0 });
+                z += w + 0.45;
+                s++;
+            }
+        };
+
+        // ── MAIN ROAD (Z=0) ──────────────────────────────────────────────────
+        // South side (buildings at z≈-11.5, facing +Z = north)
+        rowX(-78, -41, -11.5, 9, 0, 0);
+        rowX(-34.5, -2.5, -11.5, 9, 0, 12);
+        rowX(2.5, 35, -11.5, 9, 0, 24);
+        rowX(41, 78, -11.5, 9, 0, 36);
+        // North side (buildings at z≈+11.5, facing -Z = south)
+        rowX(-78, -41, +11.5, 9, Math.PI, 48);
+        rowX(-34.5, -2.5, +11.5, 9, Math.PI, 60);
+        rowX(2.5, 35, +11.5, 9, Math.PI, 72);
+        rowX(41, 78, +11.5, 9, Math.PI, 84);
+
+        // ── NORTH ROAD (Z=-32) ────────────────────────────────────────────────
+        // Between main and north road — south side of north road: z≈-22, facing south
+        rowX(-37, -2.5, -22, 8, Math.PI, 96);
+        rowX(2.5, 37, -22, 8, Math.PI, 108);
+        // North side of north road: z≈-43, facing north
+        rowX(-72, -41, -43, 10, 0, 120);
+        rowX(-34.5, -2.5, -43, 10, 0, 132);
+        rowX(2.5, 35, -43, 10, 0, 144);
+        rowX(41, 72, -43, 10, 0, 156);
+
+        // ── SOUTH ROAD (Z=32) ─────────────────────────────────────────────────
+        // North side of south road: z≈+22, facing north
+        rowX(-37, -2.5, +22, 8, 0, 168);
+        rowX(2.5, 37, +22, 8, 0, 180);
+        // South side of south road: z≈+43, facing south
+        rowX(-72, -41, +43, 10, Math.PI, 192);
+        rowX(-34.5, -2.5, +43, 10, Math.PI, 204);
+        rowX(2.5, 35, +43, 10, Math.PI, 216);
+        rowX(41, 72, +43, 10, Math.PI, 228);
+
+        // ── WEST ROAD (X=-38) ─────────────────────────────────────────────────
+        // East side of west road (x≈-29.5, facing west = -X)
+        rowZ(-31, -2.5, -29.5, 8, -Math.PI / 2, 240);
+        rowZ(2.5, 31, -29.5, 8, -Math.PI / 2, 252);
+        // West side of west road (x≈-48, facing east = +X)
+        rowZ(-43, -2.5, -48, 10, Math.PI / 2, 264);
+        rowZ(2.5, 43, -48, 10, Math.PI / 2, 276);
+
+        // ── EAST ROAD (X=38) ──────────────────────────────────────────────────
+        // West side of east road (x≈+29.5, facing east = +X)
+        rowZ(-31, -2.5, +29.5, 8, Math.PI / 2, 288);
+        rowZ(2.5, 31, +29.5, 8, Math.PI / 2, 300);
+        // East side of east road (x≈+48, facing west = -X)
+        rowZ(-43, -2.5, +48, 10, -Math.PI / 2, 312);
+        rowZ(2.5, 43, +48, 10, -Math.PI / 2, 324);
+
+        // ── Corner buildings at key intersections ─────────────────────────────
+        const cornerSpots = [
+            [-38, -32], [0, -32], [38, -32],
+            [-38, 0], [38, 0],
+            [-38, 32], [0, 32], [38, 32],
+        ];
+        cornerSpots.forEach(([cx, cz], i) => {
+            const b = buildJapaneseCorner(i * 37 + 5);
+            b.position.set(cx + (i % 2 === 0 ? -5 : 5), 0, cz + (i < 4 ? -5 : 5));
+            b.rotation.y = (i * Math.PI / 4);
+            this.scene.add(b);
+            this.colliders.push({ x: cx, z: cz, w: 14, d: 14, h: 10, floorY: 0 });
+        });
+    }
+
+    // ─── Street Props ─────────────────────────────────────────────────────────
+    _streetProps() {
+        // Power poles along main road north sidewalk (every 13 units)
+        for (let x = -72; x <= 72; x += 13) {
+            const p = createPowerPole(Math.round(x));
+            p.position.set(x, 0, 7.5);
+            this.scene.add(p);
+        }
+        // Power poles along west road
+        for (let z = -38; z <= 38; z += 12) {
+            const p = createPowerPole(Math.round(z) + 100);
+            p.rotation.y = Math.PI / 2;
+            p.position.set(-33, 0, z);
+            this.scene.add(p);
+        }
+        // Power poles along east road
+        for (let z = -38; z <= 38; z += 12) {
+            const p = createPowerPole(Math.round(z) + 200);
+            p.rotation.y = Math.PI / 2;
+            p.position.set(33, 0, z);
+            this.scene.add(p);
+        }
+        // North road poles
+        for (let x = -60; x <= 60; x += 14) {
+            const p = createPowerPole(Math.round(x) + 300);
+            p.position.set(x, 0, -37.5);
+            this.scene.add(p);
+        }
+
+        // ── Vending machines ──────────────────────────────────────────────
+        const vmSpots = [
+            // Main road south sidewalk
+            [-68, -8.5], [-54, -8.5], [-32, -8.5], [-10, -8.5],
+            [12, -8.5], [36, -8.5], [58, -8.5], [72, -8.5],
+            // Main road north sidewalk
+            [-65, 8.5], [-44, 8.5], [-20, 8.5], [5, 8.5],
+            [28, 8.5], [52, 8.5], [70, 8.5],
+            // North road
+            [-55, -36.5], [-28, -36.5], [10, -36.5], [42, -36.5],
+            // South road
+            [-50, 36.5], [-22, 36.5], [15, 36.5], [44, 36.5],
+        ];
+        vmSpots.forEach(([x, z], i) => {
+            const vm = createVendingMachine(i);
+            vm.position.set(x, 0, z);
+            vm.rotation.y = z < 0 ? Math.PI : 0;
+            this.scene.add(vm);
+        });
+
+        // ── Street lamps ──────────────────────────────────────────────────
+        for (let x = -76; x <= 76; x += 20) {
+            const lamp = createStreetLamp();
+            lamp.position.set(x, 0, -6.8);
+            this.scene.add(lamp);
+            const lamp2 = createStreetLamp();
+            lamp2.position.set(x + 10, 0, 6.8);
+            this.scene.add(lamp2);
+        }
+        for (let x = -60; x <= 60; x += 22) {
+            const la = createStreetLamp();
+            la.position.set(x, 0, -36.8);
+            this.scene.add(la);
+            const lb = createStreetLamp();
+            lb.position.set(x + 11, 0, 36.8);
+            this.scene.add(lb);
+        }
+
+        // ── Round signs ───────────────────────────────────────────────────
+        const signSpots = [
+            [-38, -7.5, 0], [38, -7.5, 0], [0, -7.5, 0],
+            [-38, 7.5, Math.PI], [38, 7.5, Math.PI],
+            [-38, -36.5, 0], [38, -36.5, 0],
+            [-38, 36.5, Math.PI], [38, 36.5, Math.PI],
+        ];
+        signSpots.forEach(([x, z, ry], i) => {
+            const s = createRoundSign(i);
+            s.position.set(x + 1.5, 0, z);
+            s.rotation.y = ry;
+            this.scene.add(s);
+        });
+
+        // ── Traffic cones (clustered at intersections) ─────────────────────
+        const coneGroups = [
+            [-38, -5], [38, -5], [0, -5],
+            [-38, 5], [38, 5],
+            [-38, -30], [38, -30],
+            [-38, 30], [38, 30],
+        ];
+        coneGroups.forEach(([cx, cz], i) => {
+            for (let c = 0; c < 2; c++) {
+                const cone = createTrafficCone(i * 3 + c);
+                const off = c * 1.8;
+                cone.position.set(cx + off, 0, cz + (c === 0 ? 0.5 : -0.5));
+                this.scene.add(cone);
+            }
+        });
+
+        // ── Trash cans ────────────────────────────────────────────────────
+        const trashSpots = [
+            [-70, -7], [-45, -7], [-18, -7], [20, -7], [48, -7], [72, -7],
+            [-70, 7.2], [-42, 7.2], [18, 7.2], [50, 7.2], [72, 7.2],
+            [-60, -36], [-25, -36], [20, -36], [55, -36],
+        ];
+        trashSpots.forEach(([x, z], i) => {
+            const t = createTrashCan(i);
+            t.position.set(x, 0, z);
+            this.scene.add(t);
+        });
+
+        // ── Benches ───────────────────────────────────────────────────────
+        const benchSpots = [
+            [-58, -7.5, 0], [-20, -7.5, 0], [22, -7.5, 0], [62, -7.5, 0],
+            [-58, 7.5, Math.PI], [-20, 7.5, Math.PI], [22, 7.5, Math.PI],
+        ];
+        benchSpots.forEach(([x, z, ry]) => {
+            const b = createBench();
+            b.position.set(x, 0, z);
+            b.rotation.y = ry;
+            this.scene.add(b);
+        });
+
+        // ── Post boxes ────────────────────────────────────────────────────
+        [[-55, 8], [15, 8], [-15, -8], [55, -8]].forEach(([x, z]) => {
+            const pb = createPostBox();
+            pb.position.set(x, 0, z);
+            this.scene.add(pb);
+        });
+
+        // ── Parked cars ───────────────────────────────────────────────────
+        const carSpots = [
+            // Parked on side of main road (south)
+            [-62, -14, 0], [-48, -14, 0], [24, -14, 0], [58, -14, 0],
+            // Parked on north road
+            [-52, -38, 0], [-20, -38, 0], [30, -38, 0],
+            // Parked on south road
+            [-48, 38, 0], [15, 38, 0], [50, 38, 0],
+        ];
+        carSpots.forEach(([x, z, ry], i) => {
+            const car = createParkedCar(i);
+            car.position.set(x, 0, z);
+            car.rotation.y = ry + (z < 0 ? 0 : Math.PI);
+            this.scene.add(car);
+            this.colliders.push({ x, z, w: 4.2, d: 2.2, h: 1.5, floorY: 0 });
+        });
+
+        // ── Bicycles ─────────────────────────────────────────────────────
+        [[-40, -7.5], [10, -7.5], [-10, 7.5], [40, 7.5]].forEach(([x, z], i) => {
+            const b = createBicycleParked();
+            b.position.set(x, 0, z);
+            this.scene.add(b);
+        });
+
+        // ── Flower pots on sidewalks ──────────────────────────────────────
+        [[-55, 8.5], [-30, 8.5], [5, 8.5], [35, 8.5], [60, 8.5],
+         [-55, -8.5], [5, -8.5], [55, -8.5]].forEach(([x, z], i) => {
+            const fp = createFlowerPot(i);
+            fp.position.set(x, 0, z);
+            this.scene.add(fp);
+        });
+    }
+
+    // ─── Wire network ─────────────────────────────────────────────────────────
+    _wireNetwork() {
+        const wireMat = new THREE.LineBasicMaterial({ color: 0x18182a });
+
+        // Catenary wire helper
+        const wire = (ax, ay, az, bx, by, bz, sag = 0.5) => {
+            const pts = [];
+            for (let t = 0; t <= 1; t += 0.06) {
+                const x = THREE.MathUtils.lerp(ax, bx, t);
+                const y = THREE.MathUtils.lerp(ay, by, t) - Math.sin(t * Math.PI) * sag;
+                const z = THREE.MathUtils.lerp(az, bz, t);
+                pts.push(new THREE.Vector3(x, y, z));
+            }
+            const geo = new THREE.BufferGeometry().setFromPoints(pts);
+            this.scene.add(new THREE.Line(geo, wireMat));
+        };
+
+        // Main road north-side poles: Z=7.5, H≈6
+        const poleH = 6.0;
+        for (let x = -72; x <= 59; x += 13) {
+            wire(x, poleH - 0.6, 7.5, x + 13, poleH - 0.6, 7.5, 0.35);
+            wire(x, poleH - 1.6, 7.5, x + 13, poleH - 1.6, 7.5, 0.28);
+        }
+        // West road poles: X=-33
+        for (let z = -38; z <= 26; z += 12) {
+            wire(-33, poleH - 0.6, z, -33, poleH - 0.6, z + 12, 0.3);
+        }
+        // Cross-street wires (connecting N and main road poles)
+        wire(-38, poleH - 0.7, 7.5, -38, poleH - 0.7, -37.5, 0.6);
+        wire(38, poleH - 0.7, 7.5, 38, poleH - 0.7, -37.5, 0.6);
+    }
+
+    // ─── Surrounding Nature ────────────────────────────────────────────────────
+    _surroundingNature() {
+        // Trees scattered outside city
         for (let i = 0; i < 90; i++) {
-            const s = i * 17 + 3;
-            const px = ((s * 41) % 580) - 290;
-            const pz = ((s * 67) % 580) - 290;
-            if (this._inRiver(px, pz, 20)) continue;
-            // Skip inside the central paved city
-            if (Math.abs(px) < 165 && Math.abs(pz) < 165) continue;
-
-            const col = i % 3 === 0 ? PALETTE.grassLight : (i % 3 === 1 ? PALETTE.grassDark : PALETTE.grassHighland);
-            const patch = new THREE.Mesh(
-                new THREE.PlaneGeometry(15 + (s % 20), 12 + (s % 15)),
-                toonMat(col, { transparent: true, opacity: 0.4 })
-            );
-            patch.rotation.x = -Math.PI / 2;
-            patch.position.set(px, 0.01, pz);
-            this.scene.add(patch);
-        }
-    }
-
-    // ── Mountains ───────────────────────────────────────────────────────────
-
-    _mountains() {
-        // Four mountain ranges: North, South, East, West
-        const ranges = [
-            { dir: 'N', peaks: this._northMountains() },
-            { dir: 'S', peaks: this._southMountains() },
-            { dir: 'E', peaks: this._eastMountains() },
-            { dir: 'W', peaks: this._westMountains() },
-        ];
-        // ranges is just for reference; peaks added inside each method
-    }
-
-    _buildMountain(cx, cy_base, cz, radius, height, seed) {
-        // Always build lush, beautiful Ghibli-style terraced mountains
-        this._buildLushTerraces(cx, cy_base, cz, radius, height, seed);
-
-        // Pine forest on lower slopes of mountain bases
-        if (height < 80) {
-            const pineCount = 5 + (seed % 7);
-            for (let p = 0; p < pineCount; p++) {
-                const angle = (p / pineCount) * Math.PI * 2 + seed * 0.3;
-                const r = radius * (0.55 + (p % 3) * 0.15);
-                const px = cx + Math.cos(angle) * r;
-                const pz = cz + Math.sin(angle) * r;
-                const pine = createPineTree(seed + p, 0.75 + (p % 3) * 0.12);
-                const ty = this.getTerrainHeight(px, pz);
-                pine.position.set(px, ty, pz);
-                this.scene.add(pine);
-            }
-        }
-    }
-
-    _buildShatteredSpire(cx, cy_base, cz, radius, height, seed) {
-        const g = new THREE.Group();
-        g.position.set(cx, cy_base, cz);
-
-        // Core Energy
-        const core = toonMesh(new THREE.CylinderGeometry(radius * 0.12, radius * 0.12, height, 6), 0x00ffff, {
-            emissive: 0x0088ff,
-            emissiveIntensity: 1.5
-        });
-        core.mesh.position.y = height / 2;
-        g.add(core.group);
-
-        // Fractured Shells
-        const rockMatColor = 0x4a4a5a;
-        for (let i = 0; i < 15; i++) {
-            const rockGeo = new THREE.TetrahedronGeometry((0.15 + (i % 3) * 0.08) * radius, 1);
-            const rock = toonMesh(rockGeo, rockMatColor);
-            
-            const angle = (i / 15) * Math.PI * 2 + (i * 0.7);
-            const r = radius * (0.3 + (i % 3) * 0.22);
-            rock.mesh.position.set(
-                Math.cos(angle) * r,
-                ((i / 15) * height),
-                Math.sin(angle) * r
-            );
-            rock.mesh.rotation.set(i * 0.5, i * 0.8, 0);
-            g.add(rock.group);
-        }
-        this.scene.add(g);
-    }
-
-    _buildLushTerraces(cx, cy_base, cz, radius, height, seed) {
-        const g = new THREE.Group();
-        g.position.set(cx, cy_base, cz);
-
-        const numLevels = 7;
-        const levelHeight = height / numLevels;
-        let currentRadius = radius;
-        const terraceData = [];
-
-        // Colors matching aesthetic
-        const rockColor = 0x7a6c62;
-        const grassColor = PALETTE.grass;
-        const waterColor = PALETTE.riverShallow;
-        const foliageColors = [
-            0x79B36A,  // Ghibli Green
-            0xF2B0C5,  // Cherry Blossom Pink
-            0xFFD966,  // Autumn Gold
-            0x8CC97D,  // Light Pastel Green
-            0xF59A45,  // Soft Orange
-        ];
-        const treeFoliageColor = foliageColors[seed % foliageColors.length];
-        const woodColor = PALETTE.wood[0];
-
-        for (let i = 0; i < numLevels; i++) {
-            const nextRadius = currentRadius - (radius * 0.12);
-            
-            // 1. Rock Base
-            const rock = toonMesh(new THREE.CylinderGeometry(nextRadius, currentRadius, levelHeight, 16), rockColor);
-            rock.mesh.position.y = (i * levelHeight) + (levelHeight / 2);
-            g.add(rock.group);
-
-            // 2. Grass Layer on top
-            const grassHeight = 0.4;
-            const grass = toonMesh(new THREE.CylinderGeometry(nextRadius, nextRadius, grassHeight, 16), grassColor);
-            grass.mesh.position.y = (i * levelHeight) + levelHeight + grassHeight / 2;
-            g.add(grass.group);
-
-            terraceData.push({ y: (i * levelHeight) + levelHeight + grassHeight / 2, radius: nextRadius });
-
-            // 3. Add Purple Trees around the perimeter (leaving a gap for the waterfall at angle 0)
-            const numTrees = 4 + (seed % 3);
-            for (let t = 0; t < numTrees; t++) {
-                const angle = (t / numTrees) * Math.PI * 2 + (seed * 0.5);
-                if (angle > -0.5 && angle < 0.5) continue; // Gap for waterfall
-
-                const treeRadius = nextRadius - 1.2;
-                const treeSize = 0.6 + (t % 3) * 0.2;
-                const tree = toonMesh(new THREE.SphereGeometry(treeSize, 12, 12), treeFoliageColor);
-                
-                tree.mesh.position.set(
-                    Math.cos(angle) * treeRadius,
-                    ((i * levelHeight) + levelHeight + grassHeight) + treeSize * 0.5,
-                    Math.sin(angle) * treeRadius
-                );
-                g.add(tree.group);
-            }
-
-            currentRadius = nextRadius;
-        }
-
-        // 4. Create Waterfall Cascades (down Z axis)
-        for (let i = 1; i < numLevels; i++) {
-            const upper = terraceData[i];
-            const lower = terraceData[i - 1];
-            
-            const waterWidth = 1.6 + ((numLevels - i) * 0.4); 
-            const waterHeight = (upper.y - lower.y) * 1.4;
-
-            const water = toonMesh(new THREE.PlaneGeometry(waterWidth, waterHeight), waterColor, { transparent: true, opacity: 0.85 });
-            
-            water.mesh.position.set(0, (upper.y + lower.y) / 2, upper.radius - 0.1);
-            water.mesh.rotation.x = -Math.PI / 8; // angle it down/outwards slightly
-            
-            g.add(water.group);
-        }
-
-        // 5. Add Temple at the Peak
-        const topLevel = terraceData[numLevels - 1];
-        const base = toonMesh(new THREE.BoxGeometry(3, 1.5, 3), woodColor);
-        base.mesh.position.set(0, topLevel.y + 0.75, 0);
-        g.add(base.group);
-
-        const roof = toonMesh(new THREE.ConeGeometry(2.5, 2, 4), treeFoliageColor);
-        roof.mesh.position.set(0, topLevel.y + 2.5, 0);
-        roof.mesh.rotation.y = Math.PI / 4;
-        g.add(roof.group);
-
-        this.scene.add(g);
-    }
-
-    _buildObsidianFang(cx, cy_base, cz, radius, height, seed) {
-        const g = new THREE.Group();
-        g.position.set(cx, cy_base, cz);
-
-        const magmaCol = 0xff2200;
-        const obsidianCol = 0x1a1a1c;
-
-        // 1. The Glowing Core (Magma Base)
-        const core = toonMesh(new THREE.ConeGeometry(radius, height, 16), magmaCol, {
-            emissive: 0xff3300,
-            emissiveIntensity: 1.5
-        });
-        core.mesh.position.y = height / 2;
-        g.add(core.group);
-
-        // Magma Glow PointLight
-        const light = new THREE.PointLight(0xff4500, 2.0, radius * 2.5);
-        light.position.set(0, height * 0.4, 0);
-        g.add(light);
-
-        // 2. Procedural Obsidian Rock Shell (optimized count for performance)
-        const numRocks = 120;
-        for (let i = 0; i < numRocks; i++) {
-            const yPos = (i / numRocks) * height;
-            const angle = (i * 2.39) % (Math.PI * 2); // Fibonacci spiral-like angle distribution
-            const currentRadius = radius * (1.0 - (yPos / height));
-            const size = (0.08 + (i % 5) * 0.03) * radius * (1.0 - (yPos / height) * 0.5);
-
-            const rock = toonMesh(new THREE.DodecahedronGeometry(size, 0), obsidianCol);
-            rock.mesh.position.set(
-                Math.cos(angle) * (currentRadius + 0.1),
-                yPos,
-                Math.sin(angle) * (currentRadius + 0.1)
-            );
-            rock.mesh.rotation.set((i * 0.3) % Math.PI, (i * 0.7) % Math.PI, (i * 1.1) % Math.PI);
-            rock.mesh.scale.set(1.0, 1.4, 0.6); // Flat slab shape
-            g.add(rock.group);
-        }
-
-        // 3. Magma River Tube
-        const curve = new THREE.CatmullRomCurve3([
-            new THREE.Vector3(0, height - 1.5, 0),
-            new THREE.Vector3(radius * 0.18, height * 0.6, radius * 0.32),
-            new THREE.Vector3(radius * 0.12, height * 0.3, radius * 0.68),
-            new THREE.Vector3(radius * 0.28, 0.5, radius * 1.02)
-        ]);
-        const riverGeo = new THREE.TubeGeometry(curve, 16, radius * 0.07, 6, false);
-        const river = toonMesh(riverGeo, magmaCol, {
-            emissive: 0xff3300,
-            emissiveIntensity: 1.5
-        });
-        g.add(river.group);
-
-        // 4. Static smoke clouds at the peak
-        const smokeMat = toonMat(0x444444, { transparent: true, opacity: 0.6 });
-        for (let i = 0; i < 5; i++) {
-            const smoke = new THREE.Mesh(new THREE.SphereGeometry(radius * 0.12, 8, 8), smokeMat);
-            smoke.position.set(
-                (Math.sin(i * 3) * radius * 0.1),
-                height + (i * radius * 0.08),
-                (Math.cos(i * 3) * radius * 0.1)
-            );
-            smoke.scale.set(1.4, 0.8, 1.2);
-            g.add(smoke);
-        }
-
-        this.scene.add(g);
-    }
-
-    _buildCrystalSpine(cx, cy_base, cz, radius, height, seed) {
-        const g = new THREE.Group();
-        g.position.set(cx, cy_base, cz);
-        const crystalColor = 0xaaccff;
-
-        for (let i = 0; i < 8; i++) {
-            const crystalGeo = new THREE.OctahedronGeometry(radius * 0.28, 0);
-            const crystal = toonMesh(crystalGeo, crystalColor, {
-                transparent: true,
-                opacity: 0.85,
-                emissive: crystalColor,
-                emissiveIntensity: 0.15
-            });
-            
-            const scaleY = 1.5 + (i % 3) * 0.8;
-            crystal.mesh.scale.set(1.0, scaleY, 1.0);
-            
-            const angle = (i / 8) * Math.PI * 2;
-            const dist = radius * 0.35;
-            crystal.mesh.position.set(
-                Math.cos(angle) * dist,
-                (radius * 0.2) * scaleY,
-                Math.sin(angle) * dist
-            );
-            
-            crystal.mesh.rotation.z = Math.cos(angle) * 0.3;
-            crystal.mesh.rotation.x = Math.sin(angle) * 0.3;
-            crystal.mesh.rotation.y = i * 0.7;
-            g.add(crystal.group);
-        }
-        this.scene.add(g);
-    }
-
-    _buildFloatingIslands(cx, cy_base, cz, radius, height, seed) {
-        const g = new THREE.Group();
-        g.position.set(cx, cy_base, cz);
-
-        const islands = [
-            { x: 0, y: height, z: 0, r: radius * 0.5 },
-            { x: -radius * 0.6, y: height * 0.8, z: radius * 0.35, r: radius * 0.35 },
-            { x: radius * 0.55, y: height * 1.1, z: -radius * 0.25, r: radius * 0.4 }
-        ];
-
-        islands.forEach(data => {
-            const base = toonMesh(new THREE.ConeGeometry(data.r, data.r * 2.0, 7), 0x666677);
-            base.mesh.rotation.x = Math.PI;
-            base.mesh.position.set(data.x, data.y - data.r, data.z);
-            g.add(base.group);
-
-            const top = toonMesh(new THREE.CylinderGeometry(data.r * 0.9, data.r, 0.4, 7), PALETTE.grass);
-            top.mesh.position.set(data.x, data.y, data.z);
-            g.add(top.group);
-        });
-
-        const bridge = toonMesh(new THREE.CylinderGeometry(radius * 0.04, radius * 0.04, height * 0.75, 8), 0xee88ff, {
-            transparent: true,
-            opacity: 0.7,
-            emissive: 0xee88ff,
-            emissiveIntensity: 0.5
-        });
-        bridge.mesh.position.set(-radius * 0.3, height * 0.9, radius * 0.18);
-        bridge.mesh.rotation.z = Math.PI / 4;
-        bridge.mesh.rotation.y = -Math.PI / 6;
-        g.add(bridge.group);
-
-        this.scene.add(g);
-    }
-
-    _buildForestMaw(cx, cy_base, cz, radius, height, seed) {
-        const g = new THREE.Group();
-        g.position.set(cx, cy_base, cz);
-
-        const scale = radius * 0.055;
-        const rockColor = 0x82857d;
-        const mossColor = 0x5b7548;
-        const barkColor = 0x3d3224;
-        const leafColor = 0x4a6e38;
-        const ruinColor = 0x6e7368;
-        const mushroomGlowColor = 0x66ffcc;
-
-        // Cave interior mysterious light
-        const caveLight = new THREE.PointLight(0x4444ff, 2.0, 25 * scale);
-        caveLight.position.set(0, 4 * scale, -5 * scale);
-        g.add(caveLight);
-
-        // 1. Dome Rocks & Mossy Patches
-        const rockLayout = [
-            { x: -6 * scale, y: 3 * scale, z: 2 * scale, s: 7 * scale },
-            { x: 6 * scale, y: 3 * scale, z: 2 * scale, s: 7 * scale },
-            { x: 0 * scale, y: 8 * scale, z: -2 * scale, s: 8 * scale },
-            { x: -4 * scale, y: 6 * scale, z: -4 * scale, s: 6 * scale },
-            { x: 4 * scale, y: 6 * scale, z: -4 * scale, s: 6 * scale },
-            { x: 0 * scale, y: 3 * scale, z: -8 * scale, s: 8 * scale }
-        ];
-
-        rockLayout.forEach((data, idx) => {
-            // Jagged rock
-            const rock = toonMesh(new THREE.IcosahedronGeometry(data.s, 1), rockColor);
-            rock.mesh.position.set(data.x, data.y, data.z);
-            rock.mesh.scale.set(1.0, 1.2, 1.0);
-            rock.mesh.rotation.set((idx * 0.4) % Math.PI, (idx * 0.7) % Math.PI, (idx * 1.1) % Math.PI);
-            g.add(rock.group);
-
-            // Moss patch on top
-            const moss = toonMesh(new THREE.IcosahedronGeometry(data.s * 0.95, 1), mossColor);
-            moss.mesh.position.set(data.x, data.y + (data.s * 0.18), data.z);
-            moss.mesh.scale.set(1.05, 0.9, 1.05);
-            moss.mesh.rotation.copy(rock.mesh.rotation);
-            g.add(moss.group);
-        });
-
-        // Dark depth background plane
-        const darkPlane = toonMesh(new THREE.PlaneGeometry(20 * scale, 15 * scale), 0x050508);
-        darkPlane.mesh.position.set(0, 5 * scale, -10 * scale);
-        g.add(darkPlane.group);
-
-        // 2. Prehistoric Ruins (Broken Pillars)
-        const pillarGeo = new THREE.BoxGeometry(1.2 * scale, 4 * scale, 1.2 * scale);
-        
-        const pillar1 = toonMesh(pillarGeo, ruinColor);
-        pillar1.mesh.position.set(-2 * scale, 2 * scale, -1 * scale);
-        pillar1.mesh.rotation.set(0, 0.4, 0.1);
-        g.add(pillar1.group);
-
-        const pillar2 = toonMesh(pillarGeo, ruinColor);
-        pillar2.mesh.position.set(2.5 * scale, 1.5 * scale, -2 * scale);
-        pillar2.mesh.rotation.set(-0.1, 0, -0.2);
-        g.add(pillar2.group);
-
-        // 3. Twisting Roots
-        const createRoot = (pts, rad) => {
-            const curve = new THREE.CatmullRomCurve3(pts);
-            const tube = toonMesh(new THREE.TubeGeometry(curve, 16, rad, 6, false), barkColor);
-            g.add(tube.group);
-        };
-
-        // Left draping root
-        createRoot([
-            new THREE.Vector3(-4 * scale, 14 * scale, -2 * scale),
-            new THREE.Vector3(-7 * scale, 9 * scale, 2 * scale),
-            new THREE.Vector3(-5 * scale, 4 * scale, 6 * scale),
-            new THREE.Vector3(-8 * scale, 0, 8 * scale)
-        ], 0.6 * scale);
-
-        // Right framing root
-        createRoot([
-            new THREE.Vector3(4 * scale, 13 * scale, -1 * scale),
-            new THREE.Vector3(6 * scale, 8 * scale, 4 * scale),
-            new THREE.Vector3(8 * scale, 3 * scale, 5 * scale),
-            new THREE.Vector3(5 * scale, 0, 9 * scale)
-        ], 0.5 * scale);
-
-        // 4. Top Forest Trees
-        const createTopTree = (x, y, z, sc) => {
-            const treeGroup = new THREE.Group();
-            treeGroup.position.set(x, y, z);
-            treeGroup.scale.setScalar(sc);
-
-            const trunk = toonMesh(new THREE.CylinderGeometry(0.8 * scale, 1.2 * scale, 4 * scale, 7), barkColor);
-            trunk.mesh.position.y = 2 * scale;
-            treeGroup.add(trunk.group);
-
-            const leafGeo = new THREE.IcosahedronGeometry(2.5 * scale, 1);
-            for (let i = 0; i < 3; i++) {
-                const leaves = toonMesh(leafGeo, leafColor);
-                leaves.mesh.position.set(
-                    (Math.sin(i * 2) * 0.8 * scale),
-                    (4 * scale + i * 0.8 * scale),
-                    (Math.cos(i * 2) * 0.8 * scale)
-                );
-                treeGroup.add(leaves.group);
-            }
-            g.add(treeGroup);
-        };
-
-        createTopTree(2 * scale, 13 * scale, -3 * scale, 1.5);
-        createTopTree(-3 * scale, 11 * scale, -4 * scale, 1.2);
-        createTopTree(-8 * scale, 5 * scale, 2 * scale, 0.8);
-
-        // 5. Glowing Cyan Mushrooms
-        const createMushroom = (x, y, z, sc) => {
-            const shroom = new THREE.Group();
-            shroom.position.set(x, y, z);
-            shroom.scale.setScalar(sc);
-
-            const stalk = toonMesh(new THREE.CylinderGeometry(0.1 * scale, 0.2 * scale, 1 * scale, 8), barkColor);
-            stalk.mesh.position.y = 0.5 * scale;
-            shroom.add(stalk.group);
-
-            const cap = toonMesh(new THREE.SphereGeometry(0.6 * scale, 12, 12, 0, Math.PI * 2, 0, Math.PI / 2), mushroomGlowColor, {
-                emissive: 0x22ccaa,
-                emissiveIntensity: 2.0
-            });
-            cap.mesh.position.y = 1 * scale;
-            cap.mesh.scale.set(1.0, 0.5, 1.0);
-            shroom.add(cap.group);
-
-            const shroomLight = new THREE.PointLight(0x66ffcc, 1.0, 4 * scale);
-            shroomLight.position.y = 1 * scale;
-            shroom.add(shroomLight);
-
-            g.add(shroom);
-        };
-
-        createMushroom(-6 * scale, 2 * scale, 6 * scale, 1.2);
-        createMushroom(-7 * scale, 1.5 * scale, 7 * scale, 0.8);
-        createMushroom(6 * scale, 4 * scale, 5 * scale, 1.5);
-        createMushroom(8 * scale, 1 * scale, 4 * scale, 1.0);
-
-        this.scene.add(g);
-    }
-
-    _northMountains() {
-        const configs = [
-            { cx: -220, cz: -330, r: 80, h: 105, s: 1 },
-            { cx: -120, cz: -320, r: 65, h: 88,  s: 4 },
-            { cx:   20, cz: -340, r: 90, h: 118, s: 7 },
-            { cx:  140, cz: -315, r: 70, h: 95,  s: 2 },
-            { cx:  250, cz: -330, r: 75, h: 82,  s: 9 },
-            // Near hills
-            { cx: -190, cz: -290, r: 42, h: 52, s: 12 },
-            { cx:   80, cz: -295, r: 38, h: 44, s: 15 },
-            { cx:  195, cz: -285, r: 44, h: 50, s: 18 },
-        ];
-        configs.forEach(c => this._buildMountain(c.cx, 0, c.cz, c.r, c.h, c.s));
-    }
-
-    _southMountains() {
-        const configs = [
-            { cx: -230, cz: 330, r: 72, h: 90,  s: 3  },
-            { cx: -100, cz: 340, r: 85, h: 112, s: 6  },
-            { cx:   30, cz: 325, r: 65, h: 78,  s: 11 },
-            { cx:  160, cz: 335, r: 80, h: 100, s: 14 },
-            { cx:  260, cz: 320, r: 60, h: 72,  s: 17 },
-            // Near hills
-            { cx: -160, cz: 295, r: 36, h: 42, s: 20 },
-            { cx:   90, cz: 290, r: 40, h: 48, s: 23 },
-        ];
-        configs.forEach(c => this._buildMountain(c.cx, 0, c.cz, c.r, c.h, c.s));
-    }
-
-    _eastMountains() {
-        const configs = [
-            { cx: 330, cz: -200, r: 68, h: 88,  s: 5  },
-            { cx: 325, cz:  -50, r: 78, h: 102, s: 8  },
-            { cx: 335, cz:  110, r: 62, h: 76,  s: 13 },
-            { cx: 320, cz:  240, r: 55, h: 65,  s: 16 },
-            // Near hills
-            { cx: 295, cz: -130, r: 38, h: 46, s: 21 },
-            { cx: 290, cz:  170, r: 34, h: 40, s: 24 },
-        ];
-        configs.forEach(c => this._buildMountain(c.cx, 0, c.cz, c.r, c.h, c.s));
-    }
-
-    _westMountains() {
-        const configs = [
-            { cx: -330, cz: -180, r: 75, h: 96,  s: 10 },
-            { cx: -325, cz:  -20, r: 82, h: 108, s: 19 },
-            { cx: -335, cz:  130, r: 58, h: 72,  s: 22 },
-            { cx: -320, cz:  260, r: 70, h: 85,  s: 25 },
-            // Near hills
-            { cx: -292, cz: -100, r: 40, h: 48, s: 26 },
-            { cx: -288, cz:  200, r: 36, h: 44, s: 27 },
-        ];
-        configs.forEach(c => this._buildMountain(c.cx, 0, c.cz, c.r, c.h, c.s));
-    }
-
-    // ── Beach ───────────────────────────────────────────────────────────────
-
-    _beach() {
-        const sand = toonMesh(new THREE.BoxGeometry(WORLD.size * 0.9, 0.22, 55), PALETTE.sand);
-        sand.mesh.position.set(0, 0.06, 268);
-        sand.mesh.receiveShadow = true;
-        this.scene.add(sand.group);
-
-        // Sandy dunes
-        for (let i = 0; i < 8; i++) {
-            const dune = toonMesh(
-                new THREE.SphereGeometry(4 + i % 3, 8, 4),
-                PALETTE.sand
-            );
-            dune.mesh.position.set(-180 + i * 52, 0.4, 272 + (i % 3) * 5);
-            dune.mesh.scale.set(1.4, 0.35, 1.0);
-            dune.mesh.receiveShadow = true;
-            this.scene.add(dune.group);
-        }
-
-        const water = toonMesh(new THREE.BoxGeometry(WORLD.size, 0.15, 35), PALETTE.waterDeep, { transparent: true, opacity: 0.88 });
-        water.mesh.position.set(0, -0.05, 297);
-        this.scene.add(water.group);
-
-        // Shallow water overlap
-        const shallow = toonMesh(new THREE.BoxGeometry(WORLD.size * 0.85, 0.1, 18), PALETTE.riverShallow, { transparent: true, opacity: 0.65 });
-        shallow.mesh.position.set(0, 0.02, 282);
-        this.scene.add(shallow.group);
-    }
-
-    // ── River ───────────────────────────────────────────────────────────────
-
-    _river() {
-        const len = WORLD.riverLength;
-        const w = WORLD.riverWidth; // 38
-
-        // 1. Asphalt Road Bed (Grand Avenue - double lane, width 24)
-        const roadMat = toonMat(PALETTE.asphalt);
-        const road = new THREE.Mesh(new THREE.BoxGeometry(24, 0.06, len), roadMat);
-        road.position.set(WORLD.riverX, 0.03, 0);
-        road.receiveShadow = true;
-        this.scene.add(road);
-
-        // 2. Central Green Median (width 4)
-        const medianMat = toonMat(PALETTE.grassLight);
-        const median = new THREE.Mesh(new THREE.BoxGeometry(4, 0.12, len), medianMat);
-        median.position.set(WORLD.riverX, 0.08, 0);
-        median.receiveShadow = true;
-        this.scene.add(median);
-
-        // Median details: streetlights, trees, and small grass patches
-        for (let z = -len / 2 + 30; z < len / 2 - 30; z += 45) {
-            // Streetlight on the median
-            const pole = createUtilityPole(WORLD.riverX, z);
-            pole.position.y = 0.14;
-            this.scene.add(pole);
-
-            // Alternating cherry trees and green pines on the median
-            const seed = Math.abs(Math.round(z));
-            const tree = seed % 2 === 0 ? createCherryTree(seed) : createPineTree(seed, 0.8);
-            tree.position.set(WORLD.riverX, 0.14, z + 15);
-            tree.scale.setScalar(0.7);
+            const seed = i * 31 + 7;
+            const angle = (seed * 0.618033) * Math.PI * 2;
+            const dist = 88 + (seed % 65);
+            const x = Math.cos(angle) * dist;
+            const z = Math.sin(angle) * dist;
+            const gy = this.getTerrainHeight(x, z);
+            const tree = this._pickTree(seed);
+            tree.position.set(x, gy, z);
             this.scene.add(tree);
         }
 
-        // 3. Sidewalks and Curbs on left and right sides
-        [-1, 1].forEach(side => {
-            // Sidewalk (width 4)
-            const sw = createSidewalk(4, len);
-            sw.position.set(WORLD.riverX + side * 14, 0.02, 0);
-            this.scene.add(sw);
-
-            // Green curb embankment (width 3)
-            const curbMat = toonMat(PALETTE.grassDark);
-            const curb = new THREE.Mesh(new THREE.BoxGeometry(3, 0.10, len), curbMat);
-            curb.position.set(WORLD.riverX + side * 17.5, 0.05, 0);
-            curb.receiveShadow = true;
-            this.scene.add(curb);
-        });
-    }
-
-    // ── Bridges ─────────────────────────────────────────────────────────────
-
-    _bridges() {
-        const bridgeZs = [-130, -40, 65, 170];
-        bridgeZs.forEach((z, bi) => {
-            this._buildBridge(WORLD.riverX, z, bi);
-        });
-    }
-
-    _buildBridge(rx, z, seed) {
-        const g = new THREE.Group();
-        const deckW = WORLD.riverWidth + 14;
-        const deckH = 1.8;   // height above ground
-        const deckThick = 0.55;
-
-        g.position.set(rx, 0, z);
-
-        // --- Stone arch supports below deck ---
-        const archCount = 3;
-        const archSpacing = WORLD.riverWidth / (archCount + 1);
-        for (let a = 0; a < archCount; a++) {
-            const ax = -WORLD.riverWidth / 2 + archSpacing * (a + 1);
-            const arch = toonMesh(new THREE.BoxGeometry(2.5, deckH, 2.5), PALETTE.bridgeStone);
-            arch.mesh.position.set(ax, deckH / 2 - 0.1, 0);
-            arch.mesh.castShadow = true;
-            g.add(arch.group);
-
-            // Arch curve suggestion (a flat arc ring approximation)
-            const ring = toonMesh(new THREE.TorusGeometry(2.0, 0.28, 6, 8, Math.PI), PALETTE.bridge);
-            ring.mesh.rotation.z = Math.PI;
-            ring.mesh.position.set(ax, deckH - 0.5, 0);
-            g.add(ring.group);
-        }
-
-        // --- Bridge deck ---
-        const deck = toonMesh(new THREE.BoxGeometry(deckW, deckThick, 8.5), PALETTE.bridge);
-        deck.mesh.position.y = deckH + deckThick / 2;
-        deck.mesh.castShadow = true;
-        deck.mesh.receiveShadow = true;
-        g.add(deck.group);
-
-        // Stone edge trim
-        [-1, 1].forEach(s => {
-            const trim = toonMesh(new THREE.BoxGeometry(deckW, 0.18, 0.25), PALETTE.bridgeStone);
-            trim.mesh.position.set(0, deckH + deckThick + 0.09, s * 4.25);
-            g.add(trim.group);
-        });
-
-        // --- Rails ---
-        [-1, 1].forEach(s => {
-            const rail = toonMesh(new THREE.BoxGeometry(deckW, 0.18, 0.14), PALETTE.bridgeRail);
-            rail.mesh.position.set(0, deckH + deckThick + 0.95, s * 4.1);
-            g.add(rail.group);
-
-            // Balusters
-            const bCount = Math.floor(deckW / 2.2);
-            for (let b = 0; b <= bCount; b++) {
-                const bx = -deckW / 2 + b * (deckW / bCount);
-                const baluster = toonMesh(new THREE.BoxGeometry(0.1, 0.9, 0.1), PALETTE.bridgeStone);
-                baluster.mesh.position.set(bx, deckH + deckThick + 0.5, s * 4.1);
-                g.add(baluster.group);
-            }
-        });
-
-        // --- Lamp posts on bridge ---
-        const lampPositions = [-deckW / 2 + 2, -deckW / 2 + deckW * 0.35, deckW / 2 - deckW * 0.35, deckW / 2 - 2];
-        lampPositions.forEach(lx => {
-            [-1, 1].forEach(ls => {
-                const lamp = createBridgeLamp();
-                lamp.position.set(lx, deckH + deckThick, ls * 3.8);
-                g.add(lamp);
-            });
-        });
-
-        this.scene.add(g);
-
-        // Add the bridge deck as a walkable platform collider
-        const worldRx = rx;
-        const deckTopY = deckH + deckThick;
-        this.colliders.push({
-            x: worldRx,
-            z: z,
-            w: deckW + 2,
-            d: 10,
-            h: deckTopY,
-            floorY: 0,
-            isBridge: true,
-        });
-
-        // Walkable ramps on east/west bridge ends
-        [-1, 1].forEach(side => {
-            const rampX = worldRx + side * (deckW / 2 + 4.5);
-            const ramp = toonMesh(
-                new THREE.BoxGeometry(9, deckTopY / 2, 8.5),
-                PALETTE.bridge,
-            );
-            ramp.mesh.position.set(rampX - worldRx, deckTopY / 4, 0);
-            ramp.mesh.rotation.z = side * -0.22;
-            ramp.mesh.castShadow = true;
-            ramp.mesh.receiveShadow = true;
-            g.add(ramp.group);
-
-            this.colliders.push({
-                x: rampX,
-                z: z,
-                w: 9,
-                d: 10,
-                h: deckTopY,
-                floorY: 0,
-                isBridgeRamp: true,
-            });
-        });
-    }
-
-    // ── Waterfall ───────────────────────────────────────────────────────────
-
-    _waterfall() {
-        // At northern end of river — a cascading waterfall feature
-        const wfX = WORLD.riverX;
-        const wfZ = -WORLD.riverLength / 2 - 5;
-        const g = new THREE.Group();
-        g.position.set(wfX, 0, wfZ);
-
-        const tiers = [
-            { y: 12, w: WORLD.riverWidth + 4,  d: 6, depth: 4 },
-            { y: 7,  w: WORLD.riverWidth + 10, d: 7, depth: 5 },
-            { y: 3,  w: WORLD.riverWidth + 16, d: 8, depth: 4 },
+        // Trees within city (at intersections, corners, small pockets)
+        const cityTrees = [
+            [-44, -36, 0], [44, -36, 1], [-44, 36, 2], [44, 36, 3],
+            [-6, -38, 4], [6, -38, 5], [-6, 38, 6], [6, 38, 7],
+            [-58, -15, 8], [58, -15, 9], [-58, 15, 10], [58, 15, 11],
+            [-44, 0, 12], [44, 0, 13],
+            [-20, -38, 14], [20, -38, 15], [-20, 38, 16], [20, 38, 17],
         ];
-
-        tiers.forEach(t => {
-            // Ledge platform
-            const ledge = toonMesh(new THREE.BoxGeometry(t.w, 0.8, t.d), PALETTE.bridgeStone);
-            ledge.mesh.position.set(0, t.y, 0);
-            ledge.mesh.castShadow = true;
-            ledge.mesh.receiveShadow = true;
-            g.add(ledge.group);
-
-            // Falling water curtain
-            const fall = toonMesh(
-                new THREE.BoxGeometry(t.w * 0.7, t.depth, 0.35),
-                PALETTE.riverShallow,
-                { transparent: true, opacity: 0.65, outline: false }
-            );
-            fall.mesh.position.set(0, t.y - t.depth / 2 - 0.2, t.d / 2 - 0.1);
-            g.add(fall.group);
-
-            // Mist splash
-            const mist = toonMesh(
-                new THREE.BoxGeometry(t.w + 2, 0.3, 4),
-                PALETTE.waterFoam,
-                { transparent: true, opacity: 0.5, outline: false }
-            );
-            mist.mesh.position.set(0, t.y - t.depth + 0.4, t.d);
-            g.add(mist.group);
-        });
-
-        // Rocky cliff face behind waterfall
-        const cliff = toonMesh(new THREE.BoxGeometry(WORLD.riverWidth + 28, 18, 10), PALETTE.mountainRock);
-        cliff.mesh.position.set(0, 9, -8);
-        cliff.mesh.castShadow = true;
-        g.add(cliff.group);
-
-        // Cliff side rocks
-        [-1, 1].forEach(side => {
-            const rock = toonMesh(new THREE.BoxGeometry(14, 16, 12), PALETTE.mountain[0]);
-            rock.mesh.position.set(side * (WORLD.riverWidth / 2 + 16), 8, -4);
-            rock.mesh.castShadow = true;
-            g.add(rock.group);
-
-            // Pine trees on cliff
-            for (let p = 0; p < 5; p++) {
-                const pine = createPineTree(p + side * 10, 0.9);
-                pine.position.set(side * (WORLD.riverWidth / 2 + 12 + p * 3), 15, -5 + p * 2);
-                g.add(pine);
-            }
-        });
-
-        this.scene.add(g);
-    }
-
-    // ── District zones (unchanged) ───────────────────────────────────────────
-
-    _districtZones() {
-        Object.values(DISTRICT_DEFS).forEach(d => {
-            if (d.id === 'downtown') return;
-            const pad = new THREE.Mesh(
-                new THREE.CircleGeometry(d.radius, 32),
-                toonMat(d.groundColor, { transparent: true, opacity: 0.18 })
-            );
-            pad.rotation.x = -Math.PI / 2;
-            pad.position.set(d.x, 0.02, d.z);
-            this.scene.add(pad);
-        });
-    }
-
-    // ── Roads ───────────────────────────────────────────────────────────────
-
-    _roadGrid() {
-        const asphalt = toonMat(PALETTE.asphalt);
-        const span = WORLD.size - 30;
-        const half = Math.floor((WORLD.size / 2) / WORLD.roadSpacing);
-
-        for (let i = -half; i <= half; i++) {
-            const offset = i * WORLD.roadSpacing;
-            if (Math.abs(offset - WORLD.riverX) < WORLD.riverWidth / 2 + 8) continue;
-
-            const y = 0.03;
-            const vRoad = new THREE.Mesh(new THREE.BoxGeometry(WORLD.roadWidth, 0.06, span), asphalt);
-            vRoad.position.set(offset, y, 0);
-            vRoad.receiveShadow = true;
-            this._add(vRoad, offset, 0);
-
-            const hRoad = new THREE.Mesh(new THREE.BoxGeometry(span, 0.06, WORLD.roadWidth), asphalt);
-            hRoad.position.set(0, y, offset);
-            hRoad.receiveShadow = true;
-            this._add(hRoad, 0, offset);
-
-            const sw = createSidewalk(WORLD.roadWidth + 2, span);
-            sw.position.set(offset + WORLD.roadWidth * 0.65, 0.02, 0);
-            this._add(sw, offset, 0);
-
-            if (i % 2 === 0 && Math.abs(offset) > 20) {
-                this._add(createCrosswalk(offset, offset, 'x'), offset, offset);
-            }
-
-            // Place street walls along the edges of the blocks only inside the central city area
-            if (Math.abs(i) <= 3) {
-                for (let j = -3; j < 3; j++) {
-                    const blockZ = j * WORLD.roadSpacing + WORLD.roadSpacing / 2;
-                    if (this._inPark(offset, blockZ, 25) || this._inRiver(offset, blockZ, 20)) continue;
-                    
-                    // Left wall of block
-                    const wall1 = createStreetWall(26, i + j);
-                    const wx1 = offset - WORLD.roadWidth * 0.72;
-                    wall1.position.set(wx1, this.getTerrainHeight(wx1, blockZ), blockZ);
-                    wall1.rotation.y = 0; // along z axis
-                    this._add(wall1, wx1, blockZ);
-
-                    this.colliders.push({
-                        x: wx1, z: blockZ,
-                        w: 0.6, d: 26, h: 2.0,
-                        floorY: this.getTerrainHeight(wx1, blockZ)
-                    });
-
-                    // Right wall of block
-                    const wall2 = createStreetWall(26, i + j + 2);
-                    const wx2 = offset + WORLD.roadWidth * 0.72;
-                    wall2.position.set(wx2, this.getTerrainHeight(wx2, blockZ), blockZ);
-                    wall2.rotation.y = 0; // along z axis
-                    this._add(wall2, wx2, blockZ);
-
-                    this.colliders.push({
-                        x: wx2, z: blockZ,
-                        w: 0.6, d: 26, h: 2.0,
-                        floorY: this.getTerrainHeight(wx2, blockZ)
-                    });
-                }
-
-                for (let j = -3; j < 3; j++) {
-                    const blockX = j * WORLD.roadSpacing + WORLD.roadSpacing / 2;
-                    if (this._inPark(blockX, offset, 25) || this._inRiver(blockX, offset, 20)) continue;
-                    if (Math.abs(blockX - WORLD.riverX) < WORLD.riverWidth / 2 + 10) continue;
-
-                    // Bottom wall of block
-                    const wall1 = createStreetWall(26, i + j + 5);
-                    const wz1 = offset - WORLD.roadWidth * 0.72;
-                    wall1.position.set(blockX, this.getTerrainHeight(blockX, wz1), wz1);
-                    wall1.rotation.y = Math.PI / 2; // along x axis
-                    this._add(wall1, blockX, wz1);
-
-                    this.colliders.push({
-                        x: blockX, z: wz1,
-                        w: 26, d: 0.6, h: 2.0,
-                        floorY: this.getTerrainHeight(blockX, wz1)
-                    });
-
-                    // Top wall of block
-                    const wall2 = createStreetWall(26, i + j + 7);
-                    const wz2 = offset + WORLD.roadWidth * 0.72;
-                    wall2.position.set(blockX, this.getTerrainHeight(blockX, wz2), wz2);
-                    wall2.rotation.y = Math.PI / 2; // along x axis
-                    this._add(wall2, blockX, wz2);
-
-                    this.colliders.push({
-                        x: blockX, z: wz2,
-                        w: 26, d: 0.6, h: 2.0,
-                        floorY: this.getTerrainHeight(blockX, wz2)
-                    });
-                }
-            }
-        }
-
-        this._slopeRoads();
-    }
-
-    _slopeRoads() {
-        const asphalt = toonMat(PALETTE.asphalt);
-        const curves = this.terrain?.slopes || [];
-        curves.forEach(curve => {
-            const pts = curve.pts;
-            for (let s = 0; s < pts.length - 1; s++) {
-                const [x1, z1, h1] = pts[s];
-                const [x2, z2, h2] = pts[s + 1];
-                const dx = x2 - x1, dz = z2 - z1;
-                const len = Math.hypot(dx, dz);
-                const angle = Math.atan2(dx, dz);
-                const midH = (h1 + h2) / 2 + 0.04;
-                const seg = new THREE.Mesh(new THREE.BoxGeometry(curve.w, 0.1, len), asphalt);
-                seg.position.set((x1 + x2) / 2, midH, (z1 + z2) / 2);
-                seg.rotation.y = angle;
-                seg.rotation.x = -Math.atan2(h2 - h1, len);
-                seg.receiveShadow = true;
-                this._add(seg, (x1 + x2) / 2, (z1 + z2) / 2);
-            }
-        });
-    }
-
-    // ── City buildings ───────────────────────────────────────────────────────
-
-    _city() {
-        const half = 3;
-        let seed = 0;
-
-        for (let i = -half; i <= half; i++) {
-            const offset = i * WORLD.roadSpacing;
-            if (Math.abs(offset - WORLD.riverX) < WORLD.riverWidth / 2 + 8) continue;
-
-            // Vertical roads: place facades along both sides of the road
-            for (let j = -half; j < half; j++) {
-                const blockZ = j * WORLD.roadSpacing + WORLD.roadSpacing / 2;
-                if (this._inPark(offset, blockZ, 22) || this._inRiver(offset, blockZ, 16)) continue;
-
-                // Left facade (facing East)
-                const lx = offset - WORLD.roadWidth * 0.72 - 0.7;
-                if (!this._isOccupied(lx, blockZ)) {
-                    const district = getDistrictAt(lx, blockZ);
-                    const gameDist = district.id !== 'downtown' ? district.id : null;
-                    const built = createZoneBuilding(lx, blockZ, seed++, gameDist);
-                    built.group.rotation.y = Math.PI / 2;
-                    const ty = this.getTerrainHeight(lx, blockZ);
-                    built.group.position.y = ty;
-                    if (built.collider) built.collider.floorY = ty;
-                    this._add(built.group, lx, blockZ);
-                    this.colliders.push(built.collider);
-                    this._markSite(lx, blockZ, built.collider.w, built.collider.d, built.collider.h || 0);
-                }
-
-                // Right facade (facing West)
-                const rx = offset + WORLD.roadWidth * 0.72 + 0.7;
-                if (!this._isOccupied(rx, blockZ)) {
-                    const district = getDistrictAt(rx, blockZ);
-                    const gameDist = district.id !== 'downtown' ? district.id : null;
-                    const built = createZoneBuilding(rx, blockZ, seed++, gameDist);
-                    built.group.rotation.y = -Math.PI / 2;
-                    const ty = this.getTerrainHeight(rx, blockZ);
-                    built.group.position.y = ty;
-                    if (built.collider) built.collider.floorY = ty;
-                    this._add(built.group, rx, blockZ);
-                    this.colliders.push(built.collider);
-                    this._markSite(rx, blockZ, built.collider.w, built.collider.d, built.collider.h || 0);
-                }
-            }
-
-            // Horizontal roads: place facades along both sides
-            for (let j = -half; j < half; j++) {
-                const blockX = j * WORLD.roadSpacing + WORLD.roadSpacing / 2;
-                if (this._inPark(blockX, offset, 22) || this._inRiver(blockX, offset, 16)) continue;
-                if (Math.abs(blockX - WORLD.riverX) < WORLD.riverWidth / 2 + 10) continue;
-
-                // Bottom facade (facing North)
-                const bz = offset - WORLD.roadWidth * 0.72 - 0.7;
-                if (!this._isOccupied(blockX, bz)) {
-                    const district = getDistrictAt(blockX, bz);
-                    const gameDist = district.id !== 'downtown' ? district.id : null;
-                    const built = createZoneBuilding(blockX, bz, seed++, gameDist);
-                    built.group.rotation.y = 0;
-                    const ty = this.getTerrainHeight(blockX, bz);
-                    built.group.position.y = ty;
-                    if (built.collider) built.collider.floorY = ty;
-                    this._add(built.group, blockX, bz);
-                    this.colliders.push(built.collider);
-                    this._markSite(blockX, bz, built.collider.w, built.collider.d, built.collider.h || 0);
-                }
-
-                // Top facade (facing South)
-                const tz = offset + WORLD.roadWidth * 0.72 + 0.7;
-                if (!this._isOccupied(blockX, tz)) {
-                    const district = getDistrictAt(blockX, tz);
-                    const gameDist = district.id !== 'downtown' ? district.id : null;
-                    const built = createZoneBuilding(blockX, tz, seed++, gameDist);
-                    built.group.rotation.y = Math.PI;
-                    const ty = this.getTerrainHeight(blockX, tz);
-                    built.group.position.y = ty;
-                    if (built.collider) built.collider.floorY = ty;
-                    this._add(built.group, blockX, tz);
-                    this.colliders.push(built.collider);
-                    this._markSite(blockX, tz, built.collider.w, built.collider.d, built.collider.h || 0);
-                }
-            }
-        }
-    }
-
-    _cityInfill() {
-        const half = Math.floor((WORLD.size / 2 - 40) / WORLD.roadSpacing);
-        const infillTypes = [createTinyHome, createResidential, createCafe, createJapaneseModern];
-        let seed = 9000;
-
-        for (let gx = -half; gx <= half; gx++) {
-            for (let gz = -half; gz <= half; gz++) {
-                if ((gx + gz) % 3 !== 0) continue;
-
-                const cx = gx * WORLD.roadSpacing + WORLD.roadSpacing * 0.22;
-                const cz = gz * WORLD.roadSpacing + WORLD.roadSpacing * 0.78;
-
-                if (this._inPark(cx, cz, 18)) continue;
-                if (this._inRiver(cx, cz, 12)) continue;
-                if (Math.abs(cx) < 8 && Math.abs(cz) < 8) continue;
-                if (this._isOccupied(cx, cz)) continue;
-
-                const fn = infillTypes[seed % infillTypes.length];
-                const built = fn(cx, cz, seed++);
-                const ty = this.getTerrainHeight(cx, cz);
-                built.group.position.y = ty;
-                if (built.collider) built.collider.floorY = ty;
-                this._add(built.group, cx, cz);
-                this.colliders.push(built.collider);
-                this._markSite(cx, cz, built.collider.w * 0.85, built.collider.d * 0.85, built.collider.h || 0);
-            }
-        }
-
-        // Corner shops along main avenues
-        const avenueSpots = [
-            [-175, -175], [175, -175], [-175, 175], [175, 175],
-            [-175, 0], [175, 0], [0, -175], [0, 175],
-            [-125, -125], [125, 125], [-125, 125], [125, -125],
-        ];
-        avenueSpots.forEach(([cx, cz], i) => {
-            if (this._inRiver(cx, cz, 10) || this._isOccupied(cx, cz)) return;
-            const built = createZoneBuilding(cx, cz, 9100 + i, null);
-            const ty = this.getTerrainHeight(cx, cz);
-            built.group.position.y = ty;
-            if (built.collider) built.collider.floorY = ty;
-            this._add(built.group, cx, cz);
-            this.colliders.push(built.collider);
-            this._markSite(cx, cz, built.collider.w, built.collider.d, built.collider.h || 0);
-        });
-    }
-
-    _urbanGreenery() {
-        const half = Math.floor((WORLD.size / 2 - 50) / WORLD.roadSpacing);
-        for (let gx = -half; gx <= half; gx += 2) {
-            for (let gz = -half; gz <= half; gz += 2) {
-                const cx = gx * WORLD.roadSpacing + 6;
-                const cz = gz * WORLD.roadSpacing - 6;
-                if (this._inRiver(cx, cz, 8) || this._inPark(cx, cz, 10)) continue;
-                if (this._isOccupied(cx, cz)) continue;
-
-                if ((gx * 3 + gz) % 5 === 0) {
-                    const tree = (gx + gz) % 4 === 0 ? createCherryTree() : createLargeTree(gx + gz);
-                    tree.position.set(cx, this.getTerrainHeight(cx, cz), cz);
-                    this.scene.add(tree);
-                }
-
-                if ((gx + gz) % 7 === 0) {
-                    const bush = toonMesh(new THREE.SphereGeometry(0.9, 8, 8), PALETTE.grassLight);
-                    bush.mesh.position.set(cx + 3, this.getTerrainHeight(cx + 3, cz) + 0.45, cz + 2);
-                    bush.mesh.scale.set(1.2, 0.65, 1.1);
-                    this.scene.add(bush.group);
-                }
-            }
-        }
-
-        // Pastel lawn pads between districts
-        for (let i = 0; i < 24; i++) {
-            const angle = (i / 24) * Math.PI * 2;
-            const r = 95 + (i % 4) * 18;
-            const lx = Math.cos(angle) * r;
-            const lz = Math.sin(angle) * r;
-            if (this._inRiver(lx, lz, 12)) continue;
-            const patch = toonMesh(
-                new THREE.CircleGeometry(8 + (i % 3) * 2, 16),
-                i % 2 === 0 ? PALETTE.grassLight : PALETTE.grass,
-                { transparent: true, opacity: 0.55, outline: false }
-            );
-            patch.mesh.rotation.x = -Math.PI / 2;
-            patch.mesh.position.set(lx, this.getTerrainHeight(lx, lz) + 0.02, lz);
-            this.scene.add(patch.group);
-        }
-    }
-
-    // ── Landmarks ───────────────────────────────────────────────────────────
-
-    _landmarks() {
-        this._hqTower(0, -120);
-
-        const school = createSchool(-150, -130, 1);
-        const sty = this.getTerrainHeight(-150, -130);
-        school.group.position.y = sty;
-        if (school.collider) school.collider.floorY = sty;
-        this._add(school.group, -150, -130);
-        this._markSite(-150, -130, 30, 24);
-
-        const lib = createServiceBuilding(155, -125, { buildingStyle: 'consulting' });
-        const lty = this.getTerrainHeight(155, -125);
-        lib.group.position.y = lty;
-        if (lib.collider) lib.collider.floorY = lty;
-        this._add(lib.group, 155, -125);
-        this._markSite(155, -125, 20, 18);
-    }
-
-    _hqTower(x, z) {
-        const g = new THREE.Group();
-        const ty = this.getTerrainHeight(x, z);
-        g.position.set(x, ty, z);
-        const base = toonMesh(new THREE.BoxGeometry(26, 16, 16), PALETTE.concreteLight);
-        base.mesh.position.y = 8;
-        base.mesh.castShadow = true;
-        g.add(base.group);
-        const tower = toonMesh(new THREE.BoxGeometry(11, 28, 11), 0xdbd7ce);
-        tower.mesh.position.y = 30;
-        tower.mesh.castShadow = true;
-        g.add(tower.group);
-        const sign = toonMesh(new THREE.BoxGeometry(9, 1, 0.25), PALETTE.mint, { emissive: PALETTE.mint, emissiveIntensity: 0.1 });
-        sign.mesh.position.set(0, 46, 5.6);
-        g.add(sign.group);
-        this._add(g, x, z);
-        this._markSite(x, z, 28, 18, 44);
-    }
-
-    // ── Database buildings ───────────────────────────────────────────────────
-
-    _dbBuildings() {
-        (this.data.buildings || []).forEach(b => {
-            if (this._isOccupied(b.x, b.z)) return;
-            const built = createServiceBuilding(b.x, b.z, b);
-            const ty = this.getTerrainHeight(b.x, b.z);
-            built.group.position.y = ty;
-            if (built.collider) built.collider.floorY = ty;
-            this._add(built.group, b.x, b.z);
-            this.colliders.push(built.collider);
-            this._markSite(b.x, b.z, built.collider.w, built.collider.d, built.collider.h || 0);
-            this._addPOI(
-                b.id, b.type === 'project' ? POI_TYPES.PROJECT : POI_TYPES.SERVICE,
-                b.x, b.z, 18,
-                b.title, b.subtitle, b.panelContent || b.content || b.description,
-                b.district
-            );
-        });
-    }
-
-    // ── Parks ────────────────────────────────────────────────────────────────
-
-    _parks() {
-        const ty = this.getTerrainHeight(WORLD.parkX, WORLD.parkZ);
-        const fountain = createFountain();
-        fountain.position.set(WORLD.parkX, ty, WORLD.parkZ);
-        this._add(fountain, WORLD.parkX, WORLD.parkZ);
-
-        // Ring of mixed trees
-        for (let a = 0; a < 22; a++) {
-            const angle = (a / 14) * Math.PI * 2;
-            const r = 14 + (a % 4) * 4;
-            const tx = WORLD.parkX + Math.cos(angle) * r;
-            const tz = WORLD.parkZ + Math.sin(angle) * r;
-            let tree;
-            if (a % 4 === 0) tree = createCherryTree();
-            else if (a % 4 === 1) tree = createLargeTree(a);
-            else if (a % 4 === 2) tree = createLargeTree(a + 3);
-            else tree = createCherryTree();
-            tree.position.set(tx, ty, tz);
-            this._add(tree, tx, tz);
-        }
-
-        // Benches
-        for (let a = 0; a < 6; a++) {
-            const angle = (a / 6) * Math.PI * 2 + 0.4;
-            const bench = createBench();
-            const bx = WORLD.parkX + Math.cos(angle) * 22;
-            const bz = WORLD.parkZ + Math.sin(angle) * 22;
-            bench.position.set(bx, ty, bz);
-            bench.rotation.y = angle + Math.PI;
-            this._add(bench, bx, bz);
-        }
-
-        // Park paths (cross-shaped)
-        ['x', 'z'].forEach(axis => {
-            const path = toonMesh(new THREE.BoxGeometry(
-                axis === 'x' ? 3 : 44,
-                0.06,
-                axis === 'z' ? 3 : 44
-            ), PALETTE.concrete);
-            path.mesh.position.set(WORLD.parkX, ty + 0.03, WORLD.parkZ);
-            this.scene.add(path.group);
-        });
-
-        // Wildflower patches
-        for (let i = 0; i < 18; i++) {
-            const angle = (i / 18) * Math.PI * 2;
-            const r = 8 + (i % 4) * 5;
-            const fx = WORLD.parkX + Math.cos(angle) * r + (i % 3) * 2 - 1;
-            const fz = WORLD.parkZ + Math.sin(angle) * r + (i % 2) * 2 - 1;
-            const cols = [PALETTE.pink, PALETTE.yellow, PALETTE.purple, PALETTE.mint, PALETTE.orange];
-            const flower = toonMesh(
-                new THREE.CylinderGeometry(0.15, 0.12, 0.45, 5),
-                cols[i % cols.length],
-                { outline: false }
-            );
-            flower.mesh.position.set(fx, ty + 0.22, fz);
-            this.scene.add(flower.group);
-        }
-    }
-
-    // ── General nature ───────────────────────────────────────────────────────
-
-    _nature() {
-        // Bamboo grove north-east
-        for (let i = 0; i < 10; i++) {
-            const bamboo = createBambooCluster();
-            bamboo.position.set(-185 + i * 7, this.getTerrainHeight(-185 + i * 7, -245), -245 + (i % 3) * 6);
-            this.scene.add(bamboo);
-        }
-
-        // Beach trees south
-        for (let i = 0; i < 16; i++) {
-            const x = -280 + i * 38;
-            const z = 232 + (i % 5) * 12;
-            const tree = i % 3 === 0 ? createWillowTree(i) : createLargeTree(i);
+        cityTrees.forEach(([x, z, seed]) => {
+            const tree = this._pickTree(seed);
             tree.position.set(x, this.getTerrainHeight(x, z), z);
             this.scene.add(tree);
-        }
-
-        // Scattered trees in residential hills (only outside the city limits)
-        for (let i = 0; i < 45; i++) {
-            const s = i * 19 + 5;
-            const x = ((s * 43) % 280) - 140;
-            const z = ((s * 71) % 280) - 140;
-            if (this._inRiver(x, z, 20) || this._inPark(x, z, 25)) continue;
-            if (this._isOccupied(x, z)) continue;
-            // Skip inside the central paved city
-            if (Math.abs(x) < 165 && Math.abs(z) < 165) continue;
-
-            const tree = i % 5 === 0 ? createCherryTree() : createLargeTree(i);
-            tree.position.set(x, this.getTerrainHeight(x, z), z);
-            this.scene.add(tree);
-        }
-
-        // Rock clusters near mountain bases
-        const rockPositions = [
-            [-210, -265], [195, -255], [-195, 268], [205, 262],
-            [-240, -120], [238, -110], [-235, 140], [242, 135],
-        ];
-        rockPositions.forEach(([x, z], i) => {
-            const rock = createRockCluster(i);
-            rock.position.set(x, this.getTerrainHeight(x, z), z);
-            this.scene.add(rock);
         });
+
+        // Low hills at far distance (silhouette behind city)
+        this._backgroundHills();
     }
 
-    // ── River forest (willows along banks) ──────────────────────────────────
-
-    _riverForest() {
-        const len = WORLD.riverLength;
-        const bankOffset = WORLD.riverWidth / 2 + 16;
-
-        for (let z = -len / 2 + 20; z < len / 2 - 20; z += 28) {
-            [-1, 1].forEach(side => {
-                const x = WORLD.riverX + side * bankOffset;
-                const ty = this.getTerrainHeight(x, z);
-                // Alternate between willow and large tree
-                const seed = Math.abs(Math.round(z)) + side + 1;
-                const tree = seed % 3 === 0 ? createWillowTree(seed) : createLargeTree(seed);
-                tree.position.set(x + side * (seed % 5) - 2, ty, z + (seed % 9) - 4);
-                this.scene.add(tree);
-            });
-        }
+    _pickTree(seed) {
+        const s = Math.abs(seed) % 4;
+        if (s === 0) return createCherryTree(seed);
+        if (s === 1) return createLargeTree(seed);
+        if (s === 2) return createPineTree(seed);
+        return createLargeTree(seed + 5);
     }
 
-    // ── Urban details ────────────────────────────────────────────────────────
+    _backgroundHills() {
+        const hillMat = toonMat(0x70a458);
+        const hillDark = toonMat(0x568040);
 
-    _urbanDetails() {
-        const half = 3;
-        let pi = 0;
+        const hill = (cx, cz, rx, ry, rz, mat = hillMat) => {
+            const geo = new THREE.SphereGeometry(1, 14, 10);
+            const m = new THREE.Mesh(geo, mat);
+            m.scale.set(rx, ry, rz);
+            m.position.set(cx, ry * -0.3, cz);
+            m.receiveShadow = true;
+            m.castShadow = true;
+            this.scene.add(m);
+        };
 
-        for (let gx = -half; gx <= half; gx++) {
-            for (let gz = -half; gz <= half; gz++) {
-                const cx = gx * WORLD.roadSpacing + WORLD.roadSpacing / 2;
-                const cz = gz * WORLD.roadSpacing + WORLD.roadSpacing / 2;
-                if (this._inRiver(cx, cz, 8)) continue;
-
-                const zone = getZoneAt(cx, cz);
-                const density = propDensity(zone);
-                if (((gx * 13 + gz * 7) % 10) / 10 > density) continue;
-
-                const px = cx + ((gx * 3 + gz) % 5) * 2 - 4;
-                const pz = cz + ((gx + gz * 5) % 5) * 2 - 4;
-
-                if ((gx + gz) % 4 === 0) {
-                    const pole = createUtilityPole(px, pz);
-                    pole.position.y = this.getTerrainHeight(px, pz);
-                    this.scene.add(pole);
-                }
-                if ((gx * 2 + gz) % 7 === 0) {
-                    const vm = createVendingMachine(px + 3, pz, pi++);
-                    vm.position.y = this.getTerrainHeight(px + 3, pz);
-                    this.scene.add(vm);
-                }
-                scatterStreetProps(this.scene, px - 2, pz + 2, zone, gx * 17 + gz, (x, z) => this.getTerrainHeight(x, z));
-            }
-        }
+        // N hills
+        hill(-55, -130, 48, 14, 38);
+        hill(15, -140, 60, 20, 46);
+        hill(85, -118, 44, 12, 34);
+        hill(-15, -120, 35, 10, 28, hillDark);
+        // S hills
+        hill(-45, 128, 50, 16, 40);
+        hill(28, 138, 58, 18, 44);
+        hill(95, 122, 42, 13, 32);
+        // E hills
+        hill(135, -35, 36, 16, 55);
+        hill(128, 42, 40, 13, 50);
+        // W hills
+        hill(-132, -28, 38, 18, 54);
+        hill(-125, 48, 42, 13, 50, hillDark);
     }
 
-    // ── POIs ─────────────────────────────────────────────────────────────────
-
+    // ─── POIs ──────────────────────────────────────────────────────────────────
     _pois() {
-        const site = this.data.siteName || 'ALIENHOUSE';
-        const hqBody = this.data.company?.hqContent || this._aboutText();
-        this._addPOI('hq', POI_TYPES.HQ, 0, -115, 14, `${site} HQ`, 'HEADQUARTERS', hqBody, 'hq');
-
-        (this.data.team || []).slice(0, 4).forEach((m, i) => {
-            this._addPOI(`team-${i}`, POI_TYPES.TEAM, -10 + i * 7, WORLD.parkZ - 18, 7,
-                m.name, m.role, m.panelContent || `${m.name} — ${m.role} at ${site}.`, 'park');
-        });
-
-        const contactBody = this.data.company?.contactContent
-            || `Email: ${this.data.email || 'signal@alienhouse.net'}`;
-        this._addPOI('contact', POI_TYPES.CONTACT, 0, -60, 12, 'Contact', 'UPLINK', contactBody, 'hq');
-    }
-
-    _aboutText() {
-        const about = this.data.about || [];
-        if (!about.length) return this.data.hero?.subtext || 'Welcome.';
-        return about.map(a => `${a.heading}: ${a.subheading}`).join('\n\n');
-    }
-
-    _addPOI(id, type, x, z, radius, title, subtitle, content, district = null) {
-        const marker = new THREE.Group();
-        const ty = this.getTerrainHeight(x, z);
-        marker.position.set(x, ty, z);
-        const colors = {
-            [POI_TYPES.HQ]: PALETTE.mint,
-            [POI_TYPES.SERVICE]: PALETTE.blue,
-            [POI_TYPES.PROJECT]: PALETTE.grassDark,
-            [POI_TYPES.TEAM]: PALETTE.purple,
-            [POI_TYPES.CONTACT]: PALETTE.orange,
-        };
-        const col = colors[type] || PALETTE.accent;
-        const pole = toonMesh(new THREE.BoxGeometry(0.1, 3, 0.1), col, { emissive: col, emissiveIntensity: 0.1 });
-        pole.mesh.position.y = 1.5;
-        marker.add(pole.group);
-        const icon = toonMesh(new THREE.BoxGeometry(0.45, 0.45, 0.45), 0xffffff, { emissive: col, emissiveIntensity: 0.14 });
-        icon.mesh.position.y = 3.1;
-        marker.add(icon.group);
-        this.scene.add(marker);
-        this.pois.push({
-            id, type, position: new THREE.Vector3(x, ty, z), radius,
-            title, subtitle, content, marker, district,
-            mapLabel: title.length > 10 ? title.slice(0, 9) + '…' : title,
-        });
-     }
-
-    _placeVehicles() {
-        // Place static bus and metro carriage props inside the paved city streets
-        
-        // 1. Orange City Bus parked at (x: -15, z: -35)
-        const bus1 = createBus(0xF59A45);
-        const b1y = this.getTerrainHeight(-15, -35);
-        bus1.position.set(-15, b1y, -35);
-        bus1.rotation.y = Math.PI / 2; // Facing East/West
-        this.scene.add(bus1);
-        this.colliders.push({
-            x: -15, z: -35,
-            w: 6.5, d: 2.2, h: 2.5,
-            floorY: b1y
-        });
-
-        // 2. Green City Bus parked at (x: 35, z: 65)
-        const bus2 = createBus(0x79B36A);
-        const b2y = this.getTerrainHeight(35, 65);
-        bus2.position.set(35, b2y, 65);
-        bus2.rotation.y = 0; // Facing North/South
-        this.scene.add(bus2);
-        this.colliders.push({
-            x: 35, z: 65,
-            w: 2.2, d: 6.5, h: 2.5,
-            floorY: b2y
-        });
-
-        // 3. Silver Metro Train Carriage sitting on street side rails at (x: -65, z: 15)
-        const metro = createMetro();
-        const my = this.getTerrainHeight(-65, 15);
-        metro.position.set(-65, my, 15);
-        metro.rotation.y = Math.PI / 2;
-        this.scene.add(metro);
-        this.colliders.push({
-            x: -65, z: 15,
-            w: 8.5, d: 2.0, h: 2.5,
-            floorY: my
+        const poiDefs = this.data.pois || this.data.buildings || [];
+        const spread = [
+            [-18, -18], [18, -18], [0, 0], [-18, 18], [18, 18],
+            [-38, 0], [38, 0], [0, -32], [0, 32],
+            [-25, -40], [25, -40], [-25, 40], [25, 40],
+        ];
+        poiDefs.forEach((poi, i) => {
+            const [sx, sz] = spread[i % spread.length];
+            const x = poi.x ?? sx;
+            const z = poi.z ?? sz;
+            this.pois.push({
+                position: new THREE.Vector3(x, 0, z),
+                type: poi.type || 'service',
+                name: poi.name || 'Location',
+                mapLabel: poi.shortName || poi.name?.slice(0, 8) || '',
+                data: poi,
+            });
         });
     }
+
+    // ─── Back-compat stubs (main.js calls these directly sometimes) ─────────────
+    cloudMeshes() { return this._cloudMeshes || []; }
 }
