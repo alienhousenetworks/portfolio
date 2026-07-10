@@ -6,12 +6,12 @@
 import * as THREE from 'three';
 import { WORLD, PALETTE } from './config.js';
 import { toonMat, toonMesh, setupCityLighting, INK } from './ToonStyle.js';
-import { buildJapaneseBuilding, buildJapaneseCorner } from './Buildings.js';
+import { buildJapaneseBuilding, buildJapaneseCorner, createVendingMachine } from './Buildings.js';
 import {
     createStreetLamp, createBench, createFlowerPot, createMailbox,
     createBicycleParked, createCherryTree, createLargeTree, createPineTree,
     createRoundSign, createTrafficCone, createTrashCan, createPowerPole,
-    createParkedCar, createPostBox, createVendingMachine,
+    createParkedCar, createPostBox,
 } from './Props.js';
 
 // ─── City layout constants ─────────────────────────────────────────────────
