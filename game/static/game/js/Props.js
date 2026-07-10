@@ -314,24 +314,6 @@ export function createCat() {
     return g;
 }
 
-export function createTrafficCone() {
-    const g = new THREE.Group();
-    // Square base
-    const base = toonMesh(new THREE.BoxGeometry(0.35, 0.05, 0.35), 0x222222, { outline: false });
-    base.mesh.position.y = 0.025;
-    g.add(base.group);
-    
-    // Cone
-    const cone = toonMesh(new THREE.ConeGeometry(0.16, 0.5, 8), PALETTE.orange, { outline: false });
-    cone.mesh.position.y = 0.25;
-    g.add(cone.group);
-
-    // White stripe
-    const stripe = toonMesh(new THREE.CylinderGeometry(0.09, 0.11, 0.12, 8), 0xffffff, { outline: false });
-    stripe.mesh.position.y = 0.25;
-    g.add(stripe.group);
-    return g;
-}
 
 export function createKeiTruck() {
     const g = new THREE.Group();
