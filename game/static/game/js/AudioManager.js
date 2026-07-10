@@ -16,42 +16,75 @@ class AudioManager {
 
     startMusic() {
         if (!this.synthEnabled) return;
+
+        // Pentatonic scale for beautiful, harmonious wind-chime melody
+        const pentatonic = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25, 783.99, 880.00];
         
-        // Soft lofi chiptune repeating chord progression (Calm music)
-        const notes = [
-            [261.63, 329.63, 392.00, 523.25], // C major
-            [349.23, 440.00, 523.25, 698.46], // F major
-            [293.66, 349.23, 440.00, 587.33], // D minor
-            [392.00, 493.88, 587.33, 783.99], // G major
+        // Cozy ambient chords
+        const chords = [
+            [130.81, 261.63, 329.63, 392.00, 493.88], // Cmaj9
+            [174.61, 349.23, 440.00, 523.25, 587.33], // Fmaj9
+            [110.00, 220.00, 329.63, 392.00, 440.00], // Am7
+            [196.00, 293.66, 392.00, 493.88, 587.33]  // G6/9
         ];
-        
+
         let chordIdx = 0;
         const playNextChord = () => {
             if (this.ctx.state === 'suspended') return;
             const now = this.ctx.currentTime;
-            const chord = notes[chordIdx];
-            chord.forEach(freq => {
+            
+            // 1. Play warm ambient chord pad
+            const chord = chords[chordIdx];
+            chord.forEach((freq, idx) => {
                 const osc = this.ctx.createOscillator();
+                const filter = this.ctx.createBiquadFilter();
                 const gain = this.ctx.createGain();
-                
-                osc.type = 'triangle'; // Cozy soft chiptune sound
+
+                osc.type = 'triangle';
                 osc.frequency.setValueAtTime(freq, now);
-                
+
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(500, now);
+
                 gain.gain.setValueAtTime(0, now);
-                gain.gain.linearRampToValueAtTime(0.015, now + 0.8); // Very soft background music
-                gain.gain.exponentialRampToValueAtTime(0.0001, now + 3.8); // Decay
-                
-                osc.connect(gain);
+                gain.gain.linearRampToValueAtTime(idx === 0 ? 0.016 : 0.008, now + 1.2); 
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + 4.8);
+
+                osc.connect(filter);
+                filter.connect(gain);
                 gain.connect(this.ctx.destination);
-                
+
                 osc.start(now);
-                osc.stop(now + 4);
+                osc.stop(now + 5.0);
             });
-            chordIdx = (chordIdx + 1) % notes.length;
+
+            // 2. Play 3 or 4 sparkling pentatonic bell notes over the chord
+            for (let i = 0; i < 4; i++) {
+                const triggerTime = now + 0.3 + i * 1.1 + Math.random() * 0.3;
+                const noteFreq = pentatonic[Math.floor(Math.random() * pentatonic.length)];
+                
+                const bellOsc = this.ctx.createOscillator();
+                const bellGain = this.ctx.createGain();
+
+                bellOsc.type = 'sine'; // Pure beautiful bell tone
+                bellOsc.frequency.setValueAtTime(noteFreq, triggerTime);
+
+                bellGain.gain.setValueAtTime(0, triggerTime);
+                bellGain.gain.linearRampToValueAtTime(0.005, triggerTime + 0.05); // Fast attack
+                bellGain.gain.exponentialRampToValueAtTime(0.0001, triggerTime + 1.8); // Long ring decay
+
+                bellOsc.connect(bellGain);
+                bellGain.connect(this.ctx.destination);
+
+                bellOsc.start(triggerTime);
+                bellOsc.stop(triggerTime + 2.0);
+            }
+
+            chordIdx = (chordIdx + 1) % chords.length;
         };
 
         playNextChord();
-        this.musicInterval = setInterval(playNextChord, 4000);
+        this.musicInterval = setInterval(playNextChord, 5000);
     }
 
     playFootstep(isRunning) {
