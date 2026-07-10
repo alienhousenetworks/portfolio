@@ -164,19 +164,20 @@ function shopFront(g, w, h, d, seed, signColor = PALETTE.orange) {
  * Returns { group, w, d, h } where h is the building height above its base.
  */
 function base(cx, cz, w, d, h, wallColor, seed) {
+    const thinD = 1.4; // Force thin depth for facades
     const g = new THREE.Group();
     g.position.set(cx, 0, cz);
-    const body = toonMesh(new THREE.BoxGeometry(w, h, d), wallColor);
+    const body = toonMesh(new THREE.BoxGeometry(w, h, thinD), wallColor);
     body.mesh.position.y = h / 2;
     body.mesh.castShadow = true;
     body.mesh.receiveShadow = true;
     g.add(body.group);
 
-    // Add anime windows and details
-    addWindows(g, w, h, d, seed);
-    addWallDetails(g, w, h, d, seed);
+    // Add anime windows and details using the thin depth
+    addWindows(g, w, h, thinD, seed);
+    addWallDetails(g, w, h, thinD, seed);
 
-    return { group: g, w, d, h };
+    return { group: g, w, d: thinD, h };
 }
 
 /**
@@ -188,7 +189,7 @@ function finish(b, cx, cz, extraH = 0) {
         group: b.group,
         collider: {
             x: cx, z: cz,
-            w: b.w + 1.5, d: b.d + 1.5,
+            w: b.w + 0.5, d: b.d + 0.5,
             h: b.h + extraH,  // roof height above group.position.y
             floorY: 0,        // relative floor — will be offset by group.position.y
         }

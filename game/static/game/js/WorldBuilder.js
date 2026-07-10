@@ -977,44 +977,70 @@ export class WorldBuilder {
                 this._add(createCrosswalk(offset, offset, 'x'), offset, offset);
             }
 
-            // Place street walls along the edges of the blocks (from offset_z = 12 to 38 within each block spacing)
-            for (let j = -half; j < half; j++) {
-                const blockZ = j * WORLD.roadSpacing + WORLD.roadSpacing / 2;
-                if (this._inPark(offset, blockZ, 25) || this._inRiver(offset, blockZ, 20)) continue;
-                
-                // Left wall of block
-                const wall1 = createStreetWall(26, i + j);
-                const wx1 = offset - WORLD.roadWidth * 0.72;
-                wall1.position.set(wx1, this.getTerrainHeight(wx1, blockZ), blockZ);
-                wall1.rotation.y = 0; // along z axis
-                this._add(wall1, wx1, blockZ);
+            // Place street walls along the edges of the blocks only inside the central city area
+            if (Math.abs(i) <= 3) {
+                for (let j = -3; j < 3; j++) {
+                    const blockZ = j * WORLD.roadSpacing + WORLD.roadSpacing / 2;
+                    if (this._inPark(offset, blockZ, 25) || this._inRiver(offset, blockZ, 20)) continue;
+                    
+                    // Left wall of block
+                    const wall1 = createStreetWall(26, i + j);
+                    const wx1 = offset - WORLD.roadWidth * 0.72;
+                    wall1.position.set(wx1, this.getTerrainHeight(wx1, blockZ), blockZ);
+                    wall1.rotation.y = 0; // along z axis
+                    this._add(wall1, wx1, blockZ);
 
-                // Right wall of block
-                const wall2 = createStreetWall(26, i + j + 2);
-                const wx2 = offset + WORLD.roadWidth * 0.72;
-                wall2.position.set(wx2, this.getTerrainHeight(wx2, blockZ), blockZ);
-                wall2.rotation.y = 0; // along z axis
-                this._add(wall2, wx2, blockZ);
-            }
+                    this.colliders.push({
+                        x: wx1, z: blockZ,
+                        w: 0.6, d: 26, h: 2.0,
+                        floorY: this.getTerrainHeight(wx1, blockZ)
+                    });
 
-            for (let j = -half; j < half; j++) {
-                const blockX = j * WORLD.roadSpacing + WORLD.roadSpacing / 2;
-                if (this._inPark(blockX, offset, 25) || this._inRiver(blockX, offset, 20)) continue;
-                if (Math.abs(blockX - WORLD.riverX) < WORLD.riverWidth / 2 + 10) continue;
+                    // Right wall of block
+                    const wall2 = createStreetWall(26, i + j + 2);
+                    const wx2 = offset + WORLD.roadWidth * 0.72;
+                    wall2.position.set(wx2, this.getTerrainHeight(wx2, blockZ), blockZ);
+                    wall2.rotation.y = 0; // along z axis
+                    this._add(wall2, wx2, blockZ);
 
-                // Bottom wall of block
-                const wall1 = createStreetWall(26, i + j + 5);
-                const wz1 = offset - WORLD.roadWidth * 0.72;
-                wall1.position.set(blockX, this.getTerrainHeight(blockX, wz1), wz1);
-                wall1.rotation.y = Math.PI / 2; // along x axis
-                this._add(wall1, blockX, wz1);
+                    this.colliders.push({
+                        x: wx2, z: blockZ,
+                        w: 0.6, d: 26, h: 2.0,
+                        floorY: this.getTerrainHeight(wx2, blockZ)
+                    });
+                }
 
-                // Top wall of block
-                const wall2 = createStreetWall(26, i + j + 7);
-                const wz2 = offset + WORLD.roadWidth * 0.72;
-                wall2.position.set(blockX, this.getTerrainHeight(blockX, wz2), wz2);
-                wall2.rotation.y = Math.PI / 2; // along x axis
-                this._add(wall2, blockX, wz2);
+                for (let j = -3; j < 3; j++) {
+                    const blockX = j * WORLD.roadSpacing + WORLD.roadSpacing / 2;
+                    if (this._inPark(blockX, offset, 25) || this._inRiver(blockX, offset, 20)) continue;
+                    if (Math.abs(blockX - WORLD.riverX) < WORLD.riverWidth / 2 + 10) continue;
+
+                    // Bottom wall of block
+                    const wall1 = createStreetWall(26, i + j + 5);
+                    const wz1 = offset - WORLD.roadWidth * 0.72;
+                    wall1.position.set(blockX, this.getTerrainHeight(blockX, wz1), wz1);
+                    wall1.rotation.y = Math.PI / 2; // along x axis
+                    this._add(wall1, blockX, wz1);
+
+                    this.colliders.push({
+                        x: blockX, z: wz1,
+                        w: 26, d: 0.6, h: 2.0,
+                        floorY: this.getTerrainHeight(blockX, wz1)
+                    });
+
+                    // Top wall of block
+                    const wall2 = createStreetWall(26, i + j + 7);
+                    const wz2 = offset + WORLD.roadWidth * 0.72;
+                    wall2.position.set(blockX, this.getTerrainHeight(blockX, wz2), wz2);
+                    wall2.rotation.y = Math.PI / 2; // along x axis
+                    this._add(wall2, blockX, wz2);
+
+                    this.colliders.push({
+                        x: blockX, z: wz2,
+                        w: 26, d: 0.6, h: 2.0,
+                        floorY: this.getTerrainHeight(blockX, wz2)
+                    });
+                }
             }
         }
 
@@ -1046,58 +1072,84 @@ export class WorldBuilder {
     // ── City buildings ───────────────────────────────────────────────────────
 
     _city() {
-        const half = Math.floor((WORLD.size / 2 - 40) / WORLD.roadSpacing);
+        const half = 3;
         let seed = 0;
 
-        for (let gx = -half; gx <= half; gx++) {
-            for (let gz = -half; gz <= half; gz++) {
-                const cx = gx * WORLD.roadSpacing + WORLD.roadSpacing / 2;
-                const cz = gz * WORLD.roadSpacing + WORLD.roadSpacing / 2;
+        for (let i = -half; i <= half; i++) {
+            const offset = i * WORLD.roadSpacing;
+            if (Math.abs(offset - WORLD.riverX) < WORLD.riverWidth / 2 + 8) continue;
 
-                if (this._inPark(cx, cz, 20)) continue;
-                if (this._inRiver(cx, cz, 16)) continue;
-                if (Math.abs(cx) < 6 && Math.abs(cz) < 6) continue;
+            // Vertical roads: place facades along both sides of the road
+            for (let j = -half; j < half; j++) {
+                const blockZ = j * WORLD.roadSpacing + WORLD.roadSpacing / 2;
+                if (this._inPark(offset, blockZ, 22) || this._inRiver(offset, blockZ, 16)) continue;
 
-                // 2x2 grid layout inside each 40x40 block
-                const offsets = [
-                    { dx: -11, dz: -11 },
-                    { dx: 11, dz: -11 },
-                    { dx: -11, dz: 11 },
-                    { dx: 11, dz: 11 }
-                ];
-
-                offsets.forEach(off => {
-                    const bx = cx + off.dx;
-                    const bz = cz + off.dz;
-
-                    // Boundaries for individual building sites
-                    if (this._inPark(bx, bz, 14)) return;
-                    if (this._inRiver(bx, bz, 10)) return;
-                    if (this._isOccupied(bx, bz)) return;
-
-                    const district = getDistrictAt(bx, bz);
+                // Left facade (facing East)
+                const lx = offset - WORLD.roadWidth * 0.72 - 0.7;
+                if (!this._isOccupied(lx, blockZ)) {
+                    const district = getDistrictAt(lx, blockZ);
                     const gameDist = district.id !== 'downtown' ? district.id : null;
-                    const built = createZoneBuilding(bx, bz, seed++, gameDist);
-
-                    // Orient building to face the adjacent road
-                    if (off.dx < 0 && off.dz < 0) {
-                        built.group.rotation.y = Math.PI; // Face South/West
-                    } else if (off.dx > 0 && off.dz < 0) {
-                        built.group.rotation.y = Math.PI / 2; // Face East
-                    } else if (off.dx < 0 && off.dz > 0) {
-                        built.group.rotation.y = -Math.PI / 2; // Face West
-                    } else {
-                        built.group.rotation.y = 0; // Face North
-                    }
-
-                    const ty = this.getTerrainHeight(bx, bz);
+                    const built = createZoneBuilding(lx, blockZ, seed++, gameDist);
+                    built.group.rotation.y = Math.PI / 2;
+                    const ty = this.getTerrainHeight(lx, blockZ);
                     built.group.position.y = ty;
                     if (built.collider) built.collider.floorY = ty;
-
-                    this._add(built.group, bx, bz);
+                    this._add(built.group, lx, blockZ);
                     this.colliders.push(built.collider);
-                    this._markSite(bx, bz, built.collider.w, built.collider.d, built.collider.h || 0);
-                });
+                    this._markSite(lx, blockZ, built.collider.w, built.collider.d, built.collider.h || 0);
+                }
+
+                // Right facade (facing West)
+                const rx = offset + WORLD.roadWidth * 0.72 + 0.7;
+                if (!this._isOccupied(rx, blockZ)) {
+                    const district = getDistrictAt(rx, blockZ);
+                    const gameDist = district.id !== 'downtown' ? district.id : null;
+                    const built = createZoneBuilding(rx, blockZ, seed++, gameDist);
+                    built.group.rotation.y = -Math.PI / 2;
+                    const ty = this.getTerrainHeight(rx, blockZ);
+                    built.group.position.y = ty;
+                    if (built.collider) built.collider.floorY = ty;
+                    this._add(built.group, rx, blockZ);
+                    this.colliders.push(built.collider);
+                    this._markSite(rx, blockZ, built.collider.w, built.collider.d, built.collider.h || 0);
+                }
+            }
+
+            // Horizontal roads: place facades along both sides
+            for (let j = -half; j < half; j++) {
+                const blockX = j * WORLD.roadSpacing + WORLD.roadSpacing / 2;
+                if (this._inPark(blockX, offset, 22) || this._inRiver(blockX, offset, 16)) continue;
+                if (Math.abs(blockX - WORLD.riverX) < WORLD.riverWidth / 2 + 10) continue;
+
+                // Bottom facade (facing North)
+                const bz = offset - WORLD.roadWidth * 0.72 - 0.7;
+                if (!this._isOccupied(blockX, bz)) {
+                    const district = getDistrictAt(blockX, bz);
+                    const gameDist = district.id !== 'downtown' ? district.id : null;
+                    const built = createZoneBuilding(blockX, bz, seed++, gameDist);
+                    built.group.rotation.y = 0;
+                    const ty = this.getTerrainHeight(blockX, bz);
+                    built.group.position.y = ty;
+                    if (built.collider) built.collider.floorY = ty;
+                    this._add(built.group, blockX, bz);
+                    this.colliders.push(built.collider);
+                    this._markSite(blockX, bz, built.collider.w, built.collider.d, built.collider.h || 0);
+                }
+
+                // Top facade (facing South)
+                const tz = offset + WORLD.roadWidth * 0.72 + 0.7;
+                if (!this._isOccupied(blockX, tz)) {
+                    const district = getDistrictAt(blockX, tz);
+                    const gameDist = district.id !== 'downtown' ? district.id : null;
+                    const built = createZoneBuilding(blockX, tz, seed++, gameDist);
+                    built.group.rotation.y = Math.PI;
+                    const ty = this.getTerrainHeight(blockX, tz);
+                    built.group.position.y = ty;
+                    if (built.collider) built.collider.floorY = ty;
+                    this._add(built.group, blockX, tz);
+                    this.colliders.push(built.collider);
+                    this._markSite(blockX, tz, built.collider.w, built.collider.d, built.collider.h || 0);
+                }
             }
         }
     }
@@ -1377,7 +1429,7 @@ export class WorldBuilder {
     // ── Urban details ────────────────────────────────────────────────────────
 
     _urbanDetails() {
-        const half = Math.floor((WORLD.size / 2 - 40) / WORLD.roadSpacing);
+        const half = 3;
         let pi = 0;
 
         for (let gx = -half; gx <= half; gx++) {
