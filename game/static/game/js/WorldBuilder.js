@@ -195,16 +195,8 @@ export class WorldBuilder {
     }
 
     _buildMountain(cx, cy_base, cz, radius, height, seed) {
-        const type = seed % 4;
-        if (type === 0) {
-            this._buildLushTerraces(cx, cy_base, cz, radius, height, seed);
-        } else if (type === 1) {
-            this._buildObsidianFang(cx, cy_base, cz, radius, height, seed);
-        } else if (type === 2) {
-            this._buildCrystalSpine(cx, cy_base, cz, radius, height, seed);
-        } else {
-            this._buildForestMaw(cx, cy_base, cz, radius, height, seed);
-        }
+        // Always build lush, beautiful Ghibli-style terraced mountains
+        this._buildLushTerraces(cx, cy_base, cz, radius, height, seed);
 
         // Pine forest on lower slopes of mountain bases
         if (height < 80) {
@@ -266,7 +258,14 @@ export class WorldBuilder {
         const rockColor = 0x7a6c62;
         const grassColor = PALETTE.grass;
         const waterColor = PALETTE.riverShallow;
-        const treeFoliageColor = 0x8a3ba0; // Purple foliage
+        const foliageColors = [
+            0x79B36A,  // Ghibli Green
+            0xF2B0C5,  // Cherry Blossom Pink
+            0xFFD966,  // Autumn Gold
+            0x8CC97D,  // Light Pastel Green
+            0xF59A45,  // Soft Orange
+        ];
+        const treeFoliageColor = foliageColors[seed % foliageColors.length];
         const woodColor = PALETTE.wood[0];
 
         for (let i = 0; i < numLevels; i++) {
