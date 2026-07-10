@@ -14,6 +14,7 @@ import { TransitRideController } from './TransitRide.js';
 import { DISTRICT_DEFS, MAP_LEGEND, POI_MAP_COLORS, getDistrictAt } from './Districts.js';
 import { getZoneAt, getZoneLabel } from './CityZones.js';
 import { TransitPicker } from './TransitPicker.js';
+import { audio } from './AudioManager.js';
 
 class Game {
     constructor(data) {
@@ -159,6 +160,7 @@ class Game {
 
     _ui() {
         document.getElementById('btn-start')?.addEventListener('click', () => {
+            audio.init();
             document.getElementById('start-screen')?.classList.add('hidden');
             this.state = 'cinematic';
             this.cinematic.start();

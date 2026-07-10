@@ -72,6 +72,15 @@ export class DialogueSystem {
             this.textEl.textContent += line.text[i++];
             if (i >= line.text.length) clearInterval(this._typing);
         }, 20);
+
+        // Speak the words aloud exactly as written
+        if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(line.text);
+            utterance.rate = 1.05;
+            utterance.pitch = (line.speaker.includes('Ambassador') || line.speaker.includes('Zyx')) ? 0.8 : 1.05;
+            window.speechSynthesis.speak(utterance);
+        }
     }
 
     advance() {
@@ -82,6 +91,9 @@ export class DialogueSystem {
             this._typing = null;
             return;
         }
+        if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+        }
         this.idx++;
         this._show();
     }
@@ -89,6 +101,9 @@ export class DialogueSystem {
     close() {
         this.active = false;
         this.box.classList.remove('active');
+        if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+        }
         this.onComplete?.();
     }
 }
