@@ -372,8 +372,18 @@ class Game {
         ctx.fillRect(0, 0, w, h);
 
         const rcx = cx + WORLD.riverX * sc;
-        ctx.fillStyle = '#4ed2c8';
-        ctx.fillRect(rcx - WORLD.riverWidth * sc / 2, 0, WORLD.riverWidth * sc, h);
+        ctx.fillStyle = '#6C777B'; // asphalt color
+        ctx.fillRect(rcx - 24 * sc / 2, 0, 24 * sc, h);
+
+        // Dash line median marker
+        ctx.strokeStyle = '#FFD966';
+        ctx.lineWidth = 1.2;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(rcx, 0);
+        ctx.lineTo(rcx, h);
+        ctx.stroke();
+        ctx.setLineDash([]);
 
         ctx.strokeStyle = 'rgba(255,255,255,0.06)';
         ctx.lineWidth = 1;

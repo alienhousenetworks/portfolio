@@ -247,12 +247,10 @@ export class PlayerController {
             this.onGround = false;
         }
 
-        // Smooth height transition — use walkable floor (terrain + bridges + blocks)
-        if (this.vy <= 0 && Math.abs(floorY - curY) < 3.5) {
+        // Only apply smooth height transition when we are on the ground (walking)
+        if (this.onGround) {
             const ySmooth = 12;
             this.avatar.position.y += (floorY - this.avatar.position.y) * (1 - Math.exp(-ySmooth * dt));
-            this.onGround = true;
-            this.vy = 0;
         } else {
             this.avatar.position.y = newY;
         }
@@ -306,7 +304,11 @@ export class PlayerController {
             const hd = c.d / 2 + r;
             if (Math.abs(x - c.x) < hw && Math.abs(z - c.z) < hd) {
                 if (c.d > 100 && this.terrain?.isOnStair(x, z)) continue;
-                if (this.terrain?.isOnBridge(x, z) && (c.isBridge || c.isBridgeRamp)) continue;
+                
+                // Allow walking under the bridge without hitting bridge colliders
+                if (y < 1.5 && (c.isBridge || c.isBridgeRamp)) continue;
+                // Allow walking on the bridge/ramps by ignoring their colliders when on top
+                if (y >= 1.5 && this.terrain?.isOnBridge(x, z, y) && (c.isBridge || c.isBridgeRamp)) continue;
 
                 const blockFloor = c.floorY || 0;
                 const blockTop = blockFloor + (c.h || 0);

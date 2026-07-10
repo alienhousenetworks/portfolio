@@ -706,53 +706,50 @@ export class WorldBuilder {
 
     _river() {
         const len = WORLD.riverLength;
-        const w = WORLD.riverWidth;
+        const w = WORLD.riverWidth; // 38
 
-        // Deep water
-        const water = toonMesh(new THREE.BoxGeometry(w, 0.18, len), PALETTE.river);
-        water.mesh.position.set(WORLD.riverX, -0.04, 0);
-        water.mesh.receiveShadow = true;
-        this.scene.add(water.group);
+        // 1. Asphalt Road Bed (Grand Avenue - double lane, width 24)
+        const roadMat = toonMat(PALETTE.asphalt);
+        const road = new THREE.Mesh(new THREE.BoxGeometry(24, 0.06, len), roadMat);
+        road.position.set(WORLD.riverX, 0.03, 0);
+        road.receiveShadow = true;
+        this.scene.add(road);
 
-        // Shallow edges
-        [-1, 1].forEach(side => {
-            const shallow = toonMesh(
-                new THREE.BoxGeometry(5, 0.12, len),
-                PALETTE.riverShallow,
-                { transparent: true, opacity: 0.75 }
-            );
-            shallow.mesh.position.set(WORLD.riverX + side * (w / 2 - 2.5), -0.01, 0);
-            this.scene.add(shallow.group);
-        });
+        // 2. Central Green Median (width 4)
+        const medianMat = toonMat(PALETTE.grassLight);
+        const median = new THREE.Mesh(new THREE.BoxGeometry(4, 0.12, len), medianMat);
+        median.position.set(WORLD.riverX, 0.08, 0);
+        median.receiveShadow = true;
+        this.scene.add(median);
 
-        // Water ripple sketch lines
-        for (let z = -len / 2; z < len / 2; z += 14) {
-            sketchLines(this.scene, [
-                new THREE.Vector3(WORLD.riverX - 4, 0.06, z),
-                new THREE.Vector3(WORLD.riverX, 0.06, z + 7),
-                new THREE.Vector3(WORLD.riverX + 5, 0.06, z + 13),
-            ], 0xffffff, 0.35);
-        }
-        // Shorter cross ripples
-        for (let z = -len / 2 + 7; z < len / 2; z += 22) {
-            sketchLines(this.scene, [
-                new THREE.Vector3(WORLD.riverX - 8, 0.06, z),
-                new THREE.Vector3(WORLD.riverX + 8, 0.06, z + 4),
-            ], 0xe8f4f8, 0.25);
+        // Median details: streetlights, trees, and small grass patches
+        for (let z = -len / 2 + 30; z < len / 2 - 30; z += 45) {
+            // Streetlight on the median
+            const pole = createUtilityPole(WORLD.riverX, z);
+            pole.position.y = 0.14;
+            this.scene.add(pole);
+
+            // Alternating cherry trees and green pines on the median
+            const seed = Math.abs(Math.round(z));
+            const tree = seed % 2 === 0 ? createCherryTree(seed) : createPineTree(seed, 0.8);
+            tree.position.set(WORLD.riverX, 0.14, z + 15);
+            tree.scale.setScalar(0.7);
+            this.scene.add(tree);
         }
 
-        // Embankment banks (grass slopes)
+        // 3. Sidewalks and Curbs on left and right sides
         [-1, 1].forEach(side => {
-            const bank = toonMesh(new THREE.BoxGeometry(14, 1.4, len), PALETTE.embankment);
-            bank.mesh.position.set(WORLD.riverX + side * (w / 2 + 7), 0.5, 0);
-            bank.mesh.receiveShadow = true;
-            this.scene.add(bank.group);
+            // Sidewalk (width 4)
+            const sw = createSidewalk(4, len);
+            sw.position.set(WORLD.riverX + side * 14, 0.02, 0);
+            this.scene.add(sw);
 
-            // Stone edge along bank
-            const stone = toonMesh(new THREE.BoxGeometry(1.5, 0.6, len), PALETTE.bridgeStone);
-            stone.mesh.position.set(WORLD.riverX + side * (w / 2 + 0.75), 0.1, 0);
-            stone.mesh.receiveShadow = true;
-            this.scene.add(stone.group);
+            // Green curb embankment (width 3)
+            const curbMat = toonMat(PALETTE.grassDark);
+            const curb = new THREE.Mesh(new THREE.BoxGeometry(3, 0.10, len), curbMat);
+            curb.position.set(WORLD.riverX + side * 17.5, 0.05, 0);
+            curb.receiveShadow = true;
+            this.scene.add(curb);
         });
     }
 

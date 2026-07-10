@@ -120,11 +120,13 @@ export class TerrainSystem {
         return maxH;
     }
 
-    getHeightAt(x, z) {
-        // Bridge decks override river ground
+    getHeightAt(x, z, currentY = null) {
+        // Bridge decks override ground only if player is high enough (on/near bridge deck level)
         for (const b of BRIDGES) {
             if (Math.abs(x - b.x) <= b.halfW && Math.abs(z - b.z) <= b.halfD) {
-                return b.deckY;
+                if (currentY === null || currentY > 1.2) {
+                    return b.deckY;
+                }
             }
         }
 
@@ -138,10 +140,12 @@ export class TerrainSystem {
                     ? (x >= innerX && x <= outerX)
                     : (x <= innerX && x >= outerX);
                 if (!onRamp) continue;
-                const t = side > 0
-                    ? (x - innerX) / (outerX - innerX)
-                    : (innerX - x) / (innerX - outerX);
-                return THREE.MathUtils.lerp(WORLD.groundY, b.deckY, THREE.MathUtils.clamp(t, 0, 1));
+                if (currentY === null || currentY > 0.5) {
+                    const t = side > 0
+                        ? (x - innerX) / (outerX - innerX)
+                        : (innerX - x) / (innerX - outerX);
+                    return THREE.MathUtils.lerp(WORLD.groundY, b.deckY, THREE.MathUtils.clamp(t, 0, 1));
+                }
             }
         }
 
@@ -158,8 +162,13 @@ export class TerrainSystem {
         return this._lawnHeightAt(x, z);
     }
 
-    isOnBridge(x, z) {
-        return BRIDGES.some(b => Math.abs(x - b.x) <= b.halfW && Math.abs(z - b.z) <= b.halfD);
+    isOnBridge(x, z, currentY = null) {
+        return BRIDGES.some(b => {
+            const inBox = Math.abs(x - b.x) <= b.halfW && Math.abs(z - b.z) <= b.halfD;
+            if (!inBox) return false;
+            if (currentY === null) return true;
+            return currentY > 1.2;
+        });
     }
 
     isOnStair(x, z) {
@@ -167,22 +176,34 @@ export class TerrainSystem {
     }
 
     canTraverse(fromX, fromZ, fromY, toX, toZ) {
-        const toY = this.getHeightAt(toX, toZ);
+        const toY = this.getHeightAt(toX, toZ, fromY);
         const dy = toY - fromY;
-        if (Math.abs(dy) <= MAX_STEP) return true;
+
+        // Going down is always traversable (gravity handles the drop)
+        if (dy <= 0.01) return true;
+
+        // Going up is allowed if height difference is within step limits
+        if (dy <= MAX_STEP) return true;
+
         if (this.isOnStair(fromX, fromZ) || this.isOnStair(toX, toZ)) {
-            return Math.abs(dy) <= STAIR_MAX_STEP;
+            return dy <= STAIR_MAX_STEP;
         }
-        if (this.isOnBridge(fromX, fromZ) || this.isOnBridge(toX, toZ)) {
-            return Math.abs(dy) <= STAIR_MAX_STEP + 0.5;
+        if (this.isOnBridge(fromX, fromZ, fromY) || this.isOnBridge(toX, toZ, toY)) {
+            return dy <= STAIR_MAX_STEP + 0.5;
         }
-        if (dy < 0 && Math.abs(dy) <= 1.2) return true;
+        
         return false;
     }
 
     getWalkableHeight(x, z, currentY) {
-        const target = this.getHeightAt(x, z);
-        if (Math.abs(target - currentY) <= STAIR_MAX_STEP) return target;
+        const target = this.getHeightAt(x, z, currentY);
+        
+        // Descending/standing is always walkable
+        if (target <= currentY + 0.1) return target;
+        
+        // Ascending requires being within stepping height limits
+        if (target - currentY <= MAX_STEP) return target;
+        
         return currentY;
     }
 

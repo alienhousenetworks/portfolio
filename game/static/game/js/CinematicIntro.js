@@ -36,13 +36,17 @@ export class CinematicIntro {
         this._walkPhase = 0;
         document.body.classList.add('cinematic');
 
-        this.ufo.position.set(WORLD.parkX, 80, WORLD.parkZ + 55);
+        // Initial UFO position high up
+        this.ufo.position.set(WORLD.parkX, 120, WORLD.parkZ);
         this.player.visible = false;
         this.player.position.set(0, 1.2, 0.5);
         this.ufo.add(this.player);
 
         const thruster = this.ufo.getObjectByName('thrusterLight');
-        if (thruster) thruster.intensity = 3;
+        if (thruster) {
+            thruster.intensity = 5;
+            thruster.color.setHex(0x48D2C9); // vibrant cyan
+        }
 
         this.npcs.forEach(n => { n.visible = false; });
         if (this.welcome.human) {
@@ -57,19 +61,49 @@ export class CinematicIntro {
         const ramp = this.ufo.getObjectByName('rampPivot');
         if (ramp) ramp.rotation.x = -Math.PI / 2;
 
-        this.camera.position.set(WORLD.parkX + 35, 25, WORLD.parkZ + 70);
-        this.camera.lookAt(WORLD.parkX, 5, WORLD.parkZ);
+        // Add a clean overlay hints for skipping
+        const skipHint = document.createElement('div');
+        skipHint.id = 'cinematic-skip-hint';
+        skipHint.style.position = 'fixed';
+        skipHint.style.bottom = '24px';
+        skipHint.style.right = '24px';
+        skipHint.style.color = '#fff';
+        skipHint.style.fontFamily = 'system-ui, sans-serif';
+        skipHint.style.fontSize = '13px';
+        skipHint.style.fontWeight = '500';
+        skipHint.style.background = 'rgba(15, 23, 42, 0.75)';
+        skipHint.style.border = '1px solid rgba(255, 255, 255, 0.15)';
+        skipHint.style.padding = '10px 16px';
+        skipHint.style.borderRadius = '24px';
+        skipHint.style.cursor = 'pointer';
+        skipHint.style.zIndex = '1000';
+        skipHint.style.letterSpacing = '0.05em';
+        skipHint.style.transition = 'all 0.2s';
+        skipHint.style.backdropFilter = 'blur(4px)';
+        skipHint.innerHTML = 'Press <kbd style="background:rgba(255,255,255,0.25); padding:2px 6px; border-radius:4px;">SPACE</kbd> or Click to Skip';
+        document.body.appendChild(skipHint);
+
+        const skip = () => { if (this.active) this._done(); };
+        skipHint.addEventListener('click', skip);
+        
+        this._skipHandler = (e) => {
+            if (e.code === 'Space' || e.code === 'Escape') {
+                e.preventDefault();
+                skip();
+            }
+        };
+        window.addEventListener('keydown', this._skipHandler);
     }
 
     _spawnDust(x, z) {
         const ring = new THREE.Mesh(
             new THREE.RingGeometry(0.5, 2, 24),
-            new THREE.MeshBasicMaterial({ color: 0xccbb99, transparent: true, opacity: 0.5, side: THREE.DoubleSide })
+            new THREE.MeshBasicMaterial({ color: 0x48D2C9, transparent: true, opacity: 0.7, side: THREE.DoubleSide })
         );
         ring.rotation.x = -Math.PI / 2;
-        ring.position.set(x, 0.15, z);
-        ring.userData.life = 1.2;
-        ring.userData.scale = 1;
+        ring.position.set(x, 0.16, z);
+        ring.userData.life = 1.5;
+        ring.userData.scale = 1.0;
         this.scene.add(ring);
         this.dustRings.push(ring);
     }
@@ -77,9 +111,9 @@ export class CinematicIntro {
     _updateDust(dt) {
         this.dustRings = this.dustRings.filter(ring => {
             ring.userData.life -= dt;
-            ring.userData.scale += dt * 4;
+            ring.userData.scale += dt * 8;
             ring.scale.set(ring.userData.scale, ring.userData.scale, 1);
-            ring.material.opacity = Math.max(0, ring.userData.life * 0.4);
+            ring.material.opacity = Math.max(0, ring.userData.life * 0.55);
             if (ring.userData.life <= 0) {
                 this.scene.remove(ring);
                 ring.geometry.dispose();
@@ -96,6 +130,29 @@ export class CinematicIntro {
         this.camera.lookAt(look);
     }
 
+    _getDronePath(time) {
+        const pos = new THREE.Vector3();
+        const look = new THREE.Vector3();
+        
+        if (time < 2.2) {
+            // Sweep down from mountains over the central avenue
+            const t = ease(time / 2.2);
+            pos.lerpVectors(new THREE.Vector3(-140, 42, -220), new THREE.Vector3(0, 14, -130), t);
+            look.lerpVectors(new THREE.Vector3(0, 5, -120), new THREE.Vector3(0, 4, -40), t);
+        } else if (time < 4.4) {
+            // Speed under the first highway overpass
+            const t = ease((time - 2.2) / 2.2);
+            pos.lerpVectors(new THREE.Vector3(0, 14, -130), new THREE.Vector3(0, 3.2, -45), t);
+            look.lerpVectors(new THREE.Vector3(0, 4, -40), new THREE.Vector3(WORLD.parkX, 2, WORLD.parkZ), t);
+        } else {
+            // Rise up towards the park to catch the UFO warp-in
+            const t = ease((time - 4.4) / 1.6);
+            pos.lerpVectors(new THREE.Vector3(0, 3.2, -45), new THREE.Vector3(WORLD.parkX + 32, 22, WORLD.parkZ + 65), t);
+            look.lerpVectors(new THREE.Vector3(WORLD.parkX, 2, WORLD.parkZ), new THREE.Vector3(WORLD.parkX, 8, WORLD.parkZ), t);
+        }
+        return { pos, look };
+    }
+
     update(dt) {
         if (!this.active) return;
         this.time += dt;
@@ -107,44 +164,59 @@ export class CinematicIntro {
         const pz = WORLD.parkZ;
         const px = WORLD.parkX;
 
-        if (this.time < 7) {
-            const t = ease(this.time / 7);
-            const bob = Math.sin(this.time * 3) * (1 - t) * 0.8;
-            this.ufo.position.y = THREE.MathUtils.lerp(80, 3.8, t) + bob;
-            this.ufo.position.z = THREE.MathUtils.lerp(pz + 55, pz, t);
-            this.ufo.rotation.y = Math.sin(this.time * 0.4) * 0.08 * (1 - t);
+        if (this.time < 6.0) {
+            // 1. Drone Flyby through the city
+            const path = this._getDronePath(this.time);
+            this.camera.position.copy(path.pos);
+            this.camera.lookAt(path.look);
+            
+            // Keep UFO hidden high up
+            this.ufo.position.set(px, 120, pz);
+        } else if (this.time < 11.0) {
+            // 2. UFO warp-in descent
+            const t = ease((this.time - 6.0) / 5.0);
+            const bob = Math.sin(this.time * 4) * (1 - t) * 0.9;
+            this.ufo.position.y = THREE.MathUtils.lerp(120, 3.8, t) + bob;
+            this.ufo.position.z = pz;
+            this.ufo.rotation.y = Math.sin(this.time * 0.5) * 0.12 * (1 - t);
 
-            if (thruster) thruster.intensity = THREE.MathUtils.lerp(3, 0.6, t);
-            if (rim?.material) rim.material.emissiveIntensity = 0.15 + Math.sin(this.time * 8) * 0.1;
+            if (thruster) thruster.intensity = THREE.MathUtils.lerp(5, 0.8, t);
+            if (rim?.material) rim.material.emissiveIntensity = 0.2 + Math.sin(this.time * 12) * 0.15;
 
-            const camT = ease(Math.min(1, this.time / 6));
+            // Camera moves to lock-on to the UFO descending in the park
+            const camT = ease(Math.min(1, (this.time - 6.0) / 4.0));
             this._lerpCamera(
-                new THREE.Vector3(px + 35, 25, pz + 70),
-                new THREE.Vector3(px + 18, 10, pz + 38),
-                new THREE.Vector3(px, 8, pz + 20),
-                new THREE.Vector3(px, 2, pz),
+                new THREE.Vector3(px + 32, 22, pz + 65),
+                new THREE.Vector3(px + 16, 8, pz + 32),
+                new THREE.Vector3(px, 8, pz),
+                new THREE.Vector3(px, 1.8, pz),
                 camT
             );
-        } else if (this.time < 7.4) {
-            const t = (this.time - 7) / 0.4;
-            this.ufo.position.y = 3.8 - Math.sin(t * Math.PI) * 0.35;
-            if (t > 0.5 && this.dustRings.length < 3) {
+        } else if (this.time < 11.5) {
+            // 3. Landing shockwave & dust
+            const t = (this.time - 11.0) / 0.5;
+            this.ufo.position.y = 3.8 - Math.sin(t * Math.PI) * 0.28;
+            if (t > 0.3 && this.dustRings.length < 4) {
                 this._spawnDust(px, pz);
+                this._spawnDust(px - 2, pz + 2);
+                this._spawnDust(px + 2, pz - 2);
             }
-            this.camera.position.set(px + 14, 7, pz + 28);
+            this.camera.position.set(px + 14, 6.2, pz + 24);
             this.camera.lookAt(px, 1.5, pz);
-        } else if (this.time < 9.5) {
-            const t = ease((this.time - 7.4) / 2.1);
+        } else if (this.time < 13.5) {
+            // 4. Ramp opening
+            const t = ease((this.time - 11.5) / 2.0);
             if (ramp) ramp.rotation.x = THREE.MathUtils.lerp(-Math.PI / 2, -0.15, t);
-            if (thruster) thruster.intensity = 0.3;
+            if (thruster) thruster.intensity = 0.25;
             this.camera.position.set(
                 THREE.MathUtils.lerp(px + 14, px + 8, t),
-                THREE.MathUtils.lerp(7, 5.5, t),
-                THREE.MathUtils.lerp(pz + 28, pz + 20, t)
+                THREE.MathUtils.lerp(6.2, 5.0, t),
+                THREE.MathUtils.lerp(pz + 24, pz + 18, t)
             );
-            this.camera.lookAt(px, 1.5, pz);
-        } else if (this.time < 13) {
-            const t = easeOut((this.time - 9.5) / 3.5);
+            this.camera.lookAt(px, 1.4, pz);
+        } else if (this.time < 17.0) {
+            // 5. Player walks down the ramp
+            const t = easeOut((this.time - 13.5) / 3.5);
             this.player.visible = true;
             this._walkPhase += dt * 5;
             this.player.position.set(
@@ -153,12 +225,13 @@ export class CinematicIntro {
                 THREE.MathUtils.lerp(0.5, 5.2, t)
             );
             this.player.rotation.y = Math.PI;
-            animateHumanWalk(this.player, this._walkPhase, 0.8);
+            animateHumanWalk(this.player, this._walkPhase, 0.85);
 
-            this.camera.position.set(px + 6, 5, pz + 18);
-            this.camera.lookAt(px, 1.4, pz + 2);
-        } else if (this.time < 16) {
-            const t = ease((this.time - 13) / 3);
+            this.camera.position.set(px + 6, 4.8, pz + 16);
+            this.camera.lookAt(px, 1.3, pz + 2);
+        } else if (this.time < 20.0) {
+            // 6. Player steps off ramp onto grass
+            const t = ease((this.time - 17.0) / 3.0);
             if (this.player.parent === this.ufo) {
                 const wp = this.player.getWorldPosition(new THREE.Vector3());
                 this.ufo.remove(this.player);
@@ -173,22 +246,23 @@ export class CinematicIntro {
                 THREE.MathUtils.lerp(pz, pz - 9, t)
             );
             this.player.rotation.y = Math.PI;
-            animateHumanWalk(this.player, this._walkPhase, 1);
+            animateHumanWalk(this.player, this._walkPhase, 1.0);
 
             this.camera.position.set(
                 THREE.MathUtils.lerp(px + 6, px, t),
-                5,
-                THREE.MathUtils.lerp(pz + 16, pz + 10, t)
+                4.8,
+                THREE.MathUtils.lerp(pz + 15, pz + 9, t)
             );
-            this.camera.lookAt(px, 1.5, THREE.MathUtils.lerp(pz, pz - 5, t));
-        } else if (this.time < 24) {
-            const t = ease((this.time - 16) / 8);
+            this.camera.lookAt(px, 1.4, THREE.MathUtils.lerp(pz, pz - 5, t));
+        } else if (this.time < 27.5) {
+            // 7. Ambassadors step forward and greet
+            const t = ease((this.time - 20.0) / 7.5);
             const playerZ = pz - 10;
 
             this._walkPhase += dt * 2;
             this.player.position.set(px, footY(this.player), playerZ);
             this.player.rotation.y = 0;
-            animateHumanWalk(this.player, this._walkPhase, 0.3);
+            animateHumanWalk(this.player, this._walkPhase, 0.25);
 
             if (this.welcome.human) {
                 this.welcome.human.visible = true;
@@ -210,19 +284,19 @@ export class CinematicIntro {
             }
 
             this.npcs.forEach((npc, i) => {
-                npc.visible = t > 0.35;
+                npc.visible = t > 0.4;
                 npc.position.set(-10 + i * 5, footY(npc), pz - 16 - i);
                 npc.lookAt(px, footY(npc) + 1, playerZ);
             });
 
-            const camAngle = t * 0.4;
+            const camAngle = t * 0.45;
             this.camera.position.set(
-                px + Math.sin(camAngle) * 12,
-                THREE.MathUtils.lerp(5, 4.2, t),
-                pz + Math.cos(camAngle) * 8
+                px + Math.sin(camAngle) * 11,
+                THREE.MathUtils.lerp(4.8, 3.8, t),
+                pz + Math.cos(camAngle) * 7.5
             );
-            this.camera.lookAt(px, 1.7, playerZ);
-        } else if (this.time >= 25) {
+            this.camera.lookAt(px, 1.5, playerZ);
+        } else {
             this._done();
         }
     }
@@ -230,6 +304,15 @@ export class CinematicIntro {
     _done() {
         this.active = false;
         document.body.classList.remove('cinematic');
+
+        // Clean up UI skip element and keypress listener
+        const skipHint = document.getElementById('cinematic-skip-hint');
+        if (skipHint) skipHint.remove();
+        if (this._skipHandler) {
+            window.removeEventListener('keydown', this._skipHandler);
+            this._skipHandler = null;
+        }
+
         const thruster = this.ufo.getObjectByName('thrusterLight');
         if (thruster) thruster.intensity = 0;
 
