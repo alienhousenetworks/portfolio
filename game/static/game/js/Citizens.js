@@ -59,6 +59,7 @@ export class CitizenManager {
         this._spawnWanderer();
         this._spawnCyclists();
         this._spawnParkLife();
+        this._spawnShopkeepers();
 
         const spots = this._walkSpots();
         for (let i = 0; i < 10; i++) {
@@ -95,6 +96,30 @@ export class CitizenManager {
         });
 
         this.spawnBuildingHosts(buildings);
+    }
+
+    _spawnShopkeepers() {
+        const shops = [
+            { name: 'Hiro', role: 'Flower Shopkeeper', x: -15, z: 46, line: 'Welcome to my flower shop! Fresh sakura and roses today!' },
+            { name: 'Kenji', role: 'Chai Seller', x: -35, z: 46, line: 'Best hot tea in town! Made with local spices.' },
+            { name: 'Ami', role: 'Shoe Shopkeeper', x: -95, z: 70, line: 'Looking for comfortable walking shoes? Try these!' },
+            { name: 'Saki', role: 'Restaurant Hostess', x: 20, z: -64, line: 'Table for two? We serve the best ramen and sushi!' }
+        ];
+
+        shops.forEach((s, i) => {
+            const modelKey = i % 2 === 0 ? 'female' : 'male';
+            const mesh = createHumanAvatar({ variant: i, modelKey, gender: modelKey, name: s.name });
+            mesh.position.set(s.x + 2, floorYForAvatar(mesh, this._groundY(s.x + 2, s.z)), s.z);
+            mesh.visible = true;
+            mesh.add(createNameTag(s.name, mesh.userData.targetHeight));
+            this.scene.add(mesh);
+            this.citizens.push({
+                mesh, name: s.name, type: 'shopkeeper',
+                subtitle: s.role.toUpperCase(),
+                line: s.line,
+                speed: 0, phase: i, visible: true
+            });
+        });
     }
 
     _spawnStudents() {

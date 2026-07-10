@@ -378,9 +378,18 @@ class Game {
         ctx.fillStyle = '#90c87a';
         ctx.fillRect(0, 0, w, h);
 
-        // 2. City concrete base slab (expanded to 280 x 220 in layout scale)
+        // 2. City concrete base slab (organic, naturally grown shape)
         ctx.fillStyle = '#a8b4b0';
-        ctx.fillRect(cx - 140 * sc, cy - 110 * sc, 280 * sc, 220 * sc);
+        ctx.beginPath();
+        ctx.moveTo(cx - 130 * sc, cy - 85 * sc);
+        ctx.quadraticCurveTo(cx - 60 * sc, cy - 120 * sc, cx, cy - 105 * sc);
+        ctx.quadraticCurveTo(cx + 70 * sc, cy - 120 * sc, cx + 135 * sc, cy - 85 * sc);
+        ctx.quadraticCurveTo(cx + 145 * sc, cy, cx + 125 * sc, cy + 90 * sc);
+        ctx.quadraticCurveTo(cx + 60 * sc, cy + 110 * sc, cx - 10 * sc, cy + 100 * sc);
+        ctx.quadraticCurveTo(cx - 80 * sc, cy + 115 * sc, cx - 135 * sc, cy + 70 * sc);
+        ctx.quadraticCurveTo(cx - 145 * sc, cy - 10 * sc, cx - 130 * sc, cy - 85 * sc);
+        ctx.closePath();
+        ctx.fill();
 
         // 3. River Harmony along the West side
         ctx.fillStyle = '#7ac4d0';

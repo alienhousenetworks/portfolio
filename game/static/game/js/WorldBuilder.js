@@ -61,6 +61,7 @@ export class WorldBuilder {
         this._roadNetwork();
         this._buildingRows();
         this._streetProps();
+        this._createDetailedShops();
         this._crosswalks();
         this._wireNetwork();
         this._surroundingNature();
@@ -320,12 +321,12 @@ export class WorldBuilder {
             // Check if it hits any road or river
             if (this._isRoadOrPark(rx, rz)) continue;
 
-            const w = 9.8;
-            const d = 9.8;
+            const w = 8.8 + Math.abs((s * 13 + 5) % 3);
+            const d = 8.8 + Math.abs((s * 19 + 7) % 3);
             const h = 7.0 + Math.abs((s * 2711 + 7) % 11);
             
             // Face inward towards Atrium dome (0, 0)
-            const facingAngle = Math.atan2(-rx, -rz);
+            const facingAngle = Math.atan2(-rx, -rz) + ((s * 31 + 17) % 5 - 2) * 0.05;
 
             const bld = buildJapaneseBuilding(w, h, d, s);
             bld.position.set(rx, 0, rz);
@@ -355,8 +356,13 @@ export class WorldBuilder {
                 else if (zCoord < 0) facingAngle = Math.PI; // North side faces South
                 else facingAngle = 0; // South side faces North
 
-                const w = 9.8;
-                const d = 9.8;
+                // Introduce natural organic irregularities (jitters)
+                const jitterX = ((s * 17 + 11) % 5 - 2.5) * 0.45;
+                const jitterZ = ((s * 23 + 19) % 5 - 2.5) * 0.45;
+                const yawJitter = ((s * 29 + 13) % 7 - 3.5) * 0.04;
+
+                const w = 8.5 + Math.abs((s * 41 + 3) % 3.2);
+                const d = 8.5 + Math.abs((s * 47 + 5) % 3.2);
                 const h = 7.0 + Math.abs((s * 2711 + 7) % 11);
 
                 let bld;
@@ -366,12 +372,72 @@ export class WorldBuilder {
                     bld = buildJapaneseBuilding(w, h, d, s);
                 }
 
-                bld.position.set(xCoord, 0, zCoord);
-                bld.rotation.y = facingAngle;
+                bld.position.set(xCoord + jitterX, 0, zCoord + jitterZ);
+                bld.rotation.y = facingAngle + yawJitter;
                 this.scene.add(bld);
                 
-                this.colliders.push({ x: xCoord, z: zCoord, w, d, h, floorY: 0 });
+                this.colliders.push({ x: xCoord + jitterX, z: zCoord + jitterZ, w, d, h, floorY: 0 });
                 s++;
+            }
+        }
+    }
+
+    _createDetailedShops() {
+        const tableMat = toonMat(0x8a7a68);
+        
+        // 1. Flower Shop Props at (-15, 46)
+        for (let i = -1; i <= 1; i++) {
+            const pot1 = createFlowerPot(i + 5);
+            pot1.position.set(-15 + i * 1.3, 0, 48.5);
+            this.scene.add(pot1);
+
+            const pot2 = createFlowerPot(i + 8);
+            pot2.position.set(-13, 0, 46 + i * 1.1);
+            this.scene.add(pot2);
+        }
+
+        // 2. Chai Shop / Tea Stall Props at (-35, 46)
+        const tbl = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.75, 1.0), tableMat);
+        tbl.position.set(-35, 0.375, 48.5);
+        this.scene.add(tbl);
+
+        const bench1 = createBench();
+        bench1.position.set(-37, 0, 48.5);
+        bench1.rotation.y = Math.PI / 2;
+        this.scene.add(bench1);
+
+        const bench2 = createBench();
+        bench2.position.set(-33, 0, 48.5);
+        bench2.rotation.y = -Math.PI / 2;
+        this.scene.add(bench2);
+
+        // 3. Restaurant Props at (20, -64)
+        for (let xOff = -4; xOff <= 4; xOff += 8) {
+            const diningTable = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 0.8, 8), tableMat);
+            diningTable.position.set(20 + xOff, 0.4, -60);
+            this.scene.add(diningTable);
+
+            for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 2) {
+                const stool = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.45, 6), toonMat(0xcc9966));
+                stool.position.set(20 + xOff + Math.cos(angle) * 1.2, 0.225, -60 + Math.sin(angle) * 1.2);
+                this.scene.add(stool);
+            }
+        }
+
+        // 4. Shoe Shop Props / Stall at (-95, 70)
+        const rack = new THREE.Mesh(new THREE.BoxGeometry(2.5, 1.8, 0.6), toonMat(0x5a6a68));
+        rack.position.set(-95, 0.9, 72.5);
+        this.scene.add(rack);
+
+        for (let ty = 0.3; ty <= 1.5; ty += 0.45) {
+            const shelf = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.08, 0.75), toonMat(0xeece60));
+            shelf.position.set(-95, ty, 72.5);
+            this.scene.add(shelf);
+
+            for (let tx = -1.0; tx <= 1.0; tx += 0.5) {
+                const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.12, 0.35), toonMat(0xff5533));
+                shoe.position.set(-95 + tx, ty + 0.1, 72.5);
+                this.scene.add(shoe);
             }
         }
     }
