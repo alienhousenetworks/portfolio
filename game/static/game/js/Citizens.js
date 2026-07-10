@@ -89,6 +89,7 @@ export class CitizenManager {
             this.scene.add(mesh);
             this.citizens.push({
                 mesh, name: m.name, type: 'team',
+                gender: mesh.userData.gender === 'female' ? 'female' : 'male',
                 subtitle: 'ALIENHOUSE CREW',
                 line: `I'm ${m.name}, ${m.role}. Proud to represent AlienHouse on this planet!`,
                 speed: 0, phase: i, visible: false, isTeam: true,
@@ -118,6 +119,7 @@ export class CitizenManager {
             this.scene.add(mesh);
             this.citizens.push({
                 mesh, name: s.name, type: 'shopkeeper',
+                gender: modelKey === 'female' ? 'female' : 'male',
                 subtitle: s.role.toUpperCase(),
                 line: s.line,
                 speed: 0, phase: i, visible: true
@@ -277,6 +279,7 @@ export class CitizenManager {
         this.scene.add(mesh);
         this.citizens.push({
             mesh, name, type,
+            gender: mesh.userData.gender === 'female' ? 'female' : 'male',
             subtitle: type === 'human' ? 'HUMAN CITIZEN'
                 : type === 'student' ? 'STUDENT'
                     : type === 'cyclist' ? 'CYCLIST'
@@ -428,6 +431,8 @@ export class CitizenManager {
 
     toInteractable(c) {
         if (!c) return null;
+        const gender = c.gender
+            || (c.mesh?.userData?.gender === 'female' ? 'female' : 'male');
         return {
             id: c.isHost ? `host-${c.buildingId}` : `citizen-${c.name}`,
             type: 'citizen',
@@ -442,6 +447,7 @@ export class CitizenManager {
             citizen: c,
             isHost: c.isHost,
             hostBuilding: c.buildingTitle,
+            gender,
         };
     }
 }

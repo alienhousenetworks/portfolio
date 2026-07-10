@@ -37,6 +37,8 @@ export const OUTFIT_PRESETS = [
 const FEMALE_NAMES = new Set([
     'Hana', 'Mio', 'Yuki', 'Aki', 'Riley', 'Taylor', 'Jamie', 'Quinn', 'Avery',
     'Nara', 'Eli', 'Oma', 'Kira', 'Luma', 'Sora',
+    'Ami', 'Saki', 'Mika', 'Rina', 'Yui', 'Sara', 'Emma', 'Lina', 'Nina', 'Mila',
+    'Aya', 'Emi', 'Nami', 'Sakura', 'Mei', 'Luna', 'Aria', 'Zoe', 'Maya',
 ]);
 
 const MODEL_KEYS = Object.keys(MODEL_CATALOG);

@@ -206,7 +206,11 @@ class Game {
         if (target.type === 'citizen') {
             this.playerCtrl.disable();
             this.dialogue.start(
-                [{ speaker: target.title, text: target.content }],
+                [{
+                    speaker: target.title,
+                    text: target.content,
+                    gender: target.gender || target.citizen?.gender || 'male',
+                }],
                 () => this.playerCtrl.enable()
             );
             return;
