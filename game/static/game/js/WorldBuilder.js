@@ -46,7 +46,6 @@ export class WorldBuilder {
         this._districtZones();
         this._roadGrid();
         this._city();
-        this._cityInfill();
         this._landmarks();
         this._dbBuildings();
         this._parks();
@@ -1016,19 +1015,49 @@ export class WorldBuilder {
                 const cz = gz * WORLD.roadSpacing + WORLD.roadSpacing / 2;
 
                 if (this._inPark(cx, cz, 20)) continue;
-                if (this._inRiver(cx, cz, 14)) continue;
+                if (this._inRiver(cx, cz, 16)) continue;
                 if (Math.abs(cx) < 6 && Math.abs(cz) < 6) continue;
-                if (this._isOccupied(cx, cz)) continue;
 
-                const district = getDistrictAt(cx, cz);
-                const gameDist = district.id !== 'downtown' ? district.id : null;
-                const built = createZoneBuilding(cx, cz, seed++, gameDist);
-                const ty = this.getTerrainHeight(cx, cz);
-                built.group.position.y = ty;
-                if (built.collider) built.collider.floorY = ty;
-                this._add(built.group, cx, cz);
-                this.colliders.push(built.collider);
-                this._markSite(cx, cz, built.collider.w, built.collider.d, built.collider.h || 0);
+                // 2x2 grid layout inside each 40x40 block
+                const offsets = [
+                    { dx: -11, dz: -11 },
+                    { dx: 11, dz: -11 },
+                    { dx: -11, dz: 11 },
+                    { dx: 11, dz: 11 }
+                ];
+
+                offsets.forEach(off => {
+                    const bx = cx + off.dx;
+                    const bz = cz + off.dz;
+
+                    // Boundaries for individual building sites
+                    if (this._inPark(bx, bz, 14)) return;
+                    if (this._inRiver(bx, bz, 10)) return;
+                    if (this._isOccupied(bx, bz)) return;
+
+                    const district = getDistrictAt(bx, bz);
+                    const gameDist = district.id !== 'downtown' ? district.id : null;
+                    const built = createZoneBuilding(bx, bz, seed++, gameDist);
+
+                    // Orient building to face the adjacent road
+                    if (off.dx < 0 && off.dz < 0) {
+                        built.group.rotation.y = Math.PI; // Face South/West
+                    } else if (off.dx > 0 && off.dz < 0) {
+                        built.group.rotation.y = Math.PI / 2; // Face East
+                    } else if (off.dx < 0 && off.dz > 0) {
+                        built.group.rotation.y = -Math.PI / 2; // Face West
+                    } else {
+                        built.group.rotation.y = 0; // Face North
+                    }
+
+                    const ty = this.getTerrainHeight(bx, bz);
+                    built.group.position.y = ty;
+                    if (built.collider) built.collider.floorY = ty;
+
+                    this._add(built.group, bx, bz);
+                    this.colliders.push(built.collider);
+                    this._markSite(bx, bz, built.collider.w, built.collider.d, built.collider.h || 0);
+                });
             }
         }
     }
