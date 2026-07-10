@@ -100,12 +100,12 @@ export function setupCityLighting(scene) {
     const sun = new THREE.DirectionalLight(0xfff0c8, 1.8);
     sun.position.set(-80, 160, 70);
     sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
+    sun.shadow.mapSize.set(1024, 1024);
     sun.shadow.camera.near = 1;
-    sun.shadow.camera.far = 500;
+    sun.shadow.camera.far = 420;
     sun.shadow.bias = -0.001;
-    sun.shadow.radius = 2.5;
-    const s = 250;
+    sun.shadow.radius = 1.5;
+    const s = 180;
     sun.shadow.camera.left = -s;
     sun.shadow.camera.right = s;
     sun.shadow.camera.top = s;

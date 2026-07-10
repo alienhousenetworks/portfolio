@@ -339,10 +339,33 @@ export class CitizenManager {
         this.citizens.filter(c => c.isTeam).forEach(c => { c.mesh.visible = visible; });
     }
 
+    /** Optional focus point — far NPCs get cheaper updates */
+    setFocus(x, z) {
+        this._focusX = x;
+        this._focusZ = z;
+    }
+
     update(dt) {
-        this.citizens.filter(c => !c.isTeam || c.mesh.visible).forEach(c => {
-            tickAnimator(c.mesh, dt);
-            this._snapToGround(c.mesh, dt);
+        const fx = this._focusX;
+        const fz = this._focusZ;
+        const hasFocus = fx != null && fz != null;
+        this._frame = (this._frame || 0) + 1;
+
+        this.citizens.filter(c => !c.isTeam || c.mesh.visible).forEach((c, idx) => {
+            // Stagger far NPCs: only update every other frame when far from player
+            let far = false;
+            let stepDt = dt;
+            if (hasFocus && c.mesh) {
+                const dx = c.mesh.position.x - fx;
+                const dz = c.mesh.position.z - fz;
+                far = (dx * dx + dz * dz) > 100 * 100;
+                if (far && ((this._frame + idx) & 1) === 0) return;
+                if (far) stepDt = dt * 2; // compensate for skipped frames
+            }
+
+            // Skip expensive animator for very far NPCs
+            if (!far) tickAnimator(c.mesh, stepDt);
+            this._snapToGround(c.mesh, stepDt);
 
             if (c.isTeam) {
                 if (isRiggedAvatar(c.mesh)) setCharacterPose(c.mesh, 'idle', 0.2);
@@ -352,7 +375,7 @@ export class CitizenManager {
             if (c.speed === 0) {
                 if (c.type === 'shopkeeper' || c.isHost) {
                     if (!c.lastEmoteTime) c.lastEmoteTime = 0;
-                    c.lastEmoteTime += dt;
+                    c.lastEmoteTime += stepDt;
                     
                     // Dynamic work-then-sell behavior for shopkeepers
                     if (c.type === 'shopkeeper') {
@@ -395,7 +418,7 @@ export class CitizenManager {
                 c.goingToTarget = !c.goingToTarget;
                 if (isRiggedAvatar(c.mesh)) setCharacterPose(c.mesh, 'idle', 0.2);
             } else {
-                const step = c.speed * dt;
+                const step = c.speed * stepDt;
                 const nx = c.mesh.position.x + (dx / dist) * step;
                 const nz = c.mesh.position.z + (dz / dist) * step;
                 if (!this.terrain || this.terrain.canTraverse(c.mesh.position.x, c.mesh.position.z, c.mesh.position.y, nx, nz)) {
@@ -403,11 +426,11 @@ export class CitizenManager {
                     c.mesh.position.z = nz;
                 }
                 c.mesh.rotation.y = Math.atan2(dx, dz);
-                c.walkT += dt * 9;
+                c.walkT += stepDt * 9;
 
                 if (c.isCyclist) {
                     animateCyclist(c.mesh, c.walkT, c.speed / 2);
-                } else if (isRiggedAvatar(c.mesh)) {
+                } else if (isRiggedAvatar(c.mesh) && !far) {
                     updateLocomotionPose(c.mesh, {
                         moving: true,
                         running: c.speed > 1.8,

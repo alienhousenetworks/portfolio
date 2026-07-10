@@ -363,21 +363,23 @@ export class EnvironmentSystem {
         const cityNight = this.timeOfDay === 'night' || this.timeOfDay === 'dusk';
         const nightAmt = this.timeOfDay === 'night' ? 1 : this.timeOfDay === 'dusk' ? 0.55 : 0;
         if (L.nightGlow) {
-            L.nightGlow.intensity = 2.4 * nightAmt;
+            L.nightGlow.intensity = 3.2 * nightAmt;
             L.nightGlow.visible = nightAmt > 0;
-            L.nightGlow.distance = 240;
+            L.nightGlow.distance = 280;
             L.nightGlow.color.setHex(0xffb070);
         }
         if (L.nightGlow2) {
-            L.nightGlow2.intensity = 1.8 * nightAmt;
+            L.nightGlow2.intensity = 2.4 * nightAmt;
             L.nightGlow2.visible = nightAmt > 0;
+            L.nightGlow2.distance = 200;
         }
         if (L.nightGlow3) {
-            L.nightGlow3.intensity = 1.8 * nightAmt;
+            L.nightGlow3.intensity = 2.4 * nightAmt;
             L.nightGlow3.visible = nightAmt > 0;
+            L.nightGlow3.distance = 200;
         }
         if (L.nightHemi) {
-            L.nightHemi.intensity = 0.55 * nightAmt;
+            L.nightHemi.intensity = 0.7 * nightAmt;
             L.nightHemi.visible = nightAmt > 0;
         }
         // Warmer fill from below at night so buildings read clearly
@@ -430,29 +432,26 @@ export class EnvironmentSystem {
     _ensureStreetPointLights() {
         if (this._streetPointLights) return;
         this._streetPointLights = [];
-        // Warm pools along Main Avenue (N–S) and Cross Blvd (E–W)
-        const spots = [];
-        for (let z = -110; z <= 110; z += 36) {
-            if (Math.abs(z) < 12) continue;
-            spots.push([0, 5.5, z]);
-            spots.push([-7, 5.2, z + 10]);
-            spots.push([7, 5.2, z - 8]);
-        }
-        for (let x = -120; x <= 120; x += 40) {
-            if (Math.abs(x) < 14) continue;
-            spots.push([x, 5.2, 0]);
-            spots.push([x + 8, 5.0, 90]);
-            spots.push([x - 6, 5.0, -90]);
-        }
-        // Plaza ring
-        for (let i = 0; i < 6; i++) {
-            const a = (i / 6) * Math.PI * 2;
-            spots.push([Math.cos(a) * 18, 4.5, Math.sin(a) * 18]);
-        }
+        // Few wide warm pools only (many PointLights kill FPS)
+        const spots = [
+            [0, 8, 0],
+            [0, 7, 50],
+            [0, 7, -50],
+            [0, 7, 100],
+            [0, 7, -100],
+            [55, 7, 0],
+            [-55, 7, 0],
+            [100, 7, 0],
+            [-100, 7, 0],
+            [0, 6.5, 90],
+            [0, 6.5, -90],
+            [40, 6.5, 40],
+            [-40, 6.5, -40],
+        ];
 
         spots.forEach(([x, y, z], i) => {
-            const col = i % 3 === 0 ? 0xffe0a0 : 0xffc070;
-            const pl = new THREE.PointLight(col, 0, 28, 1.6);
+            const col = i % 2 === 0 ? 0xffe0a0 : 0xffc070;
+            const pl = new THREE.PointLight(col, 0, 55, 1.4);
             pl.position.set(x, y, z);
             pl.visible = false;
             pl.castShadow = false;
@@ -511,12 +510,12 @@ export class EnvironmentSystem {
             }
         });
 
-        // Avenue point lights — warm pools of light on roads
-        const plIntensity = on ? 1.65 * amount : 0;
+        // Few wide avenue point lights (emissive windows carry most of the look)
+        const plIntensity = on ? 2.4 * amount : 0;
         this._streetPointLights.forEach((pl, i) => {
-            pl.intensity = plIntensity * (0.85 + (i % 4) * 0.08);
+            pl.intensity = plIntensity * (0.9 + (i % 3) * 0.05);
             pl.visible = on && amount > 0.05;
-            pl.distance = on ? 32 : 1;
+            pl.distance = on ? 60 : 1;
         });
     }
 
@@ -544,7 +543,7 @@ export class EnvironmentSystem {
         this._particleKind = kind;
         if (!kind) return;
 
-        const count = kind === 'fireflies' ? 40 : kind === 'snow' ? 400 : 220;
+        const count = kind === 'fireflies' ? 18 : kind === 'snow' ? 90 : 70;
         const positions = new Float32Array(count * 3);
         const speeds = new Float32Array(count);
         for (let i = 0; i < count; i++) {
@@ -581,25 +580,34 @@ export class EnvironmentSystem {
 
     _tickParticles(dt) {
         if (!this._particles) return;
+        // Throttle particle CPU work (~20fps updates feel fine for snow/petals)
+        this._particleAcc = (this._particleAcc || 0) + dt;
+        if (this._particleAcc < 0.05) return;
+        const step = this._particleAcc;
+        this._particleAcc = 0;
+
         const pos = this._particles.geometry.attributes.position;
         const speeds = this._particles.geometry.userData.speeds;
         const kind = this._particles.userData.kind;
+        const arr = pos.array;
         for (let i = 0; i < pos.count; i++) {
-            let x = pos.getX(i);
-            let y = pos.getY(i);
-            let z = pos.getZ(i);
+            const i3 = i * 3;
+            let x = arr[i3];
+            let y = arr[i3 + 1];
+            let z = arr[i3 + 2];
             const sp = speeds[i] || 1;
             if (kind === 'snow') {
-                y -= sp * 4.5 * dt;
-                x += Math.sin(y * 0.1 + i) * 0.8 * dt;
+                y -= sp * 4.5 * step;
+                x += Math.sin(y * 0.1 + i) * 0.8 * step;
             } else if (kind === 'sakura' || kind === 'leaves') {
-                y -= sp * 2.2 * dt;
-                x += Math.sin(y * 0.15 + i) * 1.4 * dt;
-                z += Math.cos(y * 0.1 + i) * 0.6 * dt;
+                y -= sp * 2.2 * step;
+                x += Math.sin(y * 0.15 + i) * 1.4 * step;
+                z += Math.cos(y * 0.1 + i) * 0.6 * step;
             } else if (kind === 'fireflies') {
-                x += Math.sin(performance.now() * 0.001 * sp + i) * 2 * dt;
-                y += Math.cos(performance.now() * 0.0012 * sp + i * 0.7) * 1.5 * dt;
-                z += Math.sin(performance.now() * 0.0009 * sp + i) * 2 * dt;
+                const t = performance.now() * 0.001;
+                x += Math.sin(t * sp + i) * 2 * step;
+                y += Math.cos(t * 1.2 * sp + i * 0.7) * 1.5 * step;
+                z += Math.sin(t * 0.9 * sp + i) * 2 * step;
                 y = THREE.MathUtils.clamp(y, 1.5, 12);
             }
             if (y < 0.5) {
@@ -611,7 +619,9 @@ export class EnvironmentSystem {
             if (x < -150) x = 150;
             if (z > 150) z = -150;
             if (z < -150) z = 150;
-            pos.setXYZ(i, x, y, z);
+            arr[i3] = x;
+            arr[i3 + 1] = y;
+            arr[i3 + 2] = z;
         }
         pos.needsUpdate = true;
     }

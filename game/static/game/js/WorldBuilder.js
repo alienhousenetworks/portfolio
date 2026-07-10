@@ -106,7 +106,7 @@ export class WorldBuilder {
     _clouds() {
         this._cloudMeshes = [];
         const cloudMat = toonMat(0xfcfcfc, { transparent: true, opacity: 0.9 });
-        for (let i = 0; i < 26; i++) {
+        for (let i = 0; i < 14; i++) {
             const g = new THREE.Group();
             const seed = i * 19 + 5;
             const cx = ((seed * 53 + 17) % 560) - 280;
@@ -708,9 +708,9 @@ export class WorldBuilder {
 
     // ─── Surrounding nature ─────────────────────────────────────────────────
     _surroundingNature() {
-        // Outer ring of trees — strictly outside city + clear margin
+        // Outer ring of trees — strictly outside city + clear margin (capped for FPS)
         const minDist = Math.hypot(CITY_HX, CITY_HZ) + (WORLD.cityClearMargin ?? 28) + 10;
-        for (let i = 0; i < 140; i++) {
+        for (let i = 0; i < 70; i++) {
             const seed = i * 31 + 7;
             const angle = (seed * 0.618033) * Math.PI * 2;
             const dist = minDist + 15 + (seed % 95);

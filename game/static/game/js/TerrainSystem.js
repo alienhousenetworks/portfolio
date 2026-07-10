@@ -386,7 +386,7 @@ export class TerrainSystem {
         });
         this.grassMaterials.push(bladeMat);
 
-        const count = 520;
+        const count = 180;
         const tufts = new THREE.InstancedMesh(bladeGeo, bladeMat, count);
         const dummy = new THREE.Object3D();
         const tuftColors = ['#c8edd6', '#b8e6c8', '#d4f2e0', '#a8dfc0', '#bce9d0'];

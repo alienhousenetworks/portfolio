@@ -49,8 +49,8 @@ export function citizenHeight(variant = 0) {
 export const PLAYER = {
     height: CITIZEN.heightDefault,
     radius: 0.22,
-    walkSpeed: 7,
-    runSpeed: 13,
+    walkSpeed: 9.5,
+    runSpeed: 16,
     maxStepHeight: 1.2,
     bridgeStepHeight: 2.6, // max step onto bridge deck / ramps
 };

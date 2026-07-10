@@ -154,9 +154,10 @@ class Game {
         const el = document.getElementById('game-canvas');
         this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
         this.renderer.setSize(innerWidth, innerHeight);
-        this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+        // Cap DPR to reduce fill-rate lag on retina displays
+        this.renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
         this.renderer.shadowMap.enabled = true;
-        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        this.renderer.shadowMap.type = THREE.PCFShadowMap;
         this.renderer.outputColorSpace = THREE.SRGBColorSpace;
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
         this.renderer.toneMappingExposure = 1.05;
@@ -487,6 +488,7 @@ class Game {
             } else if (this.state === 'playing' && this.playerCtrl) {
                 this.playerCtrl.update(dt);
                 this.transit.update(dt);
+                this.citizens.setFocus?.(this.player.position.x, this.player.position.z);
                 this.citizens.update(dt);
                 this.chunks?.update(this.player.position.x, this.player.position.z);
             }
