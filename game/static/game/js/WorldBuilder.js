@@ -15,115 +15,32 @@ import {
 } from './Props.js';
 
 // ─── City layout constants ─────────────────────────────────────────────────
+// Main road at Z=0 (E-W), width 9
+// North road at Z=-32, width 7
+// South road at Z=32, width 7
+// West road at X=-38, width 7
+// East road at X=38, width 7
+// Short alley at X=0 connecting N/S roads, width 5
+
 const ROAD = {
-    showroom: { z: -75, w: 9 },
-    bazaar: { z: 55, w: 9 },
-    mohr: { x: -45, w: 8 },
-    tech1: { x: 45, w: 8 },
-    tech2: { x: 90, w: 8 },
-    techHoriz1: { z: -30, w: 8, x1: 45, x2: 130 },
-    techHoriz2: { z: 30, w: 8, x1: 45, x2: 130 },
-    promenade: { angle: Math.atan2(-130, 180), w: 9 },
-    floral: { rInner: 35, rOuter: 41 },
+    main: { z: 0, w: 9 },
+    north: { z: -32, w: 7 },
+    south: { z: 32, w: 7 },
+    west: { x: -38, w: 7 },
+    east: { x: 38, w: 7 },
+    alley: { x: 0, w: 5, z1: -32, z2: 32 },
     sw: 2.2,  // sidewalk width
 };
 
-// Exact building layouts from the City of Harmonia map
-const HARMONIA_BUILDINGS = [
-    // --- Showroom & Retail Drive (S) ---
-    // Above road (Z = -75, road+sidewalk edge is at Z = -81.7)
-    { id: 'S1', x: -100, z: -86.7, w: 10, d: 10, h: 9, style: 'showroom', yaw: 0 },
-    { id: 'S8_1', x: -75, z: -86.7, w: 12, d: 10, h: 10, style: 'showroom', yaw: 0 },
-    { id: 'S3', x: -50, z: -86.7, w: 10, d: 10, h: 8, style: 'showroom', yaw: 0 },
-    { id: 'S8_2', x: -25, z: -86.7, w: 12, d: 10, h: 11, style: 'showroom', yaw: 0 },
-    { id: 'S5', x: 0, z: -86.7, w: 10, d: 10, h: 9, style: 'showroom', yaw: 0 },
-    { id: 'S6', x: 25, z: -86.7, w: 12, d: 10, h: 10, style: 'showroom', yaw: 0 },
-    { id: 'S7', x: 50, z: -86.7, w: 12, d: 10, h: 8, style: 'showroom', yaw: 0 },
-    { id: 'I3_1', x: 80, z: -86.7, w: 14, d: 10, h: 12, style: 'showroom', yaw: 0 },
-
-    // Below road (Z = -75, road+sidewalk edge is at Z = -68.3)
-    { id: 'R18', x: -30, z: -63.3, w: 10, d: 10, h: 8, style: 'residential', yaw: Math.PI },
-    { id: 'S8_3', x: -5, z: -63.3, w: 12, d: 10, h: 10, style: 'showroom', yaw: Math.PI },
-    { id: 'S7_2', x: 20, z: -63.3, w: 12, d: 10, h: 9, style: 'showroom', yaw: Math.PI },
-    { id: 'S1_2', x: 45, z: -63.3, w: 10, d: 10, h: 8, style: 'showroom', yaw: Math.PI },
-    { id: 'C10_1', x: 60, z: -63.3, w: 6, d: 6, h: 5, style: 'cafe', yaw: Math.PI },
-
-    // --- West Block (left of Mohr Ave X = -45) ---
-    // Column next to river (X = -85)
-    { id: 'I1_1', x: -75, z: -50, w: 12, d: 12, h: 14, style: 'showroom', yaw: Math.PI/2 },
-    { id: 'I3_2', x: -75, z: -25, w: 12, d: 12, h: 10, style: 'showroom', yaw: Math.PI/2 },
-    { id: 'I3_3', x: -75, z: 5, w: 16, d: 16, h: 15, style: 'showroom', yaw: Math.PI/2 },
-    { id: 'I4_1', x: -75, z: 35, w: 12, d: 12, h: 9, style: 'showroom', yaw: Math.PI/2 },
-
-    // Column next to Mohr Ave (Mohr Ave west sidewalk edge is X = -51.2)
-    { id: 'R1_1', x: -56.2, z: -50, w: 10, d: 10, h: 8, style: 'residential', yaw: -Math.PI/2 },
-    { id: 'R2_1', x: -56.2, z: -20, w: 10, d: 10, h: 9, style: 'residential', yaw: -Math.PI/2 },
-    { id: 'R3_1', x: -56.2, z: 15, w: 10, d: 10, h: 10, style: 'residential', yaw: -Math.PI/2 },
-    { id: 'I4_2', x: -75, z: 50, w: 12, d: 12, h: 9, style: 'showroom', yaw: 0 },
-    { id: 'I1_2', x: -55, z: 75, w: 14, d: 10, h: 11, style: 'showroom', yaw: 0 },
-
-    // --- Central Left Block (Mohr Ave east sidewalk edge is X = -38.8) ---
-    { id: 'R2_2', x: -33.8, z: -48, w: 10, d: 10, h: 8, style: 'residential', yaw: Math.PI/4 },
-    { id: 'R20_1', x: -33.8, z: -24, w: 10, d: 10, h: 9, style: 'residential', yaw: Math.PI/4 },
-    { id: 'R20_2', x: -33.8, z: 0, w: 10, d: 10, h: 9, style: 'residential', yaw: Math.PI/4 },
-    { id: 'R1_2', x: -24, z: 24, w: 10, d: 10, h: 8, style: 'residential', yaw: -Math.PI/4 },
-    { id: 'R5_1', x: -24, z: 46, w: 10, d: 10, h: 9, style: 'residential', yaw: -Math.PI/4 },
-    { id: 'R7_1', x: -10, z: 12, w: 10, d: 10, h: 9, style: 'residential', yaw: 0 },
-    { id: 'R4_1', x: -10, z: 34, w: 10, d: 10, h: 8, style: 'residential', yaw: 0 },
-
-    // Cafes in Central Left
-    { id: 'C1_1', x: -15, z: 46, w: 6, d: 6, h: 5, style: 'cafe', yaw: 0 },
-    { id: 'C10_2', x: -35, z: 46, w: 6, d: 6, h: 5, style: 'cafe', yaw: 0 },
-
-    // --- Central Top Area (below Showrooms) ---
-    { id: 'R9_1', x: -10, z: -45, w: 14, d: 14, h: 11, style: 'residential', yaw: Math.PI },
-    { id: 'S8_4', x: 10, z: -45, w: 12, d: 12, h: 10, style: 'showroom', yaw: Math.PI },
-    { id: 'S7_3', x: 28, z: -45, w: 12, d: 12, h: 9, style: 'showroom', yaw: Math.PI },
-    { id: 'C1_2', x: 42, z: -45, w: 6, d: 6, h: 5, style: 'cafe', yaw: Math.PI },
-
-    // --- Central Bottom Area (above Bazaar road Z = 55, edge at Z = 48.3) ---
-    { id: 'M2_1', x: -28, z: 44.3, w: 8, d: 8, h: 7, style: 'market', yaw: 0 },
-    { id: 'M2_2', x: -12, z: 44.3, w: 8, d: 8, h: 7, style: 'market', yaw: 0 },
-    { id: 'M1_1', x: 12, z: 44.3, w: 8, d: 8, h: 7, style: 'market', yaw: 0 },
-    { id: 'M2_3', x: 28, z: 44.3, w: 8, d: 8, h: 7, style: 'market', yaw: 0 },
-
-    // --- Bottom Row (below Bazaar road Z = 55, edge at Z = 61.7) ---
-    { id: 'G2_1', x: -95, z: 66.7, w: 10, d: 10, h: 8, style: 'market', yaw: 0 },
-    { id: 'R1_3', x: -95, z: 77.0, w: 10, d: 10, h: 8, style: 'residential', yaw: 0 },
-    { id: 'R22_1', x: -80, z: 66.7, w: 10, d: 10, h: 9, style: 'residential', yaw: 0 },
-    { id: 'R14_1', x: -80, z: 77.0, w: 10, d: 10, h: 8, style: 'residential', yaw: 0 },
-    { id: 'R15_1', x: -65, z: 77.0, w: 10, d: 10, h: 8, style: 'residential', yaw: 0 },
-    { id: 'G3_1', x: -65, z: 66.7, w: 10, d: 10, h: 8, style: 'market', yaw: 0 },
-    { id: 'R16_1', x: -50, z: 77.0, w: 10, d: 10, h: 8, style: 'residential', yaw: 0 },
-    { id: 'G4_1', x: -50, z: 66.7, w: 10, d: 10, h: 8, style: 'market', yaw: 0 },
-    { id: 'G5_1', x: -35, z: 66.7, w: 10, d: 10, h: 8, style: 'market', yaw: 0 },
-    { id: 'R17_1', x: -35, z: 77.0, w: 10, d: 10, h: 8, style: 'residential', yaw: 0 },
-    { id: 'G5_2', x: -20, z: 66.7, w: 10, d: 10, h: 8, style: 'market', yaw: 0 },
-    { id: 'R20_3', x: -20, z: 77.0, w: 10, d: 10, h: 9, style: 'residential', yaw: 0 },
-    { id: 'G4_2', x: -5, z: 66.7, w: 10, d: 10, h: 8, style: 'market', yaw: 0 },
-    { id: 'R19_1', x: 5, z: 77.0, w: 10, d: 10, h: 8, style: 'residential', yaw: 0 },
-    { id: 'G8_1', x: 10, z: 66.7, w: 10, d: 10, h: 8, style: 'market', yaw: 0 },
-    { id: 'R20_4', x: 25, z: 66.7, w: 10, d: 10, h: 9, style: 'residential', yaw: 0 },
-
-    // --- East Block (Tech Hub District Y) ---
-    // Below Promenade
-    { id: 'T5_1', x: 33.8, z: -12, w: 10, d: 10, h: 8, style: 'tech', yaw: -Math.PI/2 },
-    { id: 'T5_2', x: 33.8, z: 14, w: 10, d: 10, h: 8, style: 'tech', yaw: -Math.PI/2 },
-
-    // Inside Tech Hub grid (Tech Lane 1 at X = 45, Tech Lane 2 at X = 90)
-    { id: 'T11_1', x: 57.2, z: -48, w: 12, d: 12, h: 11, style: 'tech', yaw: -Math.PI/2 },
-    { id: 'T11_2', x: 77.8, z: -48, w: 12, d: 12, h: 11, style: 'tech', yaw: -Math.PI/2 },
-    { id: 'T13_1', x: 77.8, z: -24, w: 14, d: 14, h: 13, style: 'tech', yaw: -Math.PI/2 },
-    { id: 'T10_1', x: 102.2, z: -24, w: 10, d: 10, h: 10, style: 'tech', yaw: -Math.PI/2 },
-    { id: 'T10_2', x: 57.2, z: 0, w: 10, d: 10, h: 10, style: 'tech', yaw: -Math.PI/2 },
-    { id: 'T11_3', x: 77.8, z: 0, w: 12, d: 12, h: 11, style: 'tech', yaw: -Math.PI/2 },
-    { id: 'T10_3', x: 102.2, z: 0, w: 10, d: 10, h: 10, style: 'tech', yaw: -Math.PI/2 },
-    { id: 'T19_1', x: 77.8, z: 24, w: 16, d: 16, h: 15, style: 'tech', yaw: -Math.PI/2 },
-    { id: 'T10_4', x: 102.2, z: 24, w: 10, d: 10, h: 10, style: 'tech', yaw: -Math.PI/2 },
-    { id: 'T11_4', x: 95, z: 66, w: 18, d: 18, h: 16, style: 'tech', yaw: 0 },
-    { id: 'I1_3', x: 102.2, z: -76, w: 12, d: 12, h: 12, style: 'showroom', yaw: 0 },
-    { id: 'H_1', x: 116.2, z: -64, w: 8, d: 8, h: 15, style: 'tech', yaw: 0 }
-];
+// Building row centerlines (where building centers are placed)
+// Calculated as road_edge + sidewalk + half_building_depth
+// We use depth=9 for main rows, depth=8 for inner rows
+const BLD_Z_SOUTH_MAIN = -(ROAD.main.w / 2 + ROAD.sw + 4.5);   // ≈ -11.2
+const BLD_Z_NORTH_MAIN = +(ROAD.main.w / 2 + ROAD.sw + 4.5);   // ≈ +11.2
+const BLD_Z_NORTH_NROAD = -(ROAD.north.z * -1 + ROAD.north.w / 2 + ROAD.sw + 5);  // ≈ -42.5
+const BLD_Z_SOUTH_NROAD = -(ROAD.north.z * -1 - ROAD.north.w / 2 - ROAD.sw - 4);  // ≈ -22
+const BLD_Z_NORTH_SROAD = +(ROAD.south.z - ROAD.south.w / 2 - ROAD.sw - 4);  // ≈ +22
+const BLD_Z_SOUTH_SROAD = +(ROAD.south.z + ROAD.south.w / 2 + ROAD.sw + 5);  // ≈ +42.5
 
 export class WorldBuilder {
     constructor(scene, gameData, terrain = null, chunkManager = null) {
@@ -226,47 +143,28 @@ export class WorldBuilder {
         outer.receiveShadow = true;
         this.scene.add(outer);
 
+        // City concrete base slab (light teal-grey, like the abeto.co streets) - Expanded to 280 x 220
+        const city = new THREE.Mesh(
+            new THREE.PlaneGeometry(280, 220),
+            toonMat(0xa8b4b0)
+        );
+        city.rotation.x = -Math.PI / 2;
+        city.position.y = 0.02;
+        city.receiveShadow = true;
+        this.scene.add(city);
+
+        // Slight curb bump at city edge (visual border between grass and city)
+        const curb = toonMesh(new THREE.BoxGeometry(280, 0.12, 220), 0xb8c0bc, { outline: false });
+        curb.mesh.position.y = 0.1;
+        this.scene.add(curb.group);
+
         // Draw River Harmony along the West side (X ≈ -115)
-        const riverGeo = new THREE.PlaneGeometry(24, 540);
+        const riverGeo = new THREE.PlaneGeometry(24, 220);
         const riverMat = toonMat(0x7ac4d0, { transparent: true, opacity: 0.85 });
         const river = new THREE.Mesh(riverGeo, riverMat);
         river.rotation.x = -Math.PI / 2;
         river.position.set(-115, 0.03, 0);
         this.scene.add(river);
-
-        // Specific block foundation pads following the Harmonia diagram
-        this._drawBlockPads();
-    }
-
-    _drawBlockPads() {
-        const padMat = toonMat(0xb8c0bc);
-        const drawPad = (x, z, w, d) => {
-            const m = new THREE.Mesh(new THREE.BoxGeometry(w, 0.06, d), padMat);
-            m.position.set(x, 0.03, z);
-            m.receiveShadow = true;
-            this.scene.add(m);
-        };
-
-        // North Showrooms pad (above Showroom & Retail Drive Z = -75)
-        drawPad(0, -86, 250, 14);
-
-        // South Market pad (below Bazaar Street Z = 55)
-        drawPad(0, 71, 240, 24);
-
-        // West Residential pad (left of Mohr Ave X = -45, right of River X = -115)
-        drawPad(-75, -10, 52, 120);
-
-        // East Tech Hub pads (divided by Tech Lanes at X = 45 and X = 90)
-        drawPad(67.5, -10, 37, 120);
-        drawPad(107.5, -10, 27, 120);
-
-        // Radial buildings pad (a ring of concrete around the Floral Way circular road)
-        const ringPadGeo = new THREE.RingGeometry(43, 53, 64);
-        const ringPad = new THREE.Mesh(ringPadGeo, padMat);
-        ringPad.rotation.x = -Math.PI / 2;
-        ringPad.position.set(0, 0.04, 0);
-        ringPad.receiveShadow = true;
-        this.scene.add(ringPad);
     }
 
     // City of Harmonia layout mathematical checks
@@ -290,8 +188,8 @@ export class WorldBuilder {
         // Tech Lanes (X = 45 and X = 90, width 7)
         if ((Math.abs(x - 45) < 5 || Math.abs(x - 90) < 5) && z > -75 && z < 55) return true;
 
-        // E-W streets / Tech lanes horizontal
-        if (x > 45 && (Math.abs(z - 30) < 5 || Math.abs(z - (-30)) < 5)) return true;
+        // E-W streets at Z = -30 and Z = 15
+        if ((Math.abs(z - (-30)) < 4.5 || Math.abs(z - 15) < 4.5) && Math.abs(x) < 120) return true;
 
         // Diagonal Promenade: z = -0.6 * x
         const distToPromenade = Math.abs(0.6 * x + z) / Math.sqrt(0.6 * 0.6 + 1 * 1);
@@ -334,13 +232,13 @@ export class WorldBuilder {
         road(45, -10, 8, 120);
         road(90, -10, 8, 120);
 
-        // 5. Tech Lanes Horizontal (Z = -30 and Z = 30 for Tech Hub)
-        road(87.5, -30, 85, 8);
-        road(87.5, 30, 85, 8);
+        // 5. E-W Connecting Streets (Z = -30 and Z = 15)
+        road(0, -30, 260, 7);
+        road(0, 15, 260, 7);
 
         // 6. Diagonal Promenade (A1) from SW to NE
         const promAngle = Math.atan2(-130, 180); // ≈ -0.62 rad
-        road(0, 0, 240, 9, promAngle);
+        road(0, -10, 240, 9, promAngle);
 
         // 7. Circular Floral Way Ring Road (Radius 35 to 41 around (0,0))
         const ringRoadGeo = new THREE.RingGeometry(35, 41, 64);
@@ -409,91 +307,136 @@ export class WorldBuilder {
         cw(45, 55);
     }
 
-    // ─── Building Rows (Exact Hand-Placed Layout) ───────────────────────────
+    // ─── Building Rows (Customized Organic Placement) ────────────────────────
     _buildingRows() {
         let s = 100;
+        const cellSpacing = 13.5;
 
-        HARMONIA_BUILDINGS.forEach(bDef => {
-            const assignedPoi = this._getAssignedBuilding(bDef.x, bDef.z);
-            let bld;
-            if (assignedPoi) {
-                bld = this._buildThemedBuilding(bDef.w, bDef.h, bDef.d, s, assignedPoi);
-            } else {
-                bld = this._buildStylizedBuilding(bDef.w, bDef.h, bDef.d, s, bDef.style);
-            }
-            bld.position.set(bDef.x, 0, bDef.z);
-            bld.rotation.y = bDef.yaw;
+        // 1. Radial building ring around Floral Way (Radius ≈ 48)
+        for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 6) {
+            const rx = Math.cos(angle) * 48;
+            const rz = Math.sin(angle) * 48;
+            
+            // Check if it hits any road or river
+            if (this._isRoadOrPark(rx, rz)) continue;
+
+            const w = 9.8;
+            const d = 9.8;
+            const h = 7.0 + Math.abs((s * 2711 + 7) % 11);
+            
+            // Face inward towards Atrium dome (0, 0)
+            const facingAngle = Math.atan2(-rx, -rz);
+
+            const bld = buildJapaneseBuilding(w, h, d, s);
+            bld.position.set(rx, 0, rz);
+            bld.rotation.y = facingAngle;
             this.scene.add(bld);
-
-            this.colliders.push({ x: bDef.x, z: bDef.z, w: bDef.w, d: bDef.d, h: bDef.h, floorY: 0 });
+            
+            this.colliders.push({ x: rx, z: rz, w, d, h, floorY: 0 });
             s++;
-        });
-    }
-
-    _buildStylizedBuilding(w, h, d, seed, style) {
-        const g = new THREE.Group();
-        
-        let wallCol = 0xc0c4bc;
-        let accentCol = 0x48d2c9;
-        
-        if (style === 'tech') {
-            wallCol = 0x22262d;      // Cool dark tech wall
-            accentCol = 0x00ffff;    // Cyber neon cyan
-        } else if (style === 'market') {
-            wallCol = 0xd4cec8;      // Warm market concrete
-            accentCol = 0xff5533;    // Bright red-orange
-        } else if (style === 'showroom') {
-            wallCol = 0xc8bada;      // Light purple
-            accentCol = 0x8a55cc;    // Deep purple
-        } else if (style === 'cafe') {
-            wallCol = 0xece9e1;
-            accentCol = 0xf59a45;    // Orange cafe accent
-        } else {
-            wallCol = 0xeae0b8;      // Yellowish warm residential
-            accentCol = 0xcc9966;
         }
 
-        // Build main body
+        // 2. Gridded building placement for themed sections (excluding road/park overlap)
+        for (let xCoord = -120; xCoord <= 120; xCoord += cellSpacing) {
+            for (let zCoord = -90; zCoord <= 90; zCoord += cellSpacing) {
+                // Skip if already in central park / road network
+                if (this._isRoadOrPark(xCoord, zCoord)) continue;
+                
+                // Skip if too close to radial ring (radius 43 to 53)
+                const distToCenter = Math.hypot(xCoord, zCoord);
+                if (distToCenter >= 42 && distToCenter <= 54) continue;
+
+                // Check if a service or project building is assigned here
+                const assignedPoi = this._getAssignedBuilding(xCoord, zCoord);
+                
+                let facingAngle = 0;
+                if (xCoord > 45) facingAngle = -Math.PI / 2; // Tech section faces West
+                else if (xCoord < -45) facingAngle = Math.PI / 2; // Residential faces East
+                else if (zCoord < 0) facingAngle = Math.PI; // North side faces South
+                else facingAngle = 0; // South side faces North
+
+                const w = 9.8;
+                const d = 9.8;
+                const h = 7.0 + Math.abs((s * 2711 + 7) % 11);
+
+                let bld;
+                if (assignedPoi) {
+                    bld = this._buildThemedBuilding(w, h, d, s, assignedPoi);
+                } else {
+                    bld = buildJapaneseBuilding(w, h, d, s);
+                }
+
+                bld.position.set(xCoord, 0, zCoord);
+                bld.rotation.y = facingAngle;
+                this.scene.add(bld);
+                
+                this.colliders.push({ x: xCoord, z: zCoord, w, d, h, floorY: 0 });
+                s++;
+            }
+        }
+    }
+
+    _buildThemedBuilding(w, h, d, seed, poi) {
+        const g = new THREE.Group();
+        const district = poi.district || '';
+
+        let wallCol = 0xbcc0bc;
+        let accentCol = 0x48d2c9;
+
+        if (district === 'software') {
+            wallCol = 0x22262d;      // Cool dark tech wall
+            accentCol = 0x00ffff;    // Cyber neon cyan
+        } else if (district === 'marketing') {
+            wallCol = 0xd4cec8;      // Warm market concrete
+            accentCol = 0xff5533;    // Bright red-orange awning/signs
+        } else {
+            wallCol = 0xc0c4bc;
+            accentCol = 0xf5c842;
+        }
+
+        // Main body
         const body = toonMesh(new THREE.BoxGeometry(w, h, d), wallCol);
         body.mesh.position.y = h / 2;
         body.mesh.castShadow = true;
         body.mesh.receiveShadow = true;
         g.add(body.group);
 
-        // Accent roof parapet
-        const parapet = toonMesh(new THREE.BoxGeometry(w + 0.25, 0.4, d + 0.25), accentCol);
-        parapet.mesh.position.y = h + 0.2;
-        g.add(parapet.group);
+        // Accent strip
+        const strip = toonMesh(new THREE.BoxGeometry(w + 0.1, 0.4, d + 0.1), accentCol, { outline: false });
+        strip.mesh.position.y = 3.2;
+        g.add(strip.group);
 
-        // Glass window or shop front
-        const glassMat = toonMat(style === 'tech' ? 0x00ffff : 0x7ac4d0, { transparent: true, opacity: 0.65 });
+        // Large display window
+        const glassMat = toonMat(accentCol, { emissive: accentCol, emissiveIntensity: 0.35 });
         const shop = new THREE.Mesh(new THREE.BoxGeometry(w * 0.72, 2.2, 0.1), glassMat);
         shop.position.set(0, 1.1, d / 2 + 0.02);
         g.add(shop);
 
-        // Shop sign
+        // Hanging sign
         const frameMat = toonMat(0x1a1a1a);
         const sign = new THREE.Mesh(new THREE.BoxGeometry(w * 0.45, 0.75, 0.15), frameMat);
-        sign.position.set(0, h - 0.8, d / 2 + 0.05);
+        sign.position.set(0, h - 1.0, d / 2 + 0.05);
         g.add(sign);
 
-        // Rooftop bits
-        if (style === 'tech') {
-            const dish = toonMesh(new THREE.SphereGeometry(0.6, 8, 8, 0, Math.PI * 2, 0, Math.PI / 2), 0x8898a8);
-            dish.mesh.position.set(0, h + 0.4, 0);
+        // Rooftop decorations
+        if (district === 'software') {
+            const dish = toonMesh(new THREE.SphereGeometry(0.7, 8, 8, 0, Math.PI * 2, 0, Math.PI / 2), 0x8898a8);
+            dish.mesh.position.set(0, h + 0.5, 0);
             dish.mesh.rotation.x = -Math.PI / 4;
             g.add(dish.group);
-        } else if (style === 'market') {
-            const canopy = toonMesh(new THREE.BoxGeometry(w * 0.8, 0.15, 1.2), accentCol);
-            canopy.mesh.position.set(0, 2.3, d / 2 + 0.5);
-            g.add(canopy.group);
+            
+            const mast = toonMesh(new THREE.BoxGeometry(0.1, 1.8, 0.1), 0x4a4a4a);
+            mast.mesh.position.set(0, h + 0.9, 0);
+            g.add(mast.group);
+        } else if (district === 'marketing') {
+            for (let i = -1; i <= 1; i += 2) {
+                const lantern = toonMesh(new THREE.CylinderGeometry(0.25, 0.25, 0.6, 6), 0xff4422, { emissive: 0xff4422, emissiveIntensity: 0.4 });
+                lantern.mesh.position.set(i * (w * 0.3), 2.4, d / 2 + 0.5);
+                g.add(lantern.group);
+            }
         }
 
         return g;
-    }
-
-    _buildThemedBuilding(w, h, d, seed, poi) {
-        return this._buildStylizedBuilding(w, h, d, seed, poi.district === 'software' ? 'tech' : (poi.district === 'marketing' ? 'market' : 'showroom'));
     }
 
     _createMarketStall(seed) {
