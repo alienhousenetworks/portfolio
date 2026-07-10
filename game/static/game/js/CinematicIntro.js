@@ -38,7 +38,7 @@ export class CinematicIntro {
 
         this.ufo.visible = false;
         this.player.visible = false;
-        this.player.position.set(0, footY(this.player), 115); // Spawn outside the city (z = 115)
+        this.player.position.set(0, footY(this.player), 120); // Spawn on Main Avenue tree tunnel
         if (this.player.parent === this.ufo) {
             this.ufo.remove(this.player);
             this.scene.add(this.player);
@@ -50,7 +50,7 @@ export class CinematicIntro {
         this.npcs.forEach(n => { n.visible = false; });
         if (this.welcome.human) {
             this.welcome.human.visible = true;
-            this.welcome.human.position.set(-3.5, footY(this.welcome.human), 108);
+            this.welcome.human.position.set(-3.5, footY(this.welcome.human), 112);
             this.welcome.human.rotation.y = Math.PI / 4;
         }
         if (this.welcome.alien) {
@@ -168,7 +168,7 @@ export class CinematicIntro {
 
         this.npcs.forEach(n => { n.visible = true; });
         if (this.welcome.human) {
-            this.welcome.human.position.set(-3.5, footY(this.welcome.human), 108);
+            this.welcome.human.position.set(-3.5, footY(this.welcome.human), 112);
             this.welcome.human.rotation.set(0, Math.PI / 4, 0);
             this.welcome.human.visible = true;
         }

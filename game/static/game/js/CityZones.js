@@ -52,21 +52,24 @@ export function getZoneAt(x, z) {
     const ax = Math.abs(x), az = Math.abs(z);
     const dist = Math.hypot(x, z);
 
-    if (Math.hypot(x - WORLD.parkX, z - WORLD.parkZ) < WORLD.parkRadius + 8) return ZONE_TYPES.PARK;
-    if (Math.abs(x - WORLD.riverX) < WORLD.riverWidth / 2 + 18 && az < 120) return ZONE_TYPES.WATERFRONT;
+    // Small central plaza
+    if (Math.hypot(x - WORLD.parkX, z - WORLD.parkZ) < WORLD.parkRadius + 6) return ZONE_TYPES.PARK;
+    // River on far west of expanded city
+    if (x < (WORLD.riverX ?? -155) + 18 && az < 160) return ZONE_TYPES.WATERFRONT;
     if (z > 220 && ax < 100) return ZONE_TYPES.BEACH;
     if (z < -220 && x < -80) return ZONE_TYPES.BAMBOO;
     if (z < -220 && x > 80) return ZONE_TYPES.INDUSTRIAL;
-    if (x < -130 && z > 40 && z < 200) return ZONE_TYPES.SCANDI;
-    if (x > 130 && z > 40 && z < 200) return ZONE_TYPES.MEDITERRANEAN;
-    if (x > 100 && z < -40 && z > -180) return ZONE_TYPES.EUROPEAN;
-    if (x < -100 && z < -40 && z > -180) return ZONE_TYPES.TRADITIONAL;
-    if (x > 100 && z < -40 && z > -180) return ZONE_TYPES.KOREAN;
-    if (ax > 55 && ax < 130) return ZONE_TYPES.HILLSIDE;
-    if (x < -120 && z < -60) return ZONE_TYPES.UNIVERSITY;
-    if (x > 120 && z < -60) return ZONE_TYPES.ARTIST;
-    if (ax < 70 && az < 70) return ZONE_TYPES.SHOPPING;
-    if (dist > 200) return ZONE_TYPES.INDUSTRIAL;
+    if (x < -100 && z > 20 && z < 140) return ZONE_TYPES.SCANDI;
+    if (x > 100 && z > 20 && z < 140) return ZONE_TYPES.MEDITERRANEAN;
+    if (x > 80 && z < -20 && z > -140) return ZONE_TYPES.EUROPEAN;
+    if (x < -80 && z < -20 && z > -140) return ZONE_TYPES.TRADITIONAL;
+    if (x > 80 && z < -20 && z > -140) return ZONE_TYPES.KOREAN;
+    if (ax > 40 && ax < 150 && az > 20) return ZONE_TYPES.HILLSIDE;
+    if (x < -90 && z < -50) return ZONE_TYPES.UNIVERSITY;
+    if (x > 90 && z < -50) return ZONE_TYPES.ARTIST;
+    // Near main avenue / cross — shopping feel
+    if (ax < 50 && az < 50) return ZONE_TYPES.SHOPPING;
+    if (dist > 220) return ZONE_TYPES.INDUSTRIAL;
     return ZONE_TYPES.DOWNTOWN;
 }
 

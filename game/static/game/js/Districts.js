@@ -55,7 +55,7 @@ export const DISTRICT_DEFS = {
         shortLabel: 'DT',
         x: 0,
         z: 0,
-        radius: 140,
+        radius: 175,
         color: '#7a878c',
         groundColor: 0xd6d4cc,
     },

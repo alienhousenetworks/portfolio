@@ -221,6 +221,102 @@ export function createWillowTree(seed = 0) {
     return createFantasyTree(seed, PALETTE.willowGreen);
 }
 
+/**
+ * Tall zelkova-style avenue tree — dense high canopy that arches over the road
+ * (matches PHOTO tree-tunnel streets). `lean` tilts foliage toward the road center.
+ * lean > 0 leans +X; lean < 0 leans -X. For N-S roads use lean on X; for E-W rotate group.
+ */
+export function createAvenueTree(seed = 0, lean = 0) {
+    const g = new THREE.Group();
+    const s = Math.abs(seed);
+    const trunkH = 10.5 + (s % 5) * 0.45;
+    const trunkR = 0.28 + (s % 3) * 0.04;
+    const trunkCol = s % 2 === 0 ? 0x4a4038 : 0x5a5048;
+
+    // Tall straight trunk with slight swell at base
+    const trunkGeo = new THREE.CylinderGeometry(trunkR * 0.72, trunkR * 1.35, trunkH, 8);
+    const trunk = toonMesh(trunkGeo, trunkCol);
+    trunk.mesh.position.y = trunkH / 2;
+    trunk.mesh.castShadow = true;
+    g.add(trunk.group);
+
+    // Root flare
+    const flare = toonMesh(new THREE.CylinderGeometry(trunkR * 1.5, trunkR * 2.1, 0.45, 8), trunkCol, { outline: false });
+    flare.mesh.position.y = 0.2;
+    g.add(flare.group);
+
+    // Bright spring greens like the reference photo
+    const greens = [0x5ab860, 0x6ec86a, 0x78cc68, 0x4aaa50, 0x8ad878, 0x62b858];
+    const leafA = greens[s % greens.length];
+    const leafB = greens[(s + 2) % greens.length];
+    const leafC = greens[(s + 4) % greens.length];
+
+    const canopyY = trunkH * 0.72;
+    const leanAmt = lean * 1.15;
+
+    // Dense high canopy — blobs that lean over the road for tunnel effect
+    const blobs = [
+        [0 + leanAmt * 0.3, canopyY + 1.8, 0, 2.6, leafA],
+        [-1.6 + leanAmt * 0.5, canopyY + 0.6, 0.3, 2.3, leafB],
+        [1.8 + leanAmt * 0.9, canopyY + 0.9, -0.2, 2.5, leafA],
+        [0.2 + leanAmt * 0.4, canopyY + 3.2, 0.1, 2.0, leafC],
+        [-2.2 + leanAmt * 0.35, canopyY - 0.4, -0.6, 1.9, leafB],
+        [2.4 + leanAmt * 1.1, canopyY + 0.1, 0.5, 2.1, leafA],
+        [leanAmt * 1.3, canopyY + 1.2, 1.4, 1.8, leafC],
+        [leanAmt * 1.2, canopyY + 1.0, -1.5, 1.7, leafB],
+        [leanAmt * 1.6, canopyY - 0.8, 0, 1.6, leafA], // droop toward road
+    ];
+    blobs.forEach(([x, y, z, r, col]) => {
+        const b = blobMesh(r, x, y, z, col);
+        b.traverse?.(n => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } });
+        g.add(b);
+    });
+
+    // Slight overall scale variation
+    const sc = 0.92 + (s % 7) * 0.025;
+    g.scale.set(sc, sc, sc);
+    return g;
+}
+
+/** Low trimmed hedge strip along avenue sidewalks (photo curb planting) */
+export function createHedge(length = 4, seed = 0) {
+    const g = new THREE.Group();
+    const greens = [0x5a9e48, 0x68b050, 0x4e9040, 0x72b858];
+    const col = greens[Math.abs(seed) % greens.length];
+    const h = 0.55 + (Math.abs(seed) % 3) * 0.08;
+    const body = toonMesh(new THREE.BoxGeometry(0.7, h, length), col, { outline: false });
+    body.mesh.position.y = h / 2;
+    body.mesh.castShadow = true;
+    body.mesh.receiveShadow = true;
+    g.add(body.group);
+    // Soft top bumps
+    for (let i = 0; i < 3; i++) {
+        const bump = toonMesh(
+            new THREE.SphereGeometry(0.28 + (seed + i) % 2 * 0.05, 6, 5),
+            greens[(seed + i) % greens.length],
+            { outline: false }
+        );
+        bump.mesh.position.set(((i - 1) * 0.12), h * 0.85, (i - 1) * (length * 0.28));
+        bump.mesh.scale.set(1.1, 0.55, 1.0);
+        g.add(bump.group);
+    }
+    return g;
+}
+
+/** Low courtyard / property wall behind avenue trees */
+export function createLowWall(length = 8, seed = 0) {
+    const g = new THREE.Group();
+    const wallCol = seed % 2 === 0 ? 0xc8c4bc : 0xb8b4ac;
+    const body = toonMesh(new THREE.BoxGeometry(0.35, 1.35, length), wallCol);
+    body.mesh.position.y = 0.68;
+    body.mesh.castShadow = true;
+    g.add(body.group);
+    const cap = toonMesh(new THREE.BoxGeometry(0.48, 0.12, length + 0.1), 0x8a8880, { outline: false });
+    cap.mesh.position.y = 1.4;
+    g.add(cap.group);
+    return g;
+}
+
 
 /** Mountain rock cluster */
 export function createRockCluster(seed = 0) {
