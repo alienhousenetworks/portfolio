@@ -432,47 +432,82 @@ export class WorldBuilder {
     // ─── Street Props ─────────────────────────────────────────────────────────
     _streetProps() {
         let s = 200;
-        for (let r = 0; r < 16; r++) {
-            const cz = r * 12 - 90;
-            for (let c = 0; c < 22; c++) {
-                const cx = c * 12 - 126;
-                const type = this._getCellType(c, r);
-                
-                if (type === 'bld') {
-                    const adjRoad = 
-                        (c > 0 && this._getCellType(c - 1, r) !== 'bld') ||
-                        (c < 21 && this._getCellType(c + 1, r) !== 'bld') ||
-                        (r > 0 && this._getCellType(c, r - 1) !== 'bld') ||
-                        (r < 15 && this._getCellType(c, r + 1) !== 'bld');
-                        
-                    if (adjRoad) {
-                        if (s % 7 === 0) {
-                            const vm = createVendingMachine(s);
-                            vm.position.set(cx, 0, cz + 4.8);
-                            this.scene.add(vm);
-                        } else if (s % 5 === 0) {
-                            const lamp = createStreetLamp();
-                            lamp.position.set(cx + 4.8, 0, cz);
-                            this.scene.add(lamp);
-                        } else if (s % 9 === 0) {
-                            const b = createBench();
-                            b.position.set(cx, 0, cz - 4.8);
-                            this.scene.add(b);
-                        }
-                    }
-                }
-                
-                if (type === 'plaza') {
-                    if ((c + r) % 3 === 0) {
-                        const stall = this._createMarketStall(s);
-                        stall.position.set(cx, 0, cz);
-                        stall.rotation.y = (s % 4) * (Math.PI / 2);
-                        this.scene.add(stall);
-                        this.colliders.push({ x: cx, z: cz, w: 3, d: 3, h: 2.5, floorY: 0 });
-                    }
-                }
-                s++;
+
+        // 1. Central Flower Park Benches (placed around the circle of radius 35)
+        for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 4) {
+            const bx = Math.cos(angle) * 33;
+            const bz = Math.sin(angle) * 33;
+            const b = createBench();
+            b.position.set(bx, 0, bz);
+            b.rotation.y = -angle + Math.PI / 2;
+            this.scene.add(b);
+        }
+
+        // 2. Showroom & Retail Drive (Z = -75) Props
+        for (let x = -110; x <= 110; x += 22) {
+            // Street lamps on both sides
+            const lamp1 = createStreetLamp();
+            lamp1.position.set(x, 0, -79.5);
+            this.scene.add(lamp1);
+
+            const lamp2 = createStreetLamp();
+            lamp2.position.set(x + 11, 0, -70.5);
+            this.scene.add(lamp2);
+
+            // Vending machines
+            if (s % 3 === 0) {
+                const vm = createVendingMachine(s);
+                vm.position.set(x + 5, 0, -79.5);
+                vm.rotation.y = 0;
+                this.scene.add(vm);
             }
+            s++;
+        }
+
+        // 3. Road Market & Bazaar (Z = 55) Props
+        for (let x = -100; x <= 100; x += 16) {
+            // Market stalls directly on the Bazaar street side
+            if (s % 2 === 0) {
+                const stall = this._createMarketStall(s);
+                stall.position.set(x, 0, 51.5);
+                stall.rotation.y = Math.PI;
+                this.scene.add(stall);
+                this.colliders.push({ x, z: 51.5, w: 2.5, d: 2.5, h: 2.5, floorY: 0 });
+            }
+
+            const lamp = createStreetLamp();
+            lamp.position.set(x + 8, 0, 59.5);
+            this.scene.add(lamp);
+            s++;
+        }
+
+        // 4. Mohr Ave (X = -45) Props
+        for (let z = -60; z <= 40; z += 20) {
+            const lamp = createStreetLamp();
+            lamp.position.set(-49.5, 0, z);
+            lamp.rotation.y = Math.PI / 2;
+            this.scene.add(lamp);
+
+            if (s % 2 === 0) {
+                const pb = createPostBox();
+                pb.position.set(-40.5, 0, z + 5);
+                this.scene.add(pb);
+            }
+            s++;
+        }
+
+        // 5. Tech Lanes (X = 45 and X = 90) Props
+        for (let z = -60; z <= 40; z += 20) {
+            const lamp1 = createStreetLamp();
+            lamp1.position.set(40.5, 0, z);
+            lamp1.rotation.y = -Math.PI / 2;
+            this.scene.add(lamp1);
+
+            const lamp2 = createStreetLamp();
+            lamp2.position.set(94.5, 0, z + 10);
+            lamp2.rotation.y = Math.PI / 2;
+            this.scene.add(lamp2);
+            s++;
         }
     }
 
