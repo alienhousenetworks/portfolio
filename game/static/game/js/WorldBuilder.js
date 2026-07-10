@@ -172,24 +172,28 @@ export class WorldBuilder {
         // Central Flower Park (Radius 35 around (0,0))
         if (Math.hypot(x, z) < 35) return true;
 
+        // Circular Floral Way Ring Road (Radius 34 to 42 around (0,0))
+        const r = Math.hypot(x, z);
+        if (r >= 33 && r <= 43) return true;
+
         // Showroom & Retail Drive (Z = -75, width 8)
-        if (Math.abs(z - (-75)) < 5) return true;
+        if (Math.abs(z - (-75)) < 6) return true;
 
         // Road Market & Bazaar (Z = 55, width 8)
-        if (Math.abs(z - 55) < 5) return true;
+        if (Math.abs(z - 55) < 6) return true;
 
         // Mohr Ave (X = -45, width 7)
-        if (Math.abs(x - (-45)) < 4.5 && z > -75 && z < 55) return true;
+        if (Math.abs(x - (-45)) < 5 && z > -75 && z < 55) return true;
 
         // Tech Lanes (X = 45 and X = 90, width 7)
-        if ((Math.abs(x - 45) < 4.5 || Math.abs(x - 90) < 4.5) && z > -75 && z < 55) return true;
+        if ((Math.abs(x - 45) < 5 || Math.abs(x - 90) < 5) && z > -75 && z < 55) return true;
 
         // E-W streets at Z = -30 and Z = 15
-        if ((Math.abs(z - (-30)) < 4 || Math.abs(z - 15) < 4) && Math.abs(x) < 120) return true;
+        if ((Math.abs(z - (-30)) < 4.5 || Math.abs(z - 15) < 4.5) && Math.abs(x) < 120) return true;
 
         // Diagonal Promenade: z = -0.6 * x
         const distToPromenade = Math.abs(0.6 * x + z) / Math.sqrt(0.6 * 0.6 + 1 * 1);
-        if (distToPromenade < 5) return true;
+        if (distToPromenade < 6.5) return true;
 
         // River Harmony boundary on the far West (X < -100)
         if (x < -100) return true;
@@ -205,7 +209,6 @@ export class WorldBuilder {
     // ─── Road Network ────────────────────────────────────────────────────────
     _roadNetwork() {
         const roadMat = toonMat(0x748088);
-        const swMat = toonMat(0xbcc4c0);
 
         const road = (x, z, w, d, ry = 0) => {
             const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), roadMat);
@@ -237,7 +240,15 @@ export class WorldBuilder {
         const promAngle = Math.atan2(-130, 180); // ≈ -0.62 rad
         road(0, -10, 240, 9, promAngle);
 
-        // 7. Central Flower Park and Atrium
+        // 7. Circular Floral Way Ring Road (Radius 35 to 41 around (0,0))
+        const ringRoadGeo = new THREE.RingGeometry(35, 41, 64);
+        const ringRoad = new THREE.Mesh(ringRoadGeo, roadMat);
+        ringRoad.rotation.x = -Math.PI / 2;
+        ringRoad.position.set(0, 0.05, 0);
+        ringRoad.receiveShadow = true;
+        this.scene.add(ringRoad);
+
+        // 8. Central Flower Park and Atrium
         this._buildCentralPark();
     }
 
@@ -274,14 +285,12 @@ export class WorldBuilder {
         const domeFrame = new THREE.Mesh(new THREE.SphereGeometry(6.05, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2), frameMat);
         domeFrame.position.set(0, 0.08, 0);
         domeFrame.scale.set(1, 0.8, 1);
-        // wireframe to represent structural panels
         domeFrame.material.wireframe = true;
         this.scene.add(domeFrame);
     }
 
     // ─── Crosswalks & Lane Markings ──────────────────────────────────────────
     _crosswalks() {
-        // Decorative crosswalk line markers at main intersections
         const white = toonMat(0xf8f8f4, { transparent: true, opacity: 0.85 });
         const cw = (cx, cz) => {
             for (let s = -2; s <= 2; s++) {
@@ -303,15 +312,43 @@ export class WorldBuilder {
         let s = 100;
         const cellSpacing = 13.5;
 
-        // Generate buildings in grid cells that are NOT roads, park, or river
+        // 1. Radial building ring around Floral Way (Radius ≈ 48)
+        for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 6) {
+            const rx = Math.cos(angle) * 48;
+            const rz = Math.sin(angle) * 48;
+            
+            // Check if it hits any road or river
+            if (this._isRoadOrPark(rx, rz)) continue;
+
+            const w = 9.8;
+            const d = 9.8;
+            const h = 7.0 + Math.abs((s * 2711 + 7) % 11);
+            
+            // Face inward towards Atrium dome (0, 0)
+            const facingAngle = Math.atan2(-rx, -rz);
+
+            const bld = buildJapaneseBuilding(w, h, d, s);
+            bld.position.set(rx, 0, rz);
+            bld.rotation.y = facingAngle;
+            this.scene.add(bld);
+            
+            this.colliders.push({ x: rx, z: rz, w, d, h, floorY: 0 });
+            s++;
+        }
+
+        // 2. Gridded building placement for themed sections (excluding road/park overlap)
         for (let xCoord = -120; xCoord <= 120; xCoord += cellSpacing) {
             for (let zCoord = -90; zCoord <= 90; zCoord += cellSpacing) {
+                // Skip if already in central park / road network
                 if (this._isRoadOrPark(xCoord, zCoord)) continue;
+                
+                // Skip if too close to radial ring (radius 43 to 53)
+                const distToCenter = Math.hypot(xCoord, zCoord);
+                if (distToCenter >= 42 && distToCenter <= 54) continue;
 
                 // Check if a service or project building is assigned here
                 const assignedPoi = this._getAssignedBuilding(xCoord, zCoord);
                 
-                // Rotation based on sector
                 let facingAngle = 0;
                 if (xCoord > 45) facingAngle = -Math.PI / 2; // Tech section faces West
                 else if (xCoord < -45) facingAngle = Math.PI / 2; // Residential faces East

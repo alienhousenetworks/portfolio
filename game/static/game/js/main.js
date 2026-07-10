@@ -371,77 +371,75 @@ class Game {
         if (!c || !this._ready || !this.player || (this.state !== 'playing' && this.state !== 'riding')) return;
         const ctx = c.getContext('2d');
         const w = c.width, h = c.height;
-        const sc = w / 400;  // world units to pixels (400 world units = full minimap)
+        const sc = w / 400;  // world units to pixels
         const cx = w / 2, cy = h / 2;
 
-        // Grass background (anime warm green)
+        // 1. Grass background (warm green)
         ctx.fillStyle = '#90c87a';
         ctx.fillRect(0, 0, w, h);
 
-        // City concrete base (muted teal-grey)
-        const bx = cx - 85 * sc, by = cy - 74 * sc;
+        // 2. City concrete base slab (expanded to 280 x 220 in layout scale)
         ctx.fillStyle = '#a8b4b0';
-        ctx.fillRect(bx, by, 170 * sc, 148 * sc);
+        ctx.fillRect(cx - 140 * sc, cy - 110 * sc, 280 * sc, 220 * sc);
 
-        // Draw roads (asphalt grey)
+        // 3. River Harmony along the West side
+        ctx.fillStyle = '#7ac4d0';
+        ctx.fillRect(cx - 127 * sc, 0, 24 * sc, h);
+
+        // 4. Draw roads (asphalt grey)
         ctx.fillStyle = '#748088';
 
-        // Main E-W road (Z=0, width=9)
-        ctx.fillRect(cx - 81 * sc, cy - 4.5 * sc, 162 * sc, 9 * sc);
-        // North E-W road (Z=-32, width=7)
-        ctx.fillRect(cx - 59 * sc, cy - 32 * sc - 3.5 * sc, 118 * sc, 7 * sc);
-        // South E-W road (Z=+32, width=7)
-        ctx.fillRect(cx - 59 * sc, cy + 32 * sc - 3.5 * sc, 118 * sc, 7 * sc);
-        // West N-S road (X=-38, width=7)
-        ctx.fillRect(cx - 38 * sc - 3.5 * sc, cy - 36 * sc, 7 * sc, 72 * sc);
-        // East N-S road (X=+38, width=7)
-        ctx.fillRect(cx + 38 * sc - 3.5 * sc, cy - 36 * sc, 7 * sc, 72 * sc);
-        // Center alley (X=0, width=5)
-        ctx.fillRect(cx - 2.5 * sc, cy - 30 * sc, 5 * sc, 60 * sc);
+        // Showroom & Retail Drive (Z = -75, width 8)
+        ctx.fillRect(0, cy - 79 * sc, w, 8 * sc);
+        // Road Market & Bazaar (Z = 55, width 8)
+        ctx.fillRect(0, cy + 51 * sc, w, 8 * sc);
 
-        // Sidewalks (lighter strip)
-        ctx.fillStyle = '#bcc4c0';
-        ctx.fillRect(cx - 81 * sc, cy - 7 * sc, 162 * sc, 2.4 * sc);
-        ctx.fillRect(cx - 81 * sc, cy + 4.6 * sc, 162 * sc, 2.4 * sc);
+        // Mohr Ave (X = -45, width 8)
+        ctx.fillRect(cx - 49 * sc, cy - 75 * sc, 8 * sc, 130 * sc);
+        // Tech Lanes (X = 45 and X = 90, width 8)
+        ctx.fillRect(cx + 41 * sc, cy - 75 * sc, 8 * sc, 130 * sc);
+        ctx.fillRect(cx + 86 * sc, cy - 75 * sc, 8 * sc, 130 * sc);
 
-        // Lane markings on main road
-        ctx.strokeStyle = '#eec820';
-        ctx.lineWidth = 0.8;
-        ctx.setLineDash([3, 3]);
+        // E-W Connecting Streets (Z = -30 and Z = 15)
+        ctx.fillRect(cx - 120 * sc, cy - 33.5 * sc, 240 * sc, 7 * sc);
+        ctx.fillRect(cx - 120 * sc, cy + 11.5 * sc, 240 * sc, 7 * sc);
+
+        // Diagonal Promenade (A1) from SW to NE
+        ctx.strokeStyle = '#748088';
+        ctx.lineWidth = 8 * sc;
         ctx.beginPath();
-        ctx.moveTo(cx - 81 * sc, cy);
-        ctx.lineTo(cx + 81 * sc, cy);
+        ctx.moveTo(cx - 100 * sc, cy + 60 * sc);
+        ctx.lineTo(cx + 100 * sc, cy - 60 * sc);
         ctx.stroke();
-        ctx.setLineDash([]);
 
-        // Crosswalks at intersections (white dots)
-        ctx.fillStyle = 'rgba(248,248,244,0.7)';
-        [[-38, 0], [38, 0], [0, 0], [-38, -32], [38, -32], [0, -32],
-         [-38, 32], [38, 32], [0, 32]].forEach(([rx, rz]) => {
-            for (let s = -2; s <= 2; s++) {
-                ctx.fillRect(
-                    cx + (rx + s * 1.6) * sc - 0.5,
-                    cy + rz * sc - 3.5 * sc,
-                    1.2, 7 * sc
-                );
-            }
-        });
+        // 5. Central Flower Park and Atrium (concentric colored rings)
+        const parkColors = ['#a6d58f', '#55ccff', '#9955ff', '#ffbb33', '#ff5566'];
+        const ringWidth = 4.5 * sc;
+        for (let i = 4; i >= 0; i--) {
+            ctx.fillStyle = parkColors[i];
+            ctx.beginPath();
+            ctx.arc(cx, cy, (8 + i * 4.5) * sc, 0, 6.28);
+            ctx.fill();
+        }
+        // Center Grass
+        ctx.fillStyle = '#6b8e4e';
+        ctx.beginPath();
+        ctx.arc(cx, cy, 8 * sc, 0, 6.28);
+        ctx.fill();
+        // Atrium Dome
+        ctx.fillStyle = '#a8c8e0';
+        ctx.beginPath();
+        ctx.arc(cx, cy, 6 * sc, 0, 6.28);
+        ctx.fill();
 
-        // District overlays — replaced with city zone labels
-        ctx.font = `bold ${Math.max(6, 7 * sc)}px 'Patrick Hand', sans-serif`;
+        // District labels
+        ctx.font = `bold ${Math.max(6, 6.5 * sc)}px sans-serif`;
         ctx.textAlign = 'center';
-        const zones = [
-            { x: -19, z: -16, label: 'NORTH' },
-            { x: 19, z: -16, label: 'QUARTER' },
-            { x: -19, z: 16, label: 'SOUTH' },
-            { x: 19, z: 16, label: 'WARD' },
-        ];
-        zones.forEach(({ x, z, label }) => {
-            ctx.fillStyle = 'rgba(80,110,90,0.6)';
-            ctx.fillText(label, cx + x * sc, cy + z * sc + 3);
-        });
-
-
+        ctx.fillStyle = 'rgba(30,42,56,0.65)';
+        ctx.fillText('TECH HUB', cx + 65 * sc, cy - 50 * sc);
+        ctx.fillText('MARKET', cx + 70 * sc, cy + 40 * sc);
+        ctx.fillText('RESIDENTIAL', cx - 75 * sc, cy + 30 * sc);
+        ctx.fillText('SHOWROOMS', cx, cy - 84 * sc);
 
         // POI dots
         this.interactables.forEach(item => {
@@ -460,7 +458,7 @@ class Game {
             }
         });
 
-        // Player dot (white with dark ring — abeto.co style)
+        // Player dot (white with dark ring)
         const px = cx + this.player.position.x * sc;
         const py = cy + this.player.position.z * sc;
         ctx.fillStyle = '#1e2a38';
