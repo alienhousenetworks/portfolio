@@ -350,6 +350,25 @@ export class CitizenManager {
                 if (c.type === 'shopkeeper' || c.isHost) {
                     if (!c.lastEmoteTime) c.lastEmoteTime = 0;
                     c.lastEmoteTime += dt;
+                    
+                    // Dynamic work-then-sell behavior for shopkeepers
+                    if (c.type === 'shopkeeper') {
+                        const cycle = c.lastEmoteTime % 6.0;
+                        if (cycle < 3.0) {
+                            // Tend to products / work (turn slightly toward the props)
+                            if (c.name === 'Ren') c.mesh.rotation.y = Math.PI - 0.7; // Turn to kettle
+                            else if (c.name === 'Hiro') c.mesh.rotation.y = 0.6;     // Turn to flowers
+                            else if (c.name === 'Kenji') c.mesh.rotation.y = -0.5;   // Turn to tea table
+                            else if (c.name === 'Ami') c.mesh.rotation.y = -0.8;     // Turn to shoe rack
+                        } else {
+                            // Turn to face front/player and welcome/sell
+                            if (c.name === 'Ren') c.mesh.rotation.y = Math.PI;
+                            else if (c.name === 'Hiro') c.mesh.rotation.y = 0.2;
+                            else if (c.name === 'Kenji') c.mesh.rotation.y = 0;
+                            else if (c.name === 'Ami') c.mesh.rotation.y = 0;
+                        }
+                    }
+
                     if (c.lastEmoteTime > 5.0) {
                         playEmote(c.mesh, 0.2);
                         c.lastEmoteTime = 0;

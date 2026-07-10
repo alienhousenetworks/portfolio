@@ -39,23 +39,25 @@ export class CinematicIntro {
         // Initial UFO position high up
         this.ufo.position.set(WORLD.parkX, 120, WORLD.parkZ);
         this.player.visible = false;
-        this.player.position.set(0, 1.2, 0.5);
+        this.player.position.set(0, 0.45, -1.0); // Start inside the ship cabin
         this.ufo.add(this.player);
 
         const thruster = this.ufo.getObjectByName('thrusterLight');
         if (thruster) {
-            thruster.intensity = 5;
+            thruster.intensity = 8;
             thruster.color.setHex(0x48D2C9); // vibrant cyan
         }
 
         this.npcs.forEach(n => { n.visible = false; });
         if (this.welcome.human) {
-            this.welcome.human.visible = false;
-            this.welcome.human.position.set(WORLD.parkX - 16, footY(this.welcome.human), WORLD.parkZ + 12);
+            this.welcome.human.visible = true;
+            this.welcome.human.position.set(WORLD.parkX - 8, footY(this.welcome.human), WORLD.parkZ + 12);
+            this.welcome.human.rotation.y = Math.PI / 4;
         }
         if (this.welcome.alien) {
-            this.welcome.alien.visible = false;
-            this.welcome.alien.position.set(WORLD.parkX + 16, footY(this.welcome.alien), WORLD.parkZ + 12);
+            this.welcome.alien.visible = true;
+            this.welcome.alien.position.set(WORLD.parkX + 8, footY(this.welcome.alien), WORLD.parkZ + 12);
+            this.welcome.alien.rotation.y = -Math.PI / 4;
         }
 
         const ramp = this.ufo.getObjectByName('rampPivot');
@@ -102,7 +104,7 @@ export class CinematicIntro {
         );
         ring.rotation.x = -Math.PI / 2;
         ring.position.set(x, 0.16, z);
-        ring.userData.life = 1.5;
+        ring.userData.life = 1.2;
         ring.userData.scale = 1.0;
         this.scene.add(ring);
         this.dustRings.push(ring);
@@ -111,9 +113,9 @@ export class CinematicIntro {
     _updateDust(dt) {
         this.dustRings = this.dustRings.filter(ring => {
             ring.userData.life -= dt;
-            ring.userData.scale += dt * 8;
+            ring.userData.scale += dt * 9;
             ring.scale.set(ring.userData.scale, ring.userData.scale, 1);
-            ring.material.opacity = Math.max(0, ring.userData.life * 0.55);
+            ring.material.opacity = Math.max(0, ring.userData.life * 0.6);
             if (ring.userData.life <= 0) {
                 this.scene.remove(ring);
                 ring.geometry.dispose();
@@ -130,41 +132,94 @@ export class CinematicIntro {
         this.camera.lookAt(look);
     }
 
-    _getDronePath(time) {
-        const pos = new THREE.Vector3();
-        const look = new THREE.Vector3();
-
-        // 3-second quick drone overview sweep settling behind player in Central Park
-        const t = ease(time / 3.0);
-        pos.lerpVectors(new THREE.Vector3(WORLD.parkX + 50, 24, WORLD.parkZ + 50), new THREE.Vector3(WORLD.parkX, 5.0, WORLD.parkZ + 6), t);
-        look.lerpVectors(new THREE.Vector3(WORLD.parkX, 6, WORLD.parkZ - 20), new THREE.Vector3(WORLD.parkX, 1.2, WORLD.parkZ - 12), t);
-
-        return { pos, look };
-    }
-
     update(dt) {
         if (!this.active) return;
         this.time += dt;
+        this._updateDust(dt);
 
-        // Keep UFO high in the sky and hidden
-        this.ufo.position.set(WORLD.parkX, 250, WORLD.parkZ);
-        this.player.visible = false;
-        
-        // Show welcome characters standing in park
-        if (this.welcome.human) {
-            this.welcome.human.visible = true;
-            this.welcome.human.position.set(WORLD.parkX - 6, footY(this.welcome.human), WORLD.parkZ - 10);
-        }
-        if (this.welcome.alien) {
-            this.welcome.alien.visible = true;
-            this.welcome.alien.position.set(WORLD.parkX + 6, footY(this.welcome.alien), WORLD.parkZ - 10);
-        }
-        this.npcs.forEach(n => { n.visible = true; });
+        const ufoDur = 3.5;
+        const rampDur = 1.5;
+        const walkDur = 2.5;
+        const totalDur = ufoDur + rampDur + walkDur + 1.5; // Total intro length
 
-        if (this.time < 3.0) {
-            const path = this._getDronePath(this.time);
-            this.camera.position.copy(path.pos);
-            this.camera.lookAt(path.look);
+        if (this.time < ufoDur) {
+            // --- PHASE 1: UFO Descending ---
+            const t = ease(this.time / ufoDur);
+            const cy = THREE.MathUtils.lerp(120, 0.5, t);
+            this.ufo.position.set(WORLD.parkX, cy, WORLD.parkZ);
+
+            // Spawn dust near landing
+            if (cy < 15 && Math.random() < 0.22) {
+                this._spawnDust(WORLD.parkX + (Math.random() - 0.5) * 4, WORLD.parkZ + (Math.random() - 0.5) * 4);
+            }
+
+            // Camera panning view
+            const camT = this.time / ufoDur;
+            const fromCam = new THREE.Vector3(WORLD.parkX + 42, 38, WORLD.parkZ + 42);
+            const toCam = new THREE.Vector3(WORLD.parkX - 22, 9, WORLD.parkZ + 24);
+            const fromLook = new THREE.Vector3(WORLD.parkX, 45, WORLD.parkZ);
+            const toLook = new THREE.Vector3(WORLD.parkX, 3, WORLD.parkZ);
+            this._lerpCamera(fromCam, toCam, fromLook, toLook, camT);
+
+        } else if (this.time < ufoDur + rampDur) {
+            // --- PHASE 2: Ramp opens ---
+            this.ufo.position.set(WORLD.parkX, 0.5, WORLD.parkZ);
+            
+            const rampT = (this.time - ufoDur) / rampDur;
+            const ramp = this.ufo.getObjectByName('rampPivot');
+            if (ramp) {
+                ramp.rotation.x = -Math.PI / 2 + rampT * (Math.PI / 2);
+            }
+
+            // Camera moves close to the ramp opening
+            const fromCam = new THREE.Vector3(WORLD.parkX - 22, 9, WORLD.parkZ + 24);
+            const toCam = new THREE.Vector3(WORLD.parkX, 5.5, WORLD.parkZ + 16);
+            const fromLook = new THREE.Vector3(WORLD.parkX, 3, WORLD.parkZ);
+            const toLook = new THREE.Vector3(WORLD.parkX, 1.2, WORLD.parkZ + 2);
+            this._lerpCamera(fromCam, toCam, fromLook, toLook, rampT);
+
+        } else if (this.time < ufoDur + rampDur + walkDur) {
+            // --- PHASE 3: Player Walks Down Ramp ---
+            this.player.visible = true;
+            
+            const walkT = (this.time - ufoDur - rampDur) / walkDur;
+            
+            // Move player down from cabin to the grass
+            const pz = THREE.MathUtils.lerp(-1.0, 5.0, walkT);
+            const py = THREE.MathUtils.lerp(0.45, -0.4, walkT); // descend along the ramp slope
+            this.player.position.set(0, py, pz);
+
+            // Play procedural walk cycles
+            this._walkPhase += dt * 8.5;
+            animateHumanWalk(this.player, this._walkPhase);
+
+            // Camera tracks player from front
+            const fromCam = new THREE.Vector3(WORLD.parkX, 5.5, WORLD.parkZ + 16);
+            const toCam = new THREE.Vector3(WORLD.parkX - 6, 2.8, WORLD.parkZ + 11);
+            const fromLook = new THREE.Vector3(WORLD.parkX, 1.2, WORLD.parkZ + 2);
+            const toLook = new THREE.Vector3(WORLD.parkX, 0.7, WORLD.parkZ + pz);
+            this._lerpCamera(fromCam, toCam, fromLook, toLook, walkT);
+
+        } else if (this.time < totalDur) {
+            // --- PHASE 4: Ambassadors Welcome player ---
+            const finalT = (this.time - ufoDur - rampDur - walkDur) / 1.5;
+            
+            // Detach player from UFO so we can position them in world coordinates
+            if (this.player.parent === this.ufo) {
+                const wp = this.player.getWorldPosition(new THREE.Vector3());
+                this.ufo.remove(this.player);
+                this.scene.add(this.player);
+                this.player.position.copy(wp);
+                this.player.rotation.set(0, 0, 0);
+            }
+
+            // Camera pans around to show the three-way welcome circle
+            const fromCam = new THREE.Vector3(WORLD.parkX - 6, 2.8, WORLD.parkZ + 11);
+            const toCam = new THREE.Vector3(WORLD.parkX, 2.2, WORLD.parkZ + 14);
+            const fromLook = new THREE.Vector3(WORLD.parkX, 0.7, WORLD.parkZ + 5.0);
+            const toLook = new THREE.Vector3(WORLD.parkX, 1.0, WORLD.parkZ + 7.0);
+            this._lerpCamera(fromCam, toCam, fromLook, toLook, finalT);
+
         } else {
             this._done();
         }
@@ -191,17 +246,19 @@ export class CinematicIntro {
             this.scene.add(this.player);
             this.player.position.copy(wp);
         }
-        this.player.position.set(WORLD.parkX, footY(this.player), WORLD.parkZ - 6);
-        this.player.rotation.y = 0;
+        this.player.position.set(WORLD.parkX, footY(this.player), WORLD.parkZ + 5.0);
+        this.player.rotation.set(0, 0, 0);
         this.player.visible = true;
 
         this.npcs.forEach(n => { n.visible = true; });
         if (this.welcome.human) {
-            this.welcome.human.position.set(WORLD.parkX - 6, footY(this.welcome.human), WORLD.parkZ - 10);
+            this.welcome.human.position.set(WORLD.parkX - 6, footY(this.welcome.human), WORLD.parkZ + 10);
+            this.welcome.human.rotation.set(0, Math.PI + 0.5, 0);
             this.welcome.human.visible = true;
         }
         if (this.welcome.alien) {
-            this.welcome.alien.position.set(WORLD.parkX + 6, footY(this.welcome.alien), WORLD.parkZ - 10);
+            this.welcome.alien.position.set(WORLD.parkX + 6, footY(this.welcome.alien), WORLD.parkZ + 10);
+            this.welcome.alien.rotation.set(0, Math.PI - 0.5, 0);
             this.welcome.alien.visible = true;
         }
 
