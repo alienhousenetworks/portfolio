@@ -133,7 +133,6 @@ export class WorldBuilder {
     _lights() { setupCityLighting(this.scene); }
 
     // ─── Ground ─────────────────────────────────────────────────────────────
-    // ─── Ground ─────────────────────────────────────────────────────────────
     _ground() {
         // Outer grass (warm green for anime warmth)
         const outer = new THREE.Mesh(
@@ -158,92 +157,132 @@ export class WorldBuilder {
         const curb = toonMesh(new THREE.BoxGeometry(280, 0.12, 220), 0xb8c0bc, { outline: false });
         curb.mesh.position.y = 0.1;
         this.scene.add(curb.group);
+
+        // Draw River Harmony along the West side (X ≈ -115)
+        const riverGeo = new THREE.PlaneGeometry(24, 220);
+        const riverMat = toonMat(0x7ac4d0, { transparent: true, opacity: 0.85 });
+        const river = new THREE.Mesh(riverGeo, riverMat);
+        river.rotation.x = -Math.PI / 2;
+        river.position.set(-115, 0.03, 0);
+        this.scene.add(river);
     }
 
-    // Organic cell grid mapping helper
-    _getCellType(c, r) {
-        // Main winding road (curving through the city)
-        const isMainRoad = 
-            (c === 8 && r >= 0 && r <= 8) ||
-            (r === 8 && c >= 0 && c <= 8) ||
-            (c === 8 && r >= 8 && r <= 12) ||
-            (r === 12 && c >= 8 && c <= 15) ||
-            (c === 15 && r >= 7 && r <= 12) ||
-            (r === 7 && c >= 15 && c <= 21);
+    // City of Harmonia layout mathematical checks
+    _isRoadOrPark(x, z) {
+        // Central Flower Park (Radius 35 around (0,0))
+        if (Math.hypot(x, z) < 35) return true;
 
-        // Alleys (galleys/narrow paths that let the player walk inside blocks)
-        const isAlley = 
-            (c === 3) ||
-            (c === 18) ||
-            (r === 3) ||
-            (r === 13) ||
-            (c === 12 && r >= 4 && r <= 12);
-        
-        // Market Plaza (central open gathering spot)
-        const isPlaza = (c >= 9 && c <= 11 && r >= 9 && r <= 11);
+        // Showroom & Retail Drive (Z = -75, width 8)
+        if (Math.abs(z - (-75)) < 5) return true;
 
-        if (isMainRoad) return 'road';
-        if (isPlaza) return 'plaza';
-        if (isAlley) return 'alley';
-        return 'bld';
+        // Road Market & Bazaar (Z = 55, width 8)
+        if (Math.abs(z - 55) < 5) return true;
+
+        // Mohr Ave (X = -45, width 7)
+        if (Math.abs(x - (-45)) < 4.5 && z > -75 && z < 55) return true;
+
+        // Tech Lanes (X = 45 and X = 90, width 7)
+        if ((Math.abs(x - 45) < 4.5 || Math.abs(x - 90) < 4.5) && z > -75 && z < 55) return true;
+
+        // E-W streets at Z = -30 and Z = 15
+        if ((Math.abs(z - (-30)) < 4 || Math.abs(z - 15) < 4) && Math.abs(x) < 120) return true;
+
+        // Diagonal Promenade: z = -0.6 * x
+        const distToPromenade = Math.abs(0.6 * x + z) / Math.sqrt(0.6 * 0.6 + 1 * 1);
+        if (distToPromenade < 5) return true;
+
+        // River Harmony boundary on the far West (X < -100)
+        if (x < -100) return true;
+
+        return false;
     }
 
     _getAssignedBuilding(x, z) {
         const buildings = this.data.buildings || [];
-        return buildings.find(b => Math.hypot(b.x - x, b.z - z) < 4.0);
+        return buildings.find(b => Math.hypot(b.x - x, b.z - z) < 8.0);
     }
 
     // ─── Road Network ────────────────────────────────────────────────────────
     _roadNetwork() {
         const roadMat = toonMat(0x748088);
-        const alleyMat = toonMat(0x606c74);
-        const plazaMat = toonMat(0xc4b4a0);
+        const swMat = toonMat(0xbcc4c0);
 
-        const road = (x, z, w, d) => {
+        const road = (x, z, w, d, ry = 0) => {
             const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), roadMat);
             m.rotation.x = -Math.PI / 2;
+            m.rotation.z = -ry;
             m.position.set(x, 0.05, z);
             m.receiveShadow = true;
             this.scene.add(m);
         };
-        const alley = (x, z, w, d) => {
-            const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), alleyMat);
-            m.rotation.x = -Math.PI / 2;
-            m.position.set(x, 0.05, z);
-            m.receiveShadow = true;
-            this.scene.add(m);
-        };
-        const plaza = (x, z, w, d) => {
-            const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), plazaMat);
-            m.rotation.x = -Math.PI / 2;
-            m.position.set(x, 0.06, z);
-            m.receiveShadow = true;
-            this.scene.add(m);
-        };
 
-        for (let r = 0; r < 16; r++) {
-            const cz = r * 12 - 90;
-            for (let c = 0; c < 22; c++) {
-                const cx = c * 12 - 126;
-                const type = this._getCellType(c, r);
+        // 1. Showroom & Retail Drive (Z = -75)
+        road(0, -75, 260, 9);
 
-                if (type === 'road') {
-                    road(cx, cz, 12.2, 12.2);
-                } else if (type === 'alley') {
-                    alley(cx, cz, 12.2, 12.2);
-                } else if (type === 'plaza') {
-                    plaza(cx, cz, 12.2, 12.2);
-                }
-            }
+        // 2. Road Market & Bazaar (Z = 55)
+        road(0, 55, 260, 9);
+
+        // 3. Mohr Ave (X = -45)
+        road(-45, -10, 8, 120);
+
+        // 4. Tech Lanes (X = 45 and X = 90)
+        road(45, -10, 8, 120);
+        road(90, -10, 8, 120);
+
+        // 5. E-W Connecting Streets (Z = -30 and Z = 15)
+        road(0, -30, 260, 7);
+        road(0, 15, 260, 7);
+
+        // 6. Diagonal Promenade (A1) from SW to NE
+        const promAngle = Math.atan2(-130, 180); // ≈ -0.62 rad
+        road(0, -10, 240, 9, promAngle);
+
+        // 7. Central Flower Park and Atrium
+        this._buildCentralPark();
+    }
+
+    _buildCentralPark() {
+        const colors = [0xff5566, 0xffbb33, 0x9955ff, 0x55ccff, 0xa6d58f];
+        // Draw concentric flower bed rings
+        const ringWidth = 4.5;
+        for (let i = 0; i < 5; i++) {
+            const innerR = 8 + i * ringWidth;
+            const outerR = innerR + ringWidth;
+            const ringGeo = new THREE.RingGeometry(innerR, outerR, 32);
+            const ringMat = toonMat(colors[i]);
+            const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+            ringMesh.rotation.x = -Math.PI / 2;
+            ringMesh.position.set(0, 0.06, 0);
+            this.scene.add(ringMesh);
         }
+
+        // Center grass circle
+        const centerGrass = new THREE.Mesh(new THREE.CircleGeometry(8, 32), toonMat(0x6b8e4e));
+        centerGrass.rotation.x = -Math.PI / 2;
+        centerGrass.position.set(0, 0.07, 0);
+        this.scene.add(centerGrass);
+
+        // Atrium Glass Dome
+        const domeMat = toonMat(0xa8c8e0, { transparent: true, opacity: 0.65, emissive: 0xa8c8e0, emissiveIntensity: 0.15 });
+        const dome = new THREE.Mesh(new THREE.SphereGeometry(6, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2), domeMat);
+        dome.position.set(0, 0.08, 0);
+        dome.scale.set(1, 0.8, 1);
+        this.scene.add(dome);
+
+        // Dome frames
+        const frameMat = toonMat(0x2a3038);
+        const domeFrame = new THREE.Mesh(new THREE.SphereGeometry(6.05, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2), frameMat);
+        domeFrame.position.set(0, 0.08, 0);
+        domeFrame.scale.set(1, 0.8, 1);
+        // wireframe to represent structural panels
+        domeFrame.material.wireframe = true;
+        this.scene.add(domeFrame);
     }
 
     // ─── Crosswalks & Lane Markings ──────────────────────────────────────────
     _crosswalks() {
+        // Decorative crosswalk line markers at main intersections
         const white = toonMat(0xf8f8f4, { transparent: true, opacity: 0.85 });
-        const yellow = toonMat(0xeec820, { transparent: true, opacity: 0.72 });
-
-        // Simple lane markers and crosswalks at winding road nodes
         const cw = (cx, cz) => {
             for (let s = -2; s <= 2; s++) {
                 const m = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 5.0), white);
@@ -253,35 +292,35 @@ export class WorldBuilder {
             }
         };
 
-        cw(-30, 6);
-        cw(54, -6);
-        cw(18, 6);
+        cw(-45, -75);
+        cw(45, -75);
+        cw(-45, 55);
+        cw(45, 55);
     }
 
     // ─── Building Rows (Customized Organic Placement) ────────────────────────
     _buildingRows() {
         let s = 100;
+        const cellSpacing = 13.5;
 
-        for (let r = 0; r < 16; r++) {
-            const cz = r * 12 - 90;
-            for (let c = 0; c < 22; c++) {
-                const cx = c * 12 - 126;
-                const type = this._getCellType(c, r);
-                if (type !== 'bld') continue;
+        // Generate buildings in grid cells that are NOT roads, park, or river
+        for (let xCoord = -120; xCoord <= 120; xCoord += cellSpacing) {
+            for (let zCoord = -90; zCoord <= 90; zCoord += cellSpacing) {
+                if (this._isRoadOrPark(xCoord, zCoord)) continue;
 
                 // Check if a service or project building is assigned here
-                const assignedPoi = this._getAssignedBuilding(cx, cz);
+                const assignedPoi = this._getAssignedBuilding(xCoord, zCoord);
                 
-                // Determine facing direction by checking neighboring road cells
+                // Rotation based on sector
                 let facingAngle = 0;
-                if (c > 0 && this._getCellType(c - 1, r) !== 'bld') facingAngle = -Math.PI / 2;
-                else if (c < 21 && this._getCellType(c + 1, r) !== 'bld') facingAngle = Math.PI / 2;
-                else if (r > 0 && this._getCellType(c, r - 1) !== 'bld') facingAngle = 0;
-                else if (r < 15 && this._getCellType(c, r + 1) !== 'bld') facingAngle = Math.PI;
+                if (xCoord > 45) facingAngle = -Math.PI / 2; // Tech section faces West
+                else if (xCoord < -45) facingAngle = Math.PI / 2; // Residential faces East
+                else if (zCoord < 0) facingAngle = Math.PI; // North side faces South
+                else facingAngle = 0; // South side faces North
 
-                const w = 9.4;
-                const d = 9.4;
-                const h = 6.5 + Math.abs((s * 2711 + 7) % 11);
+                const w = 9.8;
+                const d = 9.8;
+                const h = 7.0 + Math.abs((s * 2711 + 7) % 11);
 
                 let bld;
                 if (assignedPoi) {
@@ -290,11 +329,11 @@ export class WorldBuilder {
                     bld = buildJapaneseBuilding(w, h, d, s);
                 }
 
-                bld.position.set(cx, 0, cz);
+                bld.position.set(xCoord, 0, zCoord);
                 bld.rotation.y = facingAngle;
                 this.scene.add(bld);
                 
-                this.colliders.push({ x: cx, z: cz, w, d, h, floorY: 0 });
+                this.colliders.push({ x: xCoord, z: zCoord, w, d, h, floorY: 0 });
                 s++;
             }
         }
@@ -344,7 +383,6 @@ export class WorldBuilder {
 
         // Rooftop decorations
         if (district === 'software') {
-            // Cyber code antenna/satellite dish
             const dish = toonMesh(new THREE.SphereGeometry(0.7, 8, 8, 0, Math.PI * 2, 0, Math.PI / 2), 0x8898a8);
             dish.mesh.position.set(0, h + 0.5, 0);
             dish.mesh.rotation.x = -Math.PI / 4;
@@ -354,7 +392,6 @@ export class WorldBuilder {
             mast.mesh.position.set(0, h + 0.9, 0);
             g.add(mast.group);
         } else if (district === 'marketing') {
-            // Paper lanterns
             for (let i = -1; i <= 1; i += 2) {
                 const lantern = toonMesh(new THREE.CylinderGeometry(0.25, 0.25, 0.6, 6), 0xff4422, { emissive: 0xff4422, emissiveIntensity: 0.4 });
                 lantern.mesh.position.set(i * (w * 0.3), 2.4, d / 2 + 0.5);
@@ -473,11 +510,11 @@ export class WorldBuilder {
 
     // ─── Surrounding Nature ────────────────────────────────────────────────────
     _surroundingNature() {
-        // Trees scattered outside city
-        for (let i = 0; i < 90; i++) {
+        // Trees scattered outside city (strictly pushed past the 142 unit border)
+        for (let i = 0; i < 110; i++) {
             const seed = i * 31 + 7;
             const angle = (seed * 0.618033) * Math.PI * 2;
-            const dist = 88 + (seed % 65);
+            const dist = 145 + (seed % 75);
             const x = Math.cos(angle) * dist;
             const z = Math.sin(angle) * dist;
             const gy = this.getTerrainHeight(x, z);
@@ -486,13 +523,10 @@ export class WorldBuilder {
             this.scene.add(tree);
         }
 
-        // Trees within city (at intersections, corners, small pockets)
+        // Trees within city (strictly kept in the Central Flower Park or residential pockets)
         const cityTrees = [
-            [-44, -36, 0], [44, -36, 1], [-44, 36, 2], [44, 36, 3],
-            [-6, -38, 4], [6, -38, 5], [-6, 38, 6], [6, 38, 7],
-            [-58, -15, 8], [58, -15, 9], [-58, 15, 10], [58, 15, 11],
-            [-44, 0, 12], [44, 0, 13],
-            [-20, -38, 14], [20, -38, 15], [-20, 38, 16], [20, 38, 17],
+            [-25, -20, 0], [25, -20, 1], [-25, 20, 2], [25, 20, 3],
+            [0, 42, 4], [0, -42, 5],
         ];
         cityTrees.forEach(([x, z, seed]) => {
             const tree = this._pickTree(seed);
@@ -526,21 +560,21 @@ export class WorldBuilder {
             this.scene.add(m);
         };
 
-        // N hills
-        hill(-55, -130, 48, 14, 38);
-        hill(15, -140, 60, 20, 46);
-        hill(85, -118, 44, 12, 34);
-        hill(-15, -120, 35, 10, 28, hillDark);
-        // S hills
-        hill(-45, 128, 50, 16, 40);
-        hill(28, 138, 58, 18, 44);
-        hill(95, 122, 42, 13, 32);
-        // E hills
-        hill(135, -35, 36, 16, 55);
-        hill(128, 42, 40, 13, 50);
-        // W hills
-        hill(-132, -28, 38, 18, 54);
-        hill(-125, 48, 42, 13, 50, hillDark);
+        // N hills (moved far North past Z = -155)
+        hill(-55, -165, 48, 14, 38);
+        hill(15, -170, 60, 20, 46);
+        hill(85, -158, 44, 12, 34);
+        hill(-15, -160, 35, 10, 28, hillDark);
+        // S hills (moved far South past Z = 155)
+        hill(-45, 168, 50, 16, 40);
+        hill(28, 178, 58, 18, 44);
+        hill(95, 162, 42, 13, 32);
+        // E hills (moved far East past X = 165)
+        hill(175, -35, 36, 16, 55);
+        hill(168, 42, 40, 13, 50);
+        // W hills (moved far West past X = -165)
+        hill(-172, -28, 38, 18, 54);
+        hill(-165, 48, 42, 13, 50, hillDark);
     }
 
     // ─── POIs ──────────────────────────────────────────────────────────────────
