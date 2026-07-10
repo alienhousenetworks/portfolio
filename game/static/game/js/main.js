@@ -186,8 +186,8 @@ class Game {
 
     _afterCinematic() {
         this.state = 'dialogue';
-        this.chunks?.preloadAround(WORLD.parkX, WORLD.parkZ, 3);
-        this.playerCtrl.setPosition(WORLD.parkX, WORLD.parkZ - 6);
+        this.chunks?.preloadAround(0, 115, 3);
+        this.playerCtrl.setPosition(0, 115);
         this.dialogue.start(this.dialogue.getIntroDialogue(), () => {
             this.state = 'playing';
             this.playerCtrl.syncCameraToPlayer();
