@@ -413,31 +413,31 @@ export function buildColonyBuilding(w, h, d, seed, style = 'thakur') {
         : _buildBoseBuilding(w, h, d, seed);
 }
 
-// ─── Sukumar Roy Colony (photo 1752224140_2 — black & white Kolkata heritage) ─
-// Buildings stay monochrome: white plaster, grey shutters, black mural ink.
-// No green/olive/wood-brown accents (those read as "colorful" in-game).
+// ─── Sukumar Roy Colony (white Kolkata colonial — images-11 / heritage façade) ─
+// Buildings: fresh white/cream plaster + soft grey-green shutters.
+// Scene stays full color (people, sky, wood, plants); only walls are white.
 const SUKUMAR = {
     walls: [
-        0xf4f4f4, // fresh white plaster
-        0xe8e8e8, // soft grey-white
-        0xdcdcdc, // aged grey plaster
-        0xf0f0f0, // clean white
-        0xe0e0e0, // cool grey wall
-        0xc8c8c8, // weathered grey-white
+        0xfaf8f4, // fresh white plaster
+        0xf5f2ec, // soft cream-white
+        0xf0ebe3, // warm aged plaster
+        0xf8f6f1, // clean white
+        0xeeeae2, // cool cream wall
+        0xe8e4db, // weathered cream-white
     ],
-    trim: 0xeaeaea,
-    shutter: [0xb0b0b0, 0x989898, 0xc4c4c4, 0x8a8a8a], // pale grey louvers (photo)
-    wood: 0x555555, // dark grey open shutter (not brown)
-    rail: 0xb8b8b8,
-    mold: 0xd6d6d6,
-    mural: 0x1a1a1a, // pure black ink figures
-    door: 0xe0e0e0,
-    frame: 0x3a3a3a,
-    plinth: 0xc0c0c0,
-    step: 0xb0b0b0,
-    ac: 0xd0d0d0,
-    open: 0x222222,
-    louv: 0x6a6a6a,
+    trim: 0xf2efe8,
+    shutter: [0xa8b0a4, 0x9aa392, 0xb5bca8, 0x8e9686], // soft grey-green louvers
+    wood: 0x8b5a3c, // natural wood open shutter
+    rail: 0xc8c4b8,
+    mold: 0xe8e4d8,
+    mural: 0x1a1a1a, // black ink figures on white walls
+    door: 0xc8d0c4, // pale grey-green door
+    frame: 0x5a6058,
+    plinth: 0xd4c8b0, // cream stone base
+    step: 0xc8b8a0,
+    ac: 0xd8dce0,
+    open: 0x2a2a2a,
+    louv: 0x6a7268,
 };
 
 /**
@@ -496,7 +496,7 @@ function _buildSukumarBuilding(w, h, d, seed) {
         _sukumarGallery(g, w, h, d, s, floorH, floors);
     }
 
-    // Shared: grey shutters / windows (B&W — no green)
+    // Shared: soft grey-green shutters / windows (white colonial style)
     _sukumarWindows(g, w, h, d, s, floorH, floors, variant);
 
     // Raised plinth / steps (photo corner steps)
@@ -541,7 +541,7 @@ function _sukumarWindows(g, w, h, d, s, floorH, floors, variant) {
             frame.mesh.position.set(wx, wy, d / 2 + 0.03);
             g.add(frame.group);
 
-            // Louvered shutters — grey only (photo B&W)
+            // Louvered shutters — soft grey-green (white colonial heritage)
             const shL = toonMesh(new THREE.BoxGeometry(0.42, 1.2, 0.06), shut, { outline: false });
             shL.mesh.position.set(wx - 0.22, wy, d / 2 + 0.08);
             g.add(shL.group);
@@ -560,7 +560,7 @@ function _sukumarWindows(g, w, h, d, s, floorH, floors, variant) {
                 g.add(louv.group);
             }
 
-            // Occasional open dark shutter (photo bottom right — greyscale, not wood brown)
+            // Occasional open wood shutter (natural brown accent on white façade)
             if ((s + c + r) % 7 === 0) {
                 const wood = toonMesh(new THREE.BoxGeometry(0.5, 1.15, 0.08), SUKUMAR.wood, { outline: false });
                 wood.mesh.position.set(wx + 0.55, wy, d / 2 + 0.15);
@@ -794,12 +794,12 @@ function getSukumarMuralTexture() {
     return _sukumarMuralTexture;
 }
 
-/** Mural wall — Sukumar Ray caricature vibe (stylized black figures on white) */
+/** Mural wall — Sukumar Ray caricature vibe (black figures on white colonial wall) */
 function _sukumarMural(g, w, h, d, s, floorH, floors) {
-    // White wall wash (B&W mural ground)
+    // White wall wash for mural ground
     const wash = toonMesh(
         new THREE.BoxGeometry(w * 0.95, h * 0.7, 0.06),
-        0xf2f2f2,
+        0xfaf8f4,
         { outline: false }
     );
     wash.mesh.position.set(0, h * 0.5, d / 2 + 0.04);

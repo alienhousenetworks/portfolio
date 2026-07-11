@@ -56,7 +56,7 @@ const ROAD = {
         x: -55, w: 5.6, z1: -135, z2: 135, sw: 1.05,
         style: 'bose', name: 'Bose Colony', nameBn: 'বোস কলোনী',
     },
-    // Sukumar Roy Colony — B&W Kolkata heritage (photo 1752224140_2)
+    // Sukumar Roy Colony — white Kolkata colonial heritage
     sukumar: {
         x: 115, w: 7.2, z1: -120, z2: 120, sw: 1.25,
         style: 'sukumar', name: 'Sukumar Roy Colony', nameBn: 'সুকুমার রায় কলোনী',
@@ -386,8 +386,8 @@ export class WorldBuilder {
     /** Narrow worn colony lane (no big highway markings) */
     _buildColonyRoad(def) {
         const isSukumar = def.id === 'sukumar';
-        const asphalt = toonMat(isSukumar ? 0x333333 : 0x4a4e54);
-        const edge = toonMat(isSukumar ? 0x222222 : 0x363a40);
+        const asphalt = toonMat(isSukumar ? 0x3a3e44 : 0x4a4e54);
+        const edge = toonMat(isSukumar ? 0x2e3238 : 0x363a40);
         const sw = roadSw(def);
         const half = def.w / 2;
         const len = def.z2 - def.z1;
@@ -421,8 +421,9 @@ export class WorldBuilder {
             });
         }
 
-        const gehwegA = toonMat(isSukumar ? 0xeaeaea : 0xd8d4cc);
-        const gehwegB = toonMat(isSukumar ? 0xd0d0d0 : 0xcac6be);
+        // Warm stone sidewalks (full color scene; white is for buildings only)
+        const gehwegA = toonMat(isSukumar ? 0xdcd6cc : 0xd8d4cc);
+        const gehwegB = toonMat(isSukumar ? 0xcfc8bc : 0xcac6be);
         [-1, 1].forEach(side => {
             const walkX = def.x + side * (half + cw + sw / 2);
             this._buildGehwegStrip(walkX, midZ, sw, len, 'ns', gehwegA, gehwegB);
@@ -889,19 +890,19 @@ export class WorldBuilder {
         else this._boseProps(def);
     }
 
-    /** Black–white painted curb (Sukumar B&W street edge — no blue) */
+    /** Blue–white painted curb (Sukumar street edge from photo) */
     _sukumarCurbPaint(def) {
         const gy = WORLD.groundY ?? 0.15;
         const half = def.w / 2;
         const cw = ROAD.curb;
         const curbW = cw + 0.12; // 0.40
         const y = gy + 0.14; // Same height as road curb
-        const black = toonMat(0x2a2a2a);
-        const white = toonMat(0xf0f0f0);
+        const blue = toonMat(0x3a7ab8);
+        const white = toonMat(0xf5f5f0);
         const seg = 2.2;
         for (const side of [-1, 1]) {
             for (let z = def.z1; z < def.z2; z += seg * 2) {
-                const b = new THREE.Mesh(new THREE.BoxGeometry(curbW, 0.22, seg), black);
+                const b = new THREE.Mesh(new THREE.BoxGeometry(curbW, 0.22, seg), blue);
                 b.position.set(def.x + side * (half + curbW / 2), y, z + seg / 2);
                 b.receiveShadow = true;
                 this.scene.add(b);
@@ -913,7 +914,7 @@ export class WorldBuilder {
         }
     }
 
-    /** Sukumar Roy Colony street props — B&W quiet heritage lane (no colorful plants) */
+    /** Sukumar Roy Colony street props — full-color quiet heritage lane */
     _sukumarProps(def) {
         const half = def.w / 2;
         const walk = half + ROAD.curb + roadSw(def) * 0.55;
@@ -923,17 +924,17 @@ export class WorldBuilder {
             if (Math.abs(z) < 15) continue;
             s++;
 
-            // Street lamps (monochrome)
-            const lamp = createStreetLamp(true);
+            // Street lamps (full color)
+            const lamp = createStreetLamp(false);
             lamp.position.set(def.x + (s % 2 === 0 ? -1 : 1) * walk, 0, z);
             this.scene.add(lamp);
 
-            // Greyscale planter (no bright flowers — keep colony monochrome)
+            // Green planter / bush
             if (s % 2 === 0) {
-                const pot = toonMesh(new THREE.CylinderGeometry(0.28, 0.22, 0.4, 8), 0x555555, { outline: false });
+                const pot = toonMesh(new THREE.CylinderGeometry(0.28, 0.22, 0.4, 8), 0xa07850, { outline: false });
                 pot.mesh.position.set(def.x + (s % 4 === 0 ? 1 : -1) * (walk + 0.2), 0.2, z + 3);
                 this.scene.add(pot.group);
-                const bush = toonMesh(new THREE.SphereGeometry(0.32, 8, 6), 0x3a3a3a, { outline: false });
+                const bush = toonMesh(new THREE.SphereGeometry(0.32, 8, 6), 0x4a8a48, { outline: false });
                 bush.mesh.position.set(def.x + (s % 4 === 0 ? 1 : -1) * (walk + 0.2), 0.55, z + 3);
                 this.scene.add(bush.group);
             }
@@ -946,16 +947,16 @@ export class WorldBuilder {
                 this.scene.add(bike);
             }
 
-            // Bench on wider sidewalk (monochrome)
+            // Bench on wider sidewalk
             if (s % 4 === 0) {
-                const bench = createBench(true);
+                const bench = createBench(false);
                 bench.position.set(def.x + walk * 0.7, 0, z + 2);
                 bench.rotation.y = -Math.PI / 2;
                 this.scene.add(bench);
             }
 
             if (s % 5 === 0) {
-                const trash = createTrashCan(s, true);
+                const trash = createTrashCan(s, false);
                 trash.position.set(def.x + walk * 0.9, 0, z + 7);
                 this.scene.add(trash);
             }
@@ -969,17 +970,16 @@ export class WorldBuilder {
         const walk = half + ROAD.curb + roadSw(def) * 0.6;
         [def.z1 + 10, def.z2 - 10].forEach((z, i) => {
             const g = new THREE.Group();
-            const poleColor = isSukumar ? 0x4a4a4a : 0x6a6058;
-            const pole = toonMesh(new THREE.BoxGeometry(0.12, 2.8, 0.12), poleColor, { outline: false });
+            const pole = toonMesh(new THREE.BoxGeometry(0.12, 2.8, 0.12), 0x6a6058, { outline: false });
             pole.mesh.position.y = 1.4;
             g.add(pole.group);
-            // Board
-            const boardColor = isSukumar ? 0xe0e0e0 : color;
+            // Board — white colonial plaque for Sukumar
+            const boardColor = isSukumar ? 0xf5f2ec : color;
             const board = toonMesh(new THREE.BoxGeometry(2.6, 1.0, 0.12), boardColor);
             board.mesh.position.set(0.2, 2.5, 0);
             g.add(board.group);
             // Accent bar
-            const barColor = isSukumar ? 0xffffff : 0xf8f0e0;
+            const barColor = isSukumar ? 0xc8d0c4 : 0xf8f0e0;
             const bar = toonMesh(new THREE.BoxGeometry(2.2, 0.12, 0.05), barColor, { outline: false });
             bar.mesh.position.set(0.2, 2.75, 0.08);
             g.add(bar.group);
