@@ -11,8 +11,9 @@ import { CinematicIntro } from './CinematicIntro.js';
 import { TransitSystem } from './Vehicles.js';
 import { CitizenManager } from './Citizens.js';
 import { TransitRideController } from './TransitRide.js';
-import { DISTRICT_DEFS, MAP_LEGEND, POI_MAP_COLORS, getDistrictAt } from './Districts.js';
+import { MAP_LEGEND, getDistrictAt, getAreaDisplayName } from './Districts.js';
 import { getZoneAt, getZoneLabel } from './CityZones.js';
+import { drawMinimap } from './Minimap.js';
 import { TransitPicker } from './TransitPicker.js';
 import { audio } from './AudioManager.js';
 import { EnvironmentSystem } from './EnvironmentSystem.js';
@@ -390,14 +391,10 @@ class Game {
         if (this.state !== 'playing') return;
         const p = this.player.position;
         document.getElementById('coord-display').textContent = `${p.x.toFixed(0)}, ${p.z.toFixed(0)}`;
-        // Simple zone label based on position in the Japanese city grid
-        let zoneLabel = 'OUTSIDE TOWN';
-        if (Math.abs(p.x) < 80 && Math.abs(p.z) < 65) {
-            if (p.z < -16) zoneLabel = p.x < 0 ? 'NORTH-WEST' : 'NORTH-EAST';
-            else if (p.z > 16) zoneLabel = p.x < 0 ? 'SOUTH-WEST' : 'SOUTH-EAST';
-            else zoneLabel = p.x < -38 ? 'WEST ALLEY' : p.x > 38 ? 'EAST ALLEY' : 'MAIN STREET';
-        }
-        document.getElementById('zone-display').textContent = this.nearestTarget?.subtitle || zoneLabel;
+        const areaName = getAreaDisplayName(p.x, p.z);
+        const zone = getZoneLabel(getZoneAt(p.x, p.z));
+        document.getElementById('zone-display').textContent =
+            this.nearestTarget?.subtitle || areaName || zone || 'OUTSIDE TOWN';
         document.getElementById('site-display').textContent = this.data.siteName;
     }
 
@@ -413,86 +410,15 @@ class Game {
         const c = document.getElementById('minimap-canvas');
         if (!c || !this._ready || !this.player || (this.state !== 'playing' && this.state !== 'riding')) return;
         const ctx = c.getContext('2d');
-        const w = c.width, h = c.height;
-        const sc = w / 480;  // larger city → slightly zoomed-out map
-        const cx = w / 2, cy = h / 2;
-
-        // 1. Grass background (warm green)
-        ctx.fillStyle = '#90c87a';
-        ctx.fillRect(0, 0, w, h);
-
-        // 2. Larger city concrete slab
-        ctx.fillStyle = '#a8b4b0';
-        ctx.fillRect(cx - 165 * sc, cy - 145 * sc, 330 * sc, 290 * sc);
-
-        // 3. River west of city slab
-        ctx.fillStyle = '#7ac4d0';
-        ctx.fillRect(cx - 194 * sc, cy - 150 * sc, 18 * sc, 300 * sc);
-
-        // 4. Few roads only (tree-avenue layout)
-        ctx.fillStyle = '#6a747c';
-        // Main Avenue N–S (X=0)
-        ctx.fillRect(cx - 5.5 * sc, cy - 135 * sc, 11 * sc, 270 * sc);
-        // Cross Boulevard E–W (Z=0)
-        ctx.fillRect(cx - 155 * sc, cy - 5 * sc, 310 * sc, 10 * sc);
-        // North Quiet Lane (Z=-90)
-        ctx.fillRect(cx - 145 * sc, cy - 94 * sc, 290 * sc, 8 * sc);
-        // South Quiet Lane (Z=90)
-        ctx.fillRect(cx - 145 * sc, cy + 86 * sc, 290 * sc, 8 * sc);
-
-        // Tree-line hint (green edges along main avenue)
-        ctx.fillStyle = 'rgba(90, 168, 80, 0.55)';
-        ctx.fillRect(cx - 8.5 * sc, cy - 135 * sc, 2.2 * sc, 270 * sc);
-        ctx.fillRect(cx + 6.3 * sc, cy - 135 * sc, 2.2 * sc, 270 * sc);
-
-        // 5. Central plaza
-        ctx.fillStyle = '#78b060';
-        ctx.beginPath();
-        ctx.arc(cx, cy, 14 * sc, 0, 6.28);
-        ctx.fill();
-        ctx.fillStyle = '#c8c4b8';
-        ctx.beginPath();
-        ctx.arc(cx, cy, 5.5 * sc, 0, 6.28);
-        ctx.fill();
-
-        // District labels
-        ctx.font = `bold ${Math.max(6, 6.5 * sc)}px sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.fillStyle = 'rgba(30,42,56,0.65)';
-        ctx.fillText('MAIN AVE', cx, cy - 50 * sc);
-        ctx.fillText('EAST BLOCK', cx + 90 * sc, cy - 40 * sc);
-        ctx.fillText('WEST BLOCK', cx - 90 * sc, cy + 35 * sc);
-        ctx.fillText('SOUTH LANE', cx, cy + 100 * sc);
-        ctx.fillText('NORTH LANE', cx, cy - 100 * sc);
-
-        // POI dots
-        this.interactables.forEach(item => {
-            const mx = cx + item.position.x * sc;
-            const my = cy + item.position.z * sc;
-            const col = POI_MAP_COLORS[item.type] || '#4a8';
-            ctx.fillStyle = col;
-            ctx.beginPath();
-            ctx.arc(mx, my, item.type === 'hq' ? 5 : 3.5, 0, 6.28);
-            ctx.fill();
-            if (item.mapLabel && ['hq', 'service', 'project', 'contact'].includes(item.type)) {
-                ctx.fillStyle = 'rgba(30,42,56,0.8)';
-                ctx.font = '7px sans-serif';
-                ctx.textAlign = 'left';
-                ctx.fillText(item.mapLabel, mx + 5, my + 2);
-            }
+        drawMinimap(ctx, {
+            player: {
+                x: this.player.position.x,
+                z: this.player.position.z,
+                rotationY: this.player.rotation?.y ?? 0,
+            },
+            pois: this.interactables || [],
+            worldSpan: 540,
         });
-
-        // Player dot (white with dark ring)
-        const px = cx + this.player.position.x * sc;
-        const py = cy + this.player.position.z * sc;
-        ctx.fillStyle = '#1e2a38';
-        ctx.beginPath();
-        ctx.arc(px, py, 5.5, 0, 6.28);
-        ctx.fill();
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.arc(px, py, 3.5, 0, 6.28);
-        ctx.fill();
     }
 
     _loop() {

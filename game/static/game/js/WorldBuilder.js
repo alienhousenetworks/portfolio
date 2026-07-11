@@ -30,11 +30,24 @@ import {
 // Thakur Colony : N–S at X= 55  (tall multi-storey alley — Kolkata photo 1)
 // Bose Colony   : N–S at X=-55  (low residential lane — photo 2)
 const ROAD = {
-    main:  { x: 0,   w: 15, z1: -160, z2: 160, sw: 2.8 },
-    cross: { z: 0,   w: 13, x1: -185, x2: 185, sw: 1.7 },
-    north: { z: -105, w: 11, x1: -175, x2: 175, sw: 1.6 },
-    south: { z: 105,  w: 11, x1: -175, x2: 175, sw: 1.6 },
-    // Named Bengali colonies (tight canyon, buildings close to road)
+    // Japanese-style avenue names
+    main:  {
+        x: 0, w: 15, z1: -160, z2: 160, sw: 2.8,
+        name: 'Sakura Dōri', nameJp: '桜通り',
+    },
+    cross: {
+        z: 0, w: 13, x1: -185, x2: 185, sw: 1.7,
+        name: 'Chūō Dōri', nameJp: '中央通り',
+    },
+    north: {
+        z: -105, w: 11, x1: -175, x2: 175, sw: 1.6,
+        name: 'Kita-machi', nameJp: '北町',
+    },
+    south: {
+        z: 105, w: 11, x1: -175, x2: 175, sw: 1.6,
+        name: 'Minami-dōri', nameJp: '南通り',
+    },
+    // Bengali colonies (tight canyon, buildings close to road)
     thakur: {
         x: 55, w: 6.0, z1: -135, z2: 135, sw: 0.9,
         style: 'thakur', name: 'Thakur Colony', nameBn: 'ঠাকুর কলোনী',
@@ -1654,20 +1667,20 @@ export class WorldBuilder {
         this.pois.push({
             position: new THREE.Vector3(55, 0, 40),
             type: 'explore',
-            name: 'Thakur Colony',
-            mapLabel: 'THAKUR',
+            name: 'ঠাকুর কলোনী',
+            mapLabel: 'ঠাকুর',
             data: {
-                name: 'Thakur Colony (ঠাকুর কলোনী)',
+                name: 'ঠাকুর কলোনী · Thakur Colony',
                 description: 'Narrow multi-storey Kolkata-style alley — balconies, green shutters, AC units, loudspeaker poles and tangled wires.',
             },
         });
         this.pois.push({
             position: new THREE.Vector3(-55, 0, -40),
             type: 'explore',
-            name: 'Bose Colony',
-            mapLabel: 'BOSE',
+            name: 'বোস কলোনী',
+            mapLabel: 'বোস',
             data: {
-                name: 'Bose Colony (বোস কলোনী)',
+                name: 'বোস কলোনী · Bose Colony',
                 description: 'Quiet low residential lane — terracotta walls, laundry lines, sitting plinths, manholes and parked bikes.',
             },
         });

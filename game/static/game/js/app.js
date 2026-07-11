@@ -11,11 +11,12 @@ import { CinematicIntro } from './CinematicIntro.js';
 import { TransitSystem } from './Vehicles.js';
 import { CitizenManager } from './Citizens.js';
 import { TransitRideController } from './TransitRide.js';
-import { DISTRICT_DEFS, MAP_LEGEND, POI_MAP_COLORS, getDistrictAt } from './Districts.js';
+import { MAP_LEGEND, getDistrictAt, getAreaDisplayName } from './Districts.js';
 import { getZoneAt, getZoneLabel } from './CityZones.js';
 import { TransitPicker } from './TransitPicker.js';
 import { EnvironmentSystem } from './EnvironmentSystem.js';
 import { MobileControls } from './MobileControls.js';
+import { drawMinimap } from './Minimap.js';
 
 class Game {
     constructor(data) {
@@ -370,10 +371,8 @@ class Game {
         if (this.state !== 'playing') return;
         const p = this.player.position;
         document.getElementById('coord-display').textContent = `${p.x.toFixed(0)}, ${p.z.toFixed(0)}`;
-        const district = getDistrictAt(p.x, p.z);
-        const zone = getZoneLabel(getZoneAt(p.x, p.z));
         document.getElementById('zone-display').textContent =
-            this.nearestTarget?.subtitle || (district.id !== 'downtown' ? district.label : zone).toUpperCase();
+            this.nearestTarget?.subtitle || getAreaDisplayName(p.x, p.z) || getZoneLabel(getZoneAt(p.x, p.z));
         document.getElementById('site-display').textContent = this.data.siteName;
     }
 
@@ -388,81 +387,15 @@ class Game {
     _minimap() {
         const c = document.getElementById('minimap-canvas');
         if (!c || !this._ready || !this.player || (this.state !== 'playing' && this.state !== 'riding')) return;
-        const ctx = c.getContext('2d');
-        const w = c.width, h = c.height, sc = w / 400;
-        const cx = w / 2, cy = h / 2;
-
-        // Soft green grass base
-        ctx.fillStyle = '#a6d88f';
-        ctx.fillRect(0, 0, w, h);
-
-        // Grid roads
-        ctx.strokeStyle = '#8a9498';
-        ctx.lineWidth = Math.max(2, WORLD.roadWidth * sc);
-        for (let i = -3; i <= 3; i++) {
-            const off = i * WORLD.roadSpacing * sc;
-            ctx.beginPath(); ctx.moveTo(cx + off, 0); ctx.lineTo(cx + off, h); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(0, cy + off); ctx.lineTo(w, cy + off); ctx.stroke();
-        }
-
-        // River (blue)
-        const rcx = cx + WORLD.riverX * sc;
-        ctx.fillStyle = '#5aabde';
-        ctx.fillRect(rcx - WORLD.riverWidth * sc / 2, 0, WORLD.riverWidth * sc, h);
-
-        // River center dashes
-        ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-        ctx.lineWidth = 1.2;
-        ctx.setLineDash([4, 4]);
-        ctx.beginPath();
-        ctx.moveTo(rcx, 0);
-        ctx.lineTo(rcx, h);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        Object.values(DISTRICT_DEFS).forEach(d => {
-            if (d.id === 'downtown') return;
-            const dx = cx + d.x * sc, dy = cy + d.z * sc, r = d.radius * sc;
-            ctx.fillStyle = d.color + '28';
-            ctx.beginPath();
-            ctx.arc(dx, dy, r, 0, 6.28);
-            ctx.fill();
-            ctx.strokeStyle = d.color + '80';
-            ctx.lineWidth = 1;
-            ctx.stroke();
-            ctx.fillStyle = d.color;
-            ctx.font = 'bold 8px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText(d.shortLabel, dx, dy + 3);
+        drawMinimap(c.getContext('2d'), {
+            player: {
+                x: this.player.position.x,
+                z: this.player.position.z,
+                rotationY: this.player.rotation?.y ?? 0,
+            },
+            pois: this.interactables || [],
+            worldSpan: 540,
         });
-
-        this.interactables.forEach(item => {
-            const mx = cx + item.position.x * sc;
-            const my = cy + item.position.z * sc;
-            const col = POI_MAP_COLORS[item.type] || '#4a8';
-            ctx.fillStyle = col;
-            ctx.beginPath();
-            ctx.arc(mx, my, item.type === 'hq' ? 5 : 3.5, 0, 6.28);
-            ctx.fill();
-            if (item.mapLabel && ['hq', 'service', 'project', 'contact'].includes(item.type)) {
-                ctx.fillStyle = 'rgba(30,42,56,0.8)';
-                ctx.font = '7px sans-serif';
-                ctx.textAlign = 'left';
-                ctx.fillText(item.mapLabel, mx + 5, my + 2);
-            }
-        });
-
-        // Player dot
-        const px = cx + this.player.position.x * sc;
-        const py = cy + this.player.position.z * sc;
-        ctx.fillStyle = '#1e2a38';
-        ctx.beginPath();
-        ctx.arc(px, py, 5.5, 0, 6.28);
-        ctx.fill();
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.arc(px, py, 3.5, 0, 6.28);
-        ctx.fill();
     }
 
     _loop() {
