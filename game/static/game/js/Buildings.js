@@ -362,41 +362,63 @@ function _upperStep(g, w, h, d, seed, wallCol, roofCol) {
     }
 }
 
-// ─── Colony / alley buildings (narrow street refs) ─────────────────────────
-// Tall multi-storey (image 1) and low residential (image 2), pastel toon.
+// ─── Bengali colony buildings (photo-matched detail) ───────────────────────
+// Thakur Colony = tall multi-storey Kolkata alley (image 1)
+// Bose Colony   = low residential lane (image 2)
 
-const COLONY = {
-    tallWalls: [
-        0xd4b8a8, // warm clay
-        0xc8d8e0, // faded blue
-        0xe8c8b0, // peach plaster
-        0xb8c4c8, // grey-blue
-        0xd8c0a0, // sand ochre
-        0xc0b0c8, // dusty lilac
+const THAKUR = {
+    // Weathered pastel façades matching photo 1
+    walls: [
+        0x5a9aaa, // faded teal-blue
+        0xe8d4a8, // cream yellow
+        0xc87860, // terracotta red
+        0xb8c8d0, // grey-blue plaster
+        0xd0b898, // warm sand
+        0x6a8898, // dusty blue
     ],
-    lowWalls: [
-        0xd8a878, // terracotta
-        0xc4a890, // mud plaster
-        0xb89070, // brown clay
-        0xe0b898, // peach
-        0xa88878, // dusty rose-brown
-    ],
-    accents: [0x48a888, 0xd46858, 0xe8c84a, 0x5a90c8, 0xc878a0],
+    ground: [0xc87058, 0xd8c8a8, 0x5a8890], // red shop / cream / blue base
+    shutter: [0x2d6b4f, 0x3a6070, 0x8a4038], // green / blue-grey / maroon
     balcony: 0xc8b8a0,
-    rail: 0x6a7078,
-    shutter: [0x3a7860, 0x486878, 0x8a5040, 0x5a6880],
+    lattice: 0xa89880,
+    rail: 0x5a6068,
+    ac: 0xd8dce0,
+    door: 0x3a5058,
+};
+
+const BOSE = {
+    walls: [
+        0xd49868, // terracotta plaster
+        0xc48858, // burnt orange
+        0xb88870, // dusty brown
+        0xe0b090, // peach clay
+        0x8a7870, // grey-brown
+        0xd8a878, // warm ochre
+    ],
+    wood: 0x6a4030,
+    eave: 0x8a5040,
+    shutter: 0x2a3038,
+    tin: 0x8a9098,
+    plinth: 0xc8b0a0,
 };
 
 /**
- * @param {'tall'|'low'} style
+ * @param {'thakur'|'bose'|'tall'|'low'} style
  * Local +Z is street-facing façade.
  */
-export function buildColonyBuilding(w, h, d, seed, style = 'tall') {
+export function buildColonyBuilding(w, h, d, seed, style = 'thakur') {
+    const tall = style === 'thakur' || style === 'tall';
+    return tall
+        ? _buildThakurBuilding(w, h, d, seed)
+        : _buildBoseBuilding(w, h, d, seed);
+}
+
+/** Thakur Colony — multi-storey ornate alley (photo 1) */
+function _buildThakurBuilding(w, h, d, seed) {
     const s = Math.abs(Math.round(seed)) % 997;
     const g = new THREE.Group();
-    const tall = style === 'tall';
-    const wallCol = pick(tall ? COLONY.tallWalls : COLONY.lowWalls, s);
-    const floors = Math.max(1, Math.floor(h / (tall ? 3.0 : 2.8)));
+    const wallCol = pick(THAKUR.walls, s);
+    const floors = Math.max(3, Math.floor(h / 3.0));
+    const floorH = h / floors;
 
     // Main body
     const body = toonMesh(new THREE.BoxGeometry(w, h, d), wallCol);
@@ -405,123 +427,280 @@ export function buildColonyBuilding(w, h, d, seed, style = 'tall') {
     body.mesh.receiveShadow = true;
     g.add(body.group);
 
-    // Flat parapet / terrace lip
-    const roofCol = pick(JP.roofs, s + 2);
-    const parapet = toonMesh(new THREE.BoxGeometry(w + 0.2, 0.35, d + 0.2), roofCol);
-    parapet.mesh.position.y = h + 0.18;
+    // Contrasting ground-floor shop band (red/cream corner shops in photo)
+    const gCol = pick(THAKUR.ground, s + 2);
+    const groundBand = toonMesh(new THREE.BoxGeometry(w + 0.08, floorH * 0.95, d + 0.08), gCol);
+    groundBand.mesh.position.y = floorH * 0.48;
+    g.add(groundBand.group);
+
+    // Parapet
+    const parapet = toonMesh(new THREE.BoxGeometry(w + 0.25, 0.4, d + 0.25), 0xb8a898);
+    parapet.mesh.position.y = h + 0.2;
     g.add(parapet.group);
 
-    // Floor bands
+    // Floor cornice lines
     for (let f = 1; f < floors; f++) {
-        const by = f * (h / floors);
-        if (by >= h - 0.3) break;
-        const band = toonMesh(
-            new THREE.BoxGeometry(w + 0.04, 0.1, d + 0.04),
-            0xb0a898,
+        const by = f * floorH;
+        const cornice = toonMesh(
+            new THREE.BoxGeometry(w + 0.12, 0.14, d + 0.12),
+            0xc8b8a8,
             { outline: false }
         );
-        band.mesh.position.y = by;
-        g.add(band.group);
+        cornice.mesh.position.y = by;
+        g.add(cornice.group);
     }
 
-    // Ground door + windows
-    const doorX = ((s % 2) - 0.5) * w * 0.25;
-    const door = toonMesh(new THREE.BoxGeometry(0.9, 2.1, 0.08), 0x3a4848, { outline: false });
-    door.mesh.position.set(doorX, 1.05, d / 2 + 0.03);
+    // Ground door with decorative frame (photo: ornate red doorway)
+    const doorX = ((s % 3) - 1) * w * 0.22;
+    if (s % 4 === 0) {
+        // Ornate shop frame
+        const frame = toonMesh(new THREE.BoxGeometry(1.4, 2.5, 0.12), 0xd8d0c8, { outline: false });
+        frame.mesh.position.set(doorX, 1.25, d / 2 + 0.04);
+        g.add(frame.group);
+        const arch = toonMesh(new THREE.BoxGeometry(1.5, 0.25, 0.1), 0xc87860, { outline: false });
+        arch.mesh.position.set(doorX, 2.45, d / 2 + 0.06);
+        g.add(arch.group);
+    }
+    const door = toonMesh(new THREE.BoxGeometry(0.85, 2.05, 0.08), THAKUR.door, { outline: false });
+    door.mesh.position.set(doorX, 1.05, d / 2 + 0.08);
     g.add(door.group);
 
-    // Windows per floor on street face
-    const cols = Math.max(1, Math.floor(w / 2.4));
+    // Green / colored window shutters + glass
+    const cols = Math.max(2, Math.floor(w / 2.2));
     for (let r = 1; r < floors; r++) {
-        const wy = r * (h / floors) + (h / floors) * 0.35;
-        if (wy >= h - 0.6) continue;
+        const wy = r * floorH + floorH * 0.4;
+        if (wy >= h - 0.5) continue;
         for (let c = 0; c < cols; c++) {
             const wx = -w / 2 + (c + 0.5) * (w / cols);
-            const shut = pick(COLONY.shutter, s + r + c);
-            const frame = toonMesh(new THREE.BoxGeometry(1.1, 1.2, 0.08), 0x2a3038, { outline: false });
-            frame.mesh.position.set(wx, wy, d / 2 + 0.02);
+            const shut = pick(THAKUR.shutter, s + r + c);
+
+            const frame = toonMesh(new THREE.BoxGeometry(1.15, 1.25, 0.08), 0x2a3038, { outline: false });
+            frame.mesh.position.set(wx, wy, d / 2 + 0.03);
             g.add(frame.group);
+
             const glass = new THREE.Mesh(
-                new THREE.BoxGeometry(0.85, 0.95, 0.05),
-                toonMat(0x7ac4d0, {
-                    transparent: true, opacity: 0.65,
-                    emissive: 0xffe0a0, emissiveIntensity: 0,
+                new THREE.BoxGeometry(0.9, 1.0, 0.05),
+                toonMat(0x6ab0c0, {
+                    transparent: true, opacity: 0.6,
+                    emissive: 0xffe8b0, emissiveIntensity: 0,
                 })
             );
-            glass.position.set(wx, wy, d / 2 + 0.04);
+            glass.position.set(wx, wy, d / 2 + 0.05);
             glass.userData.cityLight = 'window';
-            glass.userData.litAtNight = ((s + r + c) % 4) !== 0;
+            glass.userData.litAtNight = ((s + r + c) % 5) !== 0;
             glass.material.userData.cityLight = 'window';
             g.add(glass);
 
-            // Colored shutter strip
-            if ((s + c) % 2 === 0) {
-                const sh = toonMesh(new THREE.BoxGeometry(0.35, 0.95, 0.04), shut, { outline: false });
-                sh.mesh.position.set(wx - 0.35, wy, d / 2 + 0.06);
-                g.add(sh.group);
-            }
+            // Split shutters left/right (photo green casements)
+            const shL = toonMesh(new THREE.BoxGeometry(0.28, 1.0, 0.05), shut, { outline: false });
+            shL.mesh.position.set(wx - 0.38, wy, d / 2 + 0.07);
+            g.add(shL.group);
+            const shR = toonMesh(new THREE.BoxGeometry(0.28, 1.0, 0.05), shut, { outline: false });
+            shR.mesh.position.set(wx + 0.38, wy, d / 2 + 0.07);
+            g.add(shR.group);
         }
     }
 
-    // Balconies (tall style — photo 1)
-    if (tall && floors >= 2) {
-        for (let r = 1; r < Math.min(floors, 4); r++) {
-            if ((s + r) % 2 === 0) continue;
-            const by = r * (h / floors) + 0.2;
-            const bw = Math.min(w * 0.55, 4.2);
-            const bal = toonMesh(new THREE.BoxGeometry(bw, 0.12, 0.9), COLONY.balcony);
-            bal.mesh.position.set(((s + r) % 2 === 0 ? -1 : 1) * w * 0.12, by, d / 2 + 0.5);
-            g.add(bal.group);
-            // Rail
-            const rail = toonMesh(new THREE.BoxGeometry(bw, 0.55, 0.06), COLONY.rail, { outline: false });
-            rail.mesh.position.set(((s + r) % 2 === 0 ? -1 : 1) * w * 0.12, by + 0.3, d / 2 + 0.9);
-            g.add(rail.group);
+    // Ornate balconies with lattice rails (photo signature)
+    for (let r = 1; r < Math.min(floors, 5); r++) {
+        if ((s + r) % 3 === 2) continue;
+        const by = r * floorH + 0.15;
+        const bw = Math.min(w * 0.7, 5.0);
+        const bx = ((s + r) % 2 === 0 ? -0.15 : 0.15) * w;
+
+        // Floor slab
+        const slab = toonMesh(new THREE.BoxGeometry(bw, 0.14, 1.15), THAKUR.balcony);
+        slab.mesh.position.set(bx, by, d / 2 + 0.6);
+        slab.mesh.castShadow = true;
+        g.add(slab.group);
+
+        // Front lattice rail (barred balcony look)
+        const railH = 0.75;
+        const posts = 6;
+        for (let p = 0; p <= posts; p++) {
+            const px = bx - bw / 2 + (p / posts) * bw;
+            const post = toonMesh(new THREE.BoxGeometry(0.05, railH, 0.05), THAKUR.lattice, { outline: false });
+            post.mesh.position.set(px, by + railH / 2, d / 2 + 1.1);
+            g.add(post.group);
         }
+        // Horizontal bars
+        for (let b = 0; b < 3; b++) {
+            const bar = toonMesh(new THREE.BoxGeometry(bw, 0.04, 0.04), THAKUR.rail, { outline: false });
+            bar.mesh.position.set(bx, by + 0.2 + b * 0.22, d / 2 + 1.1);
+            g.add(bar.group);
+        }
+        // Side rails
+        [-1, 1].forEach(side => {
+            const sideR = toonMesh(new THREE.BoxGeometry(0.05, railH, 1.0), THAKUR.rail, { outline: false });
+            sideR.mesh.position.set(bx + side * bw / 2, by + railH / 2, d / 2 + 0.65);
+            g.add(sideR.group);
+        });
     }
 
-    // AC boxes on façade
-    if (tall) {
-        for (let i = 0; i < 2; i++) {
-            const ac = toonMesh(new THREE.BoxGeometry(0.7, 0.4, 0.35), 0xd0d4d0, { outline: false });
-            ac.mesh.position.set(
-                -w / 2 + 0.6 + i * 1.4,
-                3.2 + i * 2.8,
-                d / 2 + 0.25
+    // AC outdoor units (photo left wall)
+    const acCount = 1 + (s % 3);
+    for (let i = 0; i < acCount; i++) {
+        const ac = toonMesh(new THREE.BoxGeometry(0.85, 0.5, 0.4), THAKUR.ac, { outline: false });
+        ac.mesh.position.set(
+            -w / 2 + 0.55 + (i % 2) * 1.6,
+            2.8 + i * 2.6,
+            d / 2 + 0.28
+        );
+        g.add(ac.group);
+        // Grill lines
+        const grill = toonMesh(new THREE.BoxGeometry(0.7, 0.12, 0.05), 0x9aa0a8, { outline: false });
+        grill.mesh.position.set(
+            -w / 2 + 0.55 + (i % 2) * 1.6,
+            2.8 + i * 2.6,
+            d / 2 + 0.48
+        );
+        g.add(grill.group);
+    }
+
+    // Wall poster panel (photo: portrait poster near door)
+    if (s % 3 === 1) {
+        const poster = toonMesh(new THREE.BoxGeometry(0.7, 0.9, 0.04), 0xf0e8d8, { outline: false });
+        poster.mesh.position.set(-doorX * 0.8, 1.4, d / 2 + 0.1);
+        g.add(poster.group);
+        const face = toonMesh(new THREE.BoxGeometry(0.45, 0.55, 0.03), 0xc8a888, { outline: false });
+        face.mesh.position.set(-doorX * 0.8, 1.5, d / 2 + 0.13);
+        g.add(face.group);
+    }
+
+    // Drainpipe
+    const pipe = toonMesh(new THREE.BoxGeometry(0.08, h * 0.9, 0.08), 0x7a8088, { outline: false });
+    pipe.mesh.position.set(w / 2 - 0.15, h * 0.45, d / 2 - 0.1);
+    g.add(pipe.group);
+
+    // Raised plinth
+    const plinth = toonMesh(new THREE.BoxGeometry(w + 0.35, 0.4, 0.6), 0xc0b8ac, { outline: false });
+    plinth.mesh.position.set(0, 0.2, d / 2 + 0.28);
+    g.add(plinth.group);
+
+    return g;
+}
+
+/** Bose Colony — low residential lane (photo 2) */
+function _buildBoseBuilding(w, h, d, seed) {
+    const s = Math.abs(Math.round(seed)) % 997;
+    const g = new THREE.Group();
+    const wallCol = pick(BOSE.walls, s);
+    const floors = Math.max(1, Math.min(3, Math.floor(h / 2.9)));
+    const floorH = h / Math.max(floors, 1);
+
+    // Main body
+    const body = toonMesh(new THREE.BoxGeometry(w, h, d), wallCol);
+    body.mesh.position.y = h / 2;
+    body.mesh.castShadow = true;
+    body.mesh.receiveShadow = true;
+    g.add(body.group);
+
+    // Carved wooden eave / chhajja (photo left overhang)
+    if (s % 2 === 0) {
+        const eave = toonMesh(new THREE.BoxGeometry(w + 0.4, 0.18, 1.3), BOSE.eave);
+        eave.mesh.position.set(0, h * 0.55, d / 2 + 0.55);
+        eave.mesh.rotation.x = 0.12;
+        g.add(eave.group);
+        // Decorative underside beams
+        for (let i = 0; i < 4; i++) {
+            const beam = toonMesh(
+                new THREE.BoxGeometry(0.1, 0.12, 1.0),
+                BOSE.wood,
+                { outline: false }
             );
-            g.add(ac.group);
+            beam.mesh.position.set(-w / 2 + 0.5 + i * (w / 3.5), h * 0.52, d / 2 + 0.45);
+            g.add(beam.group);
         }
     }
 
-    // Laundry poles (low residential — photo 2)
-    if (!tall && s % 2 === 0) {
-        const pole = toonMesh(new THREE.BoxGeometry(0.06, 1.4, 0.06), 0x8a9098, { outline: false });
-        pole.mesh.position.set(w * 0.3, h + 0.9, d / 2 - 0.2);
-        g.add(pole.group);
-        const clothes = [0xf2b0c5, 0x48d2c9, 0xf5c842, 0xffffff];
-        for (let i = 0; i < 3; i++) {
+    // Tin / corrugated roof edge
+    const tin = toonMesh(new THREE.BoxGeometry(w + 0.3, 0.12, d + 0.4), BOSE.tin);
+    tin.mesh.position.y = h + 0.08;
+    g.add(tin.group);
+    // Ridge
+    const ridge = toonMesh(new THREE.BoxGeometry(w * 0.3, 0.35, 0.2), BOSE.wood, { outline: false });
+    ridge.mesh.position.set(0, h + 0.3, 0);
+    g.add(ridge.group);
+
+    // Dark shuttered shop / room fronts
+    const shutW = w * 0.55;
+    const shut = toonMesh(new THREE.BoxGeometry(shutW, 1.8, 0.1), BOSE.shutter, { outline: false });
+    shut.mesh.position.set(-w * 0.1, 1.0, d / 2 + 0.04);
+    g.add(shut.group);
+    // Door
+    const door = toonMesh(new THREE.BoxGeometry(0.75, 1.9, 0.08), 0x3a3028, { outline: false });
+    door.mesh.position.set(w * 0.28, 0.95, d / 2 + 0.05);
+    g.add(door.group);
+
+    // Upper windows (if multi-floor)
+    if (floors >= 2) {
+        const cols = Math.max(1, Math.floor(w / 2.5));
+        for (let c = 0; c < cols; c++) {
+            const wx = -w / 2 + (c + 0.5) * (w / cols);
+            const wy = floorH + floorH * 0.4;
+            const frame = toonMesh(new THREE.BoxGeometry(1.0, 1.1, 0.07), 0x2a3038, { outline: false });
+            frame.mesh.position.set(wx, wy, d / 2 + 0.03);
+            g.add(frame.group);
+            const glass = new THREE.Mesh(
+                new THREE.BoxGeometry(0.8, 0.9, 0.04),
+                toonMat(0x6ab0c0, {
+                    transparent: true, opacity: 0.55,
+                    emissive: 0xffe0a0, emissiveIntensity: 0,
+                })
+            );
+            glass.position.set(wx, wy, d / 2 + 0.05);
+            glass.userData.cityLight = 'window';
+            glass.userData.litAtNight = true;
+            glass.material.userData.cityLight = 'window';
+            g.add(glass);
+        }
+    }
+
+    // Laundry on façade / roof edge (photo)
+    if (s % 2 === 0) {
+        const clothes = [0xf2b0c5, 0x48d2c9, 0xf8f0e8, 0xf5c842, 0xd08080];
+        for (let i = 0; i < 4; i++) {
             const cloth = toonMesh(
-                new THREE.BoxGeometry(0.55, 0.7, 0.04),
+                new THREE.BoxGeometry(0.45 + (i % 2) * 0.15, 0.7 + (i % 3) * 0.1, 0.04),
                 clothes[i % clothes.length],
                 { outline: false }
             );
-            cloth.mesh.position.set(w * 0.3 - 0.7 + i * 0.55, h + 0.5, d / 2 + 0.15);
-            cloth.mesh.rotation.z = (i - 1) * 0.08;
+            cloth.mesh.position.set(
+                -w / 2 + 0.6 + i * 0.55,
+                1.6 + (i % 2) * 0.3,
+                d / 2 + 0.2
+            );
+            cloth.mesh.rotation.z = (i - 1.5) * 0.06;
             g.add(cloth.group);
         }
     }
 
-    // Shop accent strip on ground floor (tall corner feel)
-    if (tall && s % 3 === 0) {
-        const acc = pick(COLONY.accents, s);
-        const strip = toonMesh(new THREE.BoxGeometry(w + 0.05, 0.25, d + 0.05), acc, { outline: false });
-        strip.mesh.position.y = 2.9;
-        g.add(strip.group);
+    // Sitting plinth / ghat-style raised seat along street (photo left)
+    const seat = toonMesh(new THREE.BoxGeometry(w * 0.7, 0.55, 0.85), BOSE.plinth);
+    seat.mesh.position.set(-w * 0.1, 0.28, d / 2 + 0.5);
+    seat.mesh.castShadow = true;
+    g.add(seat.group);
+    // Step
+    const step = toonMesh(new THREE.BoxGeometry(w * 0.5, 0.22, 0.4), 0xb8a898, { outline: false });
+    step.mesh.position.set(-w * 0.1, 0.11, d / 2 + 0.95);
+    g.add(step.group);
+
+    // Metal window grills on upper (photo mid buildings)
+    if (s % 3 === 1 && floors >= 2) {
+        const grill = toonMesh(new THREE.BoxGeometry(w * 0.6, 1.0, 0.06), 0x3a4850, { outline: false });
+        grill.mesh.position.set(0, floorH + 0.9, d / 2 + 0.08);
+        g.add(grill.group);
+        for (let i = 0; i < 5; i++) {
+            const bar = toonMesh(new THREE.BoxGeometry(0.04, 0.9, 0.04), 0x5a6870, { outline: false });
+            bar.mesh.position.set(-w * 0.25 + i * 0.22, floorH + 0.9, d / 2 + 0.12);
+            g.add(bar.group);
+        }
     }
 
-    // Raised plinth / sidewalk edge (both styles)
-    const plinth = toonMesh(new THREE.BoxGeometry(w + 0.3, 0.35, 0.55), 0xc8c0b4, { outline: false });
-    plinth.mesh.position.set(0, 0.18, d / 2 + 0.25);
-    g.add(plinth.group);
+    // Drainpipe
+    const pipe = toonMesh(new THREE.BoxGeometry(0.07, h * 0.85, 0.07), 0x7a8088, { outline: false });
+    pipe.mesh.position.set(w / 2 - 0.12, h * 0.42, d / 2 - 0.08);
+    g.add(pipe.group);
 
     return g;
 }

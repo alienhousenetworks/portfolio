@@ -243,6 +243,7 @@ export class TerrainSystem {
         pos.needsUpdate = true;
         groundGeo.computeVertexNormals();
 
+        // Outside city: solid grass. Under city slab this mesh is covered by concrete lot.
         const grassCol = PALETTE.grass ?? 0x90c87a;
         const baseMat = new THREE.MeshToonMaterial({
             color: grassCol,
@@ -250,7 +251,8 @@ export class TerrainSystem {
         });
 
         const baseMesh = new THREE.Mesh(groundGeo, baseMat);
-        baseMesh.position.y = 0;
+        // Slightly below city concrete / roads so grey surfaces win in town
+        baseMesh.position.y = -0.02;
         baseMesh.receiveShadow = true;
         baseMesh.name = 'terrainGrass';
         scene.add(baseMesh);

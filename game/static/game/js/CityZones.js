@@ -58,9 +58,9 @@ export function getZoneAt(x, z) {
     if (Math.hypot(x - 20, z + 255) < 100) return ZONE_TYPES.HILLSIDE;
     // Explore: river gorge (west of bridges)
     if (Math.hypot(x + 280, z - 15) < 110) return ZONE_TYPES.WATERFRONT;
-    // Colony alleys
-    if (Math.abs(x - 55) < 12 && Math.abs(z) < 130) return ZONE_TYPES.TRADITIONAL;
-    if (Math.abs(x + 55) < 12 && Math.abs(z) < 130) return ZONE_TYPES.TRADITIONAL;
+    // Thakur Colony (east tall alley) / Bose Colony (west low lane)
+    if (Math.abs(x - 55) < 14 && Math.abs(z) < 140) return ZONE_TYPES.TRADITIONAL;
+    if (Math.abs(x + 55) < 14 && Math.abs(z) < 140) return ZONE_TYPES.TRADITIONAL;
     // River west of city slab
     if (x < (WORLD.riverX ?? -180) + 18 && az < 180) return ZONE_TYPES.WATERFRONT;
     if (z > 220 && ax < 100) return ZONE_TYPES.BEACH;
