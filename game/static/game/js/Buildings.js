@@ -402,14 +402,328 @@ const BOSE = {
 };
 
 /**
- * @param {'thakur'|'bose'|'tall'|'low'} style
+ * @param {'thakur'|'bose'|'sukumar'|'tall'|'low'} style
  * Local +Z is street-facing façade.
  */
 export function buildColonyBuilding(w, h, d, seed, style = 'thakur') {
+    if (style === 'sukumar') return _buildSukumarBuilding(w, h, d, seed);
     const tall = style === 'thakur' || style === 'tall';
     return tall
         ? _buildThakurBuilding(w, h, d, seed)
         : _buildBoseBuilding(w, h, d, seed);
+}
+
+// ─── Sukumar Roy Colony (photo 1752224140 — white Kolkata heritage) ────────
+const SUKUMAR = {
+    walls: [
+        0xf2f0ec, // fresh white plaster
+        0xe8e4dc, // warm off-white
+        0xdcd8d0, // aged cream
+        0xe0e8e8, // cool white-blue
+        0xf0e8e0, // ivory
+        0xc8c4bc, // grey-white weathered
+    ],
+    trim: 0xe8e4d8,
+    shutter: [0x8a9a8a, 0x6a7a70, 0xa89870, 0x5a7068], // muted green / olive / brown-green
+    wood: 0x8a6a48,
+    rail: 0xb0a898,
+    mold: 0xd8d0c4,
+    mural: 0x2a2a2a,
+    door: 0xd8d4cc,
+    curbBlue: 0x4a90c8,
+};
+
+/**
+ * White colonial / Art-Deco Kolkata house — variants by seed.
+ * Variants: corner · pilaster · mural · arched · gallery
+ */
+function _buildSukumarBuilding(w, h, d, seed) {
+    const s = Math.abs(Math.round(seed)) % 997;
+    const variant = s % 5; // 0 corner, 1 pilaster, 2 mural, 3 arched, 4 gallery
+    const g = new THREE.Group();
+    const wallCol = pick(SUKUMAR.walls, s);
+    const floors = Math.max(2, Math.min(3, Math.floor(h / 3.4)));
+    const floorH = h / floors;
+
+    // Main body (slightly taller ground floor like photo)
+    const body = toonMesh(new THREE.BoxGeometry(w, h, d), wallCol);
+    body.mesh.position.y = h / 2;
+    body.mesh.castShadow = true;
+    body.mesh.receiveShadow = true;
+    g.add(body.group);
+
+    // Cornice lines between floors
+    for (let f = 1; f < floors; f++) {
+        const band = toonMesh(
+            new THREE.BoxGeometry(w + 0.15, 0.16, d + 0.15),
+            SUKUMAR.mold,
+            { outline: false }
+        );
+        band.mesh.position.y = f * floorH;
+        g.add(band.group);
+    }
+
+    // Roof parapet with decorative top (photo: stepped cornice)
+    const parapet = toonMesh(new THREE.BoxGeometry(w + 0.35, 0.55, d + 0.35), SUKUMAR.trim);
+    parapet.mesh.position.y = h + 0.28;
+    g.add(parapet.group);
+    // Small top rail posts along roof
+    const posts = Math.max(4, Math.floor(w / 1.4));
+    for (let i = 0; i <= posts; i++) {
+        const px = -w / 2 + (i / posts) * w;
+        const p = toonMesh(new THREE.BoxGeometry(0.12, 0.45, 0.12), SUKUMAR.rail, { outline: false });
+        p.mesh.position.set(px, h + 0.72, d / 2 + 0.05);
+        g.add(p.group);
+    }
+
+    // ── Variant-specific façade ──────────────────────────────────────────
+    if (variant === 0) {
+        _sukumarCorner(g, w, h, d, s, floorH, floors);
+    } else if (variant === 1) {
+        _sukumarPilasters(g, w, h, d, s, floorH, floors);
+    } else if (variant === 2) {
+        _sukumarMural(g, w, h, d, s, floorH, floors);
+    } else if (variant === 3) {
+        _sukumarArched(g, w, h, d, s, floorH, floors);
+    } else {
+        _sukumarGallery(g, w, h, d, s, floorH, floors);
+    }
+
+    // Shared: green shutters / windows on upper floors
+    _sukumarWindows(g, w, h, d, s, floorH, floors, variant);
+
+    // Raised plinth / steps (photo corner steps)
+    const plinth = toonMesh(new THREE.BoxGeometry(w + 0.4, 0.45, 0.7), 0xc8c4bc, { outline: false });
+    plinth.mesh.position.set(0, 0.22, d / 2 + 0.3);
+    g.add(plinth.group);
+    if (variant === 0 || s % 3 === 0) {
+        for (let i = 0; i < 3; i++) {
+            const step = toonMesh(
+                new THREE.BoxGeometry(1.4 - i * 0.15, 0.14, 0.4),
+                0xb8b4ac,
+                { outline: false }
+            );
+            step.mesh.position.set(0, 0.08 + i * 0.14, d / 2 + 0.55 + i * 0.15);
+            g.add(step.group);
+        }
+    }
+
+    // Wires / AC clutter on some variants
+    if (s % 2 === 0) {
+        const ac = toonMesh(new THREE.BoxGeometry(0.7, 0.4, 0.35), 0xd0d4d0, { outline: false });
+        ac.mesh.position.set(w / 2 - 0.5, floorH + 1.2, d / 2 + 0.2);
+        g.add(ac.group);
+    }
+
+    return g;
+}
+
+function _sukumarWindows(g, w, h, d, s, floorH, floors, variant) {
+    const cols = Math.max(2, Math.floor(w / 2.3));
+    for (let r = 0; r < floors; r++) {
+        const wy = r * floorH + floorH * (r === 0 ? 0.55 : 0.45);
+        if (wy >= h - 0.5) continue;
+        for (let c = 0; c < cols; c++) {
+            // Skip center ground for door
+            if (r === 0 && Math.abs(c - (cols - 1) / 2) < 0.6 && variant !== 2) continue;
+            const wx = -w / 2 + (c + 0.5) * (w / cols);
+            const shut = pick(SUKUMAR.shutter, s + r + c);
+
+            // Frame
+            const frame = toonMesh(new THREE.BoxGeometry(1.05, 1.35, 0.08), 0x3a4048, { outline: false });
+            frame.mesh.position.set(wx, wy, d / 2 + 0.03);
+            g.add(frame.group);
+
+            // Louvered shutters (photo)
+            const shL = toonMesh(new THREE.BoxGeometry(0.42, 1.2, 0.06), shut, { outline: false });
+            shL.mesh.position.set(wx - 0.22, wy, d / 2 + 0.08);
+            g.add(shL.group);
+            const shR = toonMesh(new THREE.BoxGeometry(0.42, 1.2, 0.06), shut, { outline: false });
+            shR.mesh.position.set(wx + 0.22, wy, d / 2 + 0.08);
+            g.add(shR.group);
+
+            // Horizontal louver lines
+            for (let L = 0; L < 5; L++) {
+                const louv = toonMesh(
+                    new THREE.BoxGeometry(0.38, 0.04, 0.03),
+                    0x5a6058,
+                    { outline: false }
+                );
+                louv.mesh.position.set(wx - 0.22, wy - 0.45 + L * 0.22, d / 2 + 0.12);
+                g.add(louv.group);
+            }
+
+            // Occasional open brown wooden shutter (photo bottom right)
+            if ((s + c + r) % 7 === 0) {
+                const wood = toonMesh(new THREE.BoxGeometry(0.5, 1.15, 0.08), SUKUMAR.wood, { outline: false });
+                wood.mesh.position.set(wx + 0.55, wy, d / 2 + 0.15);
+                wood.mesh.rotation.y = 0.55;
+                g.add(wood.group);
+            }
+        }
+    }
+
+    // Ground floor door (cream)
+    if (variant !== 2) {
+        const door = toonMesh(new THREE.BoxGeometry(1.0, 2.15, 0.1), SUKUMAR.door, { outline: false });
+        door.mesh.position.set(0, 1.2, d / 2 + 0.06);
+        g.add(door.group);
+        // Frame mold
+        const df = toonMesh(new THREE.BoxGeometry(1.25, 2.35, 0.06), SUKUMAR.mold, { outline: false });
+        df.mesh.position.set(0, 1.25, d / 2 + 0.02);
+        g.add(df.group);
+    }
+}
+
+/** Chamfered corner building with upper balcony (photo hero) */
+function _sukumarCorner(g, w, h, d, s, floorH, floors) {
+    // Chamfer cut suggestion: angled corner panel
+    const chamfer = toonMesh(new THREE.BoxGeometry(1.6, h * 0.95, 1.6), pick(SUKUMAR.walls, s + 1));
+    chamfer.mesh.position.set(w / 2 - 0.3, h * 0.48, d / 2 - 0.3);
+    chamfer.mesh.rotation.y = Math.PI / 4;
+    g.add(chamfer.group);
+
+    // Corner balcony on 1st floor
+    const balW = Math.min(w * 0.55, 4.5);
+    const bal = toonMesh(new THREE.BoxGeometry(balW, 0.14, 1.2), SUKUMAR.rail);
+    bal.mesh.position.set(0, floorH + 0.1, d / 2 + 0.65);
+    g.add(bal.group);
+    // Balcony posts + rail
+    for (let i = 0; i <= 5; i++) {
+        const px = -balW / 2 + (i / 5) * balW;
+        const post = toonMesh(new THREE.BoxGeometry(0.08, 0.85, 0.08), SUKUMAR.trim, { outline: false });
+        post.mesh.position.set(px, floorH + 0.55, d / 2 + 1.15);
+        g.add(post.group);
+    }
+    const topR = toonMesh(new THREE.BoxGeometry(balW, 0.1, 0.1), SUKUMAR.trim, { outline: false });
+    topR.mesh.position.set(0, floorH + 0.95, d / 2 + 1.15);
+    g.add(topR.group);
+
+    // Decorative pilasters on front
+    [-w * 0.35, w * 0.35].forEach(px => {
+        const pil = toonMesh(new THREE.BoxGeometry(0.35, h * 0.9, 0.2), SUKUMAR.mold, { outline: false });
+        pil.mesh.position.set(px, h * 0.45, d / 2 + 0.05);
+        g.add(pil.group);
+    });
+}
+
+/** Vertical pilasters + molded panels */
+function _sukumarPilasters(g, w, h, d, s, floorH, floors) {
+    const n = 3 + (s % 2);
+    for (let i = 0; i < n; i++) {
+        const px = -w / 2 + ((i + 0.5) / n) * w;
+        const pil = toonMesh(new THREE.BoxGeometry(0.32, h * 0.92, 0.18), SUKUMAR.mold, { outline: false });
+        pil.mesh.position.set(px, h * 0.46, d / 2 + 0.04);
+        g.add(pil.group);
+        // Capital
+        const cap = toonMesh(new THREE.BoxGeometry(0.45, 0.2, 0.25), SUKUMAR.trim, { outline: false });
+        cap.mesh.position.set(px, h * 0.9, d / 2 + 0.06);
+        g.add(cap.group);
+    }
+    // Base molding
+    const base = toonMesh(new THREE.BoxGeometry(w + 0.1, 0.35, 0.25), SUKUMAR.mold, { outline: false });
+    base.mesh.position.set(0, 0.4, d / 2 + 0.08);
+    g.add(base.group);
+}
+
+/** Mural wall — Sukumar Ray caricature vibe (stylized black figures) */
+function _sukumarMural(g, w, h, d, s, floorH, floors) {
+    // Slightly darker wall wash
+    const wash = toonMesh(
+        new THREE.BoxGeometry(w * 0.95, h * 0.7, 0.06),
+        0xe8e4dc,
+        { outline: false }
+    );
+    wash.mesh.position.set(0, h * 0.5, d / 2 + 0.04);
+    g.add(wash.group);
+
+    // Tall figure with "telescope" (simple toon shapes)
+    const body = toonMesh(new THREE.BoxGeometry(0.7, 2.2, 0.08), SUKUMAR.mural, { outline: false });
+    body.mesh.position.set(w * 0.15, floorH + 1.4, d / 2 + 0.1);
+    g.add(body.group);
+    const head = toonMesh(new THREE.SphereGeometry(0.35, 8, 6), SUKUMAR.mural, { outline: false });
+    head.mesh.position.set(w * 0.15, floorH + 2.7, d / 2 + 0.1);
+    g.add(head.group);
+    // Telescope
+    const scope = toonMesh(new THREE.BoxGeometry(1.4, 0.12, 0.12), SUKUMAR.mural, { outline: false });
+    scope.mesh.position.set(w * 0.15 + 0.7, floorH + 2.5, d / 2 + 0.12);
+    scope.mesh.rotation.z = -0.25;
+    g.add(scope.group);
+
+    // Small figure
+    const kid = toonMesh(new THREE.BoxGeometry(0.45, 1.3, 0.08), SUKUMAR.mural, { outline: false });
+    kid.mesh.position.set(-w * 0.25, floorH + 0.9, d / 2 + 0.1);
+    g.add(kid.group);
+    const kidH = toonMesh(new THREE.SphereGeometry(0.25, 6, 6), SUKUMAR.mural, { outline: false });
+    kidH.mesh.position.set(-w * 0.25, floorH + 1.7, d / 2 + 0.1);
+    g.add(kidH.group);
+
+    // Bengali text bars (abstract lines = lettering blocks)
+    for (let i = 0; i < 3; i++) {
+        const line = toonMesh(
+            new THREE.BoxGeometry(1.2 + i * 0.15, 0.12, 0.04),
+            SUKUMAR.mural,
+            { outline: false }
+        );
+        line.mesh.position.set(w * 0.28, floorH + 0.5 + i * 0.28, d / 2 + 0.1);
+        g.add(line.group);
+    }
+}
+
+/** Arched ground openings like heritage shop-houses */
+function _sukumarArched(g, w, h, d, s, floorH, floors) {
+    const arches = 2 + (s % 2);
+    for (let i = 0; i < arches; i++) {
+        const ax = -w / 2 + ((i + 0.5) / arches) * w;
+        // Arch frame
+        const frame = toonMesh(new THREE.BoxGeometry(1.5, 2.4, 0.12), SUKUMAR.mold, { outline: false });
+        frame.mesh.position.set(ax, 1.35, d / 2 + 0.05);
+        g.add(frame.group);
+        // Arch top (half cylinder)
+        const arch = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.75, 0.75, 0.14, 12, 1, false, 0, Math.PI),
+            toonMat(SUKUMAR.mold)
+        );
+        arch.rotation.z = Math.PI / 2;
+        arch.rotation.y = Math.PI / 2;
+        arch.position.set(ax, 2.55, d / 2 + 0.05);
+        g.add(arch);
+        // Dark opening
+        const open = toonMesh(new THREE.BoxGeometry(1.1, 1.9, 0.08), 0x2a3038, { outline: false });
+        open.mesh.position.set(ax, 1.15, d / 2 + 0.08);
+        g.add(open.group);
+    }
+    // Upper string course
+    const course = toonMesh(new THREE.BoxGeometry(w + 0.1, 0.2, 0.22), SUKUMAR.trim, { outline: false });
+    course.mesh.position.set(0, floorH, d / 2 + 0.06);
+    g.add(course.group);
+}
+
+/** Long gallery balcony across upper floor */
+function _sukumarGallery(g, w, h, d, s, floorH, floors) {
+    const bal = toonMesh(new THREE.BoxGeometry(w * 0.92, 0.12, 1.1), SUKUMAR.rail);
+    bal.mesh.position.set(0, floorH + 0.08, d / 2 + 0.55);
+    g.add(bal.group);
+    const n = Math.max(5, Math.floor(w / 1.1));
+    for (let i = 0; i <= n; i++) {
+        const px = -w * 0.45 + (i / n) * w * 0.9;
+        const post = toonMesh(new THREE.BoxGeometry(0.07, 0.8, 0.07), SUKUMAR.trim, { outline: false });
+        post.mesh.position.set(px, floorH + 0.5, d / 2 + 1.0);
+        g.add(post.group);
+    }
+    const rail = toonMesh(new THREE.BoxGeometry(w * 0.92, 0.08, 0.08), SUKUMAR.trim, { outline: false });
+    rail.mesh.position.set(0, floorH + 0.88, d / 2 + 1.0);
+    g.add(rail.group);
+    // Ground rusticated panels
+    for (let i = 0; i < 3; i++) {
+        const panel = toonMesh(
+            new THREE.BoxGeometry(w * 0.28, floorH * 0.7, 0.08),
+            SUKUMAR.mold,
+            { outline: false }
+        );
+        panel.mesh.position.set(-w * 0.3 + i * w * 0.3, floorH * 0.4, d / 2 + 0.04);
+        g.add(panel.group);
+    }
 }
 
 /** Thakur Colony — multi-storey ornate alley (photo 1) */

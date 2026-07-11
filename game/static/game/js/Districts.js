@@ -128,6 +128,19 @@ export const DISTRICT_DEFS = {
         color: '#d49868',
         groundColor: 0xc4a890,
     },
+    /** Bengali colony — white Kolkata heritage (Sukumar Ray) */
+    sukumar: {
+        id: 'sukumar',
+        label: 'সুকুমার রায় কলোনী',
+        shortLabel: 'SUKUMAR',
+        mapLabel: 'সুকুমার',
+        mapSub: 'Sukumar Roy',
+        x: 115,
+        z: 0,
+        radius: 55,
+        color: '#e8e4dc',
+        groundColor: 0xf0ece4,
+    },
 };
 
 /**
@@ -225,6 +238,21 @@ export const MAP_ROADS = [
         color: '#5a5048',
         showWalk: false,
     },
+    {
+        id: 'sukumar',
+        name: 'Sukumar Roy Colony',
+        mapLabel: 'সুকুমার',
+        mapSub: 'Roy Colony',
+        axis: 'ns',
+        x: 115,
+        w: 7.2,
+        z1: -120,
+        z2: 120,
+        labelX: 132,
+        labelZ: 25,
+        color: '#5a5854',
+        showWalk: true,
+    },
 ];
 
 export const MAP_LEGEND = [
@@ -254,6 +282,7 @@ export function getAreaDisplayName(x, z) {
     const d = getDistrictAt(x, z);
     if (d.id === 'thakur') return 'ঠাকুর কলোনী · Thakur Colony';
     if (d.id === 'bose') return 'বোস কলোনী · Bose Colony';
+    if (d.id === 'sukumar') return 'সুকুমার রায় কলোনী · Sukumar Roy Colony';
     if (d.mapLabel && d.mapSub) return `${d.mapLabel} · ${d.mapSub}`;
     if (d.mapLabel) return d.mapLabel;
     return d.label;

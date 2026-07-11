@@ -56,6 +56,11 @@ const ROAD = {
         x: -55, w: 5.6, z1: -135, z2: 135, sw: 1.05,
         style: 'bose', name: 'Bose Colony', nameBn: 'বোস কলোনী',
     },
+    // Sukumar Roy Colony — white Kolkata heritage (photo 1752224140)
+    sukumar: {
+        x: 115, w: 7.2, z1: -120, z2: 120, sw: 1.25,
+        style: 'sukumar', name: 'Sukumar Roy Colony', nameBn: 'সুকুমার রায় কলোনী',
+    },
     // legacy aliases
     get colonyTall() { return this.thakur; },
     get colonyLow() { return this.bose; },
@@ -107,7 +112,7 @@ export class WorldBuilder {
         this._ground();
         this._roadNetwork();
         this._mainAvenueShinjuku(); // dense commercial canyon (full Main length)
-        this._colonyDistricts();    // Thakur Colony + Bose Colony
+        this._colonyDistricts();    // Thakur + Bose + Sukumar Roy colonies
         this._mahapalikaBhavan();   // single Indo-Gothic civic landmark
         this._avenueTrees();        // tree tunnels on side streets only
         this._buildingRows();
@@ -251,8 +256,8 @@ export class WorldBuilder {
         if (Math.abs(z - ROAD.south.z) < row(ROAD.south.w, roadSw(ROAD.south))
             && x >= ROAD.south.x1 - pad && x <= ROAD.south.x2 + pad) return true;
 
-        // Thakur / Bose colonies (narrow N–S)
-        for (const col of [ROAD.thakur, ROAD.bose]) {
+        // Thakur / Bose / Sukumar colonies (narrow N–S)
+        for (const col of [ROAD.thakur, ROAD.bose, ROAD.sukumar]) {
             if (Math.abs(x - col.x) < row(col.w, roadSw(col))
                 && z >= col.z1 - pad && z <= col.z2 + pad) return true;
         }
@@ -368,9 +373,12 @@ export class WorldBuilder {
         ewRoad(ROAD.north.z, ROAD.north.x1, ROAD.north.x2, ROAD.north.w, roadSw(ROAD.north));
         ewRoad(ROAD.south.z, ROAD.south.x1, ROAD.south.x2, ROAD.south.w, roadSw(ROAD.south));
 
-        // Thakur & Bose colony lanes — worn asphalt, minimal markings
+        // Colony lanes — worn asphalt, minimal markings
         this._buildColonyRoad(ROAD.thakur);
         this._buildColonyRoad(ROAD.bose);
+        this._buildColonyRoad(ROAD.sukumar);
+        // Blue–white curb stripes for Sukumar Roy Colony (photo)
+        this._sukumarCurbPaint(ROAD.sukumar);
 
         this._buildCentralPlaza();
     }
@@ -618,6 +626,7 @@ export class WorldBuilder {
                 // Skip colony alleys (tight canyons — no big avenue trees)
                 if (Math.abs(x - ROAD.thakur.x) < 14) continue;
                 if (Math.abs(x - ROAD.bose.x) < 14) continue;
+                if (Math.abs(x - ROAD.sukumar.x) < 16) continue;
 
                 const tN = createAvenueTree(seed++, +1);
                 tN.rotation.y = Math.PI / 2;
@@ -697,7 +706,7 @@ export class WorldBuilder {
         cw(0, ROAD.north.z, ROAD.main.w, 'x');
         cw(0, ROAD.south.z, ROAD.main.w, 'x');
         // Colony alleys × Cross / North / South
-        for (const col of [ROAD.thakur, ROAD.bose]) {
+        for (const col of [ROAD.thakur, ROAD.bose, ROAD.sukumar]) {
             cw(col.x, ROAD.cross.z, col.w, 'x');
             cw(col.x, ROAD.north.z, col.w, 'x');
             cw(col.x, ROAD.south.z, col.w, 'x');
@@ -806,26 +815,27 @@ export class WorldBuilder {
     }
 
     /**
-     * Thakur Colony (east) + Bose Colony (west) — photo-matched alleys.
-     * Buildings sit tight to the narrow road for a canyon/colony feel.
+     * Thakur + Bose + Sukumar Roy colonies — photo-matched alleys.
      */
     _colonyDistricts() {
         this._buildColonyStrip(ROAD.thakur, 'thakur');
         this._buildColonyStrip(ROAD.bose, 'bose');
-        // Entry nameplates at both ends of each colony
+        this._buildColonyStrip(ROAD.sukumar, 'sukumar');
         this._colonyNameSigns(ROAD.thakur, 0xd46858);
         this._colonyNameSigns(ROAD.bose, 0xd49868);
+        this._colonyNameSigns(ROAD.sukumar, 0xe8e4dc);
     }
 
     _buildColonyStrip(def, style) {
         const half = def.w / 2;
         const sw = roadSw(def);
-        const facadeGap = 0.35; // photos: buildings right on the street edge
-        const depth = ROAD.colonyBldgDepth;
+        const facadeGap = style === 'sukumar' ? 0.55 : 0.35;
+        const depth = style === 'sukumar' ? ROAD.colonyBldgDepth + 1.5 : ROAD.colonyBldgDepth;
         const facadeLine = half + ROAD.curb + sw + facadeGap;
         const tall = style === 'thakur';
-        const spacing = tall ? 8.6 : 9.8;
-        let seed = tall ? 12000 : 15000;
+        const sukumar = style === 'sukumar';
+        const spacing = tall ? 8.6 : sukumar ? 10.5 : 9.8;
+        let seed = tall ? 12000 : sukumar ? 18000 : 15000;
 
         for (let z = def.z1 + 7; z <= def.z2 - 7; z += spacing) {
             if (Math.abs(z) < 15) continue;
@@ -835,13 +845,16 @@ export class WorldBuilder {
 
             for (const side of [-1, 1]) {
                 seed++;
-                // Vary widths so façades feel irregular like real colonies
                 const facadeW = tall
                     ? 7.2 + (seed % 4) * 0.7
-                    : 7.8 + (seed % 4) * 0.85;
+                    : sukumar
+                        ? 8.5 + (seed % 5) * 0.9
+                        : 7.8 + (seed % 4) * 0.85;
                 const h = tall
-                    ? 12 + (seed % 9) + ((seed * 3) % 5)      // 12–25 multi-storey
-                    : 5.2 + (seed % 5) + ((seed * 2) % 3) * 0.6; // 5–12 low
+                    ? 12 + (seed % 9) + ((seed * 3) % 5)
+                    : sukumar
+                        ? 8.5 + (seed % 5) + ((seed * 2) % 3) * 0.8  // 2–3 storey white heritage
+                        : 5.2 + (seed % 5) + ((seed * 2) % 3) * 0.6;
 
                 const bx = def.x + side * (facadeLine + depth / 2);
                 const bz = z;
@@ -854,9 +867,89 @@ export class WorldBuilder {
             }
         }
 
+        // Signature corner house at south end of Sukumar colony (photo hero)
+        if (sukumar) {
+            const corner = buildColonyBuilding(11, 11.5, depth + 1, 18111, 'sukumar');
+            const fl = facadeLine + (depth + 1) / 2;
+            corner.position.set(def.x + fl, 0, def.z2 - 18);
+            corner.rotation.y = -Math.PI / 2;
+            this.scene.add(corner);
+            this.colliders.push({
+                x: def.x + fl, z: def.z2 - 18,
+                w: depth + 1, d: 11, h: 11.5, floorY: 0,
+            });
+        }
+
         this._colonyWiresAndPoles(def, style);
         if (tall) this._thakurProps(def);
+        else if (sukumar) this._sukumarProps(def);
         else this._boseProps(def);
+    }
+
+    /** Blue–white painted curb (Sukumar photo street edge) */
+    _sukumarCurbPaint(def) {
+        const gy = WORLD.groundY ?? 0.15;
+        const half = def.w / 2;
+        const y = gy + 0.09;
+        const blue = toonMat(0x4a90c8);
+        const white = toonMat(0xf0ece4);
+        const seg = 2.2;
+        for (const side of [-1, 1]) {
+            for (let z = def.z1 + 4; z < def.z2 - 4; z += seg * 2) {
+                const b = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.1, seg), blue);
+                b.position.set(def.x + side * (half + 0.15), y, z + seg / 2);
+                this.scene.add(b);
+                const w = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.1, seg), white);
+                w.position.set(def.x + side * (half + 0.15), y, z + seg + seg / 2);
+                this.scene.add(w);
+            }
+        }
+    }
+
+    /** Sukumar Roy Colony street props — wires, planters, quiet heritage lane */
+    _sukumarProps(def) {
+        const half = def.w / 2;
+        const walk = half + ROAD.curb + roadSw(def) * 0.55;
+        let s = 700;
+
+        for (let z = def.z1 + 14; z < def.z2 - 14; z += 18) {
+            if (Math.abs(z) < 15) continue;
+            s++;
+
+            // Street lamps
+            const lamp = createStreetLamp();
+            lamp.position.set(def.x + (s % 2 === 0 ? -1 : 1) * walk, 0, z);
+            this.scene.add(lamp);
+
+            // Flower pots / greenery (photo has plants on roofs & edges)
+            if (s % 2 === 0) {
+                const pot = createFlowerPot(s);
+                pot.position.set(def.x + (s % 4 === 0 ? 1 : -1) * (walk + 0.2), 0, z + 3);
+                this.scene.add(pot);
+            }
+
+            // Parked bike
+            if (s % 3 === 0) {
+                const bike = createBicycleParked();
+                bike.position.set(def.x - walk * 0.8, 0, z + 5);
+                bike.rotation.y = Math.PI / 2;
+                this.scene.add(bike);
+            }
+
+            // Bench on wider sidewalk
+            if (s % 4 === 0) {
+                const bench = createBench();
+                bench.position.set(def.x + walk * 0.7, 0, z + 2);
+                bench.rotation.y = -Math.PI / 2;
+                this.scene.add(bench);
+            }
+
+            if (s % 5 === 0) {
+                const trash = createTrashCan();
+                trash.position.set(def.x + walk * 0.9, 0, z + 7);
+                this.scene.add(trash);
+            }
+        }
     }
 
     /** Name board at north & south mouths of the colony lane */
@@ -891,7 +984,8 @@ export class WorldBuilder {
         const poleOff = half + ROAD.curb + roadSw(def) * 0.35;
         const wireMat = toonMat(0x1e1e28);
         const tall = style === 'thakur';
-        let seed = tall ? 200 : 300;
+        const sukumar = style === 'sukumar';
+        let seed = tall ? 200 : sukumar ? 400 : 300;
 
         for (let z = def.z1 + 12; z < def.z2 - 12; z += 16) {
             if (Math.abs(z) < 14) continue;
@@ -900,7 +994,7 @@ export class WorldBuilder {
             const px = def.x + side * poleOff;
 
             // Concrete utility pole
-            const poleH = tall ? 7.2 : 6.0;
+            const poleH = tall ? 7.2 : sukumar ? 6.8 : 6.0;
             const pole = toonMesh(new THREE.BoxGeometry(0.16, poleH, 0.16), 0x6a6860);
             pole.mesh.position.set(px, poleH / 2, z);
             pole.mesh.castShadow = true;
@@ -1251,6 +1345,7 @@ export class WorldBuilder {
                 if (Math.abs(x) < mainClear) continue;
                 if (Math.abs(x - ROAD.thakur.x) < colHalf(ROAD.thakur)) continue;
                 if (Math.abs(x - ROAD.bose.x) < colHalf(ROAD.bose)) continue;
+                if (Math.abs(x - ROAD.sukumar.x) < colHalf(ROAD.sukumar) + 1) continue;
                 // Setback from E-W roads (buildings behind Gehweg + gap)
                 if (Math.abs(z) < crossClear && Math.abs(x) > 16) continue;
                 if (Math.abs(z - ROAD.north.z) < quietClear) continue;
@@ -1682,6 +1777,16 @@ export class WorldBuilder {
             data: {
                 name: 'বোস কলোনী · Bose Colony',
                 description: 'Quiet low residential lane — terracotta walls, laundry lines, sitting plinths, manholes and parked bikes.',
+            },
+        });
+        this.pois.push({
+            position: new THREE.Vector3(115, 0, 30),
+            type: 'explore',
+            name: 'সুকুমার রায় কলোনী',
+            mapLabel: 'সুকুমার',
+            data: {
+                name: 'সুকুমার রায় কলোনী · Sukumar Roy Colony',
+                description: 'White Kolkata heritage street — corner houses, green shutters, pilasters, mural walls and blue–white curbs. Named for Sukumar Ray.',
             },
         });
         this.pois.push({
