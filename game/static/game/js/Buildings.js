@@ -452,35 +452,68 @@ function _buildSukumarBuilding(w, h, d, seed) {
     const floors = Math.max(2, Math.min(3, Math.floor(h / 3.4)));
     const floorH = h / floors;
 
-    // Main body (slightly taller ground floor like photo)
+    // Main body
     const body = toonMesh(new THREE.BoxGeometry(w, h, d), wallCol);
     body.mesh.position.y = h / 2;
     body.mesh.castShadow = true;
     body.mesh.receiveShadow = true;
     g.add(body.group);
 
-    // Cornice lines between floors
+    // Cream rusticated base band (photo: soft plinth wash)
+    const baseBand = toonMesh(
+        new THREE.BoxGeometry(w + 0.12, Math.min(floorH * 0.42, 1.6), d + 0.12),
+        SUKUMAR.plinth,
+        { outline: false }
+    );
+    baseBand.mesh.position.y = Math.min(floorH * 0.21, 0.8);
+    g.add(baseBand.group);
+
+    // Cornice lines between floors + subtle dentil blocks
     for (let f = 1; f < floors; f++) {
         const band = toonMesh(
-            new THREE.BoxGeometry(w + 0.15, 0.16, d + 0.15),
+            new THREE.BoxGeometry(w + 0.18, 0.18, d + 0.18),
             SUKUMAR.mold,
             { outline: false }
         );
         band.mesh.position.y = f * floorH;
         g.add(band.group);
+        const dents = Math.max(6, Math.floor(w / 0.7));
+        for (let i = 0; i < dents; i++) {
+            const dx = -w / 2 + (i + 0.5) * (w / dents);
+            const dent = toonMesh(
+                new THREE.BoxGeometry(0.16, 0.12, 0.1),
+                SUKUMAR.trim,
+                { outline: false }
+            );
+            dent.mesh.position.set(dx, f * floorH + 0.12, d / 2 + 0.08);
+            g.add(dent.group);
+        }
     }
 
-    // Roof parapet with decorative top (photo: stepped cornice)
-    const parapet = toonMesh(new THREE.BoxGeometry(w + 0.35, 0.55, d + 0.35), SUKUMAR.trim);
+    // Roof parapet + decorative posts
+    const parapet = toonMesh(new THREE.BoxGeometry(w + 0.4, 0.55, d + 0.4), SUKUMAR.trim);
     parapet.mesh.position.y = h + 0.28;
     g.add(parapet.group);
-    // Small top rail posts along roof
-    const posts = Math.max(4, Math.floor(w / 1.4));
+    const posts = Math.max(4, Math.floor(w / 1.35));
     for (let i = 0; i <= posts; i++) {
         const px = -w / 2 + (i / posts) * w;
-        const p = toonMesh(new THREE.BoxGeometry(0.12, 0.45, 0.12), SUKUMAR.rail, { outline: false });
-        p.mesh.position.set(px, h + 0.72, d / 2 + 0.05);
+        const p = toonMesh(new THREE.BoxGeometry(0.12, 0.48, 0.12), SUKUMAR.rail, { outline: false });
+        p.mesh.position.set(px, h + 0.74, d / 2 + 0.06);
         g.add(p.group);
+        // Ball finial
+        const ball = toonMesh(new THREE.SphereGeometry(0.08, 6, 6), SUKUMAR.trim, { outline: false });
+        ball.mesh.position.set(px, h + 1.02, d / 2 + 0.06);
+        g.add(ball.group);
+    }
+
+    // Corner cupola on taller houses (photo roof turret)
+    if (variant === 0 || (s % 6 === 0 && floors >= 3)) {
+        const cup = toonMesh(new THREE.CylinderGeometry(0.55, 0.7, 0.9, 8), SUKUMAR.walls[0]);
+        cup.mesh.position.set(w * 0.28, h + 0.95, d * 0.15);
+        g.add(cup.group);
+        const cupTop = toonMesh(new THREE.ConeGeometry(0.65, 0.45, 8), SUKUMAR.mold, { outline: false });
+        cupTop.mesh.position.set(w * 0.28, h + 1.55, d * 0.15);
+        g.add(cupTop.group);
     }
 
     // ── Variant-specific façade ──────────────────────────────────────────
@@ -496,17 +529,16 @@ function _buildSukumarBuilding(w, h, d, seed) {
         _sukumarGallery(g, w, h, d, s, floorH, floors);
     }
 
-    // Shared: soft grey-green shutters / windows (white colonial style)
     _sukumarWindows(g, w, h, d, s, floorH, floors, variant);
 
-    // Raised plinth / steps (photo corner steps)
+    // Raised entrance steps
     const plinth = toonMesh(new THREE.BoxGeometry(w + 0.4, 0.45, 0.7), SUKUMAR.plinth, { outline: false });
     plinth.mesh.position.set(0, 0.22, d / 2 + 0.3);
     g.add(plinth.group);
     if (variant === 0 || s % 3 === 0) {
         for (let i = 0; i < 3; i++) {
             const step = toonMesh(
-                new THREE.BoxGeometry(1.4 - i * 0.15, 0.14, 0.4),
+                new THREE.BoxGeometry(1.5 - i * 0.15, 0.14, 0.42),
                 SUKUMAR.step,
                 { outline: false }
             );
@@ -515,11 +547,60 @@ function _buildSukumarBuilding(w, h, d, seed) {
         }
     }
 
-    // Wires / AC clutter on some variants
+    // AC unit clutter
     if (s % 2 === 0) {
         const ac = toonMesh(new THREE.BoxGeometry(0.7, 0.4, 0.35), SUKUMAR.ac, { outline: false });
         ac.mesh.position.set(w / 2 - 0.5, floorH + 1.2, d / 2 + 0.2);
         g.add(ac.group);
+    }
+
+    // Wall lamp (cityLight for night)
+    if (s % 3 !== 1) {
+        const lampBody = toonMesh(new THREE.BoxGeometry(0.18, 0.28, 0.18), 0x5a5048, { outline: false });
+        lampBody.mesh.position.set(-w * 0.35, floorH * 0.85, d / 2 + 0.2);
+        g.add(lampBody.group);
+        const glow = toonMesh(
+            new THREE.SphereGeometry(0.14, 8, 8),
+            0xffe0a0,
+            { emissive: 0xffc870, emissiveIntensity: 0.15, outline: false }
+        );
+        glow.mesh.position.set(-w * 0.35, floorH * 0.85 - 0.22, d / 2 + 0.22);
+        glow.mesh.userData.cityLight = 'lampGlow';
+        if (glow.mesh.material) glow.mesh.material.userData = { cityLight: 'lampGlow' };
+        g.add(glow.group);
+    }
+
+    // Hanging rope / wire across façade (photo detail)
+    if (s % 2 === 0) {
+        const rope = toonMesh(
+            new THREE.CylinderGeometry(0.025, 0.025, w * 0.85, 5),
+            0x9a8a78,
+            { outline: false }
+        );
+        rope.mesh.rotation.z = Math.PI / 2;
+        rope.mesh.rotation.x = 0.08;
+        rope.mesh.position.set(0, h * 0.72, d / 2 + 0.35);
+        g.add(rope.group);
+    }
+
+    // Window flower pots on gallery / corner
+    if (variant === 0 || variant === 4 || s % 4 === 0) {
+        for (let i = 0; i < 2; i++) {
+            const pot = toonMesh(
+                new THREE.CylinderGeometry(0.12, 0.1, 0.18, 6),
+                0xb07050,
+                { outline: false }
+            );
+            pot.mesh.position.set(-w * 0.25 + i * w * 0.5, floorH + 0.25, d / 2 + 0.55);
+            g.add(pot.group);
+            const leaf = toonMesh(
+                new THREE.SphereGeometry(0.16, 6, 5),
+                0x3d8a40,
+                { outline: false }
+            );
+            leaf.mesh.position.set(-w * 0.25 + i * w * 0.5, floorH + 0.42, d / 2 + 0.55);
+            g.add(leaf.group);
+        }
     }
 
     return g;
@@ -536,12 +617,42 @@ function _sukumarWindows(g, w, h, d, s, floorH, floors, variant) {
             const wx = -w / 2 + (c + 0.5) * (w / cols);
             const shut = pick(SUKUMAR.shutter, s + r + c);
 
-            // Frame (dark grey)
+            // Arched top frame (heritage window)
+            const arch = toonMesh(
+                new THREE.BoxGeometry(1.12, 0.28, 0.1),
+                SUKUMAR.mold,
+                { outline: false }
+            );
+            arch.mesh.position.set(wx, wy + 0.72, d / 2 + 0.04);
+            g.add(arch.group);
+            const archRound = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.52, 0.52, 0.1, 10, 1, false, 0, Math.PI),
+                toonMat(SUKUMAR.mold)
+            );
+            archRound.rotation.z = Math.PI / 2;
+            archRound.rotation.y = Math.PI / 2;
+            archRound.position.set(wx, wy + 0.85, d / 2 + 0.04);
+            g.add(archRound);
+
+            // Frame
             const frame = toonMesh(new THREE.BoxGeometry(1.05, 1.35, 0.08), SUKUMAR.frame, { outline: false });
             frame.mesh.position.set(wx, wy, d / 2 + 0.03);
             g.add(frame.group);
 
-            // Louvered shutters — soft grey-green (white colonial heritage)
+            // Warm interior glow pane (night cityLight)
+            if ((s + c + r) % 3 === 0) {
+                const pane = toonMesh(
+                    new THREE.BoxGeometry(0.7, 0.9, 0.04),
+                    0xffe8b0,
+                    { emissive: 0xffc870, emissiveIntensity: 0.08, outline: false }
+                );
+                pane.mesh.position.set(wx, wy, d / 2 + 0.01);
+                pane.mesh.userData.cityLight = 'window';
+                if (pane.mesh.material) pane.mesh.material.userData = { cityLight: 'window' };
+                g.add(pane.group);
+            }
+
+            // Louvered shutters — soft grey-green
             const shL = toonMesh(new THREE.BoxGeometry(0.42, 1.2, 0.06), shut, { outline: false });
             shL.mesh.position.set(wx - 0.22, wy, d / 2 + 0.08);
             g.add(shL.group);
@@ -549,7 +660,6 @@ function _sukumarWindows(g, w, h, d, s, floorH, floors, variant) {
             shR.mesh.position.set(wx + 0.22, wy, d / 2 + 0.08);
             g.add(shR.group);
 
-            // Horizontal louver lines
             for (let L = 0; L < 5; L++) {
                 const louv = toonMesh(
                     new THREE.BoxGeometry(0.38, 0.04, 0.03),
@@ -558,9 +668,16 @@ function _sukumarWindows(g, w, h, d, s, floorH, floors, variant) {
                 );
                 louv.mesh.position.set(wx - 0.22, wy - 0.45 + L * 0.22, d / 2 + 0.12);
                 g.add(louv.group);
+                const louvR = toonMesh(
+                    new THREE.BoxGeometry(0.38, 0.04, 0.03),
+                    SUKUMAR.louv,
+                    { outline: false }
+                );
+                louvR.mesh.position.set(wx + 0.22, wy - 0.45 + L * 0.22, d / 2 + 0.12);
+                g.add(louvR.group);
             }
 
-            // Occasional open wood shutter (natural brown accent on white façade)
+            // Occasional open wood shutter
             if ((s + c + r) % 7 === 0) {
                 const wood = toonMesh(new THREE.BoxGeometry(0.5, 1.15, 0.08), SUKUMAR.wood, { outline: false });
                 wood.mesh.position.set(wx + 0.55, wy, d / 2 + 0.15);
@@ -570,15 +687,29 @@ function _sukumarWindows(g, w, h, d, s, floorH, floors, variant) {
         }
     }
 
-    // Ground floor door (light grey)
+    // Ground floor double door with moulded surround
     if (variant !== 2) {
-        const door = toonMesh(new THREE.BoxGeometry(1.0, 2.15, 0.1), SUKUMAR.door, { outline: false });
-        door.mesh.position.set(0, 1.2, d / 2 + 0.06);
-        g.add(door.group);
-        // Frame mold
-        const df = toonMesh(new THREE.BoxGeometry(1.25, 2.35, 0.06), SUKUMAR.mold, { outline: false });
-        df.mesh.position.set(0, 1.25, d / 2 + 0.02);
+        const df = toonMesh(new THREE.BoxGeometry(1.4, 2.5, 0.08), SUKUMAR.mold, { outline: false });
+        df.mesh.position.set(0, 1.3, d / 2 + 0.02);
         g.add(df.group);
+        const doorL = toonMesh(new THREE.BoxGeometry(0.48, 2.15, 0.1), SUKUMAR.door, { outline: false });
+        doorL.mesh.position.set(-0.28, 1.2, d / 2 + 0.08);
+        g.add(doorL.group);
+        const doorR = toonMesh(new THREE.BoxGeometry(0.48, 2.15, 0.1), SUKUMAR.door, { outline: false });
+        doorR.mesh.position.set(0.28, 1.2, d / 2 + 0.08);
+        g.add(doorR.group);
+        // Door panels
+        for (const sx of [-0.28, 0.28]) {
+            for (const py of [0.55, 1.45]) {
+                const panel = toonMesh(
+                    new THREE.BoxGeometry(0.32, 0.55, 0.04),
+                    SUKUMAR.mold,
+                    { outline: false }
+                );
+                panel.mesh.position.set(sx, py, d / 2 + 0.14);
+                g.add(panel.group);
+            }
+        }
     }
 }
 
@@ -633,188 +764,220 @@ function _sukumarPilasters(g, w, h, d, s, floorH, floors) {
     g.add(base.group);
 }
 
-let _sukumarMuralTexture = null;
-function getSukumarMuralTexture() {
-    if (_sukumarMuralTexture) return _sukumarMuralTexture;
-    
+const _sukumarMuralCache = {};
+
+function getSukumarMuralTexture(kind = 0) {
+    if (_sukumarMuralCache[kind]) return _sukumarMuralCache[kind];
+
     const canvas = document.createElement('canvas');
     canvas.width = 1024;
     canvas.height = 512;
     const ctx = canvas.getContext('2d');
-    
-    // Fill white background
-    ctx.fillStyle = '#f5f5f5';
+
+    // Warm white colonial wall wash
+    ctx.fillStyle = '#f7f4ee';
     ctx.fillRect(0, 0, 1024, 512);
-    
-    // Draw charcoal-like black lines
-    ctx.strokeStyle = '#151515';
-    ctx.fillStyle = '#151515';
+    // Soft cream plinth strip
+    ctx.fillStyle = '#e8dcc8';
+    ctx.fillRect(0, 430, 1024, 82);
+
+    ctx.strokeStyle = '#1a1a1a';
+    ctx.fillStyle = '#1a1a1a';
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    
-    // 1. Draw Goat-Rooster on the left (x: 100 to 320, y: 150 to 400)
-    ctx.beginPath();
-    ctx.lineWidth = 4;
-    // Goat head
-    ctx.moveTo(180, 200);
-    ctx.lineTo(140, 230); // muzzle
-    ctx.lineTo(160, 260); // jaw
-    ctx.lineTo(200, 230); // neck
-    // Horns
-    ctx.moveTo(185, 205);
-    ctx.quadraticCurveTo(170, 150, 150, 140); // left horn
-    ctx.moveTo(195, 210);
-    ctx.quadraticCurveTo(185, 155, 170, 145); // right horn
-    // Ear
-    ctx.moveTo(200, 220);
-    ctx.lineTo(220, 240);
-    // Eye
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(170, 218, 4, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Rooster body / feathers
-    ctx.beginPath();
-    ctx.lineWidth = 4;
-    ctx.moveTo(200, 230); // from neck
-    ctx.quadraticCurveTo(240, 280, 290, 270); // back
-    ctx.quadraticCurveTo(340, 250, 360, 180); // tail feathers top
-    ctx.quadraticCurveTo(330, 280, 300, 310); // tail bottom
-    ctx.quadraticCurveTo(240, 340, 200, 290); // belly
-    ctx.lineTo(200, 230);
-    
-    // Tail details (feathers)
-    ctx.moveTo(290, 270);
-    ctx.quadraticCurveTo(360, 220, 370, 160);
-    ctx.moveTo(300, 285);
-    ctx.quadraticCurveTo(370, 260, 380, 200);
-    
-    // Legs
-    ctx.moveTo(230, 315);
-    ctx.lineTo(225, 370); // leg 1
-    ctx.lineTo(215, 380); // toe
-    ctx.moveTo(230, 315);
-    ctx.lineTo(235, 375); // toe 2
-    
-    ctx.moveTo(270, 305);
-    ctx.lineTo(275, 365); // leg 2
-    ctx.lineTo(265, 375); // toe 3
-    ctx.moveTo(275, 365);
-    ctx.lineTo(285, 370); // toe 4
-    ctx.stroke();
 
-    // 2. Draw Bengali poem in the middle
-    ctx.fillStyle = '#151515';
-    ctx.font = '28px "Times New Roman", "Courier New", serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('"আমি অর্থাৎ শ্রী গোবিন্দ', 520, 180);
-    ctx.fillText('বাবুয়াটি নই বাঁকা', 520, 230);
-    ctx.fillText('বলি যা সব ভেবে বলি', 520, 280);
-    ctx.fillText('কথা কইনে ফাঁকা"', 520, 330);
-    
-    // 3. Draw Man holding a tray on the right (x: 720 to 920, y: 150 to 450)
-    ctx.beginPath();
-    ctx.lineWidth = 4;
-    // Head / Face
-    ctx.arc(820, 200, 35, 0, Math.PI * 2);
-    ctx.stroke();
-    // Hair
-    ctx.beginPath();
-    ctx.arc(820, 185, 38, Math.PI, 0);
-    ctx.stroke();
-    // Moustache (thick)
-    ctx.beginPath();
-    ctx.lineWidth = 6;
-    ctx.moveTo(790, 215);
-    ctx.quadraticCurveTo(820, 215, 820, 222);
-    ctx.quadraticCurveTo(820, 215, 850, 215);
-    ctx.stroke();
-    
-    // Eyes
-    ctx.beginPath();
-    ctx.arc(808, 195, 3, 0, Math.PI * 2);
-    ctx.arc(832, 195, 3, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Suit / Body
-    ctx.beginPath();
-    ctx.lineWidth = 4;
-    ctx.moveTo(795, 233); // shoulder left
-    ctx.lineTo(750, 280);
-    ctx.lineTo(750, 450); // body left
-    ctx.lineTo(890, 450); // body right
-    ctx.lineTo(890, 280);
-    ctx.lineTo(845, 233); // shoulder right
-    // Collar & Tie
-    ctx.moveTo(805, 235);
-    ctx.lineTo(820, 275);
-    ctx.lineTo(835, 235);
-    ctx.moveTo(820, 275);
-    ctx.lineTo(815, 320); // tie
-    ctx.lineTo(820, 330);
-    ctx.lineTo(825, 320);
-    ctx.lineTo(820, 275);
-    ctx.stroke();
-    
-    // Left arm holding tray
-    ctx.beginPath();
-    ctx.moveTo(750, 280);
-    ctx.lineTo(700, 320);
-    ctx.lineTo(700, 270); // hand up
-    ctx.stroke();
-    
-    // Tray (rectangle)
-    ctx.beginPath();
-    ctx.fillStyle = '#e8e8e8';
-    ctx.rect(630, 240, 140, 30);
-    ctx.fill();
-    ctx.stroke();
-    // Lines on tray (grid)
-    ctx.beginPath();
-    ctx.lineWidth = 2;
-    for (let i = 1; i <= 3; i++) {
-        ctx.moveTo(630 + i * 35, 240);
-        ctx.lineTo(630 + i * 35, 270);
+    if (kind === 1) {
+        // Telescope man + child (Abol Tabol vibe from street photo)
+        ctx.lineWidth = 5;
+        // Child left
+        ctx.beginPath();
+        ctx.arc(220, 200, 28, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(220, 230);
+        ctx.lineTo(220, 320);
+        ctx.moveTo(220, 260);
+        ctx.lineTo(170, 300);
+        ctx.moveTo(220, 260);
+        ctx.lineTo(270, 295);
+        ctx.moveTo(220, 320);
+        ctx.lineTo(190, 400);
+        ctx.moveTo(220, 320);
+        ctx.lineTo(255, 400);
+        // Arm raised
+        ctx.moveTo(220, 250);
+        ctx.lineTo(250, 180);
+        ctx.stroke();
+        // Man with telescope
+        ctx.beginPath();
+        ctx.arc(620, 170, 38, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(620, 210);
+        ctx.quadraticCurveTo(560, 280, 540, 420);
+        ctx.moveTo(620, 210);
+        ctx.quadraticCurveTo(700, 290, 740, 420);
+        ctx.moveTo(620, 250);
+        ctx.lineTo(760, 200);
+        ctx.lineTo(820, 175); // telescope barrel
+        ctx.lineTo(760, 185);
+        ctx.stroke();
+        // Telescope rings
+        ctx.beginPath();
+        ctx.lineWidth = 3;
+        ctx.arc(800, 178, 12, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.fillStyle = '#1a1a1a';
+        ctx.font = '26px "Times New Roman", serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('আয় তোর মুঠো দেখি', 560, 470);
+        ctx.fillText('আয় দেখি ফুটুক পারি', 560, 500);
+    } else {
+        // Goat-rooster + poem + tray man (images-11 style)
+        ctx.beginPath();
+        ctx.lineWidth = 4;
+        ctx.moveTo(180, 200);
+        ctx.lineTo(140, 230);
+        ctx.lineTo(160, 260);
+        ctx.lineTo(200, 230);
+        ctx.moveTo(185, 205);
+        ctx.quadraticCurveTo(170, 150, 150, 140);
+        ctx.moveTo(195, 210);
+        ctx.quadraticCurveTo(185, 155, 170, 145);
+        ctx.moveTo(200, 220);
+        ctx.lineTo(220, 240);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(170, 218, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.lineWidth = 4;
+        ctx.moveTo(200, 230);
+        ctx.quadraticCurveTo(240, 280, 290, 270);
+        ctx.quadraticCurveTo(340, 250, 360, 180);
+        ctx.quadraticCurveTo(330, 280, 300, 310);
+        ctx.quadraticCurveTo(240, 340, 200, 290);
+        ctx.lineTo(200, 230);
+        ctx.moveTo(290, 270);
+        ctx.quadraticCurveTo(360, 220, 370, 160);
+        ctx.moveTo(300, 285);
+        ctx.quadraticCurveTo(370, 260, 380, 200);
+        ctx.moveTo(230, 315);
+        ctx.lineTo(225, 370);
+        ctx.lineTo(215, 380);
+        ctx.moveTo(230, 315);
+        ctx.lineTo(235, 375);
+        ctx.moveTo(270, 305);
+        ctx.lineTo(275, 365);
+        ctx.lineTo(265, 375);
+        ctx.moveTo(275, 365);
+        ctx.lineTo(285, 370);
+        ctx.stroke();
+
+        ctx.fillStyle = '#1a1a1a';
+        ctx.font = '28px "Times New Roman", "Courier New", serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('"আমি অর্থাৎ শ্রী গোবিন্দ', 520, 180);
+        ctx.fillText('বাবুয়াটি নই বাঁকা', 520, 230);
+        ctx.fillText('বলি যা সব ভেবে বলি', 520, 280);
+        ctx.fillText('কথা কইনে ফাঁকা"', 520, 330);
+
+        ctx.beginPath();
+        ctx.lineWidth = 4;
+        ctx.arc(820, 200, 35, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(820, 185, 38, Math.PI, 0);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.lineWidth = 6;
+        ctx.moveTo(790, 215);
+        ctx.quadraticCurveTo(820, 215, 820, 222);
+        ctx.quadraticCurveTo(820, 215, 850, 215);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(808, 195, 3, 0, Math.PI * 2);
+        ctx.arc(832, 195, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.lineWidth = 4;
+        ctx.moveTo(795, 233);
+        ctx.lineTo(750, 280);
+        ctx.lineTo(750, 450);
+        ctx.lineTo(890, 450);
+        ctx.lineTo(890, 280);
+        ctx.lineTo(845, 233);
+        ctx.moveTo(805, 235);
+        ctx.lineTo(820, 275);
+        ctx.lineTo(835, 235);
+        ctx.moveTo(820, 275);
+        ctx.lineTo(815, 320);
+        ctx.lineTo(820, 330);
+        ctx.lineTo(825, 320);
+        ctx.lineTo(820, 275);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(750, 280);
+        ctx.lineTo(700, 320);
+        ctx.lineTo(700, 270);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.fillStyle = '#eeeae2';
+        ctx.rect(630, 240, 140, 30);
+        ctx.fill();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.lineWidth = 2;
+        for (let i = 1; i <= 3; i++) {
+            ctx.moveTo(630 + i * 35, 240);
+            ctx.lineTo(630 + i * 35, 270);
+        }
+        ctx.stroke();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.rect(800, 300, 40, 25);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#1a1a1a';
+        ctx.font = 'bold 14px sans-serif';
+        ctx.fillText('যত্র', 820, 318);
     }
-    ctx.stroke();
-    
-    // Tag on chest "যত্র"
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.rect(800, 300, 40, 25);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = '#151515';
-    ctx.font = 'bold 14px sans-serif';
-    ctx.fillText('যত্র', 820, 318);
-    
-    _sukumarMuralTexture = new THREE.CanvasTexture(canvas);
-    _sukumarMuralTexture.colorSpace = THREE.SRGBColorSpace;
-    return _sukumarMuralTexture;
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    _sukumarMuralCache[kind] = tex;
+    return tex;
 }
 
 /** Mural wall — Sukumar Ray caricature vibe (black figures on white colonial wall) */
 function _sukumarMural(g, w, h, d, s, floorH, floors) {
-    // White wall wash for mural ground
     const wash = toonMesh(
-        new THREE.BoxGeometry(w * 0.95, h * 0.7, 0.06),
+        new THREE.BoxGeometry(w * 0.95, h * 0.72, 0.06),
         0xfaf8f4,
         { outline: false }
     );
     wash.mesh.position.set(0, h * 0.5, d / 2 + 0.04);
     g.add(wash.group);
 
-    const tex = getSukumarMuralTexture();
+    // Cream lower wall band under murals
+    const cream = toonMesh(
+        new THREE.BoxGeometry(w * 0.95, h * 0.22, 0.08),
+        0xe8dcc8,
+        { outline: false }
+    );
+    cream.mesh.position.set(0, h * 0.18, d / 2 + 0.05);
+    g.add(cream.group);
+
+    const tex = getSukumarMuralTexture(s % 2);
     const muralMat = new THREE.MeshToonMaterial({
         map: tex,
         gradientMap: getGradientMap(),
     });
     const plate = new THREE.Mesh(
-        new THREE.PlaneGeometry(w * 0.9, h * 0.65),
+        new THREE.PlaneGeometry(w * 0.9, h * 0.62),
         muralMat
     );
-    plate.position.set(0, h * 0.5, d / 2 + 0.075);
+    plate.position.set(0, h * 0.52, d / 2 + 0.075);
     g.add(plate);
 }
 

@@ -1,10 +1,11 @@
 /**
  * EnvironmentSystem — location-based day/night + Japan-style seasons.
- * Uses browser geolocation (Tokyo fallback) + solar elevation math (no external lib).
+ * Uses browser geolocation, timezone-based city fallback, and local-clock
+ * time-of-day so night in the player's place never shows as dawn.
  */
 import * as THREE from 'three';
 
-/** Default: Tokyo, Japan */
+/** Last-resort default when timezone is unknown */
 export const DEFAULT_LOCATION = {
     lat: 35.6762,
     lng: 139.6503,
@@ -60,16 +61,44 @@ function julianDay(date) {
     return date.getTime() / 86400000 + 2440587.5;
 }
 
-/** Map solar altitude + hour to a named time-of-day phase */
+/**
+ * Map local wall-clock + solar altitude to a time-of-day phase.
+ *
+ * Local clock is the source of truth for hard night / hard day so a wrong
+ * GPS fallback (e.g. Tokyo while the player is in India) cannot show dawn
+ * at midnight. Solar altitude refines twilight around sunrise/sunset.
+ */
 export function getTimeOfDay(altitude, date = new Date()) {
     const hour = date.getHours() + date.getMinutes() / 60;
     const morning = hour < 12;
 
-    if (altitude < -12) return 'night';
-    if (altitude < -4) return morning ? 'dawn' : 'dusk';
-    if (altitude < 8) return morning ? 'sunrise' : 'sunset';
-    if (altitude < 18) return morning ? 'morning' : 'golden';
-    return 'day';
+    // Hard local night — never dawn/day when it is clearly night outside
+    if (hour >= 20.5 || hour < 4.5) return 'night';
+
+    // Hard local midday — never night when the sun is up on the clock
+    if (hour >= 10 && hour < 15.5) {
+        if (altitude >= 18) return 'day';
+        if (altitude >= 8) return morning ? 'morning' : 'golden';
+        return 'day';
+    }
+
+    // Twilight / shoulder hours: prefer solar when available
+    if (Number.isFinite(altitude)) {
+        if (altitude < -12) return 'night';
+        if (altitude < -4) return morning ? 'dawn' : 'dusk';
+        if (altitude < 8) return morning ? 'sunrise' : 'sunset';
+        if (altitude < 18) return morning ? 'morning' : 'golden';
+        return 'day';
+    }
+
+    // Clock-only fallback
+    if (hour < 5.75) return 'dawn';
+    if (hour < 7.25) return 'sunrise';
+    if (hour < 10) return 'morning';
+    if (hour < 16) return 'day';
+    if (hour < 17.75) return 'golden';
+    if (hour < 19.25) return 'sunset';
+    return 'dusk';
 }
 
 /** Visual recipes: sky gradient (horizon→zenith), fog, lights, exposure, particles */
@@ -249,13 +278,14 @@ export class EnvironmentSystem {
         this.scene = scene;
         this.renderer = opts.renderer || null;
         this.handles = opts.handles || {};
-        this.location = { ...DEFAULT_LOCATION };
+        // Start from timezone city so local night never flashes as Tokyo dawn
+        this.location = locationFromTimezone();
         this.season = 'summer';
         this.timeOfDay = 'day';
         this.sun = { altitude: 45, azimuth: 180 };
         this._ready = false;
         this._timer = 0;
-        this._refreshSec = 90; // recompute sun every 90s
+        this._refreshSec = 60; // recompute sun every 60s
         this._particles = null;
         this._particleKind = null;
         this._statusEl = null;
@@ -264,12 +294,24 @@ export class EnvironmentSystem {
         this._cityLightsOn = null;
     }
 
-    /** Resolve geolocation then apply first look. Safe if permission denied. */
+    /** Apply timezone look immediately, then upgrade with GPS if allowed. */
     async init() {
-        this.location = await resolveUserLocation();
+        this._bindStatusUi();
+        // Instant correct phase from local clock + timezone city
+        this.location = locationFromTimezone();
         this.refresh(true);
         this._ready = true;
-        this._bindStatusUi();
+
+        try {
+            const loc = await resolveUserLocation();
+            if (loc) {
+                this.location = loc;
+                this.refresh(true);
+            }
+        } catch {
+            // keep timezone location
+        }
+
         this._updateStatusUi();
         return this.getState();
     }
@@ -635,8 +677,11 @@ export class EnvironmentSystem {
     _statusText() {
         const s = SEASON_TINT[this.season];
         const loc = this.location.label || 'Local';
-        const src = this.location.source === 'gps' ? '' : ' · default';
-        return `${TOD_EMOJI[this.timeOfDay] || ''} ${TOD_LABEL[this.timeOfDay] || this.timeOfDay} · ${s?.emoji || ''} ${s?.label || this.season} · ${loc}${src}`;
+        const now = new Date();
+        const clock = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const srcMap = { gps: '', cached: ' · saved', timezone: ' · clock', default: ' · default' };
+        const src = srcMap[this.location.source] ?? ' · default';
+        return `${TOD_EMOJI[this.timeOfDay] || ''} ${TOD_LABEL[this.timeOfDay] || this.timeOfDay} · ${clock} · ${s?.emoji || ''} ${s?.label || this.season} · ${loc}${src}`;
     }
 
     _bindStatusUi() {
@@ -667,41 +712,157 @@ export class EnvironmentSystem {
     }
 }
 
-/** Browser geolocation with Tokyo fallback */
+/**
+ * Guess a city from the browser timezone so day/night matches the player's
+ * place even when GPS is denied (Tokyo is wrong for India at midnight → dawn).
+ */
+export function locationFromTimezone(timeZone) {
+    const tz = timeZone || (() => {
+        try {
+            return Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+        } catch {
+            return '';
+        }
+    })();
+
+    const table = [
+        // India / Bangladesh / Sri Lanka (common for this project)
+        { match: /Kolkata|Calcutta/, lat: 22.5726, lng: 88.3639, label: 'Kolkata' },
+        { match: /Dhaka/, lat: 23.8103, lng: 90.4125, label: 'Dhaka' },
+        { match: /Colombo/, lat: 6.9271, lng: 79.8612, label: 'Colombo' },
+        { match: /Kathmandu/, lat: 27.7172, lng: 85.3240, label: 'Kathmandu' },
+        { match: /Karachi/, lat: 24.8607, lng: 67.0011, label: 'Karachi' },
+        // Japan
+        { match: /Tokyo/, lat: 35.6762, lng: 139.6503, label: 'Tokyo' },
+        { match: /Osaka/, lat: 34.6937, lng: 135.5023, label: 'Osaka' },
+        // SE Asia
+        { match: /Bangkok/, lat: 13.7563, lng: 100.5018, label: 'Bangkok' },
+        { match: /Singapore/, lat: 1.3521, lng: 103.8198, label: 'Singapore' },
+        { match: /Jakarta/, lat: -6.2088, lng: 106.8456, label: 'Jakarta' },
+        { match: /Ho_Chi_Minh|Saigon/, lat: 10.8231, lng: 106.6297, label: 'Ho Chi Minh' },
+        { match: /Manila/, lat: 14.5995, lng: 120.9842, label: 'Manila' },
+        { match: /Kuala_Lumpur/, lat: 3.1390, lng: 101.6869, label: 'Kuala Lumpur' },
+        // Middle East
+        { match: /Dubai/, lat: 25.2048, lng: 55.2708, label: 'Dubai' },
+        { match: /Riyadh/, lat: 24.7136, lng: 46.6753, label: 'Riyadh' },
+        // Europe
+        { match: /London/, lat: 51.5074, lng: -0.1278, label: 'London' },
+        { match: /Paris/, lat: 48.8566, lng: 2.3522, label: 'Paris' },
+        { match: /Berlin/, lat: 52.5200, lng: 13.4050, label: 'Berlin' },
+        // Americas
+        { match: /New_York/, lat: 40.7128, lng: -74.0060, label: 'New York' },
+        { match: /Los_Angeles/, lat: 34.0522, lng: -118.2437, label: 'Los Angeles' },
+        { match: /Chicago/, lat: 41.8781, lng: -87.6298, label: 'Chicago' },
+        { match: /Toronto/, lat: 43.6532, lng: -79.3832, label: 'Toronto' },
+        // Oceania
+        { match: /Sydney/, lat: -33.8688, lng: 151.2093, label: 'Sydney' },
+        { match: /Melbourne/, lat: -37.8136, lng: 144.9631, label: 'Melbourne' },
+        // China
+        { match: /Shanghai/, lat: 31.2304, lng: 121.4737, label: 'Shanghai' },
+        { match: /Hong_Kong/, lat: 22.3193, lng: 114.1694, label: 'Hong Kong' },
+    ];
+
+    for (const row of table) {
+        if (row.match.test(tz)) {
+            return { lat: row.lat, lng: row.lng, label: row.label, source: 'timezone', timeZone: tz };
+        }
+    }
+
+    // Offset-based coarse fallback (minutes east of UTC)
+    const offsetMin = -new Date().getTimezoneOffset();
+    if (offsetMin === 330) return { lat: 22.5726, lng: 88.3639, label: 'India (IST)', source: 'timezone', timeZone: tz };
+    if (offsetMin === 345) return { lat: 27.7172, lng: 85.3240, label: 'Nepal', source: 'timezone', timeZone: tz };
+    if (offsetMin === 360) return { lat: 23.8103, lng: 90.4125, label: 'Bangladesh', source: 'timezone', timeZone: tz };
+    if (offsetMin === 540) return { lat: 35.6762, lng: 139.6503, label: 'Japan (JST)', source: 'timezone', timeZone: tz };
+    if (offsetMin === 480) return { lat: 1.3521, lng: 103.8198, label: 'Singapore', source: 'timezone', timeZone: tz };
+    if (offsetMin === 0 || offsetMin === 60) return { lat: 51.5074, lng: -0.1278, label: 'London', source: 'timezone', timeZone: tz };
+
+    return { ...DEFAULT_LOCATION, source: 'default', timeZone: tz };
+}
+
+/** Browser geolocation with timezone/city fallback (not always Tokyo) */
 export function resolveUserLocation() {
     return new Promise((resolve) => {
+        const tzLoc = locationFromTimezone();
+
+        let cachedLoc = null;
+        try {
+            const raw = localStorage.getItem('env_last_gps');
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (parsed?.lat != null && parsed?.lng != null) {
+                    cachedLoc = {
+                        lat: parsed.lat,
+                        lng: parsed.lng,
+                        label: approxPlaceLabel(parsed.lat, parsed.lng),
+                        source: 'cached',
+                    };
+                }
+            }
+        } catch { /* ignore */ }
+
         if (!navigator.geolocation) {
-            resolve({ ...DEFAULT_LOCATION, source: 'default' });
+            resolve(cachedLoc || tzLoc);
             return;
         }
-        const done = (loc) => resolve(loc);
+
+        let settled = false;
+        const settle = (loc) => {
+            if (settled) return;
+            settled = true;
+            resolve(loc);
+        };
+
+        // Don't wait forever — timezone (or cache) is better than Tokyo default
+        const timer = setTimeout(() => settle(cachedLoc || tzLoc), 3500);
+
         navigator.geolocation.getCurrentPosition(
             (pos) => {
+                clearTimeout(timer);
                 const lat = pos.coords.latitude;
                 const lng = pos.coords.longitude;
-                done({
+                try {
+                    localStorage.setItem('env_last_gps', JSON.stringify({ lat, lng, t: Date.now() }));
+                } catch { /* ignore */ }
+                settle({
                     lat,
                     lng,
                     label: approxPlaceLabel(lat, lng),
                     source: 'gps',
                 });
             },
-            () => done({ ...DEFAULT_LOCATION, source: 'default' }),
-            { enableHighAccuracy: false, timeout: 6000, maximumAge: 600000 }
+            () => {
+                clearTimeout(timer);
+                settle(cachedLoc || tzLoc);
+            },
+            { enableHighAccuracy: false, timeout: 5000, maximumAge: 600000 }
         );
     });
 }
 
-/** Coarse region label — Japan cities when near, else lat/lng */
+/** Coarse region label — known cities when near, else lat/lng */
 function approxPlaceLabel(lat, lng) {
-    // Japan bounding box-ish
-    if (lat > 24 && lat < 46 && lng > 123 && lng < 146) {
-        if (Math.hypot(lat - 35.68, lng - 139.65) < 0.8) return 'Tokyo';
-        if (Math.hypot(lat - 34.69, lng - 135.50) < 0.6) return 'Osaka';
-        if (Math.hypot(lat - 35.01, lng - 135.77) < 0.5) return 'Kyoto';
-        if (Math.hypot(lat - 43.06, lng - 141.35) < 0.8) return 'Sapporo';
-        if (Math.hypot(lat - 33.59, lng - 130.40) < 0.6) return 'Fukuoka';
-        return 'Japan';
+    const cities = [
+        { lat: 22.57, lng: 88.36, r: 0.9, label: 'Kolkata' },
+        { lat: 28.61, lng: 77.21, r: 0.9, label: 'Delhi' },
+        { lat: 19.08, lng: 72.88, r: 0.9, label: 'Mumbai' },
+        { lat: 12.97, lng: 77.59, r: 0.8, label: 'Bengaluru' },
+        { lat: 23.81, lng: 90.41, r: 0.8, label: 'Dhaka' },
+        { lat: 35.68, lng: 139.65, r: 0.8, label: 'Tokyo' },
+        { lat: 34.69, lng: 135.50, r: 0.6, label: 'Osaka' },
+        { lat: 35.01, lng: 135.77, r: 0.5, label: 'Kyoto' },
+        { lat: 43.06, lng: 141.35, r: 0.8, label: 'Sapporo' },
+        { lat: 33.59, lng: 130.40, r: 0.6, label: 'Fukuoka' },
+        { lat: 1.35, lng: 103.82, r: 0.6, label: 'Singapore' },
+        { lat: 13.76, lng: 100.50, r: 0.7, label: 'Bangkok' },
+        { lat: 51.51, lng: -0.13, r: 0.8, label: 'London' },
+        { lat: 40.71, lng: -74.01, r: 0.8, label: 'New York' },
+    ];
+    for (const c of cities) {
+        if (Math.hypot(lat - c.lat, lng - c.lng) < c.r) return c.label;
     }
+    // Japan bounding box-ish
+    if (lat > 24 && lat < 46 && lng > 123 && lng < 146) return 'Japan';
+    if (lat > 6 && lat < 36 && lng > 68 && lng < 98) return 'South Asia';
     return `${lat.toFixed(1)}°, ${lng.toFixed(1)}°`;
 }

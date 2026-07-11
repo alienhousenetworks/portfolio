@@ -871,17 +871,39 @@ export class WorldBuilder {
             }
         }
 
-        // Signature corner house at south end of Sukumar colony (photo hero)
+        // Signature corner houses (photo hero buildings) at both ends of the lane
         if (sukumar) {
-            const corner = buildColonyBuilding(11, 11.5, depth + 1, 18111, 'sukumar');
-            const fl = facadeLine + (depth + 1) / 2;
-            corner.position.set(def.x + fl, 0, def.z2 - 18);
-            corner.rotation.y = -Math.PI / 2;
-            this.scene.add(corner);
-            this.colliders.push({
-                x: def.x + fl, z: def.z2 - 18,
-                w: depth + 1, d: 11, h: 11.5, floorY: 0,
-            });
+            for (const [side, z, seed] of [
+                [1, def.z2 - 18, 18111],
+                [-1, def.z2 - 22, 18222],
+                [1, def.z1 + 20, 18333],
+            ]) {
+                const corner = buildColonyBuilding(11, 11.5, depth + 1, seed, 'sukumar');
+                const fl = facadeLine + (depth + 1) / 2;
+                corner.position.set(def.x + side * fl, 0, z);
+                corner.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2;
+                this.scene.add(corner);
+                this.colliders.push({
+                    x: def.x + side * fl, z,
+                    w: depth + 1, d: 11, h: 11.5, floorY: 0,
+                });
+            }
+            // Dedicated mural façades (seed % 997 % 5 === 2 → mural variant)
+            for (const [side, z, seed] of [
+                [1, 28, 999],   // 999 % 997 = 2
+                [-1, -32, 1996], // 1996 % 997 = 2
+                [1, -55, 2993],  // 2993 % 997 = 2
+            ]) {
+                const mural = buildColonyBuilding(10, 9.5, depth, seed, 'sukumar');
+                const fl = facadeLine + depth / 2;
+                mural.position.set(def.x + side * fl, 0, z);
+                mural.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2;
+                this.scene.add(mural);
+                this.colliders.push({
+                    x: def.x + side * fl, z,
+                    w: depth, d: 10, h: 9.5, floorY: 0,
+                });
+            }
         }
 
         this._colonyWiresAndPoles(def, style);
@@ -899,7 +921,7 @@ export class WorldBuilder {
         const y = gy + 0.14; // Same height as road curb
         const blue = toonMat(0x3a7ab8);
         const white = toonMat(0xf5f5f0);
-        const seg = 2.2;
+        const seg = 2.0;
         for (const side of [-1, 1]) {
             for (let z = def.z1; z < def.z2; z += seg * 2) {
                 const b = new THREE.Mesh(new THREE.BoxGeometry(curbW, 0.22, seg), blue);
@@ -914,29 +936,47 @@ export class WorldBuilder {
         }
     }
 
-    /** Sukumar Roy Colony street props — full-color quiet heritage lane */
+    /** Sukumar Roy Colony street props — full-color heritage lane with life */
     _sukumarProps(def) {
         const half = def.w / 2;
         const walk = half + ROAD.curb + roadSw(def) * 0.55;
         let s = 700;
 
-        for (let z = def.z1 + 14; z < def.z2 - 14; z += 18) {
-            if (Math.abs(z) < 15) continue;
+        for (let z = def.z1 + 12; z < def.z2 - 12; z += 14) {
+            if (Math.abs(z) < 12) continue;
             s++;
 
-            // Street lamps (full color)
+            // Alternating street lamps both sides
             const lamp = createStreetLamp(false);
             lamp.position.set(def.x + (s % 2 === 0 ? -1 : 1) * walk, 0, z);
             this.scene.add(lamp);
 
-            // Green planter / bush
+            // Planter / bush
             if (s % 2 === 0) {
+                const side = s % 4 === 0 ? 1 : -1;
                 const pot = toonMesh(new THREE.CylinderGeometry(0.28, 0.22, 0.4, 8), 0xa07850, { outline: false });
-                pot.mesh.position.set(def.x + (s % 4 === 0 ? 1 : -1) * (walk + 0.2), 0.2, z + 3);
+                pot.mesh.position.set(def.x + side * (walk + 0.2), 0.2, z + 3);
                 this.scene.add(pot.group);
                 const bush = toonMesh(new THREE.SphereGeometry(0.32, 8, 6), 0x4a8a48, { outline: false });
-                bush.mesh.position.set(def.x + (s % 4 === 0 ? 1 : -1) * (walk + 0.2), 0.55, z + 3);
+                bush.mesh.position.set(def.x + side * (walk + 0.2), 0.55, z + 3);
                 this.scene.add(bush.group);
+                // Small flowers
+                if (s % 4 === 0) {
+                    const flowerCols = [0xff6b8a, 0xffd966, 0xc49bff];
+                    for (let f = 0; f < 3; f++) {
+                        const fl = toonMesh(
+                            new THREE.SphereGeometry(0.07, 5, 4),
+                            flowerCols[f % 3],
+                            { outline: false }
+                        );
+                        fl.mesh.position.set(
+                            def.x + side * (walk + 0.2) + (f - 1) * 0.1,
+                            0.72,
+                            z + 3
+                        );
+                        this.scene.add(fl.group);
+                    }
+                }
             }
 
             // Parked bike
@@ -947,7 +987,7 @@ export class WorldBuilder {
                 this.scene.add(bike);
             }
 
-            // Bench on wider sidewalk
+            // Bench
             if (s % 4 === 0) {
                 const bench = createBench(false);
                 bench.position.set(def.x + walk * 0.7, 0, z + 2);
@@ -959,6 +999,19 @@ export class WorldBuilder {
                 const trash = createTrashCan(s, false);
                 trash.position.set(def.x + walk * 0.9, 0, z + 7);
                 this.scene.add(trash);
+            }
+
+            // Thick crossing rope / clothesline between façades (photo vibe)
+            if (s % 3 === 0) {
+                const span = walk * 2 + 1.2;
+                const rope = toonMesh(
+                    new THREE.CylinderGeometry(0.03, 0.03, span, 5),
+                    0xb0a090,
+                    { outline: false }
+                );
+                rope.mesh.rotation.z = Math.PI / 2;
+                rope.mesh.position.set(def.x, 5.2 + (s % 3) * 0.4, z + 1);
+                this.scene.add(rope.group);
             }
         }
     }
