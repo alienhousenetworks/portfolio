@@ -1,12 +1,13 @@
 import * as THREE from 'three';
 import { WORLD, PALETTE, BRIDGES, isCityFlat } from './config.js';
 import { toonMat, toonMesh, getGradientMap } from './ToonStyle.js';
+import { ExploreTerrain } from './ExploreTerrain.js';
 
 const MAX_STEP = 2.2;
 const STAIR_MAX_STEP = 2.5;
 
 /**
- * Curved hills + styled stairs (modern / curved / spiral / helix).
+ * Curved hills + styled stairs + explore terrains (ridge / gorge).
  * Stairs only where height access is needed; hills stay outside the city slab.
  */
 export class TerrainSystem {
@@ -20,6 +21,7 @@ export class TerrainSystem {
         this.grassTufts = null;
         this.butterflies = [];
         this.time = 0;
+        this.explore = new ExploreTerrain();
         this._grassPalette = [
             new THREE.Color('#c8edd6'),
             new THREE.Color('#b8e6c8'),
@@ -27,21 +29,19 @@ export class TerrainSystem {
             new THREE.Color('#a8dfc0'),
         ];
 
-        // Rolling hills — centers + radius fully outside city slab + clear margin
-        // city ~±165 x ±145; margin 28 → keep |x|-r > 193 or |z|-r > 173
+        // Rolling hills — outside city; avoid overlapping explore ridge/gorge
+        // Ridge zone ≈ (20,-255) size 190; Gorge ≈ (-255,15) 155×240
         this.hills = [
-            // North band
-            { x: -90, z: -250, r: 48, hy: -30 },
-            { x: 20, z: -265, r: 55, hy: -34 },
-            { x: 110, z: -245, r: 46, hy: -28 },
+            // North — offset around ridge (not under ridge mesh)
+            { x: -120, z: -230, r: 36, hy: -22 },
+            { x: 130, z: -235, r: 38, hy: -24 },
             // South band
             { x: -80, z: 250, r: 48, hy: -30 },
             { x: 30, z: 265, r: 55, hy: -34 },
             { x: 120, z: 248, r: 44, hy: -28 },
-            // West band (beyond river / city)
-            { x: -250, z: -60, r: 50, hy: -32 },
-            { x: -260, z: 50, r: 48, hy: -30 },
-            { x: -245, z: 150, r: 42, hy: -26 },
+            // West — far past gorge
+            { x: -310, z: -100, r: 36, hy: -22 },
+            { x: -305, z: 160, r: 34, hy: -20 },
             // East band
             { x: 250, z: -50, r: 50, hy: -32 },
             { x: 260, z: 60, r: 48, hy: -30 },
@@ -52,6 +52,7 @@ export class TerrainSystem {
     build(scene) {
         this._defineZones();
         this._buildCurvedHills(scene);
+        this.explore.build(scene);
         this._buildStairs(scene);
         this._buildSteppingStones(scene);
         this._buildHedges(scene);
@@ -63,6 +64,7 @@ export class TerrainSystem {
 
     update(dt) {
         this.time += dt;
+        this.explore?.update(dt);
 
         // Soft pastel lawn shimmer (breeze / afternoon light)
         const [colA, colB, colC, colD] = this._grassPalette;
@@ -97,7 +99,7 @@ export class TerrainSystem {
         return isCityFlat(x, z, WORLD.cityClearMargin ?? 28);
     }
 
-    /** Walkable height on open lawn / hills (no bridge decks). */
+    /** Walkable height on open lawn / hills / explore terrains (no bridge decks). */
     _lawnHeightAt(x, z) {
         // Hard rule: nothing raises the ground inside the city
         if (this._isCityFlat(x, z)) return WORLD.groundY;
@@ -105,6 +107,10 @@ export class TerrainSystem {
 
         const stairH = this._heightOnStair(x, z);
         if (stairH != null) return stairH;
+
+        // Pastel ridge + river gorge (explore zones outside town)
+        const exploreH = this.explore?.heightAt(x, z);
+        if (exploreH != null) return exploreH;
 
         for (const sl of this.slopes) {
             const h = this._heightOnSlope(x, z, sl);

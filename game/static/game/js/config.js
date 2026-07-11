@@ -1,9 +1,10 @@
 export const WORLD = {
-    size: 620,
+    size: 720,
     groundY: 0.15,
     roadWidth: 15,
     roadSpacing: 70,
-    bound: 280,
+    /** Expanded so players can reach Pastel Ridge (N) and River Gorge (W) */
+    bound: 340,
     /** Larger Japanese city footprint (concrete slab half-extents) */
     cityHalfX: 165,
     cityHalfZ: 145,

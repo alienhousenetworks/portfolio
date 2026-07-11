@@ -59,6 +59,28 @@ export const DISTRICT_DEFS = {
         color: '#7a878c',
         groundColor: 0xd6d4cc,
     },
+    /** Explore: pastel mountain ridge (north of city) */
+    ridge: {
+        id: 'ridge',
+        label: 'Pastel Ridge',
+        shortLabel: 'RIDGE',
+        x: 20,
+        z: -255,
+        radius: 100,
+        color: '#c4a86a',
+        groundColor: 0x5aad62,
+    },
+    /** Explore: pastel river gorge (west of river) */
+    gorge: {
+        id: 'gorge',
+        label: 'River Gorge',
+        shortLabel: 'GORGE',
+        x: -255,
+        z: 15,
+        radius: 110,
+        color: '#8fc7d9',
+        groundColor: 0x99cad5,
+    },
 };
 
 export const MAP_LEGEND = [
@@ -70,6 +92,7 @@ export const MAP_LEGEND = [
     { type: 'bus_stop', label: 'Bus', color: '#f7d55c' },
     { type: 'train_station', label: 'Metro', color: '#4c8fe3' },
     { type: 'district', label: 'Districts', color: '#7a878c' },
+    { type: 'explore', label: 'Explore', color: '#c4a86a' },
 ];
 
 export function getDistrictAt(x, z) {
@@ -88,6 +111,7 @@ export const POI_MAP_COLORS = {
     contact: '#f08b3a',
     bus_stop: '#f7d55c',
     train_station: '#4c8fe3',
+    explore: '#c4a86a',
 };
 
 export function districtSlots(districtId) {

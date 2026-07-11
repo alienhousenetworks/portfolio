@@ -1194,11 +1194,9 @@ export class WorldBuilder {
             this.scene.add(m);
         };
 
-        // North
-        hill(-70, -270, 52, 16, 42);
-        hill(25, -285, 65, 22, 50);
-        hill(110, -265, 48, 14, 38);
-        hill(-20, -255, 38, 12, 32, hillDark);
+        // North — flank Pastel Ridge (ridge sits ~z=-255, leave that clear)
+        hill(-140, -230, 40, 14, 36);
+        hill(140, -240, 42, 15, 38);
         // South
         hill(-55, 275, 54, 18, 44);
         hill(40, 290, 60, 20, 48);
@@ -1207,10 +1205,9 @@ export class WorldBuilder {
         hill(275, -45, 42, 18, 58);
         hill(285, 55, 46, 16, 54);
         hill(270, 145, 40, 14, 48);
-        // West (past river)
-        hill(-285, -40, 44, 20, 58);
-        hill(-295, 55, 48, 16, 54, hillDark);
-        hill(-275, 145, 40, 14, 48);
+        // West — far past River Gorge (gorge ~x=-255)
+        hill(-330, -120, 36, 16, 44);
+        hill(-325, 170, 38, 14, 42, hillDark);
     }
 
     // ─── POIs ───────────────────────────────────────────────────────────────
@@ -1233,6 +1230,28 @@ export class WorldBuilder {
                 mapLabel: poi.shortName || poi.name?.slice(0, 8) || '',
                 data: poi,
             });
+        });
+
+        // Explore destinations (map markers — outside city)
+        this.pois.push({
+            position: new THREE.Vector3(20, 0, -200),
+            type: 'explore',
+            name: 'Pastel Ridge Trail',
+            mapLabel: 'RIDGE',
+            data: {
+                name: 'Pastel Ridge Trail',
+                description: 'Walk north out of town into the pastel mountain ridge. Soft peaks, rock knobs, and open trails.',
+            },
+        });
+        this.pois.push({
+            position: new THREE.Vector3(-205, 0, 20),
+            type: 'explore',
+            name: 'River Gorge',
+            mapLabel: 'GORGE',
+            data: {
+                name: 'River Gorge',
+                description: 'Cross the west bridges and follow the winding gorge — turquoise water, rocky banks, autumn foliage and river cottages.',
+            },
         });
     }
 
