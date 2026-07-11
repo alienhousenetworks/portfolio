@@ -1,38 +1,39 @@
 export const WORLD = {
-    size: 720,
+    size: 780,
     groundY: 0.15,
     roadWidth: 15,
     roadSpacing: 70,
     /** Expanded so players can reach Pastel Ridge (N) and River Gorge (W) */
-    bound: 340,
-    /** Larger Japanese city footprint (concrete slab half-extents) */
-    cityHalfX: 165,
-    cityHalfZ: 145,
+    bound: 360,
+    /** Larger city footprint — room for Main + colony alleys */
+    cityHalfX: 200,
+    cityHalfZ: 175,
     /** Extra pad so hills/nature never clip the city slab */
     cityClearMargin: 28,
     parkX: 0,
     parkZ: 0,
     parkRadius: 18,
     parkLawnRadius: 22,
-    riverX: -180,
+    /** West of expanded city edge (~200) */
+    riverX: -230,
     riverWidth: 28,
-    riverLength: 500,
+    riverLength: 560,
     mountainY: 0,
 };
 
 /** True if (x,z) is on the flat city slab (no hills / embankments). */
 export function isCityFlat(x, z, margin = 0) {
-    const hx = (WORLD.cityHalfX ?? 165) + margin;
-    const hz = (WORLD.cityHalfZ ?? 145) + margin;
+    const hx = (WORLD.cityHalfX ?? 200) + margin;
+    const hz = (WORLD.cityHalfZ ?? 175) + margin;
     return Math.abs(x) <= hx && Math.abs(z) <= hz;
 }
 
 /** River bridge decks — west of city, spanning the river only */
 export const BRIDGES = [
-    { x: -180, z: -130, deckY: 2.35, halfW: 18, halfD: 5.5 },
-    { x: -180, z: -40, deckY: 2.35, halfW: 18, halfD: 5.5 },
-    { x: -180, z: 65, deckY: 2.35, halfW: 18, halfD: 5.5 },
-    { x: -180, z: 160, deckY: 2.35, halfW: 18, halfD: 5.5 },
+    { x: -230, z: -130, deckY: 2.35, halfW: 18, halfD: 5.5 },
+    { x: -230, z: -40, deckY: 2.35, halfW: 18, halfD: 5.5 },
+    { x: -230, z: 65, deckY: 2.35, halfW: 18, halfD: 5.5 },
+    { x: -230, z: 160, deckY: 2.35, halfW: 18, halfD: 5.5 },
 ];
 
 /** NPC / citizen stature — compact scale for the toon city */

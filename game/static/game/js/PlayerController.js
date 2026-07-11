@@ -289,7 +289,7 @@ export class PlayerController {
             moving: this.velocity.lengthSq() > 0.1,
             running: this.isRunning,
             onGround: this.onGround,
-            climbing: this.terrain?.isOnStair(this.avatar.position.x, this.avatar.position.z),
+            climbing: false,
             fade: 0.18,
         });
 
@@ -332,8 +332,6 @@ export class PlayerController {
             const hw = c.w / 2 + r;
             const hd = c.d / 2 + r;
             if (Math.abs(x - c.x) < hw && Math.abs(z - c.z) < hd) {
-                if (c.d > 100 && this.terrain?.isOnStair(x, z)) continue;
-                
                 // Allow walking under the bridge without hitting bridge colliders
                 if (y < 1.5 && (c.isBridge || c.isBridgeRamp)) continue;
                 // Allow walking on the bridge/ramps by ignoring their colliders when on top

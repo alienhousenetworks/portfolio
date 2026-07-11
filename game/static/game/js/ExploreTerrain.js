@@ -59,8 +59,8 @@ export const EXPLORE = {
     gorge: {
         id: 'gorge',
         label: 'River Gorge',
-        // West of bridges (river x=-180); gorge center further west
-        cx: -255,
+        // West of bridges (river x≈-230); gorge center further west
+        cx: -280,
         cz: 15,
         sizeX: 155,
         sizeZ: 240,
@@ -559,7 +559,7 @@ export class ExploreTerrain {
         this._signPost(scene, ridgeGate.x, WORLD.groundY, ridgeGate.z, 'Pastel Ridge →', 0xffd56b);
 
         // Path markers from bridges west → gorge
-        const gorgeGate = { x: -205, z: 20 };
+        const gorgeGate = { x: -250, z: 20 };
         this._signPost(scene, gorgeGate.x, WORLD.groundY, gorgeGate.z, '← River Gorge', 0xaee2e0);
 
         // Small stepping stones toward ridge approach (visual only)

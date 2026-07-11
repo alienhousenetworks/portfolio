@@ -7,7 +7,8 @@ import * as THREE from 'three';
 import { WORLD, PALETTE, isCityFlat } from './config.js';
 import { toonMat, toonMesh, setupCityLighting, INK } from './ToonStyle.js';
 import {
-    buildJapaneseBuilding, buildJapaneseCorner, buildShinjukuBuilding, createVendingMachine,
+    buildJapaneseBuilding, buildJapaneseCorner, buildShinjukuBuilding,
+    buildColonyBuilding, createVendingMachine,
 } from './Buildings.js';
 import {
     createStreetLamp, createBench, createFlowerPot, createMailbox,
@@ -24,17 +25,23 @@ import {
 //
 // Main Avenue   : N–S at X=0  (Shinjuku commercial canyon)
 // Cross Blvd    : E–W at Z=0
-// North Quiet   : E–W at Z=-90
-// South Quiet   : E–W at Z= 90
+// North Quiet   : E–W at Z=-105
+// South Quiet   : E–W at Z= 105
+// Colony Tall   : N–S at X= 55  (multi-storey alley — ref image 1)
+// Colony Low    : N–S at X=-55  (low residential lane — ref image 2)
 const ROAD = {
-    main:  { x: 0,   w: 15, z1: -135, z2: 135, sw: 2.8 }, // commercial Gehweg
-    cross: { z: 0,   w: 13, x1: -155, x2: 155, sw: 1.7 },
-    north: { z: -90, w: 11, x1: -145, x2: 145, sw: 1.6 },
-    south: { z: 90,  w: 11, x1: -145, x2: 145, sw: 1.6 },
-    sw: 1.6,       // default Gehweg
-    curb: 0.28,    // Bordstein
-    facadeGap: 1.2, // clear air between Gehweg outer edge and building face
-    mainBldgDepth: 10.5, // fixed depth so canyon line is consistent
+    main:  { x: 0,   w: 15, z1: -160, z2: 160, sw: 2.8 },
+    cross: { z: 0,   w: 13, x1: -185, x2: 185, sw: 1.7 },
+    north: { z: -105, w: 11, x1: -175, x2: 175, sw: 1.6 },
+    south: { z: 105,  w: 11, x1: -175, x2: 175, sw: 1.6 },
+    // Narrow colony alleys (tight canyon, buildings close)
+    colonyTall: { x: 55,  w: 6.2, z1: -130, z2: 130, sw: 0.95, style: 'tall' },
+    colonyLow:  { x: -55, w: 5.8, z1: -130, z2: 130, sw: 1.1,  style: 'low' },
+    sw: 1.6,
+    curb: 0.28,
+    facadeGap: 1.2,
+    mainBldgDepth: 10.5,
+    colonyBldgDepth: 7.5, // shallow lots so alleys feel tight
 };
 
 /** Per-road sidewalk width */
@@ -78,6 +85,7 @@ export class WorldBuilder {
         this._ground();
         this._roadNetwork();
         this._mainAvenueShinjuku(); // dense commercial canyon (full Main length)
+        this._colonyDistricts();    // two narrow colony alleys (ref photos)
         this._avenueTrees();        // tree tunnels on side streets only
         this._buildingRows();
         this._streetProps();
@@ -216,6 +224,12 @@ export class WorldBuilder {
         if (Math.abs(z - ROAD.south.z) < row(ROAD.south.w, roadSw(ROAD.south))
             && x >= ROAD.south.x1 - pad && x <= ROAD.south.x2 + pad) return true;
 
+        // Colony alleys (narrow N–S)
+        for (const col of [ROAD.colonyTall, ROAD.colonyLow]) {
+            if (Math.abs(x - col.x) < row(col.w, roadSw(col))
+                && z >= col.z1 - pad && z <= col.z2 + pad) return true;
+        }
+
         // River (west of city)
         const riverX = WORLD.riverX ?? -(CITY_HX + 20);
         if (x < riverX + (WORLD.riverWidth ?? 28) / 2 + 4) return true;
@@ -321,7 +335,62 @@ export class WorldBuilder {
         ewRoad(ROAD.north.z, ROAD.north.x1, ROAD.north.x2, ROAD.north.w, roadSw(ROAD.north));
         ewRoad(ROAD.south.z, ROAD.south.x1, ROAD.south.x2, ROAD.south.w, roadSw(ROAD.south));
 
+        // Narrow colony alleys — worn asphalt, minimal markings (ref photos)
+        this._buildColonyRoad(ROAD.colonyTall);
+        this._buildColonyRoad(ROAD.colonyLow);
+
         this._buildCentralPlaza();
+    }
+
+    /** Narrow worn colony lane (no big highway markings) */
+    _buildColonyRoad(def) {
+        const asphalt = toonMat(0x5a6268);
+        const edge = toonMat(0x4a5258);
+        const sw = roadSw(def);
+        const half = def.w / 2;
+        const len = def.z2 - def.z1;
+        const midZ = (def.z1 + def.z2) / 2;
+        const cw = ROAD.curb;
+
+        const plane = (x, z, w, d, mat, y = 0.05) => {
+            const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), mat);
+            m.rotation.x = -Math.PI / 2;
+            m.position.set(x, y, z);
+            m.receiveShadow = true;
+            this.scene.add(m);
+        };
+
+        plane(def.x, midZ, def.w, len, asphalt, 0.048);
+        plane(def.x - half + 0.25, midZ, 0.4, len, edge, 0.049);
+        plane(def.x + half - 0.25, midZ, 0.4, len, edge, 0.049);
+
+        // Low curb / plinth edge (photo: raised building footings)
+        [-1, 1].forEach(side => {
+            const curb = toonMesh(
+                new THREE.BoxGeometry(cw + 0.12, 0.22, len),
+                0xc8c0b4,
+                { outline: false }
+            );
+            curb.mesh.position.set(def.x + side * (half + (cw + 0.12) / 2), 0.12, midZ);
+            curb.mesh.receiveShadow = true;
+            this.scene.add(curb.group);
+        });
+
+        // Thin side walks
+        const gehwegA = toonMat(0xc4beb4);
+        const gehwegB = toonMat(0xb8b2a8);
+        [-1, 1].forEach(side => {
+            const walkX = def.x + side * (half + cw + sw / 2);
+            this._buildGehwegStrip(walkX, midZ, sw, len, 'ns', gehwegA, gehwegB);
+        });
+
+        // Occasional manhole covers (photo 2)
+        for (let z = def.z1 + 20; z < def.z2 - 20; z += 42) {
+            if (Math.abs(z) < 14) continue;
+            const hole = toonMesh(new THREE.CylinderGeometry(0.55, 0.55, 0.06, 12), 0x4a5058, { outline: false });
+            hole.mesh.position.set(def.x + ((z * 0.1) % 1.2) - 0.4, 0.055, z);
+            this.scene.add(hole.group);
+        }
     }
 
     /**
@@ -500,6 +569,9 @@ export class WorldBuilder {
                 if (Math.hypot(x, roadZ) < 18) continue;
                 // Never plant into Main Avenue building canyon
                 if (Math.abs(x) < mainSkip) continue;
+                // Skip colony alleys (tight canyons — no big avenue trees)
+                if (Math.abs(x - ROAD.colonyTall.x) < 14) continue;
+                if (Math.abs(x - ROAD.colonyLow.x) < 14) continue;
 
                 const tN = createAvenueTree(seed++, +1);
                 tN.rotation.y = Math.PI / 2;
@@ -577,6 +649,12 @@ export class WorldBuilder {
         // Main × North / South quiet lanes
         cw(0, ROAD.north.z, ROAD.main.w, 'x');
         cw(0, ROAD.south.z, ROAD.main.w, 'x');
+        // Colony alleys × Cross / North / South
+        for (const col of [ROAD.colonyTall, ROAD.colonyLow]) {
+            cw(col.x, ROAD.cross.z, col.w, 'x');
+            cw(col.x, ROAD.north.z, col.w, 'x');
+            cw(col.x, ROAD.south.z, col.w, 'x');
+        }
     }
 
     /**
@@ -647,6 +725,207 @@ export class WorldBuilder {
                 this.scene.add(t);
             }
         });
+    }
+
+    /**
+     * Two colony alleys from reference photos:
+     *  - colonyTall (x=+55): multi-storey balconies, wires, poles (image 1)
+     *  - colonyLow  (x=-55): low homes, laundry, parked bikes (image 2)
+     * Buildings sit tight to the narrow road for a canyon/colony feel.
+     */
+    _colonyDistricts() {
+        this._buildColonyStrip(ROAD.colonyTall, 'tall');
+        this._buildColonyStrip(ROAD.colonyLow, 'low');
+    }
+
+    _buildColonyStrip(def, style) {
+        const half = def.w / 2;
+        const sw = roadSw(def);
+        const facadeGap = 0.45; // very tight — photos show buildings on the street edge
+        const depth = ROAD.colonyBldgDepth;
+        const facadeLine = half + ROAD.curb + sw + facadeGap;
+        const spacing = style === 'tall' ? 9.2 : 10.5;
+        let seed = style === 'tall' ? 12000 : 15000;
+
+        for (let z = def.z1 + 8; z <= def.z2 - 8; z += spacing) {
+            // Gaps at major E–W crossings
+            if (Math.abs(z) < 16) continue;
+            if (Math.abs(z - ROAD.north.z) < 12) continue;
+            if (Math.abs(z - ROAD.south.z) < 12) continue;
+            if (Math.abs(z - ROAD.cross.z) < 12) continue;
+
+            for (const side of [-1, 1]) {
+                seed++;
+                const facadeW = style === 'tall'
+                    ? 7.5 + (seed % 3) * 0.8
+                    : 8.0 + (seed % 3) * 0.9;
+                const h = style === 'tall'
+                    ? 11 + (seed % 8) + ((seed * 3) % 4)   // 11–22 multi-storey
+                    : 5.5 + (seed % 4) + ((seed * 2) % 3) * 0.5; // 5.5–10 low colony
+
+                const bx = def.x + side * (facadeLine + depth / 2);
+                const bz = z + ((seed % 3) - 1) * 0.15;
+
+                const bld = buildColonyBuilding(facadeW, h, depth, seed, style);
+                bld.position.set(bx, 0, bz);
+                bld.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2;
+                this.scene.add(bld);
+                this.colliders.push({ x: bx, z: bz, w: depth, d: facadeW, h, floorY: 0 });
+            }
+        }
+
+        // Overhead wires / poles (photo 1 + 2 street clutter)
+        this._colonyWiresAndPoles(def, style);
+
+        // Props unique to each style
+        if (style === 'tall') {
+            this._colonyTallProps(def);
+        } else {
+            this._colonyLowProps(def);
+        }
+    }
+
+    _colonyWiresAndPoles(def, style) {
+        const half = def.w / 2;
+        const poleX = half + ROAD.curb + roadSw(def) * 0.4;
+        const wireMat = toonMat(0x2a2a32);
+        let seed = style === 'tall' ? 200 : 300;
+
+        for (let z = def.z1 + 14; z < def.z2 - 14; z += 18) {
+            if (Math.abs(z) < 14) continue;
+            seed++;
+            const side = seed % 2 === 0 ? 1 : -1;
+            const px = def.x + side * poleX;
+
+            // Utility pole
+            const pole = toonMesh(new THREE.BoxGeometry(0.14, 6.2, 0.14), 0x5a5850);
+            pole.mesh.position.set(px, 3.1, z);
+            pole.mesh.castShadow = true;
+            this.scene.add(pole.group);
+
+            // Cross arm
+            const arm = toonMesh(new THREE.BoxGeometry(1.6, 0.08, 0.08), 0x4a4840, { outline: false });
+            arm.mesh.position.set(px - side * 0.5, 5.6, z);
+            this.scene.add(arm.group);
+
+            // Speaker horns on tall alley poles (photo 1)
+            if (style === 'tall' && seed % 3 === 0) {
+                for (let i = 0; i < 2; i++) {
+                    const horn = toonMesh(new THREE.CylinderGeometry(0.22, 0.35, 0.4, 8), 0x3a4048);
+                    horn.mesh.position.set(px - side * 0.55, 4.8 - i * 0.45, z);
+                    horn.mesh.rotation.z = side * 0.9;
+                    this.scene.add(horn.group);
+                }
+            }
+
+            // Wire sag to next pole
+            const nextZ = z + 18;
+            if (nextZ < def.z2 - 10) {
+                const wire = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.02, 0.02, 18.2, 4),
+                    wireMat
+                );
+                wire.position.set(px - side * 0.3, 5.5, z + 9);
+                wire.rotation.x = Math.PI / 2;
+                // slight sag via scale
+                wire.scale.set(1, 1, 1.02);
+                this.scene.add(wire);
+            }
+        }
+    }
+
+    _colonyTallProps(def) {
+        const half = def.w / 2;
+        const walk = half + ROAD.curb + roadSw(def) * 0.5;
+        let s = 400;
+
+        for (let z = def.z1 + 16; z < def.z2 - 16; z += 22) {
+            if (Math.abs(z) < 16) continue;
+            s++;
+            // Street lamps tight to edge
+            const lamp = createStreetLamp();
+            lamp.position.set(def.x + (s % 2 === 0 ? -1 : 1) * walk, 0, z);
+            this.scene.add(lamp);
+
+            if (s % 3 === 0) {
+                const trash = createTrashCan();
+                trash.position.set(def.x + (s % 2 === 0 ? 1 : -1) * (walk + 0.2), 0, z + 4);
+                this.scene.add(trash);
+            }
+            if (s % 4 === 0) {
+                const bike = createBicycleParked();
+                bike.position.set(def.x - walk * 0.9, 0, z + 6);
+                bike.rotation.y = Math.PI / 2;
+                this.scene.add(bike);
+            }
+            if (s % 5 === 0) {
+                const pot = createFlowerPot(s);
+                pot.position.set(def.x + walk * 0.85, 0, z + 3);
+                this.scene.add(pot);
+            }
+        }
+    }
+
+    _colonyLowProps(def) {
+        const half = def.w / 2;
+        const walk = half + ROAD.curb + roadSw(def) * 0.55;
+        let s = 500;
+
+        for (let z = def.z1 + 14; z < def.z2 - 14; z += 20) {
+            if (Math.abs(z) < 16) continue;
+            s++;
+
+            // Parked motorcycles along edge (photo 2)
+            if (s % 2 === 0) {
+                const bike = createBicycleParked();
+                bike.scale.setScalar(1.15);
+                bike.position.set(def.x + (s % 4 === 0 ? 1 : -1) * (half + 0.35), 0, z);
+                bike.rotation.y = Math.PI / 2 + (s % 3) * 0.1;
+                this.scene.add(bike);
+            }
+
+            // Benches / sitting plinths
+            if (s % 3 === 0) {
+                const bench = createBench();
+                bench.position.set(def.x - walk * 0.7, 0, z + 5);
+                bench.rotation.y = Math.PI / 2;
+                this.scene.add(bench);
+            }
+
+            // Laundry line across alley occasionally
+            if (s % 4 === 0) {
+                const y = 3.2;
+                const left = def.x - half - 0.8;
+                const right = def.x + half + 0.8;
+                const line = toonMesh(
+                    new THREE.BoxGeometry(right - left, 0.03, 0.03),
+                    0x8a9098,
+                    { outline: false }
+                );
+                line.mesh.position.set(def.x, y, z + 2);
+                this.scene.add(line.group);
+                const clothCols = [0xf2b0c5, 0x48d2c9, 0xffffff, 0xf5c842];
+                for (let i = 0; i < 4; i++) {
+                    const cloth = toonMesh(
+                        new THREE.BoxGeometry(0.5, 0.65, 0.04),
+                        clothCols[i],
+                        { outline: false }
+                    );
+                    cloth.mesh.position.set(
+                        left + 1.2 + i * 0.9,
+                        y - 0.35,
+                        z + 2
+                    );
+                    this.scene.add(cloth.group);
+                }
+            }
+
+            if (s % 5 === 0) {
+                const trash = createTrashCan();
+                trash.position.set(def.x + walk * 0.8, 0, z + 7);
+                this.scene.add(trash);
+            }
+        }
     }
 
     _mainAvenueLanePaint() {
@@ -832,16 +1111,20 @@ export class WorldBuilder {
         const cell = 16;
 
         // Candidate slots across expanded city
-        for (let x = -150; x <= 150; x += cell) {
-            for (let z = -125; z <= 125; z += cell) {
+        for (let x = -185; x <= 185; x += cell) {
+            for (let z = -155; z <= 155; z += cell) {
                 // Keep roads + tree buffer clear
                 if (this._isRoadOrPark(x, z, 2)) continue;
 
-                // Keep generic lots outside Main commercial canyon + side ROW
+                // Keep generic lots outside Main canyon + colony alleys + side ROW
                 const mainClear = mainCorridorClear();
+                const colHalf = (def) =>
+                    def.w / 2 + ROAD.curb + roadSw(def) + ROAD.colonyBldgDepth + 2.5;
                 const crossClear = walkOuter(ROAD.cross.w / 2, roadSw(ROAD.cross)) + ROAD.facadeGap + 5;
                 const quietClear = walkOuter(ROAD.north.w / 2, roadSw(ROAD.north)) + ROAD.facadeGap + 4.5;
                 if (Math.abs(x) < mainClear) continue;
+                if (Math.abs(x - ROAD.colonyTall.x) < colHalf(ROAD.colonyTall)) continue;
+                if (Math.abs(x - ROAD.colonyLow.x) < colHalf(ROAD.colonyLow)) continue;
                 // Setback from E-W roads (buildings behind Gehweg + gap)
                 if (Math.abs(z) < crossClear && Math.abs(x) > 16) continue;
                 if (Math.abs(z - ROAD.north.z) < quietClear) continue;
@@ -1244,13 +1527,33 @@ export class WorldBuilder {
             },
         });
         this.pois.push({
-            position: new THREE.Vector3(-205, 0, 20),
+            position: new THREE.Vector3(-250, 0, 20),
             type: 'explore',
             name: 'River Gorge',
             mapLabel: 'GORGE',
             data: {
                 name: 'River Gorge',
                 description: 'Cross the west bridges and follow the winding gorge — turquoise water, rocky banks, autumn foliage and river cottages.',
+            },
+        });
+        this.pois.push({
+            position: new THREE.Vector3(55, 0, 40),
+            type: 'explore',
+            name: 'East Colony Alley',
+            mapLabel: 'COLONY',
+            data: {
+                name: 'East Colony Alley',
+                description: 'Narrow multi-storey alley with balconies, wires, and tight façades.',
+            },
+        });
+        this.pois.push({
+            position: new THREE.Vector3(-55, 0, -40),
+            type: 'explore',
+            name: 'West Colony Lane',
+            mapLabel: 'LANE',
+            data: {
+                name: 'West Colony Lane',
+                description: 'Quiet low residential lane with laundry, plinths, and parked bikes.',
             },
         });
     }

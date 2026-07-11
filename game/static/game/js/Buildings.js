@@ -362,6 +362,170 @@ function _upperStep(g, w, h, d, seed, wallCol, roofCol) {
     }
 }
 
+// ─── Colony / alley buildings (narrow street refs) ─────────────────────────
+// Tall multi-storey (image 1) and low residential (image 2), pastel toon.
+
+const COLONY = {
+    tallWalls: [
+        0xd4b8a8, // warm clay
+        0xc8d8e0, // faded blue
+        0xe8c8b0, // peach plaster
+        0xb8c4c8, // grey-blue
+        0xd8c0a0, // sand ochre
+        0xc0b0c8, // dusty lilac
+    ],
+    lowWalls: [
+        0xd8a878, // terracotta
+        0xc4a890, // mud plaster
+        0xb89070, // brown clay
+        0xe0b898, // peach
+        0xa88878, // dusty rose-brown
+    ],
+    accents: [0x48a888, 0xd46858, 0xe8c84a, 0x5a90c8, 0xc878a0],
+    balcony: 0xc8b8a0,
+    rail: 0x6a7078,
+    shutter: [0x3a7860, 0x486878, 0x8a5040, 0x5a6880],
+};
+
+/**
+ * @param {'tall'|'low'} style
+ * Local +Z is street-facing façade.
+ */
+export function buildColonyBuilding(w, h, d, seed, style = 'tall') {
+    const s = Math.abs(Math.round(seed)) % 997;
+    const g = new THREE.Group();
+    const tall = style === 'tall';
+    const wallCol = pick(tall ? COLONY.tallWalls : COLONY.lowWalls, s);
+    const floors = Math.max(1, Math.floor(h / (tall ? 3.0 : 2.8)));
+
+    // Main body
+    const body = toonMesh(new THREE.BoxGeometry(w, h, d), wallCol);
+    body.mesh.position.y = h / 2;
+    body.mesh.castShadow = true;
+    body.mesh.receiveShadow = true;
+    g.add(body.group);
+
+    // Flat parapet / terrace lip
+    const roofCol = pick(JP.roofs, s + 2);
+    const parapet = toonMesh(new THREE.BoxGeometry(w + 0.2, 0.35, d + 0.2), roofCol);
+    parapet.mesh.position.y = h + 0.18;
+    g.add(parapet.group);
+
+    // Floor bands
+    for (let f = 1; f < floors; f++) {
+        const by = f * (h / floors);
+        if (by >= h - 0.3) break;
+        const band = toonMesh(
+            new THREE.BoxGeometry(w + 0.04, 0.1, d + 0.04),
+            0xb0a898,
+            { outline: false }
+        );
+        band.mesh.position.y = by;
+        g.add(band.group);
+    }
+
+    // Ground door + windows
+    const doorX = ((s % 2) - 0.5) * w * 0.25;
+    const door = toonMesh(new THREE.BoxGeometry(0.9, 2.1, 0.08), 0x3a4848, { outline: false });
+    door.mesh.position.set(doorX, 1.05, d / 2 + 0.03);
+    g.add(door.group);
+
+    // Windows per floor on street face
+    const cols = Math.max(1, Math.floor(w / 2.4));
+    for (let r = 1; r < floors; r++) {
+        const wy = r * (h / floors) + (h / floors) * 0.35;
+        if (wy >= h - 0.6) continue;
+        for (let c = 0; c < cols; c++) {
+            const wx = -w / 2 + (c + 0.5) * (w / cols);
+            const shut = pick(COLONY.shutter, s + r + c);
+            const frame = toonMesh(new THREE.BoxGeometry(1.1, 1.2, 0.08), 0x2a3038, { outline: false });
+            frame.mesh.position.set(wx, wy, d / 2 + 0.02);
+            g.add(frame.group);
+            const glass = new THREE.Mesh(
+                new THREE.BoxGeometry(0.85, 0.95, 0.05),
+                toonMat(0x7ac4d0, {
+                    transparent: true, opacity: 0.65,
+                    emissive: 0xffe0a0, emissiveIntensity: 0,
+                })
+            );
+            glass.position.set(wx, wy, d / 2 + 0.04);
+            glass.userData.cityLight = 'window';
+            glass.userData.litAtNight = ((s + r + c) % 4) !== 0;
+            glass.material.userData.cityLight = 'window';
+            g.add(glass);
+
+            // Colored shutter strip
+            if ((s + c) % 2 === 0) {
+                const sh = toonMesh(new THREE.BoxGeometry(0.35, 0.95, 0.04), shut, { outline: false });
+                sh.mesh.position.set(wx - 0.35, wy, d / 2 + 0.06);
+                g.add(sh.group);
+            }
+        }
+    }
+
+    // Balconies (tall style — photo 1)
+    if (tall && floors >= 2) {
+        for (let r = 1; r < Math.min(floors, 4); r++) {
+            if ((s + r) % 2 === 0) continue;
+            const by = r * (h / floors) + 0.2;
+            const bw = Math.min(w * 0.55, 4.2);
+            const bal = toonMesh(new THREE.BoxGeometry(bw, 0.12, 0.9), COLONY.balcony);
+            bal.mesh.position.set(((s + r) % 2 === 0 ? -1 : 1) * w * 0.12, by, d / 2 + 0.5);
+            g.add(bal.group);
+            // Rail
+            const rail = toonMesh(new THREE.BoxGeometry(bw, 0.55, 0.06), COLONY.rail, { outline: false });
+            rail.mesh.position.set(((s + r) % 2 === 0 ? -1 : 1) * w * 0.12, by + 0.3, d / 2 + 0.9);
+            g.add(rail.group);
+        }
+    }
+
+    // AC boxes on façade
+    if (tall) {
+        for (let i = 0; i < 2; i++) {
+            const ac = toonMesh(new THREE.BoxGeometry(0.7, 0.4, 0.35), 0xd0d4d0, { outline: false });
+            ac.mesh.position.set(
+                -w / 2 + 0.6 + i * 1.4,
+                3.2 + i * 2.8,
+                d / 2 + 0.25
+            );
+            g.add(ac.group);
+        }
+    }
+
+    // Laundry poles (low residential — photo 2)
+    if (!tall && s % 2 === 0) {
+        const pole = toonMesh(new THREE.BoxGeometry(0.06, 1.4, 0.06), 0x8a9098, { outline: false });
+        pole.mesh.position.set(w * 0.3, h + 0.9, d / 2 - 0.2);
+        g.add(pole.group);
+        const clothes = [0xf2b0c5, 0x48d2c9, 0xf5c842, 0xffffff];
+        for (let i = 0; i < 3; i++) {
+            const cloth = toonMesh(
+                new THREE.BoxGeometry(0.55, 0.7, 0.04),
+                clothes[i % clothes.length],
+                { outline: false }
+            );
+            cloth.mesh.position.set(w * 0.3 - 0.7 + i * 0.55, h + 0.5, d / 2 + 0.15);
+            cloth.mesh.rotation.z = (i - 1) * 0.08;
+            g.add(cloth.group);
+        }
+    }
+
+    // Shop accent strip on ground floor (tall corner feel)
+    if (tall && s % 3 === 0) {
+        const acc = pick(COLONY.accents, s);
+        const strip = toonMesh(new THREE.BoxGeometry(w + 0.05, 0.25, d + 0.05), acc, { outline: false });
+        strip.mesh.position.y = 2.9;
+        g.add(strip.group);
+    }
+
+    // Raised plinth / sidewalk edge (both styles)
+    const plinth = toonMesh(new THREE.BoxGeometry(w + 0.3, 0.35, 0.55), 0xc8c0b4, { outline: false });
+    plinth.mesh.position.set(0, 0.18, d / 2 + 0.25);
+    g.add(plinth.group);
+
+    return g;
+}
+
 // ─── Shinjuku-style commercial tower (pastel anime) ───────────────────────
 // Dense façade, vertical kanban signs, billboards, neon glow — matches
 // japan-725347 photo composition but in the game's pastel toon palette.
