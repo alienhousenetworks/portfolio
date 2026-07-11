@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { PALETTE } from './config.js';
 import { toonMesh, toonMat, INK } from './ToonStyle.js';
 
-export function createStreetLamp() {
+export function createStreetLamp(isMonochrome = false) {
     const g = new THREE.Group();
     g.userData.isStreetLamp = true;
     const pole = toonMesh(new THREE.BoxGeometry(0.1, 4.2, 0.1), PALETTE.pole);
@@ -11,8 +11,9 @@ export function createStreetLamp() {
     const arm = toonMesh(new THREE.BoxGeometry(0.8, 0.08, 0.08), PALETTE.pole);
     arm.mesh.position.set(0.35, 4, 0);
     g.add(arm.group);
-    const bulb = toonMesh(new THREE.BoxGeometry(0.35, 0.25, 0.35), PALETTE.yellow, {
-        emissive: PALETTE.yellow, emissiveIntensity: 0.2,
+    const bulbColor = isMonochrome ? 0xeeeeee : PALETTE.yellow;
+    const bulb = toonMesh(new THREE.BoxGeometry(0.35, 0.25, 0.35), bulbColor, {
+        emissive: bulbColor, emissiveIntensity: 0.2,
     });
     bulb.mesh.position.set(0.7, 3.85, 0);
     bulb.mesh.userData.cityLight = 'lamp';
@@ -21,10 +22,11 @@ export function createStreetLamp() {
     g.add(bulb.group);
 
     // Soft cone glow (emissive sphere) — brightens strongly at night
+    const glowColor = isMonochrome ? 0xffffff : 0xffe8a0;
     const glow = new THREE.Mesh(
         new THREE.SphereGeometry(0.55, 8, 6),
         new THREE.MeshBasicMaterial({
-            color: 0xffe8a0,
+            color: glowColor,
             transparent: true,
             opacity: 0.12,
             depthWrite: false,
@@ -49,13 +51,15 @@ export function createBridgeLamp() {
     return g;
 }
 
-export function createBench() {
+export function createBench(isMonochrome = false) {
     const g = new THREE.Group();
-    const seat = toonMesh(new THREE.BoxGeometry(2.2, 0.15, 0.65), PALETTE.wood[1]);
+    const seatColor = isMonochrome ? 0xcccccc : PALETTE.wood[1];
+    const legColor = isMonochrome ? 0x888888 : PALETTE.wood[0];
+    const seat = toonMesh(new THREE.BoxGeometry(2.2, 0.15, 0.65), seatColor);
     seat.mesh.position.y = 0.45;
     g.add(seat.group);
     [-0.85, 0.85].forEach(x => {
-        const leg = toonMesh(new THREE.BoxGeometry(0.1, 0.45, 0.55), PALETTE.wood[0]);
+        const leg = toonMesh(new THREE.BoxGeometry(0.1, 0.45, 0.55), legColor);
         leg.mesh.position.set(x, 0.22, 0);
         g.add(leg.group);
     });
@@ -943,9 +947,9 @@ export function createTrafficCone(seed = 0) {
 }
 
 /** Trash/rubbish bin (blue, common in Japanese streets) */
-export function createTrashCan(seed = 0) {
+export function createTrashCan(seed = 0, isMonochrome = false) {
     const g = new THREE.Group();
-    const colors = [0x5888c8, 0x58a858, 0xd86848];
+    const colors = isMonochrome ? [0x888888, 0xaaaaaa, 0x666666] : [0x5888c8, 0x58a858, 0xd86848];
     const col = colors[Math.abs(seed) % 3];
     const body = toonMesh(new THREE.CylinderGeometry(0.3, 0.28, 0.72, 10), col);
     body.mesh.position.y = 0.36;

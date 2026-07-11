@@ -385,8 +385,9 @@ export class WorldBuilder {
 
     /** Narrow worn colony lane (no big highway markings) */
     _buildColonyRoad(def) {
-        const asphalt = toonMat(0x4a4e54);
-        const edge = toonMat(0x363a40);
+        const isSukumar = def.id === 'sukumar';
+        const asphalt = toonMat(isSukumar ? 0x333333 : 0x4a4e54);
+        const edge = toonMat(isSukumar ? 0x222222 : 0x363a40);
         const sw = roadSw(def);
         const half = def.w / 2;
         const len = def.z2 - def.z1;
@@ -407,19 +408,21 @@ export class WorldBuilder {
         plane(def.x - half + 0.25, midZ, 0.4, len, edge, Y_ROAD + 0.005);
         plane(def.x + half - 0.25, midZ, 0.4, len, edge, Y_ROAD + 0.005);
 
-        [-1, 1].forEach(side => {
-            const curb = toonMesh(
-                new THREE.BoxGeometry(cw + 0.12, 0.22, len),
-                0xe8e4dc,
-                { outline: false }
-            );
-            curb.mesh.position.set(def.x + side * (half + (cw + 0.12) / 2), gy + 0.14, midZ);
-            curb.mesh.receiveShadow = true;
-            this.scene.add(curb.group);
-        });
+        if (!isSukumar) {
+            [-1, 1].forEach(side => {
+                const curb = toonMesh(
+                    new THREE.BoxGeometry(cw + 0.12, 0.22, len),
+                    0xe8e4dc,
+                    { outline: false }
+                );
+                curb.mesh.position.set(def.x + side * (half + (cw + 0.12) / 2), gy + 0.14, midZ);
+                curb.mesh.receiveShadow = true;
+                this.scene.add(curb.group);
+            });
+        }
 
-        const gehwegA = toonMat(0xd8d4cc);
-        const gehwegB = toonMat(0xcac6be);
+        const gehwegA = toonMat(isSukumar ? 0xeaeaea : 0xd8d4cc);
+        const gehwegB = toonMat(isSukumar ? 0xd0d0d0 : 0xcac6be);
         [-1, 1].forEach(side => {
             const walkX = def.x + side * (half + cw + sw / 2);
             this._buildGehwegStrip(walkX, midZ, sw, len, 'ns', gehwegA, gehwegB);
@@ -890,17 +893,21 @@ export class WorldBuilder {
     _sukumarCurbPaint(def) {
         const gy = WORLD.groundY ?? 0.15;
         const half = def.w / 2;
-        const y = gy + 0.09;
+        const cw = ROAD.curb;
+        const curbW = cw + 0.12; // 0.40
+        const y = gy + 0.14; // Same height as road curb
         const black = toonMat(0x2a2a2a);
         const white = toonMat(0xf0f0f0);
         const seg = 2.2;
         for (const side of [-1, 1]) {
-            for (let z = def.z1 + 4; z < def.z2 - 4; z += seg * 2) {
-                const b = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.1, seg), black);
-                b.position.set(def.x + side * (half + 0.15), y, z + seg / 2);
+            for (let z = def.z1; z < def.z2; z += seg * 2) {
+                const b = new THREE.Mesh(new THREE.BoxGeometry(curbW, 0.22, seg), black);
+                b.position.set(def.x + side * (half + curbW / 2), y, z + seg / 2);
+                b.receiveShadow = true;
                 this.scene.add(b);
-                const w = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.1, seg), white);
-                w.position.set(def.x + side * (half + 0.15), y, z + seg + seg / 2);
+                const w = new THREE.Mesh(new THREE.BoxGeometry(curbW, 0.22, seg), white);
+                w.position.set(def.x + side * (half + curbW / 2), y, z + seg + seg / 2);
+                w.receiveShadow = true;
                 this.scene.add(w);
             }
         }
@@ -916,8 +923,8 @@ export class WorldBuilder {
             if (Math.abs(z) < 15) continue;
             s++;
 
-            // Street lamps
-            const lamp = createStreetLamp();
+            // Street lamps (monochrome)
+            const lamp = createStreetLamp(true);
             lamp.position.set(def.x + (s % 2 === 0 ? -1 : 1) * walk, 0, z);
             this.scene.add(lamp);
 
@@ -939,16 +946,16 @@ export class WorldBuilder {
                 this.scene.add(bike);
             }
 
-            // Bench on wider sidewalk
+            // Bench on wider sidewalk (monochrome)
             if (s % 4 === 0) {
-                const bench = createBench();
+                const bench = createBench(true);
                 bench.position.set(def.x + walk * 0.7, 0, z + 2);
                 bench.rotation.y = -Math.PI / 2;
                 this.scene.add(bench);
             }
 
             if (s % 5 === 0) {
-                const trash = createTrashCan();
+                const trash = createTrashCan(s, true);
                 trash.position.set(def.x + walk * 0.9, 0, z + 7);
                 this.scene.add(trash);
             }
@@ -957,22 +964,26 @@ export class WorldBuilder {
 
     /** Name board at north & south mouths of the colony lane */
     _colonyNameSigns(def, color) {
+        const isSukumar = def.id === 'sukumar';
         const half = def.w / 2;
         const walk = half + ROAD.curb + roadSw(def) * 0.6;
         [def.z1 + 10, def.z2 - 10].forEach((z, i) => {
             const g = new THREE.Group();
-            const pole = toonMesh(new THREE.BoxGeometry(0.12, 2.8, 0.12), 0x6a6058, { outline: false });
+            const poleColor = isSukumar ? 0x4a4a4a : 0x6a6058;
+            const pole = toonMesh(new THREE.BoxGeometry(0.12, 2.8, 0.12), poleColor, { outline: false });
             pole.mesh.position.y = 1.4;
             g.add(pole.group);
             // Board
-            const board = toonMesh(new THREE.BoxGeometry(2.6, 1.0, 0.12), color);
+            const boardColor = isSukumar ? 0xe0e0e0 : color;
+            const board = toonMesh(new THREE.BoxGeometry(2.6, 1.0, 0.12), boardColor);
             board.mesh.position.set(0.2, 2.5, 0);
             g.add(board.group);
             // Accent bar
-            const bar = toonMesh(new THREE.BoxGeometry(2.2, 0.12, 0.05), 0xf8f0e0, { outline: false });
+            const barColor = isSukumar ? 0xffffff : 0xf8f0e0;
+            const bar = toonMesh(new THREE.BoxGeometry(2.2, 0.12, 0.05), barColor, { outline: false });
             bar.mesh.position.set(0.2, 2.75, 0.08);
             g.add(bar.group);
-            const bar2 = toonMesh(new THREE.BoxGeometry(2.2, 0.12, 0.05), 0xf8f0e0, { outline: false });
+            const bar2 = toonMesh(new THREE.BoxGeometry(2.2, 0.12, 0.05), barColor, { outline: false });
             bar2.mesh.position.set(0.2, 2.25, 0.08);
             g.add(bar2.group);
 

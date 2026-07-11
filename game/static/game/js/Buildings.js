@@ -4,7 +4,7 @@
  */
 import * as THREE from 'three';
 import { PALETTE } from './config.js';
-import { toonMesh, toonMat, INK } from './ToonStyle.js';
+import { toonMesh, toonMat, INK, getGradientMap } from './ToonStyle.js';
 
 // ─── Japanese palette ──────────────────────────────────────────────────────
 const JP = {
@@ -633,6 +633,167 @@ function _sukumarPilasters(g, w, h, d, s, floorH, floors) {
     g.add(base.group);
 }
 
+let _sukumarMuralTexture = null;
+function getSukumarMuralTexture() {
+    if (_sukumarMuralTexture) return _sukumarMuralTexture;
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+    
+    // Fill white background
+    ctx.fillStyle = '#f5f5f5';
+    ctx.fillRect(0, 0, 1024, 512);
+    
+    // Draw charcoal-like black lines
+    ctx.strokeStyle = '#151515';
+    ctx.fillStyle = '#151515';
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    
+    // 1. Draw Goat-Rooster on the left (x: 100 to 320, y: 150 to 400)
+    ctx.beginPath();
+    ctx.lineWidth = 4;
+    // Goat head
+    ctx.moveTo(180, 200);
+    ctx.lineTo(140, 230); // muzzle
+    ctx.lineTo(160, 260); // jaw
+    ctx.lineTo(200, 230); // neck
+    // Horns
+    ctx.moveTo(185, 205);
+    ctx.quadraticCurveTo(170, 150, 150, 140); // left horn
+    ctx.moveTo(195, 210);
+    ctx.quadraticCurveTo(185, 155, 170, 145); // right horn
+    // Ear
+    ctx.moveTo(200, 220);
+    ctx.lineTo(220, 240);
+    // Eye
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(170, 218, 4, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Rooster body / feathers
+    ctx.beginPath();
+    ctx.lineWidth = 4;
+    ctx.moveTo(200, 230); // from neck
+    ctx.quadraticCurveTo(240, 280, 290, 270); // back
+    ctx.quadraticCurveTo(340, 250, 360, 180); // tail feathers top
+    ctx.quadraticCurveTo(330, 280, 300, 310); // tail bottom
+    ctx.quadraticCurveTo(240, 340, 200, 290); // belly
+    ctx.lineTo(200, 230);
+    
+    // Tail details (feathers)
+    ctx.moveTo(290, 270);
+    ctx.quadraticCurveTo(360, 220, 370, 160);
+    ctx.moveTo(300, 285);
+    ctx.quadraticCurveTo(370, 260, 380, 200);
+    
+    // Legs
+    ctx.moveTo(230, 315);
+    ctx.lineTo(225, 370); // leg 1
+    ctx.lineTo(215, 380); // toe
+    ctx.moveTo(230, 315);
+    ctx.lineTo(235, 375); // toe 2
+    
+    ctx.moveTo(270, 305);
+    ctx.lineTo(275, 365); // leg 2
+    ctx.lineTo(265, 375); // toe 3
+    ctx.moveTo(275, 365);
+    ctx.lineTo(285, 370); // toe 4
+    ctx.stroke();
+
+    // 2. Draw Bengali poem in the middle
+    ctx.fillStyle = '#151515';
+    ctx.font = '28px "Times New Roman", "Courier New", serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('"আমি অর্থাৎ শ্রী গোবিন্দ', 520, 180);
+    ctx.fillText('বাবুয়াটি নই বাঁকা', 520, 230);
+    ctx.fillText('বলি যা সব ভেবে বলি', 520, 280);
+    ctx.fillText('কথা কইনে ফাঁকা"', 520, 330);
+    
+    // 3. Draw Man holding a tray on the right (x: 720 to 920, y: 150 to 450)
+    ctx.beginPath();
+    ctx.lineWidth = 4;
+    // Head / Face
+    ctx.arc(820, 200, 35, 0, Math.PI * 2);
+    ctx.stroke();
+    // Hair
+    ctx.beginPath();
+    ctx.arc(820, 185, 38, Math.PI, 0);
+    ctx.stroke();
+    // Moustache (thick)
+    ctx.beginPath();
+    ctx.lineWidth = 6;
+    ctx.moveTo(790, 215);
+    ctx.quadraticCurveTo(820, 215, 820, 222);
+    ctx.quadraticCurveTo(820, 215, 850, 215);
+    ctx.stroke();
+    
+    // Eyes
+    ctx.beginPath();
+    ctx.arc(808, 195, 3, 0, Math.PI * 2);
+    ctx.arc(832, 195, 3, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Suit / Body
+    ctx.beginPath();
+    ctx.lineWidth = 4;
+    ctx.moveTo(795, 233); // shoulder left
+    ctx.lineTo(750, 280);
+    ctx.lineTo(750, 450); // body left
+    ctx.lineTo(890, 450); // body right
+    ctx.lineTo(890, 280);
+    ctx.lineTo(845, 233); // shoulder right
+    // Collar & Tie
+    ctx.moveTo(805, 235);
+    ctx.lineTo(820, 275);
+    ctx.lineTo(835, 235);
+    ctx.moveTo(820, 275);
+    ctx.lineTo(815, 320); // tie
+    ctx.lineTo(820, 330);
+    ctx.lineTo(825, 320);
+    ctx.lineTo(820, 275);
+    ctx.stroke();
+    
+    // Left arm holding tray
+    ctx.beginPath();
+    ctx.moveTo(750, 280);
+    ctx.lineTo(700, 320);
+    ctx.lineTo(700, 270); // hand up
+    ctx.stroke();
+    
+    // Tray (rectangle)
+    ctx.beginPath();
+    ctx.fillStyle = '#e8e8e8';
+    ctx.rect(630, 240, 140, 30);
+    ctx.fill();
+    ctx.stroke();
+    // Lines on tray (grid)
+    ctx.beginPath();
+    ctx.lineWidth = 2;
+    for (let i = 1; i <= 3; i++) {
+        ctx.moveTo(630 + i * 35, 240);
+        ctx.lineTo(630 + i * 35, 270);
+    }
+    ctx.stroke();
+    
+    // Tag on chest "যত্র"
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.rect(800, 300, 40, 25);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#151515';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillText('যত্র', 820, 318);
+    
+    _sukumarMuralTexture = new THREE.CanvasTexture(canvas);
+    _sukumarMuralTexture.colorSpace = THREE.SRGBColorSpace;
+    return _sukumarMuralTexture;
+}
+
 /** Mural wall — Sukumar Ray caricature vibe (stylized black figures on white) */
 function _sukumarMural(g, w, h, d, s, floorH, floors) {
     // White wall wash (B&W mural ground)
@@ -644,37 +805,17 @@ function _sukumarMural(g, w, h, d, s, floorH, floors) {
     wash.mesh.position.set(0, h * 0.5, d / 2 + 0.04);
     g.add(wash.group);
 
-    // Tall figure with "telescope" (simple toon shapes)
-    const body = toonMesh(new THREE.BoxGeometry(0.7, 2.2, 0.08), SUKUMAR.mural, { outline: false });
-    body.mesh.position.set(w * 0.15, floorH + 1.4, d / 2 + 0.1);
-    g.add(body.group);
-    const head = toonMesh(new THREE.SphereGeometry(0.35, 8, 6), SUKUMAR.mural, { outline: false });
-    head.mesh.position.set(w * 0.15, floorH + 2.7, d / 2 + 0.1);
-    g.add(head.group);
-    // Telescope
-    const scope = toonMesh(new THREE.BoxGeometry(1.4, 0.12, 0.12), SUKUMAR.mural, { outline: false });
-    scope.mesh.position.set(w * 0.15 + 0.7, floorH + 2.5, d / 2 + 0.12);
-    scope.mesh.rotation.z = -0.25;
-    g.add(scope.group);
-
-    // Small figure
-    const kid = toonMesh(new THREE.BoxGeometry(0.45, 1.3, 0.08), SUKUMAR.mural, { outline: false });
-    kid.mesh.position.set(-w * 0.25, floorH + 0.9, d / 2 + 0.1);
-    g.add(kid.group);
-    const kidH = toonMesh(new THREE.SphereGeometry(0.25, 6, 6), SUKUMAR.mural, { outline: false });
-    kidH.mesh.position.set(-w * 0.25, floorH + 1.7, d / 2 + 0.1);
-    g.add(kidH.group);
-
-    // Bengali text bars (abstract lines = lettering blocks)
-    for (let i = 0; i < 3; i++) {
-        const line = toonMesh(
-            new THREE.BoxGeometry(1.2 + i * 0.15, 0.12, 0.04),
-            SUKUMAR.mural,
-            { outline: false }
-        );
-        line.mesh.position.set(w * 0.28, floorH + 0.5 + i * 0.28, d / 2 + 0.1);
-        g.add(line.group);
-    }
+    const tex = getSukumarMuralTexture();
+    const muralMat = new THREE.MeshToonMaterial({
+        map: tex,
+        gradientMap: getGradientMap(),
+    });
+    const plate = new THREE.Mesh(
+        new THREE.PlaneGeometry(w * 0.9, h * 0.65),
+        muralMat
+    );
+    plate.position.set(0, h * 0.5, d / 2 + 0.075);
+    g.add(plate);
 }
 
 /** Arched ground openings like heritage shop-houses */

@@ -417,6 +417,15 @@ class Game {
                 this.chunks?.update(this.player.position.x, this.player.position.z);
             }
 
+            if (this.player) {
+                const inSukumar = Math.abs(this.player.position.x - 115) < 22 && this.player.position.z >= -125 && this.player.position.z <= 125;
+                const canvasEl = document.getElementById('game-canvas');
+                if (canvasEl) {
+                    canvasEl.style.transition = 'filter 0.5s ease';
+                    canvasEl.style.filter = inSukumar ? 'grayscale(1)' : '';
+                }
+            }
+
             this._proximity();
             this._hud();
             this._minimap();
