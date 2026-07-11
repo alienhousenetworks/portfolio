@@ -95,15 +95,15 @@ export const PALETTE = {
     sand: 0xd8d4c8,
     dirt: 0xb09870,
 
-    // Roads & urban — cool greys only (not green)
-    asphalt: 0x5a6068,       // dark road surface
-    asphaltDark: 0x4a5058,   // gutter / edge
-    asphaltLight: 0x6a7078,  // worn spots
-    sidewalk: 0xd4d0c8,      // light concrete pedestrian
-    sidewalkAlt: 0xc8c4bc,   // paver tint
-    curb: 0xe4e0d8,          // pale stone curb
-    concrete: 0xb8b4ac,      // city lot under buildings
-    concreteLight: 0xc8c4bc,
+    // Roads & urban — clear greys (never green)
+    asphalt: 0x4a4e54,       // dark road asphalt
+    asphaltDark: 0x3a3e44,   // gutter / edge
+    asphaltLight: 0x5a5e64,  // worn spots
+    sidewalk: 0xd8d4cc,      // light concrete pedestrian
+    sidewalkAlt: 0xcac6be,   // paver tint
+    curb: 0xe8e4dc,          // pale stone curb
+    concrete: 0xb0aca4,      // city lot under buildings (warm grey)
+    concreteLight: 0xc4c0b8,
     retainingWall: 0xa8a4a0,
 
     // Water (kept)

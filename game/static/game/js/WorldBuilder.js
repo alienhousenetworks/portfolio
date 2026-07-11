@@ -8,7 +8,7 @@ import { WORLD, PALETTE, isCityFlat } from './config.js';
 import { toonMat, toonMesh, setupCityLighting, INK } from './ToonStyle.js';
 import {
     buildJapaneseBuilding, buildJapaneseCorner, buildShinjukuBuilding,
-    buildColonyBuilding, createVendingMachine,
+    buildColonyBuilding, buildMahapalikaBhavan, createVendingMachine,
 } from './Buildings.js';
 import {
     createStreetLamp, createBench, createFlowerPot, createMailbox,
@@ -95,6 +95,7 @@ export class WorldBuilder {
         this._roadNetwork();
         this._mainAvenueShinjuku(); // dense commercial canyon (full Main length)
         this._colonyDistricts();    // Thakur Colony + Bose Colony
+        this._mahapalikaBhavan();   // single Indo-Gothic civic landmark
         this._avenueTrees();        // tree tunnels on side streets only
         this._buildingRows();
         this._streetProps();
@@ -178,36 +179,40 @@ export class WorldBuilder {
 
     // ─── Ground (larger city slab) ──────────────────────────────────────────
     _ground() {
-        // Nature grass only OUTSIDE the city (outer world)
+        // Outer nature grass (far outside city footprint)
         const grassMat = toonMat(PALETTE.grass ?? 0x90c87a);
         const outer = new THREE.Mesh(
             new THREE.PlaneGeometry(WORLD.size, WORLD.size),
             grassMat
         );
         outer.rotation.x = -Math.PI / 2;
+        outer.position.y = -0.04;
         outer.receiveShadow = true;
         this.scene.add(outer);
         this._groundGrass = outer;
 
-        // City lots under buildings — warm concrete grey (NOT green)
+        // City lots under buildings — solid grey concrete (NOT green)
+        // Sit just under asphalt so roads read as dark grey on top
+        const gy = WORLD.groundY ?? 0.15;
         const cityW = CITY_HX * 2;
         const cityD = CITY_HZ * 2;
         const city = new THREE.Mesh(
             new THREE.PlaneGeometry(cityW, cityD),
-            toonMat(PALETTE.concrete ?? 0xb8b4ac)
+            toonMat(PALETTE.concrete ?? 0xb0aca4)
         );
         city.rotation.x = -Math.PI / 2;
-        city.position.y = 0.03;
+        city.position.y = gy + 0.01;
         city.receiveShadow = true;
+        city.name = 'cityConcrete';
         this.scene.add(city);
 
-        // River west of the city slab (no overlap with roads/buildings)
+        // River west of the city slab
         const riverX = WORLD.riverX ?? -(CITY_HX + 20);
         const riverGeo = new THREE.PlaneGeometry(WORLD.riverWidth ?? 28, cityD + 40);
         const riverMat = toonMat(0x7ac4d0, { transparent: true, opacity: 0.85 });
         const river = new THREE.Mesh(riverGeo, riverMat);
         river.rotation.x = -Math.PI / 2;
-        river.position.set(riverX, 0.03, 0);
+        river.position.set(riverX, gy + 0.01, 0);
         this.scene.add(river);
     }
 
@@ -262,26 +267,28 @@ export class WorldBuilder {
         return buildings.find(b => Math.hypot(b.x - x, b.z - z) < 10.0);
     }
 
-    // ─── Road Network — clear asphalt vs concrete walk (not green) ─────────
-    // Fahrbahn (dark asphalt) | Bordstein (pale curb) | Gehweg (light concrete)
+    // ─── Road Network — dark asphalt + light concrete walks (above grass) ──
     _roadNetwork() {
-        const asphalt = toonMat(PALETTE.asphalt ?? 0x5a6068);
-        const asphaltEdge = toonMat(PALETTE.asphaltDark ?? 0x4a5058);
-        const gehwegA = toonMat(PALETTE.sidewalk ?? 0xd4d0c8);
-        const gehwegB = toonMat(PALETTE.sidewalkAlt ?? 0xc8c4bc);
-        const curbMat = toonMat(PALETTE.curb ?? 0xe4e0d8);
-        const lineMat = toonMat(0xf4f2ea, { transparent: true, opacity: 0.92 });
+        // Hard-coded road greys (never tinted green by lighting/palette mixups)
+        const asphalt = toonMat(0x4a4e54);
+        const asphaltEdge = toonMat(0x363a40);
+        const gehwegA = toonMat(0xd8d4cc);
+        const gehwegB = toonMat(0xcac6be);
+        const curbMat = toonMat(0xe8e4dc);
+        const lineMat = toonMat(0xf4f2ea, { transparent: true, opacity: 0.95 });
 
-        // Slightly raised so green ground never shows through road/walk
-        const Y_ROAD = 0.07;
-        const Y_EDGE = 0.072;
-        const Y_CURB = 0.14;
+        // MUST sit above WORLD.groundY so green terrain never covers roads
+        const gy = WORLD.groundY ?? 0.15;
+        const Y_ROAD = gy + 0.06;   // dark asphalt
+        const Y_EDGE = gy + 0.065;
+        const Y_CURB = gy + 0.14;
 
         const plane = (x, z, w, d, mat, y = Y_ROAD) => {
-            const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), mat);
-            m.rotation.x = -Math.PI / 2;
+            // Use a thin box, not a plane — more reliable depth vs ground
+            const m = new THREE.Mesh(new THREE.BoxGeometry(w, 0.08, d), mat);
             m.position.set(x, y, z);
             m.receiveShadow = true;
+            m.userData.isRoad = true;
             this.scene.add(m);
             return m;
         };
@@ -293,21 +300,21 @@ export class WorldBuilder {
             const half = w / 2;
             const cw = ROAD.curb;
 
-            // Fahrbahn (dark asphalt carriageway)
+            // Dark asphalt carriageway
             plane(cx, midZ, w, len, asphalt, Y_ROAD);
             plane(cx - half + 0.35, midZ, 0.55, len, asphaltEdge, Y_EDGE);
             plane(cx + half - 0.35, midZ, 0.55, len, asphaltEdge, Y_EDGE);
 
-            // Bordstein (raised pale curb) each side
+            // Pale curb each side
             [-1, 1].forEach(side => {
                 const curbX = cx + side * (half + cw / 2);
-                const curb = toonMesh(new THREE.BoxGeometry(cw, 0.16, len), curbMat, { outline: false });
+                const curb = toonMesh(new THREE.BoxGeometry(cw, 0.18, len), curbMat, { outline: false });
                 curb.mesh.position.set(curbX, Y_CURB, midZ);
                 curb.mesh.receiveShadow = true;
                 this.scene.add(curb.group);
             });
 
-            // Gehweg — light concrete sidewalks only outside curb
+            // Light concrete sidewalks
             [-1, 1].forEach(side => {
                 const walkX = cx + side * (half + cw + sw / 2);
                 this._buildGehwegStrip(walkX, midZ, sw, len, 'ns', gehwegA, gehwegB);
@@ -329,7 +336,7 @@ export class WorldBuilder {
 
             [-1, 1].forEach(side => {
                 const curbZ = cz + side * (half + cw / 2);
-                const curb = toonMesh(new THREE.BoxGeometry(len, 0.16, cw), curbMat, { outline: false });
+                const curb = toonMesh(new THREE.BoxGeometry(len, 0.18, cw), curbMat, { outline: false });
                 curb.mesh.position.set(midX, Y_CURB, curbZ);
                 curb.mesh.receiveShadow = true;
                 this.scene.add(curb.group);
@@ -357,52 +364,50 @@ export class WorldBuilder {
 
     /** Narrow worn colony lane (no big highway markings) */
     _buildColonyRoad(def) {
-        const asphalt = toonMat(PALETTE.asphalt ?? 0x5a6068);
-        const edge = toonMat(PALETTE.asphaltDark ?? 0x4a5058);
+        const asphalt = toonMat(0x4a4e54);
+        const edge = toonMat(0x363a40);
         const sw = roadSw(def);
         const half = def.w / 2;
         const len = def.z2 - def.z1;
         const midZ = (def.z1 + def.z2) / 2;
         const cw = ROAD.curb;
-        const Y_ROAD = 0.07;
+        const gy = WORLD.groundY ?? 0.15;
+        const Y_ROAD = gy + 0.06;
 
         const plane = (x, z, w, d, mat, y = Y_ROAD) => {
-            const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), mat);
-            m.rotation.x = -Math.PI / 2;
+            const m = new THREE.Mesh(new THREE.BoxGeometry(w, 0.08, d), mat);
             m.position.set(x, y, z);
             m.receiveShadow = true;
+            m.userData.isRoad = true;
             this.scene.add(m);
         };
 
         plane(def.x, midZ, def.w, len, asphalt, Y_ROAD);
-        plane(def.x - half + 0.25, midZ, 0.4, len, edge, Y_ROAD + 0.002);
-        plane(def.x + half - 0.25, midZ, 0.4, len, edge, Y_ROAD + 0.002);
+        plane(def.x - half + 0.25, midZ, 0.4, len, edge, Y_ROAD + 0.005);
+        plane(def.x + half - 0.25, midZ, 0.4, len, edge, Y_ROAD + 0.005);
 
-        // Low curb / plinth edge (photo: raised building footings)
         [-1, 1].forEach(side => {
             const curb = toonMesh(
                 new THREE.BoxGeometry(cw + 0.12, 0.22, len),
-                PALETTE.curb ?? 0xe4e0d8,
+                0xe8e4dc,
                 { outline: false }
             );
-            curb.mesh.position.set(def.x + side * (half + (cw + 0.12) / 2), 0.14, midZ);
+            curb.mesh.position.set(def.x + side * (half + (cw + 0.12) / 2), gy + 0.14, midZ);
             curb.mesh.receiveShadow = true;
             this.scene.add(curb.group);
         });
 
-        // Thin side walks — light concrete (not green)
-        const gehwegA = toonMat(PALETTE.sidewalk ?? 0xd4d0c8);
-        const gehwegB = toonMat(PALETTE.sidewalkAlt ?? 0xc8c4bc);
+        const gehwegA = toonMat(0xd8d4cc);
+        const gehwegB = toonMat(0xcac6be);
         [-1, 1].forEach(side => {
             const walkX = def.x + side * (half + cw + sw / 2);
             this._buildGehwegStrip(walkX, midZ, sw, len, 'ns', gehwegA, gehwegB);
         });
 
-        // Occasional manhole covers (photo 2)
         for (let z = def.z1 + 20; z < def.z2 - 20; z += 42) {
             if (Math.abs(z) < 14) continue;
-            const hole = toonMesh(new THREE.CylinderGeometry(0.55, 0.55, 0.06, 12), 0x4a5058, { outline: false });
-            hole.mesh.position.set(def.x + ((z * 0.1) % 1.2) - 0.4, Y_ROAD + 0.01, z);
+            const hole = toonMesh(new THREE.CylinderGeometry(0.55, 0.55, 0.06, 12), 0x3a3e44, { outline: false });
+            hole.mesh.position.set(def.x + ((z * 0.1) % 1.2) - 0.4, Y_ROAD + 0.05, z);
             this.scene.add(hole.group);
         }
     }
@@ -413,19 +418,22 @@ export class WorldBuilder {
      * axis 'ns' = strip runs along Z; 'ew' = along X.
      */
     _buildGehwegStrip(cx, cz, sizeX, sizeZ, axis, matA, matB) {
-        // Raised light-concrete sidewalk above asphalt + city lot
-        const base = new THREE.Mesh(new THREE.BoxGeometry(sizeX, 0.12, sizeZ), matA);
-        base.position.set(cx, 0.14, cz);
+        // Raised light-concrete sidewalk — always above grass / city lot
+        const gy = WORLD.groundY ?? 0.15;
+        const baseY = gy + 0.12;
+        const base = new THREE.Mesh(new THREE.BoxGeometry(sizeX, 0.14, sizeZ), matA);
+        base.position.set(cx, baseY, cz);
         base.receiveShadow = true;
+        base.userData.isSidewalk = true;
         this.scene.add(base);
 
-        // Grey seam lines (stone joints), not green
+        // Grey seam lines (stone joints), never green
         const seamMat = toonMat(0xa8a49c);
         const along = axis === 'ns' ? sizeZ : sizeX;
         const across = axis === 'ns' ? sizeX : sizeZ;
         const tile = 1.6;
         const halfAlong = along / 2;
-        const seamY = 0.205;
+        const seamY = baseY + 0.08;
 
         for (let t = -halfAlong + tile; t < halfAlong - 0.5; t += tile) {
             const wx = axis === 'ns' ? cx : cx + t;
@@ -479,7 +487,7 @@ export class WorldBuilder {
     /** German lane paint: dashed center + solid edge lines */
     _germanLaneMarkings(cx, cz, roadW, len, axis, lineMat) {
         const half = roadW / 2;
-        const y = 0.055;
+        const y = (WORLD.groundY ?? 0.15) + 0.11;
         const skipPlaza = (pos) => Math.hypot(
             axis === 'ns' ? cx : pos,
             axis === 'ns' ? pos : cz
@@ -522,23 +530,28 @@ export class WorldBuilder {
     }
 
     _buildCentralPlaza() {
-        // Plaza: paved concrete ring + small lawn center (lawn only in the middle)
+        // Plaza: paved concrete (not green) + small lawn only in the middle
+        const gy = WORLD.groundY ?? 0.15;
         const plazaPave = new THREE.Mesh(
-            new THREE.CircleGeometry(14, 40),
-            toonMat(PALETTE.sidewalk ?? 0xd4d0c8)
+            new THREE.CylinderGeometry(14, 14, 0.12, 40),
+            toonMat(0xd8d4cc)
         );
-        plazaPave.rotation.x = -Math.PI / 2;
-        plazaPave.position.set(0, 0.08, 0);
+        plazaPave.position.set(0, gy + 0.08, 0);
+        plazaPave.receiveShadow = true;
         this.scene.add(plazaPave);
 
-        const lawn = new THREE.Mesh(new THREE.CircleGeometry(6.5, 32), toonMat(PALETTE.grass ?? 0x90c87a));
-        lawn.rotation.x = -Math.PI / 2;
-        lawn.position.set(0, 0.09, 0);
+        const lawn = new THREE.Mesh(
+            new THREE.CylinderGeometry(6.5, 6.5, 0.1, 32),
+            toonMat(PALETTE.grass ?? 0x90c87a)
+        );
+        lawn.position.set(0, gy + 0.12, 0);
         this.scene.add(lawn);
 
-        const path = new THREE.Mesh(new THREE.CircleGeometry(3.2, 24), toonMat(PALETTE.concrete ?? 0xb8b4ac));
-        path.rotation.x = -Math.PI / 2;
-        path.position.set(0, 0.1, 0);
+        const path = new THREE.Mesh(
+            new THREE.CylinderGeometry(3.2, 3.2, 0.1, 24),
+            toonMat(0xb0aca4)
+        );
+        path.position.set(0, gy + 0.14, 0);
         this.scene.add(path);
 
         // Flower ring
@@ -635,7 +648,8 @@ export class WorldBuilder {
 
     // ─── Zebrastreifen (German zebra crosswalks) ────────────────────────────
     _crosswalks() {
-        const white = toonMat(0xf8f8f4, { transparent: true, opacity: 0.92 });
+        const white = toonMat(0xf8f8f4, { transparent: true, opacity: 0.95 });
+        const yPaint = (WORLD.groundY ?? 0.15) + 0.12;
         // stripes across the road width; axis = direction of road travel
         const cw = (cx, cz, roadW, axis = 'x') => {
             const stripeW = 0.55;
@@ -646,15 +660,15 @@ export class WorldBuilder {
             for (let i = 0; i < n; i++) {
                 const off = -span / 2 + i * (stripeW + gap);
                 const m = new THREE.Mesh(
-                    new THREE.PlaneGeometry(
+                    new THREE.BoxGeometry(
                         axis === 'x' ? stripeW : stripeLen,
+                        0.04,
                         axis === 'x' ? stripeLen : stripeW
                     ),
                     white
                 );
-                m.rotation.x = -Math.PI / 2;
-                if (axis === 'x') m.position.set(cx + off, 0.056, cz);
-                else m.position.set(cx, 0.056, cz + off);
+                if (axis === 'x') m.position.set(cx + off, yPaint, cz);
+                else m.position.set(cx, yPaint, cz + off);
                 this.scene.add(m);
             }
         };
@@ -698,6 +712,8 @@ export class WorldBuilder {
             if (Math.abs(z) < 22) continue;
             if (Math.abs(z - ROAD.north.z) < 14) continue;
             if (Math.abs(z - ROAD.south.z) < 14) continue;
+            // Clear pad for Mahapalika Bhavan (north terminus of Main Avenue)
+            if (z < -138) continue;
 
             for (const side of [-1, 1]) {
                 seed++;
@@ -744,6 +760,35 @@ export class WorldBuilder {
                 t.position.set(tx, 0, tz + side * 1.5);
                 this.scene.add(t);
             }
+        });
+    }
+
+    /**
+     * Mahapalika Bhavan — single BMC-inspired Indo-Gothic city hall.
+     * Sits at the north end of Main Avenue as a civic landmark.
+     */
+    _mahapalikaBhavan() {
+        const hall = buildMahapalikaBhavan();
+        // Face south toward the city (+Z is building front in the model)
+        const x = 0;
+        const z = -150;
+        hall.position.set(x, 0, z);
+        hall.rotation.y = 0;
+        this.scene.add(hall);
+
+        const c = hall.userData.collider || { w: 42, d: 22, h: 48 };
+        this.colliders.push({
+            x, z: z + 2,
+            w: c.w, d: c.d, h: c.h,
+            floorY: 0,
+        });
+
+        // Small approach lamps
+        [-12, 12].forEach((ox, i) => {
+            const lamp = createStreetLamp();
+            lamp.position.set(ox, 0, z + 14);
+            if (i === 1) lamp.rotation.y = Math.PI;
+            this.scene.add(lamp);
         });
     }
 
@@ -1001,8 +1046,8 @@ export class WorldBuilder {
     }
 
     _mainAvenueLanePaint() {
-        const white = toonMat(0xf4f2ea, { transparent: true, opacity: 0.88 });
-        const y = 0.056;
+        const white = toonMat(0xf4f2ea, { transparent: true, opacity: 0.92 });
+        const y = (WORLD.groundY ?? 0.15) + 0.12;
         // Two dashed lane dividers (quarter lines) for multi-lane look
         const quarters = [-ROAD.main.w * 0.25, ROAD.main.w * 0.25];
         quarters.forEach(qx => {
@@ -1010,14 +1055,13 @@ export class WorldBuilder {
                 if (Math.abs(z) < 16) continue;
                 if (Math.abs(z - ROAD.north.z) < 8) continue;
                 if (Math.abs(z - ROAD.south.z) < 8) continue;
-                const dash = new THREE.Mesh(new THREE.PlaneGeometry(0.14, 2.6), white);
-                dash.rotation.x = -Math.PI / 2;
+                const dash = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.03, 2.6), white);
                 dash.position.set(qx, y, z);
                 this.scene.add(dash);
             }
         });
 
-        // Stop lines (止まれ-style solid white bars) before major crossings
+        // Stop lines before major crossings
         const stopZs = [
             ROAD.cross.w / 2 + 2.2,
             -(ROAD.cross.w / 2 + 2.2),
@@ -1027,24 +1071,21 @@ export class WorldBuilder {
             ROAD.south.z - ROAD.south.w / 2 - 2,
         ];
         stopZs.forEach(sz => {
-            const line = new THREE.Mesh(new THREE.PlaneGeometry(ROAD.main.w * 0.92, 0.45), white);
-            line.rotation.x = -Math.PI / 2;
-            line.position.set(0, y + 0.001, sz);
+            const line = new THREE.Mesh(new THREE.BoxGeometry(ROAD.main.w * 0.92, 0.03, 0.45), white);
+            line.position.set(0, y + 0.002, sz);
             this.scene.add(line);
 
-            // Abstract "止" stop boxes (two white squares with X — toon shorthand)
+            // Abstract "止" stop boxes
             [-3.2, 3.2].forEach(ox => {
-                const box = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1.6), white);
-                box.rotation.x = -Math.PI / 2;
-                box.position.set(ox, y + 0.002, sz + Math.sign(sz || 1) * 2.4);
+                const box = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.03, 1.6), white);
+                box.position.set(ox, y + 0.004, sz + Math.sign(sz || 1) * 2.4);
                 this.scene.add(box);
                 // Dark X inside
                 const xMat = toonMat(0x3a4248);
                 for (const rot of [Math.PI / 4, -Math.PI / 4]) {
-                    const arm = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 0.18), xMat);
-                    arm.rotation.x = -Math.PI / 2;
-                    arm.rotation.z = rot;
-                    arm.position.set(ox, y + 0.003, sz + Math.sign(sz || 1) * 2.4);
+                    const arm = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.025, 0.18), xMat);
+                    arm.rotation.y = rot;
+                    arm.position.set(ox, y + 0.008, sz + Math.sign(sz || 1) * 2.4);
                     this.scene.add(arm);
                 }
             });
@@ -1204,6 +1245,8 @@ export class WorldBuilder {
 
                 // Soft edge — don't pack right to slab edge
                 if (Math.abs(x) > CITY_HX - 12 || Math.abs(z) > CITY_HZ - 12) continue;
+                // Clear Mahapalika Bhavan pad (north Main Avenue terminus)
+                if (Math.abs(x) < 28 && z < -132 && z > -168) continue;
 
                 const assignedPoi = this._getAssignedBuilding(x, z);
 
@@ -1626,6 +1669,16 @@ export class WorldBuilder {
             data: {
                 name: 'Bose Colony (বোস কলোনী)',
                 description: 'Quiet low residential lane — terracotta walls, laundry lines, sitting plinths, manholes and parked bikes.',
+            },
+        });
+        this.pois.push({
+            position: new THREE.Vector3(0, 0, -148),
+            type: 'hq',
+            name: 'Mahapalika Bhavan',
+            mapLabel: 'HALL',
+            data: {
+                name: 'Mahapalika Bhavan',
+                description: 'The grand Indo-Gothic city hall — sandstone stripes, gothic arches, clock tower and golden-domed spire. The civic heart of town.',
             },
         });
     }

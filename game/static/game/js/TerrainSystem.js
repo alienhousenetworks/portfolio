@@ -227,32 +227,38 @@ export class TerrainSystem {
     }
 
     _buildCurvedHills(scene) {
-        // Flat city slab + rolling hills only outside (baked into ground plane)
-        // Solid normal grass — no blotchy vertex colors, no shimmer animation
+        // Outside city: green grass hills. Inside city: low grey underlay so roads stay visible.
+        // IMPORTANT: city verts sit BELOW road height so asphalt is never buried under green.
         const groundGeo = new THREE.PlaneGeometry(WORLD.size, WORLD.size, 80, 80);
         groundGeo.rotateX(-Math.PI / 2);
 
         const pos = groundGeo.attributes.position;
+        const colors = [];
+        const grassCol = new THREE.Color(PALETTE.grass ?? 0x90c87a);
+        const cityCol = new THREE.Color(PALETTE.concrete ?? 0xb0aca4);
+
         for (let i = 0; i < pos.count; i++) {
             const vx = pos.getX(i);
             const vz = pos.getZ(i);
-            // Force city vertices flat — no hill deformation under buildings/roads
-            const surfaceY = this._isCityFlat(vx, vz) ? WORLD.groundY : this._lawnHeightAt(vx, vz);
+            const inCity = this._isCityFlat(vx, vz);
+            // City: sink under roads/lots. Outside: real walk height.
+            const surfaceY = inCity ? 0.0 : this._lawnHeightAt(vx, vz);
             pos.setY(i, surfaceY);
+
+            const c = inCity ? cityCol : grassCol;
+            colors.push(c.r, c.g, c.b);
         }
         pos.needsUpdate = true;
+        groundGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
         groundGeo.computeVertexNormals();
 
-        // Outside city: solid grass. Under city slab this mesh is covered by concrete lot.
-        const grassCol = PALETTE.grass ?? 0x90c87a;
         const baseMat = new THREE.MeshToonMaterial({
-            color: grassCol,
+            vertexColors: true,
             gradientMap: getGradientMap(),
         });
 
         const baseMesh = new THREE.Mesh(groundGeo, baseMat);
-        // Slightly below city concrete / roads so grey surfaces win in town
-        baseMesh.position.y = -0.02;
+        baseMesh.position.y = 0;
         baseMesh.receiveShadow = true;
         baseMesh.name = 'terrainGrass';
         scene.add(baseMesh);

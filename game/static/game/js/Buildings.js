@@ -1034,3 +1034,389 @@ export function createResidential(seed) { return buildJapaneseBuilding(10, 7.5, 
 export function createTinyHome(seed) { return buildJapaneseBuilding(7, 5.5, 8, seed); }
 export function createCafe(seed) { return buildJapaneseBuilding(9, 6.5, 9, seed); }
 export function createJapaneseModern(seed) { return buildJapaneseBuilding(13, 14, 10, seed); }
+
+// ─── Mahapalika Bhavan (BMC-inspired Indo-Gothic civic landmark) ───────────
+// Single monumental city hall — sandstone stripes, gothic windows, ribbed dome.
+// Scaled for the anime town (~0.42 of the full architectural study model).
+
+const BMC = {
+    stoneBase: 0x937c68,
+    stoneLight: 0xc2af9e,
+    stoneDark: 0x6e5948,
+    dome: 0x8a715b,
+    trim: 0xe2d6c7,
+    roofRed: 0xa64b39,
+    gold: 0xcca662,
+    window: 0x1a2128,
+    sign: 0x1e3d7b,
+    hedge: 0x4a9a58,
+    plinth: 0x4a5058,
+    step: 0xdcdde1,
+};
+
+function _bmcMat(hex, opts = {}) {
+    return toonMat(hex, opts);
+}
+
+function _bmcStripedWall(w, h, d) {
+    const g = new THREE.Group();
+    const stripeH = 0.85;
+    const layers = Math.ceil(h / stripeH);
+    const mats = [
+        _bmcMat(BMC.stoneLight),
+        _bmcMat(BMC.stoneDark),
+        _bmcMat(BMC.stoneBase),
+    ];
+    for (let i = 0; i < layers; i++) {
+        const box = new THREE.Mesh(
+            new THREE.BoxGeometry(w, stripeH, d),
+            mats[i % 3]
+        );
+        box.position.y = i * stripeH + stripeH / 2;
+        box.castShadow = true;
+        box.receiveShadow = true;
+        g.add(box);
+    }
+    return g;
+}
+
+function _bmcDome(radius, height, segments = 28) {
+    const points = [];
+    const steps = 32;
+    for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        const y = t * height;
+        let r;
+        if (t < 0.22) {
+            r = radius * (1.0 + Math.sin((t / 0.22) * Math.PI * 0.5) * 0.12);
+        } else if (t < 0.72) {
+            const nt = (t - 0.22) / 0.5;
+            r = radius * 1.12 * Math.cos(nt * Math.PI * 0.45);
+        } else {
+            const nt = (t - 0.72) / 0.28;
+            r = radius * 0.38 * Math.pow(1.0 - nt, 2.0);
+        }
+        points.push(new THREE.Vector2(Math.max(0.05, r), y));
+    }
+    const domeGeo = new THREE.LatheGeometry(points, segments);
+    const group = new THREE.Group();
+    const domeMesh = new THREE.Mesh(domeGeo, _bmcMat(BMC.dome));
+    domeMesh.castShadow = true;
+    group.add(domeMesh);
+
+    // Cream ribs
+    const ribCount = 12;
+    for (let i = 0; i < ribCount; i++) {
+        const angle = (i / ribCount) * Math.PI * 2;
+        const ribPts = points.map(p => new THREE.Vector3(
+            Math.sin(angle) * p.x * 1.01,
+            p.y,
+            Math.cos(angle) * p.x * 1.01
+        ));
+        const curve = new THREE.CatmullRomCurve3(ribPts);
+        const tube = new THREE.Mesh(
+            new THREE.TubeGeometry(curve, 20, 0.07, 5, false),
+            _bmcMat(BMC.trim)
+        );
+        group.add(tube);
+    }
+
+    // Gold spire + finial
+    const gold = _bmcMat(BMC.gold, { emissive: BMC.gold, emissiveIntensity: 0.15 });
+    const ball = new THREE.Mesh(new THREE.SphereGeometry(radius * 0.16, 10, 10), gold);
+    ball.position.y = height;
+    group.add(ball);
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(radius * 0.08, height * 0.45, 8), gold);
+    cone.position.y = height + height * 0.22;
+    group.add(cone);
+    const cross = new THREE.Mesh(new THREE.BoxGeometry(0.12, height * 0.22, 0.12), gold);
+    cross.position.y = height + height * 0.5;
+    group.add(cross);
+    const bar = new THREE.Mesh(new THREE.BoxGeometry(radius * 0.28, 0.1, 0.1), gold);
+    bar.position.y = height + height * 0.48;
+    group.add(bar);
+
+    return group;
+}
+
+function _bmcGothicWindow(parent, x, y, z, w, h, d, rotY = 0) {
+    const g = new THREE.Group();
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), _bmcMat(BMC.stoneDark));
+    g.add(frame);
+    const arch = new THREE.Mesh(
+        new THREE.CylinderGeometry(w * 0.5, w * 0.5, d, 12, 1, false, 0, Math.PI),
+        _bmcMat(BMC.stoneDark)
+    );
+    arch.rotation.z = Math.PI / 2;
+    arch.rotation.y = Math.PI / 2;
+    arch.position.y = h / 2;
+    g.add(arch);
+
+    const glassMat = toonMat(BMC.window, {
+        emissive: 0xffbb66,
+        emissiveIntensity: 0,
+    });
+    const glass = new THREE.Mesh(new THREE.BoxGeometry(w * 0.72, h * 0.82, d * 1.05), glassMat);
+    glass.position.y = -h * 0.05;
+    glass.userData.cityLight = 'window';
+    glass.userData.litAtNight = true;
+    glassMat.userData.cityLight = 'window';
+    g.add(glass);
+
+    const leftTrim = new THREE.Mesh(new THREE.BoxGeometry(0.18, h, d + 0.08), _bmcMat(BMC.trim));
+    leftTrim.position.set(-w / 2 - 0.08, 0, 0);
+    g.add(leftTrim);
+    const rightTrim = leftTrim.clone();
+    rightTrim.position.x = w / 2 + 0.08;
+    g.add(rightTrim);
+
+    const outerArch = new THREE.Mesh(
+        new THREE.CylinderGeometry(w * 0.58, w * 0.58, d + 0.1, 12, 1, false, 0, Math.PI),
+        _bmcMat(BMC.trim)
+    );
+    outerArch.rotation.z = Math.PI / 2;
+    outerArch.rotation.y = Math.PI / 2;
+    outerArch.position.y = h / 2;
+    g.add(outerArch);
+
+    g.position.set(x, y, z);
+    g.rotation.y = rotY;
+    parent.add(g);
+}
+
+function _bmcBalcony(w, d) {
+    const g = new THREE.Group();
+    g.add(new THREE.Mesh(new THREE.BoxGeometry(w, 0.35, d), _bmcMat(BMC.stoneLight)));
+    const posts = 7;
+    const railH = 0.9;
+    for (let i = 0; i <= posts; i++) {
+        const t = -w / 2 + (i / posts) * w;
+        const post = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.07, 0.07, railH, 6),
+            _bmcMat(BMC.trim)
+        );
+        post.position.set(t, railH / 2 + 0.18, d / 2 - 0.1);
+        g.add(post);
+    }
+    const topRail = new THREE.Mesh(new THREE.BoxGeometry(w, 0.12, 0.12), _bmcMat(BMC.trim));
+    topRail.position.set(0, railH + 0.18, d / 2 - 0.1);
+    g.add(topRail);
+    return g;
+}
+
+function _bmcClock(parent, tx, ty, tz, rotY) {
+    const cg = new THREE.Group();
+    cg.add(new THREE.Mesh(new THREE.TorusGeometry(2.6, 0.32, 6, 24), _bmcMat(BMC.trim)));
+    const face = new THREE.Mesh(
+        new THREE.CylinderGeometry(2.35, 2.35, 0.18, 20),
+        _bmcMat(BMC.stoneDark)
+    );
+    face.rotation.x = Math.PI / 2;
+    cg.add(face);
+    const gold = _bmcMat(BMC.gold, { emissive: BMC.gold, emissiveIntensity: 0.12 });
+    const hour = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.2, 0.12), gold);
+    hour.position.y = 0.5;
+    cg.add(hour);
+    const min = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.8, 0.1), gold);
+    min.position.y = 0.85;
+    min.rotation.z = -Math.PI / 3;
+    cg.add(min);
+    cg.position.set(tx, ty, tz);
+    cg.rotation.y = rotY;
+    parent.add(cg);
+}
+
+function _bmcWing(w, h, d, x, isLeft) {
+    const g = new THREE.Group();
+    g.add(_bmcStripedWall(w, h, d));
+
+    const cols = 4;
+    for (let c = 0; c < cols; c++) {
+        const wx = -w / 2 + (c + 0.5) * (w / cols);
+        _bmcGothicWindow(g, wx, h * 0.28, d / 2 + 0.08, 1.7, 3.8, 0.5);
+        _bmcGothicWindow(g, wx, h * 0.68, d / 2 + 0.08, 1.7, 3.8, 0.5);
+        const dormer = new THREE.Mesh(
+            new THREE.ConeGeometry(1.6, 4, 4),
+            _bmcMat(BMC.roofRed)
+        );
+        dormer.rotation.y = Math.PI / 4;
+        dormer.position.set(wx, h + 2.0, d / 2 - 0.15);
+        g.add(dormer);
+    }
+
+    const roof = new THREE.Mesh(
+        new THREE.BoxGeometry(w + 0.5, 1.6, d + 0.5),
+        _bmcMat(BMC.roofRed)
+    );
+    roof.position.y = h + 0.85;
+    g.add(roof);
+
+    // Outer corner tower + small dome
+    const tw = 6.5;
+    const th = h + 10;
+    const twX = isLeft ? -w / 2 : w / 2;
+    const wingTower = _bmcStripedWall(tw, th, d + 0.8);
+    wingTower.position.set(twX, 0, 0);
+    g.add(wingTower);
+    const wingDome = _bmcDome(tw * 0.48, 7.5, 20);
+    wingDome.position.set(twX, th, 0);
+    g.add(wingDome);
+
+    g.position.set(x, 0, -1.5);
+    return g;
+}
+
+/**
+ * Mahapalika Bhavan — single Indo-Gothic civic landmark for the city.
+ * Front faces +Z (street). Dimensions roughly 38×32×~55 (scaled).
+ */
+export function buildMahapalikaBhavan() {
+    const root = new THREE.Group();
+    root.name = 'MahapalikaBhavan';
+
+    // Scale whole composition to fit the city
+    const S = 0.42;
+    const bmc = new THREE.Group();
+
+    const towerW = 20, towerD = 20, towerH = 74;
+    const central = _bmcStripedWall(towerW, towerH, towerD);
+    bmc.add(central);
+
+    // Floor bands
+    const floorCount = 5;
+    for (let i = 1; i <= floorCount; i++) {
+        const fy = (towerH / floorCount) * i;
+        const band = new THREE.Mesh(
+            new THREE.BoxGeometry(towerW + 1.0, 0.9, towerD + 1.0),
+            _bmcMat(BMC.trim)
+        );
+        band.position.y = fy;
+        central.add(band);
+    }
+
+    // Windows + balconies on front face
+    for (let f = 0; f < floorCount; f++) {
+        const fy = (towerH / floorCount) * (f + 0.5);
+        _bmcGothicWindow(central, -5, fy, towerD / 2 + 0.08, 2.2, 4.5, 0.55);
+        _bmcGothicWindow(central, 0, fy, towerD / 2 + 0.08, 2.2, 4.5, 0.55);
+        _bmcGothicWindow(central, 5, fy, towerD / 2 + 0.08, 2.2, 4.5, 0.55);
+        if (f === 1 || f === 3) {
+            const bal = _bmcBalcony(14, 2.0);
+            bal.position.set(0, fy - 2.5, towerD / 2 + 0.9);
+            central.add(bal);
+        }
+    }
+
+    // Four clock faces
+    _bmcClock(central, 0, towerH - 8, towerD / 2 + 0.15, 0);
+    _bmcClock(central, 0, towerH - 8, -towerD / 2 - 0.15, Math.PI);
+    _bmcClock(central, towerW / 2 + 0.15, towerH - 8, 0, Math.PI / 2);
+    _bmcClock(central, -towerW / 2 - 0.15, towerH - 8, 0, -Math.PI / 2);
+
+    // Corner spirelets
+    [
+        [towerW / 2, towerD / 2],
+        [towerW / 2, -towerD / 2],
+        [-towerW / 2, towerD / 2],
+        [-towerW / 2, -towerD / 2],
+    ].forEach(([cx, cz]) => {
+        const mid = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.35, 0.55, 12, 8),
+            _bmcMat(BMC.trim)
+        );
+        mid.position.set(cx * 1.02, towerH * 0.58, cz * 1.02);
+        const cap = new THREE.Mesh(new THREE.ConeGeometry(0.7, 3.5, 8), _bmcMat(BMC.gold));
+        cap.position.set(cx * 1.02, towerH * 0.58 + 7.5, cz * 1.02);
+        central.add(mid);
+        central.add(cap);
+    });
+
+    // Drum + main dome
+    const drumH = 12;
+    const drum = new THREE.Mesh(
+        new THREE.CylinderGeometry(towerW * 0.48, towerW * 0.48, drumH, 20),
+        _bmcMat(BMC.stoneBase)
+    );
+    drum.position.y = towerH + drumH / 2;
+    drum.castShadow = true;
+    bmc.add(drum);
+
+    for (let i = 0; i < 12; i++) {
+        const ang = (i / 12) * Math.PI * 2;
+        const dx = Math.sin(ang) * towerW * 0.49;
+        const dz = Math.cos(ang) * towerW * 0.49;
+        const niche = new THREE.Mesh(new THREE.BoxGeometry(1.4, 5.2, 0.5), _bmcMat(BMC.stoneLight));
+        niche.position.set(dx, towerH + drumH / 2, dz);
+        niche.lookAt(0, towerH + drumH / 2, 0);
+        bmc.add(niche);
+    }
+
+    const mainDome = _bmcDome(towerW * 0.48, 24, 28);
+    mainDome.position.set(0, towerH + drumH, 0);
+    bmc.add(mainDome);
+
+    // Blue civic signboard
+    const sign = new THREE.Mesh(new THREE.BoxGeometry(14, 2.1, 0.5), _bmcMat(BMC.sign));
+    sign.position.set(0, 22, towerD / 2 + 0.7);
+    bmc.add(sign);
+    const textBar = new THREE.Mesh(new THREE.BoxGeometry(12, 0.55, 0.55), _bmcMat(0xf8f8f0));
+    textBar.position.set(0, 22, towerD / 2 + 0.72);
+    bmc.add(textBar);
+
+    // Wings
+    const wingW = 30, wingH = 38, wingD = 16;
+    bmc.add(_bmcWing(wingW, wingH, wingD, -towerW / 2 - wingW / 2, true));
+    bmc.add(_bmcWing(wingW, wingH, wingD, towerW / 2 + wingW / 2, false));
+
+    // Exhibition plinth + steps
+    const plinth = new THREE.Mesh(
+        new THREE.BoxGeometry(100, 2.6, 42),
+        _bmcMat(BMC.plinth)
+    );
+    plinth.position.set(0, 1.3, 5);
+    plinth.receiveShadow = true;
+    bmc.add(plinth);
+
+    for (let i = 0; i < 4; i++) {
+        const step = new THREE.Mesh(
+            new THREE.BoxGeometry(20 - i * 1.0, 0.35, 5 - i * 0.7),
+            _bmcMat(BMC.step)
+        );
+        step.position.set(0, 2.7 + i * 0.35, towerD / 2 + 2.4 + i * 0.35);
+        step.receiveShadow = true;
+        bmc.add(step);
+    }
+
+    // Pedestal + statue silhouette (front plaza)
+    const ped = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.8, 3.2, 10), _bmcMat(BMC.stoneDark));
+    ped.position.set(0, 1.6 + 2.6, towerD / 2 + 14);
+    bmc.add(ped);
+    const statue = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.55, 0.85, 4.2, 8),
+        _bmcMat(0x2a2e34)
+    );
+    statue.position.set(0, 2.6 + 3.2 + 2.1, towerD / 2 + 14);
+    bmc.add(statue);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.5, 8, 8), _bmcMat(0x2a2e34));
+    head.position.set(0, 2.6 + 3.2 + 4.4, towerD / 2 + 14);
+    bmc.add(head);
+
+    // Side hedges
+    const hedgeL = new THREE.Mesh(new THREE.BoxGeometry(26, 1.2, 3.2), _bmcMat(BMC.hedge));
+    hedgeL.position.set(-30, 3.2, 18);
+    bmc.add(hedgeL);
+    const hedgeR = hedgeL.clone();
+    hedgeR.position.x = 30;
+    bmc.add(hedgeR);
+
+    bmc.scale.setScalar(S);
+    root.add(bmc);
+
+    // Approx footprint for colliders (scaled)
+    root.userData.collider = {
+        w: 100 * S,
+        d: 50 * S,
+        h: (towerH + drumH + 28) * S,
+    };
+    return root;
+}
