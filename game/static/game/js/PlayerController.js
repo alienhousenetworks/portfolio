@@ -268,7 +268,10 @@ export class PlayerController {
         let newY = curY + this.vy * dt;
 
         // Ground / platform collision
-        if (newY <= floorY + PHYSICS.groundSnap && this.vy <= 0) {
+        // If already under the solid surface (clipping through mountain/grass mesh),
+        // treat as on-ground and force climb/snap onto the heightfield.
+        const underSurface = curY < floorY - 0.35;
+        if (underSurface || (newY <= floorY + PHYSICS.groundSnap && this.vy <= 0)) {
             newY = floorY;
             this.vy = 0;
             this.onGround = true;
@@ -276,10 +279,16 @@ export class PlayerController {
             this.onGround = false;
         }
 
-        // Only apply smooth height transition when we are on the ground (walking)
+        // On ground: follow terrain. Under solid mesh → snap hard (no soft lerp through rock).
+        // Gentle slopes use smooth height so footsteps feel natural.
         if (this.onGround) {
-            const ySmooth = 12;
-            this.avatar.position.y += (floorY - this.avatar.position.y) * (1 - Math.exp(-ySmooth * dt));
+            if (underSurface) {
+                // Climb onto grass / ridge / gorge surface — never remain inside the mesh
+                this.avatar.position.y = floorY;
+            } else {
+                const ySmooth = 12;
+                this.avatar.position.y += (floorY - this.avatar.position.y) * (1 - Math.exp(-ySmooth * dt));
+            }
         } else {
             this.avatar.position.y = newY;
         }

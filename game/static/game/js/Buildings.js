@@ -413,24 +413,31 @@ export function buildColonyBuilding(w, h, d, seed, style = 'thakur') {
         : _buildBoseBuilding(w, h, d, seed);
 }
 
-// ─── Sukumar Roy Colony (photo 1752224140 — white Kolkata heritage) ────────
+// ─── Sukumar Roy Colony (photo 1752224140_2 — black & white Kolkata heritage) ─
+// Buildings stay monochrome: white plaster, grey shutters, black mural ink.
+// No green/olive/wood-brown accents (those read as "colorful" in-game).
 const SUKUMAR = {
     walls: [
-        0xf2f0ec, // fresh white plaster
-        0xe8e4dc, // warm off-white
-        0xdcd8d0, // aged cream
-        0xe0e8e8, // cool white-blue
-        0xf0e8e0, // ivory
-        0xc8c4bc, // grey-white weathered
+        0xf4f4f4, // fresh white plaster
+        0xe8e8e8, // soft grey-white
+        0xdcdcdc, // aged grey plaster
+        0xf0f0f0, // clean white
+        0xe0e0e0, // cool grey wall
+        0xc8c8c8, // weathered grey-white
     ],
-    trim: 0xe8e4d8,
-    shutter: [0x8a9a8a, 0x6a7a70, 0xa89870, 0x5a7068], // muted green / olive / brown-green
-    wood: 0x8a6a48,
-    rail: 0xb0a898,
-    mold: 0xd8d0c4,
-    mural: 0x2a2a2a,
-    door: 0xd8d4cc,
-    curbBlue: 0x4a90c8,
+    trim: 0xeaeaea,
+    shutter: [0xb0b0b0, 0x989898, 0xc4c4c4, 0x8a8a8a], // pale grey louvers (photo)
+    wood: 0x555555, // dark grey open shutter (not brown)
+    rail: 0xb8b8b8,
+    mold: 0xd6d6d6,
+    mural: 0x1a1a1a, // pure black ink figures
+    door: 0xe0e0e0,
+    frame: 0x3a3a3a,
+    plinth: 0xc0c0c0,
+    step: 0xb0b0b0,
+    ac: 0xd0d0d0,
+    open: 0x222222,
+    louv: 0x6a6a6a,
 };
 
 /**
@@ -489,18 +496,18 @@ function _buildSukumarBuilding(w, h, d, seed) {
         _sukumarGallery(g, w, h, d, s, floorH, floors);
     }
 
-    // Shared: green shutters / windows on upper floors
+    // Shared: grey shutters / windows (B&W — no green)
     _sukumarWindows(g, w, h, d, s, floorH, floors, variant);
 
     // Raised plinth / steps (photo corner steps)
-    const plinth = toonMesh(new THREE.BoxGeometry(w + 0.4, 0.45, 0.7), 0xc8c4bc, { outline: false });
+    const plinth = toonMesh(new THREE.BoxGeometry(w + 0.4, 0.45, 0.7), SUKUMAR.plinth, { outline: false });
     plinth.mesh.position.set(0, 0.22, d / 2 + 0.3);
     g.add(plinth.group);
     if (variant === 0 || s % 3 === 0) {
         for (let i = 0; i < 3; i++) {
             const step = toonMesh(
                 new THREE.BoxGeometry(1.4 - i * 0.15, 0.14, 0.4),
-                0xb8b4ac,
+                SUKUMAR.step,
                 { outline: false }
             );
             step.mesh.position.set(0, 0.08 + i * 0.14, d / 2 + 0.55 + i * 0.15);
@@ -510,7 +517,7 @@ function _buildSukumarBuilding(w, h, d, seed) {
 
     // Wires / AC clutter on some variants
     if (s % 2 === 0) {
-        const ac = toonMesh(new THREE.BoxGeometry(0.7, 0.4, 0.35), 0xd0d4d0, { outline: false });
+        const ac = toonMesh(new THREE.BoxGeometry(0.7, 0.4, 0.35), SUKUMAR.ac, { outline: false });
         ac.mesh.position.set(w / 2 - 0.5, floorH + 1.2, d / 2 + 0.2);
         g.add(ac.group);
     }
@@ -529,12 +536,12 @@ function _sukumarWindows(g, w, h, d, s, floorH, floors, variant) {
             const wx = -w / 2 + (c + 0.5) * (w / cols);
             const shut = pick(SUKUMAR.shutter, s + r + c);
 
-            // Frame
-            const frame = toonMesh(new THREE.BoxGeometry(1.05, 1.35, 0.08), 0x3a4048, { outline: false });
+            // Frame (dark grey)
+            const frame = toonMesh(new THREE.BoxGeometry(1.05, 1.35, 0.08), SUKUMAR.frame, { outline: false });
             frame.mesh.position.set(wx, wy, d / 2 + 0.03);
             g.add(frame.group);
 
-            // Louvered shutters (photo)
+            // Louvered shutters — grey only (photo B&W)
             const shL = toonMesh(new THREE.BoxGeometry(0.42, 1.2, 0.06), shut, { outline: false });
             shL.mesh.position.set(wx - 0.22, wy, d / 2 + 0.08);
             g.add(shL.group);
@@ -546,14 +553,14 @@ function _sukumarWindows(g, w, h, d, s, floorH, floors, variant) {
             for (let L = 0; L < 5; L++) {
                 const louv = toonMesh(
                     new THREE.BoxGeometry(0.38, 0.04, 0.03),
-                    0x5a6058,
+                    SUKUMAR.louv,
                     { outline: false }
                 );
                 louv.mesh.position.set(wx - 0.22, wy - 0.45 + L * 0.22, d / 2 + 0.12);
                 g.add(louv.group);
             }
 
-            // Occasional open brown wooden shutter (photo bottom right)
+            // Occasional open dark shutter (photo bottom right — greyscale, not wood brown)
             if ((s + c + r) % 7 === 0) {
                 const wood = toonMesh(new THREE.BoxGeometry(0.5, 1.15, 0.08), SUKUMAR.wood, { outline: false });
                 wood.mesh.position.set(wx + 0.55, wy, d / 2 + 0.15);
@@ -563,7 +570,7 @@ function _sukumarWindows(g, w, h, d, s, floorH, floors, variant) {
         }
     }
 
-    // Ground floor door (cream)
+    // Ground floor door (light grey)
     if (variant !== 2) {
         const door = toonMesh(new THREE.BoxGeometry(1.0, 2.15, 0.1), SUKUMAR.door, { outline: false });
         door.mesh.position.set(0, 1.2, d / 2 + 0.06);
@@ -626,12 +633,12 @@ function _sukumarPilasters(g, w, h, d, s, floorH, floors) {
     g.add(base.group);
 }
 
-/** Mural wall — Sukumar Ray caricature vibe (stylized black figures) */
+/** Mural wall — Sukumar Ray caricature vibe (stylized black figures on white) */
 function _sukumarMural(g, w, h, d, s, floorH, floors) {
-    // Slightly darker wall wash
+    // White wall wash (B&W mural ground)
     const wash = toonMesh(
         new THREE.BoxGeometry(w * 0.95, h * 0.7, 0.06),
-        0xe8e4dc,
+        0xf2f2f2,
         { outline: false }
     );
     wash.mesh.position.set(0, h * 0.5, d / 2 + 0.04);
@@ -689,7 +696,7 @@ function _sukumarArched(g, w, h, d, s, floorH, floors) {
         arch.position.set(ax, 2.55, d / 2 + 0.05);
         g.add(arch);
         // Dark opening
-        const open = toonMesh(new THREE.BoxGeometry(1.1, 1.9, 0.08), 0x2a3038, { outline: false });
+        const open = toonMesh(new THREE.BoxGeometry(1.1, 1.9, 0.08), SUKUMAR.open, { outline: false });
         open.mesh.position.set(ax, 1.15, d / 2 + 0.08);
         g.add(open.group);
     }

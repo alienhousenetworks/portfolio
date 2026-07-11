@@ -56,7 +56,7 @@ const ROAD = {
         x: -55, w: 5.6, z1: -135, z2: 135, sw: 1.05,
         style: 'bose', name: 'Bose Colony', nameBn: 'বোস কলোনী',
     },
-    // Sukumar Roy Colony — white Kolkata heritage (photo 1752224140)
+    // Sukumar Roy Colony — B&W Kolkata heritage (photo 1752224140_2)
     sukumar: {
         x: 115, w: 7.2, z1: -120, z2: 120, sw: 1.25,
         style: 'sukumar', name: 'Sukumar Roy Colony', nameBn: 'সুকুমার রায় কলোনী',
@@ -823,7 +823,7 @@ export class WorldBuilder {
         this._buildColonyStrip(ROAD.sukumar, 'sukumar');
         this._colonyNameSigns(ROAD.thakur, 0xd46858);
         this._colonyNameSigns(ROAD.bose, 0xd49868);
-        this._colonyNameSigns(ROAD.sukumar, 0xe8e4dc);
+        this._colonyNameSigns(ROAD.sukumar, 0xe8e8e8);
     }
 
     _buildColonyStrip(def, style) {
@@ -886,17 +886,17 @@ export class WorldBuilder {
         else this._boseProps(def);
     }
 
-    /** Blue–white painted curb (Sukumar photo street edge) */
+    /** Black–white painted curb (Sukumar B&W street edge — no blue) */
     _sukumarCurbPaint(def) {
         const gy = WORLD.groundY ?? 0.15;
         const half = def.w / 2;
         const y = gy + 0.09;
-        const blue = toonMat(0x4a90c8);
-        const white = toonMat(0xf0ece4);
+        const black = toonMat(0x2a2a2a);
+        const white = toonMat(0xf0f0f0);
         const seg = 2.2;
         for (const side of [-1, 1]) {
             for (let z = def.z1 + 4; z < def.z2 - 4; z += seg * 2) {
-                const b = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.1, seg), blue);
+                const b = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.1, seg), black);
                 b.position.set(def.x + side * (half + 0.15), y, z + seg / 2);
                 this.scene.add(b);
                 const w = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.1, seg), white);
@@ -906,7 +906,7 @@ export class WorldBuilder {
         }
     }
 
-    /** Sukumar Roy Colony street props — wires, planters, quiet heritage lane */
+    /** Sukumar Roy Colony street props — B&W quiet heritage lane (no colorful plants) */
     _sukumarProps(def) {
         const half = def.w / 2;
         const walk = half + ROAD.curb + roadSw(def) * 0.55;
@@ -921,11 +921,14 @@ export class WorldBuilder {
             lamp.position.set(def.x + (s % 2 === 0 ? -1 : 1) * walk, 0, z);
             this.scene.add(lamp);
 
-            // Flower pots / greenery (photo has plants on roofs & edges)
+            // Greyscale planter (no bright flowers — keep colony monochrome)
             if (s % 2 === 0) {
-                const pot = createFlowerPot(s);
-                pot.position.set(def.x + (s % 4 === 0 ? 1 : -1) * (walk + 0.2), 0, z + 3);
-                this.scene.add(pot);
+                const pot = toonMesh(new THREE.CylinderGeometry(0.28, 0.22, 0.4, 8), 0x555555, { outline: false });
+                pot.mesh.position.set(def.x + (s % 4 === 0 ? 1 : -1) * (walk + 0.2), 0.2, z + 3);
+                this.scene.add(pot.group);
+                const bush = toonMesh(new THREE.SphereGeometry(0.32, 8, 6), 0x3a3a3a, { outline: false });
+                bush.mesh.position.set(def.x + (s % 4 === 0 ? 1 : -1) * (walk + 0.2), 0.55, z + 3);
+                this.scene.add(bush.group);
             }
 
             // Parked bike

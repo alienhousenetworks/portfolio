@@ -128,7 +128,7 @@ export const DISTRICT_DEFS = {
         color: '#d49868',
         groundColor: 0xc4a890,
     },
-    /** Bengali colony — white Kolkata heritage (Sukumar Ray) */
+    /** Bengali colony — B&W Kolkata heritage (Sukumar Ray, photo 1752224140_2) */
     sukumar: {
         id: 'sukumar',
         label: 'সুকুমার রায় কলোনী',
@@ -138,8 +138,8 @@ export const DISTRICT_DEFS = {
         x: 115,
         z: 0,
         radius: 55,
-        color: '#e8e4dc',
-        groundColor: 0xf0ece4,
+        color: '#e8e8e8',
+        groundColor: 0xe8e8e8,
     },
 };
 

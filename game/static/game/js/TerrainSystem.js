@@ -5,10 +5,21 @@ import { ExploreTerrain } from './ExploreTerrain.js';
 
 const MAX_STEP = 2.2;
 const BRIDGE_MAX_STEP = 3.0;
+/** Max rise per move check on continuous explore heightfields (ridge / gorge / hills). */
+const EXPLORE_MAX_STEP = 5.0;
+/** Max rise/run on explore slopes (~49°). Steeper = solid cliff wall. */
+const EXPLORE_MAX_SLOPE = 1.15;
+/** If feet are this far under the sampled surface, treat as clipping through solid mesh. */
+const CLIP_EPS = 0.4;
 
 /**
  * Curved hills + explore terrains (ridge / gorge).
  * Hills stay outside the city slab; no stairs.
+ *
+ * Walk physics rule for continuous heightfields (explore + hills):
+ *   - Stand ON the surface (never walk through solid mesh).
+ *   - Gentle slopes are walkable; cliff faces block horizontal entry.
+ *   - If already under the mesh, snap/climb up onto the surface.
  */
 export class TerrainSystem {
     constructor() {
@@ -166,14 +177,47 @@ export class TerrainSystem {
         return false;
     }
 
+    /** True when standing on continuous outdoor heightfield (ridge, gorge, or rolling hills). */
+    isContinuousTerrain(x, z) {
+        if (this._isCityFlat(x, z) || this._isParkLawn(x, z)) return false;
+        if (this.explore?.isInExplore(x, z)) return true;
+        // Rolling hills outside city also use continuous surface follow
+        for (const h of this.hills) {
+            if (this._hillTouchesCity(h)) continue;
+            const dx = x - h.x;
+            const dz = z - h.z;
+            if (dx * dx + dz * dz < h.r * h.r) return true;
+        }
+        return false;
+    }
+
     canTraverse(fromX, fromZ, fromY, toX, toZ) {
         const toY = this.getHeightAt(toX, toZ, fromY);
         const dy = toY - fromY;
 
-        // Going down is always traversable (gravity handles the drop)
+        // Going down / flat is always OK (gravity + surface snap handle drops)
         if (dy <= 0.01) return true;
 
-        // Going up is allowed if height difference is within step limits
+        const continuous =
+            this.isContinuousTerrain(fromX, fromZ) || this.isContinuousTerrain(toX, toZ);
+
+        if (continuous) {
+            // Frame-rate independent slope probe (~1 m look-ahead).
+            // Tiny per-frame steps would make walls look shallow if we used dy/dist alone.
+            const dist = Math.hypot(toX - fromX, toZ - fromZ);
+            if (dist < 1e-6) return true;
+            const ux = (toX - fromX) / dist;
+            const uz = (toZ - fromZ) / dist;
+            const LOOK = 1.15;
+            const fromSurf = this.getHeightAt(fromX, fromZ, fromY);
+            const lookY = this.getHeightAt(fromX + ux * LOOK, fromZ + uz * LOOK, fromY);
+            const rise = lookY - fromSurf;
+            if (rise <= 0.05) return true;
+            // Walkable mountain / bank slope; steeper = solid cliff (cannot tunnel in)
+            return (rise / LOOK) <= EXPLORE_MAX_SLOPE;
+        }
+
+        // City / discrete steps
         if (dy <= MAX_STEP) return true;
 
         if (this.isOnBridge(fromX, fromZ, fromY) || this.isOnBridge(toX, toZ, toY)) {
@@ -185,13 +229,38 @@ export class TerrainSystem {
 
     getWalkableHeight(x, z, currentY) {
         const target = this.getHeightAt(x, z, currentY);
-        
-        // Descending/standing is always walkable
+        const continuous = this.isContinuousTerrain(x, z);
+
+        // ── Anti-clip: never leave feet inside solid mesh ──────────────────
+        // Root bug: MAX_STEP kept currentY while the ridge/gorge mesh sat high
+        // above, so the player walked *through* the mountain instead of on it.
+        if (currentY < target - CLIP_EPS) {
+            const buried = target - currentY;
+            if (continuous) {
+                // Deeply stuck (teleport / load / old clip) → hard eject onto surface
+                if (buried > 10) return target;
+                // Climb up onto grass/rock at a controlled rate
+                return Math.min(target, currentY + EXPLORE_MAX_STEP);
+            }
+            // Non-continuous: still never stay under solid ground
+            return target;
+        }
+
+        // On or above surface — follow down freely (stand on grass / rock / bank)
         if (target <= currentY + 0.1) return target;
-        
-        // Ascending requires being within stepping height limits
+
+        if (continuous) {
+            // Continuous heightfield: always follow the mesh surface.
+            // Cliffs are gated by canTraverse (no walking into solid walls).
+            return target;
+        }
+
+        // City / bridge step limits
+        if (this.isOnBridge(x, z, currentY)) {
+            if (target - currentY <= BRIDGE_MAX_STEP) return target;
+            return currentY;
+        }
         if (target - currentY <= MAX_STEP) return target;
-        
         return currentY;
     }
 
