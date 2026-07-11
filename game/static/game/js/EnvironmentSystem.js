@@ -507,6 +507,12 @@ export class EnvironmentSystem {
             } else if (tag === 'lampGlow') {
                 mat.opacity = glowOpacity;
                 mat.needsUpdate = true;
+            } else if (tag === 'sign') {
+                // Pastel neon kanban / billboards (Shinjuku strip)
+                if (mat.emissive) {
+                    mat.emissiveIntensity = on ? 0.95 * amount : 0.2;
+                    mat.needsUpdate = true;
+                }
             }
         });
 

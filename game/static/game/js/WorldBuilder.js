@@ -6,7 +6,9 @@
 import * as THREE from 'three';
 import { WORLD, PALETTE, isCityFlat } from './config.js';
 import { toonMat, toonMesh, setupCityLighting, INK } from './ToonStyle.js';
-import { buildJapaneseBuilding, buildJapaneseCorner, createVendingMachine } from './Buildings.js';
+import {
+    buildJapaneseBuilding, buildJapaneseCorner, buildShinjukuBuilding, createVendingMachine,
+} from './Buildings.js';
 import {
     createStreetLamp, createBench, createFlowerPot, createMailbox,
     createBicycleParked, createCherryTree, createLargeTree, createPineTree,
@@ -15,17 +17,21 @@ import {
     createParkedCar, createPostBox,
 } from './Props.js';
 
-// ─── Sparse road network (few roads, big blocks) ───────────────────────────
-// Main Avenue   : N–S at X=0  (the photo tree-tunnel street)
+// ─── Sparse road network — German-style (Fahrbahn + Bordstein + Gehweg) ───
+// Main Avenue   : N–S at X=0  (tree-tunnel street)
 // Cross Blvd    : E–W at Z=0
 // North Quiet   : E–W at Z=-90
 // South Quiet   : E–W at Z= 90
+// w  = Fahrbahn (asphalt carriageway) width
+// sw = Gehweg (sidewalk) width each side — keep narrow
+// curb = Bordstein thickness
 const ROAD = {
-    main:  { x: 0,   w: 11, z1: -135, z2: 135 }, // N-S
-    cross: { z: 0,   w: 10, x1: -155, x2: 155 }, // E-W
-    north: { z: -90, w: 8,  x1: -145, x2: 145 },
-    south: { z: 90,  w: 8,  x1: -145, x2: 145 },
-    sw: 2.4, // sidewalk half-width beyond road edge
+    main:  { x: 0,   w: 15, z1: -135, z2: 135 }, // N-S — wider avenue
+    cross: { z: 0,   w: 13, x1: -155, x2: 155 }, // E-W
+    north: { z: -90, w: 11, x1: -145, x2: 145 },
+    south: { z: 90,  w: 11, x1: -145, x2: 145 },
+    sw: 1.5,   // Gehweg each side (was 2.4 — too wide)
+    curb: 0.28, // Bordstein strip width
 };
 
 const CITY_HX = WORLD.cityHalfX ?? 165;
@@ -48,9 +54,11 @@ export class WorldBuilder {
         this._lights();
         this._ground();
         this._roadNetwork();
-        this._avenueTrees();      // tree tunnels first so buildings sit behind
+        this._mainAvenueShinjuku(); // dense commercial canyon (full Main length)
+        this._avenueTrees();        // tree tunnels on side streets only
         this._buildingRows();
         this._streetProps();
+        this._mainAvenueProps();
         this._createDetailedShops();
         this._createCentralTeaStall();
         this._crosswalks();
@@ -140,20 +148,18 @@ export class WorldBuilder {
         this.scene.add(outer);
         this._groundGrass = outer;
 
+        // Block lots under buildings — muted, not sidewalk-like
+        // (real Gehweg lives only beside roads)
         const cityW = CITY_HX * 2;
         const cityD = CITY_HZ * 2;
         const city = new THREE.Mesh(
             new THREE.PlaneGeometry(cityW, cityD),
-            toonMat(0xa8b4b0)
+            toonMat(0x8a9488)
         );
         city.rotation.x = -Math.PI / 2;
         city.position.y = 0.02;
         city.receiveShadow = true;
         this.scene.add(city);
-
-        const curb = toonMesh(new THREE.BoxGeometry(cityW, 0.12, cityD), 0xb8c0bc, { outline: false });
-        curb.mesh.position.y = 0.1;
-        this.scene.add(curb.group);
 
         // River west of the city slab (no overlap with roads/buildings)
         const riverX = WORLD.riverX ?? -(CITY_HX + 20);
@@ -165,23 +171,26 @@ export class WorldBuilder {
         this.scene.add(river);
     }
 
-    // Keep clear of roads, tree buffer, small central plaza, river
+    // Keep clear of roads + Gehweg + small tree buffer, plaza, river
     _isRoadOrPark(x, z, pad = 0) {
         // Central plaza (small green at crossroads)
         if (Math.hypot(x, z) < 16 + pad) return true;
 
+        // Corridor = half Fahrbahn + Bordstein + Gehweg + tree strip
+        const corridor = (w) => w / 2 + ROAD.curb + ROAD.sw + 2.2 + pad;
+
         // Main Avenue N-S
-        if (Math.abs(x - ROAD.main.x) < ROAD.main.w / 2 + ROAD.sw + 3.5 + pad
+        if (Math.abs(x - ROAD.main.x) < corridor(ROAD.main.w)
             && z >= ROAD.main.z1 - pad && z <= ROAD.main.z2 + pad) return true;
 
         // Cross Boulevard E-W
-        if (Math.abs(z - ROAD.cross.z) < ROAD.cross.w / 2 + ROAD.sw + 3.5 + pad
+        if (Math.abs(z - ROAD.cross.z) < corridor(ROAD.cross.w)
             && x >= ROAD.cross.x1 - pad && x <= ROAD.cross.x2 + pad) return true;
 
         // North / South quiet lanes
-        if (Math.abs(z - ROAD.north.z) < ROAD.north.w / 2 + ROAD.sw + 3 + pad
+        if (Math.abs(z - ROAD.north.z) < corridor(ROAD.north.w)
             && x >= ROAD.north.x1 - pad && x <= ROAD.north.x2 + pad) return true;
-        if (Math.abs(z - ROAD.south.z) < ROAD.south.w / 2 + ROAD.sw + 3 + pad
+        if (Math.abs(z - ROAD.south.z) < corridor(ROAD.south.w)
             && x >= ROAD.south.x1 - pad && x <= ROAD.south.x2 + pad) return true;
 
         // River (west of city)
@@ -196,44 +205,210 @@ export class WorldBuilder {
         return buildings.find(b => Math.hypot(b.x - x, b.z - z) < 10.0);
     }
 
-    // ─── Road Network (few roads only) ──────────────────────────────────────
+    // ─── Road Network — German style ───────────────────────────────────────
+    // Fahrbahn (dark asphalt) | Bordstein (raised curb) | Gehweg (tiled pavers)
     _roadNetwork() {
-        const roadMat = toonMat(0x6a747c); // slightly darker asphalt like the photo
-        const sideMat = toonMat(0xb8c0b8);
+        const asphalt = toonMat(0x4a5258);
+        const asphaltEdge = toonMat(0x3e464c);
+        const gehwegA = toonMat(0xc8c4bc);
+        const gehwegB = toonMat(0xbbb6ae);
+        const curbMat = toonMat(0xd8d4cc);
+        const lineMat = toonMat(0xf4f2ea, { transparent: true, opacity: 0.9 });
 
-        const strip = (x, z, w, d, mat = roadMat, y = 0.05) => {
+        const plane = (x, z, w, d, mat, y = 0.05) => {
             const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), mat);
             m.rotation.x = -Math.PI / 2;
             m.position.set(x, y, z);
             m.receiveShadow = true;
             this.scene.add(m);
+            return m;
         };
 
-        // Sidewalks under roads (slightly wider, lighter)
-        const mainLen = ROAD.main.z2 - ROAD.main.z1;
-        const crossLen = ROAD.cross.x2 - ROAD.cross.x1;
-        strip(0, 0, ROAD.main.w + ROAD.sw * 2, mainLen + 4, sideMat, 0.035);
-        strip(0, 0, crossLen + 4, ROAD.cross.w + ROAD.sw * 2, sideMat, 0.035);
-        strip(0, ROAD.north.z, crossLen - 10, ROAD.north.w + ROAD.sw * 2, sideMat, 0.035);
-        strip(0, ROAD.south.z, crossLen - 10, ROAD.south.w + ROAD.sw * 2, sideMat, 0.035);
+        /** N–S road: Fahrbahn + two Bordsteine + two Gehwege */
+        const nsRoad = (cx, z1, z2, w) => {
+            const len = z2 - z1;
+            const midZ = (z1 + z2) / 2;
+            const half = w / 2;
+            const sw = ROAD.sw;
+            const cw = ROAD.curb;
 
-        // Asphalt
-        strip(ROAD.main.x, 0, ROAD.main.w, mainLen);
-        strip(0, ROAD.cross.z, crossLen, ROAD.cross.w);
-        strip(0, ROAD.north.z, ROAD.north.x2 - ROAD.north.x1, ROAD.north.w);
-        strip(0, ROAD.south.z, ROAD.south.x2 - ROAD.south.x1, ROAD.south.w);
+            // Fahrbahn (asphalt carriageway)
+            plane(cx, midZ, w, len, asphalt, 0.048);
+            // Subtle darker edge band inside asphalt (gutter feel)
+            plane(cx - half + 0.35, midZ, 0.55, len, asphaltEdge, 0.049);
+            plane(cx + half - 0.35, midZ, 0.55, len, asphaltEdge, 0.049);
 
-        // Soft center-line dashes on Main Avenue
-        const dashMat = toonMat(0xd8d8d0, { transparent: true, opacity: 0.55 });
-        for (let z = -120; z <= 120; z += 8) {
-            if (Math.abs(z) < 12) continue; // skip plaza
-            const dash = new THREE.Mesh(new THREE.PlaneGeometry(0.35, 3.2), dashMat);
+            // Bordstein (raised curb) each side
+            [-1, 1].forEach(side => {
+                const curbX = cx + side * (half + cw / 2);
+                const curb = toonMesh(new THREE.BoxGeometry(cw, 0.14, len), curbMat, { outline: false });
+                curb.mesh.position.set(curbX, 0.09, midZ);
+                curb.mesh.receiveShadow = true;
+                this.scene.add(curb.group);
+            });
+
+            // Gehweg — narrow tiled sidewalks outside curb only (not under road)
+            [-1, 1].forEach(side => {
+                const walkX = cx + side * (half + cw + sw / 2);
+                // sizeX = sidewalk width, sizeZ = length along road
+                this._buildGehwegStrip(walkX, midZ, sw, len, 'ns', gehwegA, gehwegB);
+            });
+
+            // German road markings: dashed Mittellinie + solid edge Leitlinien
+            this._germanLaneMarkings(cx, midZ, w, len, 'ns', lineMat);
+        };
+
+        /** E–W road */
+        const ewRoad = (cz, x1, x2, w) => {
+            const len = x2 - x1;
+            const midX = (x1 + x2) / 2;
+            const half = w / 2;
+            const sw = ROAD.sw;
+            const cw = ROAD.curb;
+
+            plane(midX, cz, len, w, asphalt, 0.048);
+            plane(midX, cz - half + 0.35, len, 0.55, asphaltEdge, 0.049);
+            plane(midX, cz + half - 0.35, len, 0.55, asphaltEdge, 0.049);
+
+            [-1, 1].forEach(side => {
+                const curbZ = cz + side * (half + cw / 2);
+                const curb = toonMesh(new THREE.BoxGeometry(len, 0.14, cw), curbMat, { outline: false });
+                curb.mesh.position.set(midX, 0.09, curbZ);
+                curb.mesh.receiveShadow = true;
+                this.scene.add(curb.group);
+            });
+
+            [-1, 1].forEach(side => {
+                const walkZ = cz + side * (half + cw + sw / 2);
+                // sizeX = length along road, sizeZ = sidewalk width
+                this._buildGehwegStrip(midX, walkZ, len, sw, 'ew', gehwegA, gehwegB);
+            });
+
+            this._germanLaneMarkings(midX, cz, w, len, 'ew', lineMat);
+        };
+
+        nsRoad(ROAD.main.x, ROAD.main.z1, ROAD.main.z2, ROAD.main.w);
+        ewRoad(ROAD.cross.z, ROAD.cross.x1, ROAD.cross.x2, ROAD.cross.w);
+        ewRoad(ROAD.north.z, ROAD.north.x1, ROAD.north.x2, ROAD.north.w);
+        ewRoad(ROAD.south.z, ROAD.south.x1, ROAD.south.x2, ROAD.south.w);
+
+        this._buildCentralPlaza();
+    }
+
+    /**
+     * Betonplatte-style Gehweg (German sidewalk).
+     * sizeX / sizeZ are world-axis extents of the strip.
+     * axis 'ns' = strip runs along Z; 'ew' = along X.
+     * Uses sparse seams + occasional tint blocks for FPS.
+     */
+    _buildGehwegStrip(cx, cz, sizeX, sizeZ, axis, matA, matB) {
+        // Raised sidewalk slab (higher than asphalt)
+        const base = new THREE.Mesh(new THREE.BoxGeometry(sizeX, 0.1, sizeZ), matA);
+        base.position.set(cx, 0.11, cz);
+        base.receiveShadow = true;
+        this.scene.add(base);
+
+        const seamMat = toonMat(0xa8a49c);
+        const along = axis === 'ns' ? sizeZ : sizeX;
+        const across = axis === 'ns' ? sizeX : sizeZ;
+        const tile = 1.6; // Betonplatte scale
+        const halfAlong = along / 2;
+
+        // Cross seams every tile (shared materials keep cost low)
+        for (let t = -halfAlong + tile; t < halfAlong - 0.5; t += tile) {
+            // Skip dense seams through central plaza
+            const wx = axis === 'ns' ? cx : cx + t;
+            const wz = axis === 'ns' ? cz + t : cz;
+            if (Math.hypot(wx, wz) < 16) continue;
+
+            const seam = new THREE.Mesh(
+                new THREE.BoxGeometry(
+                    axis === 'ns' ? across * 0.94 : 0.045,
+                    0.018,
+                    axis === 'ns' ? 0.045 : across * 0.94
+                ),
+                seamMat
+            );
+            if (axis === 'ns') seam.position.set(cx, 0.165, cz + t);
+            else seam.position.set(cx + t, 0.165, cz);
+            this.scene.add(seam);
+        }
+
+        // One longitudinal center groove
+        const longSeam = new THREE.Mesh(
+            new THREE.BoxGeometry(
+                axis === 'ns' ? 0.04 : along * 0.98,
+                0.014,
+                axis === 'ns' ? along * 0.98 : 0.04
+            ),
+            seamMat
+        );
+        longSeam.position.set(cx, 0.164, cz);
+        this.scene.add(longSeam);
+
+        // Sparse alternating paver tints (every 3rd tile)
+        for (let t = -halfAlong + tile * 0.5; t < halfAlong; t += tile * 3) {
+            const wx = axis === 'ns' ? cx : cx + t;
+            const wz = axis === 'ns' ? cz + t : cz;
+            if (Math.hypot(wx, wz) < 16) continue;
+
+            const tint = new THREE.Mesh(
+                new THREE.BoxGeometry(
+                    axis === 'ns' ? across * 0.9 : tile * 0.9,
+                    0.012,
+                    axis === 'ns' ? tile * 0.9 : across * 0.9
+                ),
+                matB
+            );
+            if (axis === 'ns') tint.position.set(cx, 0.162, cz + t);
+            else tint.position.set(cx + t, 0.162, cz);
+            this.scene.add(tint);
+        }
+    }
+
+    /** German lane paint: dashed center + solid edge lines */
+    _germanLaneMarkings(cx, cz, roadW, len, axis, lineMat) {
+        const half = roadW / 2;
+        const y = 0.055;
+        const skipPlaza = (pos) => Math.hypot(
+            axis === 'ns' ? cx : pos,
+            axis === 'ns' ? pos : cz
+        ) < 14;
+
+        // Dashed Mittellinie
+        const dashLen = 2.8;
+        const gap = 3.4;
+        for (let t = -len / 2 + 2; t < len / 2 - 2; t += dashLen + gap) {
+            const pos = t + dashLen / 2;
+            if (skipPlaza(axis === 'ns' ? cz + pos : cx + pos)) continue;
+            const dash = new THREE.Mesh(
+                new THREE.PlaneGeometry(
+                    axis === 'ns' ? 0.18 : dashLen,
+                    axis === 'ns' ? dashLen : 0.18
+                ),
+                lineMat
+            );
             dash.rotation.x = -Math.PI / 2;
-            dash.position.set(0, 0.06, z);
+            if (axis === 'ns') dash.position.set(cx, y, cz + pos);
+            else dash.position.set(cx + pos, y, cz);
             this.scene.add(dash);
         }
 
-        this._buildCentralPlaza();
+        // Solid edge Leitlinien (near curb, inside asphalt)
+        const edgeOff = half - 0.45;
+        [-edgeOff, edgeOff].forEach(off => {
+            const edge = new THREE.Mesh(
+                new THREE.PlaneGeometry(
+                    axis === 'ns' ? 0.12 : len * 0.98,
+                    axis === 'ns' ? len * 0.98 : 0.12
+                ),
+                lineMat
+            );
+            edge.rotation.x = -Math.PI / 2;
+            if (axis === 'ns') edge.position.set(cx + off, y, cz);
+            else edge.position.set(cx, y, cz + off);
+            this.scene.add(edge);
+        });
     }
 
     _buildCentralPlaza() {
@@ -283,10 +458,12 @@ export class WorldBuilder {
         let seed = 500;
 
         // Helper: place dual tree rows along a N-S road at given x
+        // Trees sit on/near Gehweg (German Allee), hedges on outer sidewalk edge
         const nsAvenue = (roadX, z1, z2, halfW, spacing = 7.2) => {
-            const treeX = halfW / 2 + 1.35; // just off curb
-            const hedgeX = halfW / 2 + 0.55;
-            const wallX = halfW / 2 + 4.2;
+            const edge = halfW / 2 + ROAD.curb;           // outer curb face
+            const treeX = edge + ROAD.sw * 0.55;          // mid Gehweg
+            const hedgeX = edge + ROAD.sw + 0.15;         // outer walk edge
+            const wallX = edge + ROAD.sw + 2.4;           // property line
             for (let z = z1; z <= z2; z += spacing) {
                 if (Math.hypot(roadX, z) < 18) continue; // clear plaza
                 // Left row — lean toward road (+X if trees are on west, i.e. negative x offset)
@@ -320,9 +497,10 @@ export class WorldBuilder {
 
         // Helper: dual tree rows along an E-W road at given z
         const ewAvenue = (roadZ, x1, x2, halfW, spacing = 7.5) => {
-            const treeZ = halfW / 2 + 1.35;
-            const hedgeZ = halfW / 2 + 0.55;
-            const wallZ = halfW / 2 + 4.2;
+            const edge = halfW / 2 + ROAD.curb;
+            const treeZ = edge + ROAD.sw * 0.55;
+            const hedgeZ = edge + ROAD.sw + 0.15;
+            const wallZ = edge + ROAD.sw + 2.4;
             for (let x = x1; x <= x2; x += spacing) {
                 if (Math.hypot(x, roadZ) < 18) continue;
                 // Skip dense double-up on main avenue corridor
@@ -360,8 +538,8 @@ export class WorldBuilder {
             }
         };
 
-        // Signature tree-tunnel: Main Avenue (photo look)
-        nsAvenue(ROAD.main.x, ROAD.main.z1 + 6, ROAD.main.z2 - 6, ROAD.main.w, 6.8);
+        // Main Avenue is Shinjuku commercial canyon — no dense tree tunnel.
+        // Sparse decorative trees only near plaza edges (planted in _mainAvenueShinjuku).
 
         // Cross boulevard trees (slightly wider spacing)
         ewAvenue(ROAD.cross.z, ROAD.cross.x1 + 8, ROAD.cross.x2 - 8, ROAD.cross.w, 7.4);
@@ -371,30 +549,269 @@ export class WorldBuilder {
         ewAvenue(ROAD.south.z, ROAD.south.x1 + 10, ROAD.south.x2 - 10, ROAD.south.w, 8.2);
     }
 
-    // ─── Crosswalks ─────────────────────────────────────────────────────────
+    // ─── Zebrastreifen (German zebra crosswalks) ────────────────────────────
     _crosswalks() {
-        const white = toonMat(0xf8f8f4, { transparent: true, opacity: 0.85 });
-        const cw = (cx, cz, axis = 'x') => {
-            for (let s = -2; s <= 2; s++) {
+        const white = toonMat(0xf8f8f4, { transparent: true, opacity: 0.92 });
+        // stripes across the road width; axis = direction of road travel
+        const cw = (cx, cz, roadW, axis = 'x') => {
+            const stripeW = 0.55;
+            const gap = 0.55;
+            const stripeLen = roadW * 0.88;
+            const n = 6;
+            const span = (n - 1) * (stripeW + gap);
+            for (let i = 0; i < n; i++) {
+                const off = -span / 2 + i * (stripeW + gap);
                 const m = new THREE.Mesh(
-                    new THREE.PlaneGeometry(axis === 'x' ? 1.15 : 5.2, axis === 'x' ? 5.2 : 1.15),
+                    new THREE.PlaneGeometry(
+                        axis === 'x' ? stripeW : stripeLen,
+                        axis === 'x' ? stripeLen : stripeW
+                    ),
                     white
                 );
                 m.rotation.x = -Math.PI / 2;
-                if (axis === 'x') m.position.set(cx + s * 1.7, 0.08, cz);
-                else m.position.set(cx, 0.08, cz + s * 1.7);
+                if (axis === 'x') m.position.set(cx + off, 0.056, cz);
+                else m.position.set(cx, 0.056, cz + off);
                 this.scene.add(m);
             }
         };
 
+        const halfMain = ROAD.main.w / 2 + 1.2;
+        const halfCross = ROAD.cross.w / 2 + 1.2;
         // Main × Cross
-        cw(0, 9, 'x');
-        cw(0, -9, 'x');
-        cw(9, 0, 'z');
-        cw(-9, 0, 'z');
+        cw(0, halfCross, ROAD.main.w, 'x');
+        cw(0, -halfCross, ROAD.main.w, 'x');
+        cw(halfMain, 0, ROAD.cross.w, 'z');
+        cw(-halfMain, 0, ROAD.cross.w, 'z');
         // Main × North / South quiet lanes
-        cw(0, ROAD.north.z, 'x');
-        cw(0, ROAD.south.z, 'x');
+        cw(0, ROAD.north.z, ROAD.main.w, 'x');
+        cw(0, ROAD.south.z, ROAD.main.w, 'x');
+    }
+
+    /**
+     * Full Main Avenue — Shinjuku-style commercial canyon (pastel).
+     * Dense tall buildings, vertical signs, billboards, multi-lane road paint.
+     */
+    _mainAvenueShinjuku() {
+        const halfRoad = ROAD.main.w / 2;
+        const walkOuter = halfRoad + ROAD.curb + ROAD.sw;
+        let seed = 7000;
+
+        // Multi-lane markings (4-lane feel like the photo)
+        this._mainAvenueLanePaint();
+
+        // Dense building rows both sides for full Main length
+        const spacing = 11.5;
+        for (let z = ROAD.main.z1 + 8; z <= ROAD.main.z2 - 8; z += spacing) {
+            // Clear central plaza
+            if (Math.abs(z) < 20) continue;
+            // Leave gaps at cross streets
+            if (Math.abs(z - ROAD.north.z) < 12) continue;
+            if (Math.abs(z - ROAD.south.z) < 12) continue;
+
+            for (const side of [-1, 1]) {
+                seed++;
+                const w = 9.5 + (seed % 4);           // façade width along street
+                const depth = 10 + (seed % 3);        // depth into block
+                const h = 18 + (seed % 12) + ((seed * 3) % 5); // tall canyon
+
+                // Front face sits just outside Gehweg
+                const bx = side * (walkOuter + depth / 2 + 0.15);
+                const bz = z + ((seed % 5) - 2) * 0.25;
+
+                const bld = buildShinjukuBuilding(w, h, depth, seed);
+                bld.position.set(bx, 0, bz);
+                // Face street: +Z local → toward road center
+                bld.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2;
+                this.scene.add(bld);
+                this.colliders.push({ x: bx, z: bz, w: depth, d: w, h, floorY: 0 });
+
+                // Freestanding tall kanban post on Gehweg (photo: signs at sidewalk)
+                if (seed % 2 === 0) {
+                    this._spawnVerticalKanban(
+                        side * (walkOuter - ROAD.sw * 0.35),
+                        bz + side * 0.5,
+                        seed
+                    );
+                }
+            }
+        }
+
+        // Japanese direction / blue guide sign near plaza
+        this._spawnGuideSign(-halfRoad - 1.2, 14, 0);
+        this._spawnGuideSign(halfRoad + 1.2, -14, Math.PI);
+
+        // Sparse bare street trees (photo has a few thin winter trees, not a tunnel)
+        for (let z = -120; z <= 120; z += 36) {
+            if (Math.abs(z) < 22) continue;
+            for (const side of [-1, 1]) {
+                const t = createAvenueTree(seed++, side > 0 ? -1 : 1);
+                t.scale.setScalar(0.55);
+                t.position.set(side * (walkOuter - 0.4), 0, z + side * 4);
+                this.scene.add(t);
+            }
+        }
+    }
+
+    _mainAvenueLanePaint() {
+        const white = toonMat(0xf4f2ea, { transparent: true, opacity: 0.88 });
+        const y = 0.056;
+        // Two dashed lane dividers (quarter lines) for multi-lane look
+        const quarters = [-ROAD.main.w * 0.25, ROAD.main.w * 0.25];
+        quarters.forEach(qx => {
+            for (let z = ROAD.main.z1 + 4; z < ROAD.main.z2 - 4; z += 6.2) {
+                if (Math.abs(z) < 16) continue;
+                if (Math.abs(z - ROAD.north.z) < 8) continue;
+                if (Math.abs(z - ROAD.south.z) < 8) continue;
+                const dash = new THREE.Mesh(new THREE.PlaneGeometry(0.14, 2.6), white);
+                dash.rotation.x = -Math.PI / 2;
+                dash.position.set(qx, y, z);
+                this.scene.add(dash);
+            }
+        });
+
+        // Stop lines (止まれ-style solid white bars) before major crossings
+        const stopZs = [
+            ROAD.cross.w / 2 + 2.2,
+            -(ROAD.cross.w / 2 + 2.2),
+            ROAD.north.z + ROAD.north.w / 2 + 2,
+            ROAD.north.z - ROAD.north.w / 2 - 2,
+            ROAD.south.z + ROAD.south.w / 2 + 2,
+            ROAD.south.z - ROAD.south.w / 2 - 2,
+        ];
+        stopZs.forEach(sz => {
+            const line = new THREE.Mesh(new THREE.PlaneGeometry(ROAD.main.w * 0.92, 0.45), white);
+            line.rotation.x = -Math.PI / 2;
+            line.position.set(0, y + 0.001, sz);
+            this.scene.add(line);
+
+            // Abstract "止" stop boxes (two white squares with X — toon shorthand)
+            [-3.2, 3.2].forEach(ox => {
+                const box = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1.6), white);
+                box.rotation.x = -Math.PI / 2;
+                box.position.set(ox, y + 0.002, sz + Math.sign(sz || 1) * 2.4);
+                this.scene.add(box);
+                // Dark X inside
+                const xMat = toonMat(0x3a4248);
+                for (const rot of [Math.PI / 4, -Math.PI / 4]) {
+                    const arm = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 0.18), xMat);
+                    arm.rotation.x = -Math.PI / 2;
+                    arm.rotation.z = rot;
+                    arm.position.set(ox, y + 0.003, sz + Math.sign(sz || 1) * 2.4);
+                    this.scene.add(arm);
+                }
+            });
+        });
+    }
+
+    _spawnVerticalKanban(x, z, seed) {
+        const g = new THREE.Group();
+        const neonCols = [0xff6b9d, 0x5ec8ff, 0xffd966, 0xff5c7a, 0x48d2c9, 0xc49bff];
+        const col = neonCols[Math.abs(seed) % neonCols.length];
+        const h = 4.5 + (seed % 4) * 0.6;
+
+        const pole = toonMesh(new THREE.BoxGeometry(0.12, h, 0.12), 0x4a5058, { outline: false });
+        pole.mesh.position.y = h / 2;
+        g.add(pole.group);
+
+        const faceMat = toonMat(col, { emissive: col, emissiveIntensity: 0.4 });
+        const face = new THREE.Mesh(new THREE.BoxGeometry(0.55, h * 0.85, 0.08), faceMat);
+        face.position.set(0.2, h * 0.55, 0);
+        face.userData.cityLight = 'sign';
+        face.userData.litAtNight = true;
+        faceMat.userData.cityLight = 'sign';
+        g.add(face);
+
+        // Segment bars
+        const segs = Math.floor(h * 0.85 / 0.65);
+        for (let i = 0; i < segs; i++) {
+            const bar = toonMesh(
+                new THREE.BoxGeometry(0.4, 0.07, 0.04),
+                0xf8f8f0,
+                { outline: false, transparent: true, opacity: 0.5 }
+            );
+            bar.mesh.position.set(0.2, 0.9 + i * 0.65, 0.06);
+            g.add(bar.group);
+        }
+
+        g.position.set(x, 0, z);
+        this.scene.add(g);
+    }
+
+    _spawnGuideSign(x, z, rotY) {
+        // Blue Japanese directional sign (pastel-soft navy)
+        const g = new THREE.Group();
+        const pole = toonMesh(new THREE.BoxGeometry(0.12, 3.4, 0.12), 0x6a7078, { outline: false });
+        pole.mesh.position.y = 1.7;
+        g.add(pole.group);
+
+        const board = toonMesh(new THREE.BoxGeometry(2.8, 1.4, 0.12), 0x5a9fd4);
+        board.mesh.position.set(0, 3.0, 0);
+        g.add(board.group);
+
+        // White arrow bars
+        const arrow = toonMesh(new THREE.BoxGeometry(1.6, 0.18, 0.05), 0xf8f8f0, { outline: false });
+        arrow.mesh.position.set(0, 3.15, 0.08);
+        g.add(arrow.group);
+        const tip = toonMesh(new THREE.BoxGeometry(0.5, 0.18, 0.05), 0xf8f8f0, { outline: false });
+        tip.mesh.position.set(0.9, 3.0, 0.08);
+        tip.mesh.rotation.z = -0.5;
+        g.add(tip.group);
+
+        // Small secondary panels
+        const p2 = toonMesh(new THREE.BoxGeometry(2.2, 0.4, 0.08), 0x7ab8e0, { outline: false });
+        p2.mesh.position.set(0, 2.5, 0.05);
+        g.add(p2.group);
+
+        g.position.set(x, 0, z);
+        g.rotation.y = rotY;
+        this.scene.add(g);
+    }
+
+    _mainAvenueProps() {
+        const walk = ROAD.main.w / 2 + ROAD.curb + ROAD.sw * 0.55;
+        let s = 900;
+
+        // Dense street lamps (urban corridor)
+        for (let z = ROAD.main.z1 + 10; z <= ROAD.main.z2 - 10; z += 16) {
+            if (Math.abs(z) < 18) continue;
+            for (const side of [-1, 1]) {
+                const lamp = createStreetLamp();
+                lamp.position.set(side * walk, 0, z + side * 3);
+                if (side > 0) lamp.rotation.y = Math.PI;
+                this.scene.add(lamp);
+            }
+            // Vending machines on Gehweg
+            if (s % 2 === 0) {
+                const vm = createVendingMachine(s);
+                vm.position.set((s % 4 === 0 ? -1 : 1) * (walk + 0.5), 0, z + 5);
+                this.scene.add(vm);
+            }
+            // Parked bikes + post boxes for street clutter
+            if (s % 3 === 0) {
+                const bike = createBicycleParked();
+                bike.position.set(-walk - 0.3, 0, z + 7);
+                this.scene.add(bike);
+            }
+            if (s % 4 === 0) {
+                const pb = createPostBox();
+                pb.position.set(walk + 0.35, 0, z + 2);
+                this.scene.add(pb);
+            }
+            s++;
+        }
+
+        // Traffic cones / bollards near intersections
+        const junctions = [ROAD.north.z, ROAD.south.z, 0];
+        junctions.forEach((jz, i) => {
+            for (const side of [-1, 1]) {
+                const cone = createTrafficCone();
+                cone.position.set(side * (ROAD.main.w / 2 - 0.8), 0, jz + side * 6);
+                this.scene.add(cone);
+            }
+            const sign = createRoundSign(i);
+            sign.position.set(ROAD.main.w / 2 + ROAD.curb + 0.6, 0, jz + 8);
+            this.scene.add(sign);
+        });
     }
 
     // ─── Buildings BEHIND the tree lines ────────────────────────────────────
@@ -409,12 +826,15 @@ export class WorldBuilder {
                 // Keep roads + tree buffer clear
                 if (this._isRoadOrPark(x, z, 2)) continue;
 
-                // Extra setback from main avenue so trees read in front of façades
-                if (Math.abs(x) < 17 && Math.abs(z) > 16) continue;
+                // Main Avenue corridor filled by Shinjuku strip — keep clear for canyon
+                const mainClear = ROAD.main.w / 2 + ROAD.curb + ROAD.sw + 12;
+                const crossClear = ROAD.cross.w / 2 + ROAD.curb + ROAD.sw + 4;
+                const quietClear = ROAD.north.w / 2 + ROAD.curb + ROAD.sw + 3.5;
+                if (Math.abs(x) < mainClear) continue;
                 // Setback from E-W roads
-                if (Math.abs(z) < 16 && Math.abs(x) > 16) continue;
-                if (Math.abs(z - ROAD.north.z) < 14) continue;
-                if (Math.abs(z - ROAD.south.z) < 14) continue;
+                if (Math.abs(z) < crossClear && Math.abs(x) > 16) continue;
+                if (Math.abs(z - ROAD.north.z) < quietClear) continue;
+                if (Math.abs(z - ROAD.south.z) < quietClear) continue;
 
                 // Soft edge — don't pack right to slab edge
                 if (Math.abs(x) > CITY_HX - 12 || Math.abs(z) > CITY_HZ - 12) continue;
@@ -595,40 +1015,16 @@ export class WorldBuilder {
     _streetProps() {
         let s = 200;
 
-        // Main Avenue lamps (between trees, not cluttering)
-        for (let z = -120; z <= 120; z += 28) {
-            if (Math.abs(z) < 16) continue;
-            const lampL = createStreetLamp();
-            lampL.position.set(-ROAD.main.w / 2 - 0.9, 0, z);
-            this.scene.add(lampL);
-            const lampR = createStreetLamp();
-            lampR.position.set(ROAD.main.w / 2 + 0.9, 0, z + 14);
-            lampR.rotation.y = Math.PI;
-            this.scene.add(lampR);
-
-            if (s % 3 === 0) {
-                const vm = createVendingMachine(s);
-                vm.position.set(ROAD.main.w / 2 + 2.2, 0, z + 6);
-                this.scene.add(vm);
-            }
-            if (s % 4 === 0) {
-                const bike = createBicycleParked();
-                bike.position.set(-ROAD.main.w / 2 - 2.0, 0, z + 4);
-                this.scene.add(bike);
-            }
-            if (s % 5 === 0) {
-                const pb = createPostBox();
-                pb.position.set(-ROAD.main.w / 2 - 2.4, 0, z + 10);
-                this.scene.add(pb);
-            }
-            s++;
-        }
+        // Main Avenue lamps/signs handled by _mainAvenueProps (Shinjuku strip).
+        // Side streets only here.
+        const crossWalk = ROAD.cross.w / 2 + ROAD.curb + ROAD.sw * 0.7;
+        const quietWalk = ROAD.south.w / 2 + ROAD.curb + ROAD.sw * 0.7;
 
         // Cross boulevard lamps
         for (let x = -140; x <= 140; x += 30) {
             if (Math.abs(x) < 14) continue;
             const lamp = createStreetLamp();
-            lamp.position.set(x, 0, ROAD.cross.w / 2 + 0.9);
+            lamp.position.set(x, 0, crossWalk);
             lamp.rotation.y = -Math.PI / 2;
             this.scene.add(lamp);
             s++;
@@ -638,15 +1034,18 @@ export class WorldBuilder {
         for (let x = -120; x <= 120; x += 22) {
             if (Math.abs(x) < 12) continue;
             const lamp = createStreetLamp();
-            lamp.position.set(x, 0, ROAD.south.z + ROAD.south.w / 2 + 0.8);
+            lamp.position.set(x, 0, ROAD.south.z + quietWalk);
             this.scene.add(lamp);
 
             if (s % 2 === 0 && Math.abs(x) > 25) {
                 const stall = this._createMarketStall(s);
-                stall.position.set(x + 4, 0, ROAD.south.z - ROAD.south.w / 2 - 3.5);
+                stall.position.set(x + 4, 0, ROAD.south.z - quietWalk - 2.2);
                 stall.rotation.y = Math.PI;
                 this.scene.add(stall);
-                this.colliders.push({ x: x + 4, z: ROAD.south.z - ROAD.south.w / 2 - 3.5, w: 2.5, d: 2.5, h: 2.5, floorY: 0 });
+                this.colliders.push({
+                    x: x + 4, z: ROAD.south.z - quietWalk - 2.2,
+                    w: 2.5, d: 2.5, h: 2.5, floorY: 0,
+                });
             }
             s++;
         }
@@ -655,11 +1054,11 @@ export class WorldBuilder {
         for (let x = -110; x <= 110; x += 32) {
             if (Math.abs(x) < 12) continue;
             const lamp = createStreetLamp();
-            lamp.position.set(x, 0, ROAD.north.z - ROAD.north.w / 2 - 0.8);
+            lamp.position.set(x, 0, ROAD.north.z - quietWalk);
             this.scene.add(lamp);
             if (s % 2 === 0) {
                 const mail = createMailbox();
-                mail.position.set(x + 3, 0, ROAD.north.z + ROAD.north.w / 2 + 2.5);
+                mail.position.set(x + 3, 0, ROAD.north.z + quietWalk + 0.8);
                 this.scene.add(mail);
             }
             s++;
@@ -693,7 +1092,7 @@ export class WorldBuilder {
 
         // Light overhead wires along Main Avenue (one side)
         const poleH = 6.2;
-        const wx = ROAD.main.w / 2 + 2.8;
+        const wx = ROAD.main.w / 2 + ROAD.curb + ROAD.sw + 0.6;
         for (let z = -100; z <= 90; z += 18) {
             if (Math.abs(z) < 14) continue;
             wire(wx, poleH, z, wx, poleH, z + 18, 0.4);

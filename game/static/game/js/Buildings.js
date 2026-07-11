@@ -362,6 +362,263 @@ function _upperStep(g, w, h, d, seed, wallCol, roofCol) {
     }
 }
 
+// ─── Shinjuku-style commercial tower (pastel anime) ───────────────────────
+// Dense façade, vertical kanban signs, billboards, neon glow — matches
+// japan-725347 photo composition but in the game's pastel toon palette.
+const SHINJUKU = {
+    walls: [
+        0xe8e4f0, // soft grey-lavender
+        0xdce8f0, // cool grey-blue
+        0xf0e8e4, // warm concrete
+        0xe4ece8, // mint-grey
+        0xf2e8f0, // pink-grey
+        0xe8ece4, // sage grey
+    ],
+    // Pastel "neon" sign colors (bright but soft)
+    neon: [
+        0xff6b9d, // hot pink
+        0x5ec8ff, // electric sky
+        0xffd966, // soft gold
+        0x7dffb3, // mint neon
+        0xff8c5a, // coral
+        0xc49bff, // lilac
+        0xff5c7a, // rose red (like the photo's vertical signs)
+        0x48d2c9, // teal
+    ],
+    billboard: [
+        0xffe0ec, 0xd0f0ff, 0xfff0c8, 0xe0ffe8, 0xf0e0ff, 0xffe8d0,
+    ],
+    panel: [0x3a4858, 0x2a3848, 0x483848, 0x284848],
+};
+
+/**
+ * Tall commercial building for Main Avenue canyon.
+ * Local +Z is the street-facing façade.
+ */
+export function buildShinjukuBuilding(w, h, d, seed) {
+    const s = Math.abs(Math.round(seed)) % 997;
+    const g = new THREE.Group();
+    const wallCol = pick(SHINJUKU.walls, s);
+    const floors = Math.max(4, Math.floor(h / 3.0));
+
+    // ── Body ──────────────────────────────────────────────────────────────
+    const body = toonMesh(new THREE.BoxGeometry(w, h, d), wallCol);
+    body.mesh.position.y = h / 2;
+    body.mesh.castShadow = true;
+    body.mesh.receiveShadow = true;
+    g.add(body.group);
+
+    // Parapet
+    const roofCol = pick(JP.roofs, s + 2);
+    const parapet = toonMesh(new THREE.BoxGeometry(w + 0.3, 0.55, d + 0.3), roofCol);
+    parapet.mesh.position.y = h + 0.28;
+    g.add(parapet.group);
+
+    // Floor bands
+    for (let f = 1; f < floors; f++) {
+        const bandY = f * (h / floors);
+        if (bandY >= h - 0.4) break;
+        const band = toonMesh(
+            new THREE.BoxGeometry(w + 0.05, 0.12, d + 0.05),
+            0xc8c4c0,
+            { outline: false }
+        );
+        band.mesh.position.y = bandY;
+        g.add(band.group);
+    }
+
+    // Dense window grid on street face
+    const cols = Math.max(2, Math.floor(w / 2.2));
+    for (let r = 1; r < floors; r++) {
+        const wy = r * (h / floors) + (h / floors) * 0.35;
+        if (wy >= h - 0.8) continue;
+        for (let c = 0; c < cols; c++) {
+            const wx = -w / 2 + (c + 0.5) * (w / cols);
+            const lit = ((s + r * 13 + c * 7) % 4) !== 0;
+            const glow = pick(SHINJUKU.neon, s + r + c);
+            const glassMat = toonMat(0x7ac4d0, {
+                transparent: true,
+                opacity: 0.7,
+                emissive: lit ? glow : 0x224040,
+                emissiveIntensity: 0,
+            });
+            const frame = new THREE.Mesh(
+                new THREE.BoxGeometry(1.15, 1.35, 0.06),
+                toonMat(0x2a3038)
+            );
+            frame.position.set(wx, wy, d / 2 + 0.02);
+            g.add(frame);
+            const glass = new THREE.Mesh(new THREE.BoxGeometry(0.95, 1.1, 0.05), glassMat);
+            glass.position.set(wx, wy, d / 2 + 0.04);
+            glass.userData.cityLight = 'window';
+            glass.userData.litAtNight = lit;
+            glassMat.userData.cityLight = 'window';
+            g.add(glass);
+        }
+    }
+
+    // Ground-floor shop (bright, lit)
+    const shopCol = pick(SHINJUKU.neon, s + 3);
+    const shopMat = toonMat(0x6ab8c8, {
+        transparent: true,
+        opacity: 0.55,
+        emissive: shopCol,
+        emissiveIntensity: 0,
+    });
+    const shop = new THREE.Mesh(new THREE.BoxGeometry(w * 0.85, 2.6, 0.08), shopMat);
+    shop.position.set(0, 1.35, d / 2 + 0.03);
+    shop.userData.cityLight = 'shop';
+    shop.userData.litAtNight = true;
+    shopMat.userData.cityLight = 'shop';
+    g.add(shop);
+
+    const shopFrame = toonMesh(
+        new THREE.BoxGeometry(w * 0.88, 2.75, 0.1),
+        0x1e2830,
+        { outline: false }
+    );
+    shopFrame.mesh.position.set(0, 1.4, d / 2 - 0.01);
+    g.add(shopFrame.group);
+
+    // Colorful awning strip
+    const awCol = pick(SHINJUKU.neon, s + 5);
+    const awning = toonMesh(new THREE.BoxGeometry(w * 0.9, 0.2, 1.4), awCol);
+    awning.mesh.position.set(0, 2.85, d / 2 + 0.65);
+    awning.mesh.rotation.x = 0.18;
+    g.add(awning.group);
+
+    // ── Vertical kanban signs (photo signature) ──────────────────────────
+    const vCount = 2 + (s % 3);
+    for (let i = 0; i < vCount; i++) {
+        const neon = pick(SHINJUKU.neon, s + i * 3);
+        const vh = 3.5 + (s + i * 11) % 5;
+        const vw = 0.45 + ((s + i) % 3) * 0.12;
+        const vx = -w / 2 + 0.4 + i * (w / Math.max(vCount, 1)) * 0.85;
+        const vy = 3.2 + (i % 3) * 1.8;
+        if (vy + vh / 2 > h - 0.5) continue;
+
+        // Outer glow frame
+        const frame = toonMesh(
+            new THREE.BoxGeometry(vw + 0.12, vh + 0.12, 0.14),
+            0x1a2030,
+            { outline: false }
+        );
+        frame.mesh.position.set(vx, vy + vh / 2, d / 2 + 0.18);
+        g.add(frame.group);
+
+        // Pastel neon face
+        const faceMat = toonMat(neon, {
+            emissive: neon,
+            emissiveIntensity: 0.35,
+        });
+        const face = new THREE.Mesh(new THREE.BoxGeometry(vw, vh, 0.1), faceMat);
+        face.position.set(vx, vy + vh / 2, d / 2 + 0.26);
+        face.userData.cityLight = 'sign';
+        face.userData.litAtNight = true;
+        faceMat.userData.cityLight = 'sign';
+        g.add(face);
+
+        // Segment bars (suggest text rows)
+        const segs = Math.floor(vh / 0.7);
+        for (let k = 0; k < segs; k++) {
+            const bar = toonMesh(
+                new THREE.BoxGeometry(vw * 0.7, 0.08, 0.04),
+                0xf8f8f0,
+                { outline: false, transparent: true, opacity: 0.55 }
+            );
+            bar.mesh.position.set(vx, vy + 0.4 + k * 0.7, d / 2 + 0.32);
+            g.add(bar.group);
+        }
+    }
+
+    // ── Horizontal billboards / posters ──────────────────────────────────
+    const billCount = 1 + (s % 3);
+    for (let i = 0; i < billCount; i++) {
+        const bw = w * (0.35 + (s % 3) * 0.1);
+        const bh = 1.4 + (s % 2) * 0.5;
+        const by = 5 + i * 4.5 + (s % 3);
+        if (by + bh / 2 > h - 1) continue;
+        const bx = ((s + i) % 2 === 0 ? -1 : 1) * (w * 0.15);
+        const bgCol = pick(SHINJUKU.billboard, s + i);
+        const frameCol = pick(SHINJUKU.panel, s + i);
+
+        const frame = toonMesh(
+            new THREE.BoxGeometry(bw + 0.15, bh + 0.15, 0.12),
+            frameCol,
+            { outline: false }
+        );
+        frame.mesh.position.set(bx, by, d / 2 + 0.1);
+        g.add(frame.group);
+
+        const posterMat = toonMat(bgCol, {
+            emissive: bgCol,
+            emissiveIntensity: 0.12,
+        });
+        const poster = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, 0.08), posterMat);
+        poster.position.set(bx, by, d / 2 + 0.18);
+        poster.userData.cityLight = 'sign';
+        poster.userData.litAtNight = true;
+        posterMat.userData.cityLight = 'sign';
+        g.add(poster);
+
+        // Accent bar on poster
+        const accent = toonMesh(
+            new THREE.BoxGeometry(bw * 0.9, 0.18, 0.05),
+            pick(SHINJUKU.neon, s + i + 2),
+            { outline: false, emissive: pick(SHINJUKU.neon, s + i + 2), emissiveIntensity: 0.2 }
+        );
+        accent.mesh.position.set(bx, by + bh * 0.3, d / 2 + 0.22);
+        g.add(accent.group);
+    }
+
+    // Rooftop billboard (skyline silhouette like the photo)
+    if (h > 16) {
+        const rbW = w * 0.7;
+        const rbH = 2.2 + (s % 3) * 0.4;
+        const rb = toonMesh(
+            new THREE.BoxGeometry(rbW, rbH, 0.2),
+            pick(SHINJUKU.neon, s + 8),
+            { emissive: pick(SHINJUKU.neon, s + 8), emissiveIntensity: 0.25 }
+        );
+        rb.mesh.position.set(0, h + 0.55 + rbH / 2, d / 2 - 0.2);
+        rb.mesh.userData.cityLight = 'sign';
+        rb.mesh.userData.litAtNight = true;
+        g.add(rb.group);
+
+        // Support poles
+        [-rbW * 0.4, rbW * 0.4].forEach(ox => {
+            const pole = toonMesh(new THREE.BoxGeometry(0.1, 1.2, 0.1), 0x6a7078, { outline: false });
+            pole.mesh.position.set(ox, h + 0.6, d / 2 - 0.2);
+            g.add(pole.group);
+        });
+    }
+
+    // Side-wall vertical signs (visible when looking down the street)
+    if (s % 2 === 0) {
+        const sideNeon = pick(SHINJUKU.neon, s + 11);
+        const side = toonMesh(
+            new THREE.BoxGeometry(0.12, 4.5, 0.5),
+            sideNeon,
+            { emissive: sideNeon, emissiveIntensity: 0.3 }
+        );
+        side.mesh.position.set(w / 2 + 0.08, 6, 0);
+        side.mesh.userData.cityLight = 'sign';
+        side.mesh.userData.litAtNight = true;
+        g.add(side.group);
+    }
+
+    // AC units on side (urban clutter)
+    if (h > 12) {
+        for (let i = 0; i < 2; i++) {
+            const ac = toonMesh(new THREE.BoxGeometry(0.7, 0.35, 0.25), 0xc8ccc8, { outline: false });
+            ac.mesh.position.set(-w / 2 - 0.12, 4 + i * 3.5, (i - 0.5) * d * 0.3);
+            g.add(ac.group);
+        }
+    }
+
+    return g;
+}
+
 // ─── Corner Building (L-shape, wider for intersections) ───────────────────
 export function buildJapaneseCorner(seed) {
     const s = Math.abs(seed) % 997;

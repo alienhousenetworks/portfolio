@@ -1,7 +1,7 @@
 export const WORLD = {
     size: 620,
     groundY: 0.15,
-    roadWidth: 11,
+    roadWidth: 15,
     roadSpacing: 70,
     bound: 280,
     /** Larger Japanese city footprint (concrete slab half-extents) */
