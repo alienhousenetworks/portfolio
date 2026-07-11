@@ -207,7 +207,6 @@ class Game {
             this.playerCtrl.enable();
             document.getElementById('hud')?.classList.add('visible');
             document.getElementById('side-toolbar')?.classList.add('visible');
-            document.querySelector('.back-link')?.classList.add('visible');
             document.getElementById('height-control')?.classList.add('visible');
             this.mobileControls?.show();
             const hint = document.getElementById('physics-hint');

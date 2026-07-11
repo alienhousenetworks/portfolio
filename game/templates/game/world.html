@@ -45,7 +45,6 @@
     </div>
 
     <div id="game-canvas"></div>
-    <a href="{% url 'index' %}" class="back-link">&larr; Back to site</a>
 
     <!-- Main HUD panels -->
     <div id="hud">
@@ -68,6 +67,7 @@
 
     <!-- Right-side toolbar (abeto.co style) -->
     <div id="side-toolbar">
+        <a href="{% url 'index' %}" class="toolbar-btn toolbar-btn-back" id="btn-toolbar-back" title="Back to site">🏠</a>
         <button class="toolbar-btn" id="btn-toolbar-map" title="Toggle minimap">🗺️</button>
         <button class="toolbar-btn" id="btn-toolbar-outfit" title="Change outfit [C]">👕</button>
         <button class="toolbar-btn" id="btn-toolbar-emote" title="Emote [G]">💬</button>

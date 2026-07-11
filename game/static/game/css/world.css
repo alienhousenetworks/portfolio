@@ -111,28 +111,6 @@ body.cinematic::after { bottom: 0; }
     to { transform: scaleY(1); }
 }
 
-/* ── Back link ───────────────────────────────────────────────────── */
-
-.back-link {
-    position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
-    z-index: 50;
-    background: rgba(255,255,255,0.85);
-    color: #2a3a48;
-    text-decoration: none;
-    font-size: 0.75rem;
-    font-weight: 700;
-    font-family: 'Nunito', sans-serif;
-    opacity: 0;
-    transition: opacity 0.3s;
-    padding: 6px 14px;
-    border-radius: 20px;
-    border: 1.5px solid rgba(30,42,56,0.2);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    letter-spacing: 0.04em;
-}
-.back-link.visible { opacity: 1; }
-.back-link:hover { background: #fff; color: #1e2a38; }
-
 /* ── HUD ─────────────────────────────────────────────────────────── */
 
 #hud { position: fixed; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.6s; }
@@ -255,6 +233,18 @@ body.cinematic::after { bottom: 0; }
     transform: translate(1px, 1px);
     box-shadow: 1px 1px 0 rgba(30,42,56,0.1);
 }
+a.toolbar-btn {
+    text-decoration: none;
+    color: inherit;
+}
+.toolbar-btn-back {
+    background: rgba(245, 200, 66, 0.92);
+    border-color: rgba(30, 42, 56, 0.28);
+}
+.toolbar-btn-back:hover {
+    background: #f5c842;
+}
+
 .toolbar-btn.active {
     background: #f5c842;
     border-color: rgba(30,42,56,0.3);
@@ -894,13 +884,6 @@ body.mobile-controls-on #env-status {
     top: max(8px, env(safe-area-inset-top));
     font-size: 0.68rem;
     padding: 5px 10px;
-}
-body.mobile-controls-on .back-link {
-    top: auto;
-    bottom: max(8px, env(safe-area-inset-bottom));
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 0.75rem;
 }
 
 @media (max-width: 520px) {
