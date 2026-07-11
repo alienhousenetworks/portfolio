@@ -18,21 +18,44 @@ import {
 } from './Props.js';
 
 // ─── Sparse road network — German-style (Fahrbahn + Bordstein + Gehweg) ───
-// Main Avenue   : N–S at X=0  (tree-tunnel street)
+// Layout (from road center outward):
+//   asphalt | curb | Gehweg (pedestrian) | air gap | building façade
+// Trees/lamps/props live ONLY on Gehweg — never inside building footprints.
+//
+// Main Avenue   : N–S at X=0  (Shinjuku commercial canyon)
 // Cross Blvd    : E–W at Z=0
 // North Quiet   : E–W at Z=-90
 // South Quiet   : E–W at Z= 90
-// w  = Fahrbahn (asphalt carriageway) width
-// sw = Gehweg (sidewalk) width each side — keep narrow
-// curb = Bordstein thickness
 const ROAD = {
-    main:  { x: 0,   w: 15, z1: -135, z2: 135 }, // N-S — wider avenue
-    cross: { z: 0,   w: 13, x1: -155, x2: 155 }, // E-W
-    north: { z: -90, w: 11, x1: -145, x2: 145 },
-    south: { z: 90,  w: 11, x1: -145, x2: 145 },
-    sw: 1.5,   // Gehweg each side (was 2.4 — too wide)
-    curb: 0.28, // Bordstein strip width
+    main:  { x: 0,   w: 15, z1: -135, z2: 135, sw: 2.8 }, // commercial Gehweg
+    cross: { z: 0,   w: 13, x1: -155, x2: 155, sw: 1.7 },
+    north: { z: -90, w: 11, x1: -145, x2: 145, sw: 1.6 },
+    south: { z: 90,  w: 11, x1: -145, x2: 145, sw: 1.6 },
+    sw: 1.6,       // default Gehweg
+    curb: 0.28,    // Bordstein
+    facadeGap: 1.2, // clear air between Gehweg outer edge and building face
+    mainBldgDepth: 10.5, // fixed depth so canyon line is consistent
 };
+
+/** Per-road sidewalk width */
+function roadSw(r) {
+    return r.sw ?? ROAD.sw;
+}
+
+/** Outer edge of Gehweg from road center (asphalt/2 + curb + walk) */
+function walkOuter(halfW, sw = ROAD.sw) {
+    return halfW + ROAD.curb + sw;
+}
+
+/** Building front X/Z distance from Main Avenue center */
+function mainFacadeLine() {
+    return walkOuter(ROAD.main.w / 2, roadSw(ROAD.main)) + ROAD.facadeGap;
+}
+
+/** Outer clear for Main corridor (rear of commercial buildings + margin) */
+function mainCorridorClear() {
+    return mainFacadeLine() + ROAD.mainBldgDepth + 3;
+}
 
 const CITY_HX = WORLD.cityHalfX ?? 165;
 const CITY_HZ = WORLD.cityHalfZ ?? 145;
@@ -171,26 +194,26 @@ export class WorldBuilder {
         this.scene.add(river);
     }
 
-    // Keep clear of roads + Gehweg + small tree buffer, plaza, river
+    // Keep clear of roads + Gehweg + façade gap (not building interiors)
     _isRoadOrPark(x, z, pad = 0) {
         // Central plaza (small green at crossroads)
         if (Math.hypot(x, z) < 16 + pad) return true;
 
-        // Corridor = half Fahrbahn + Bordstein + Gehweg + tree strip
-        const corridor = (w) => w / 2 + ROAD.curb + ROAD.sw + 2.2 + pad;
+        // Public right-of-way only (asphalt + curb + Gehweg + small pad)
+        const row = (w, sw) => w / 2 + ROAD.curb + sw + 0.6 + pad;
 
         // Main Avenue N-S
-        if (Math.abs(x - ROAD.main.x) < corridor(ROAD.main.w)
+        if (Math.abs(x - ROAD.main.x) < row(ROAD.main.w, roadSw(ROAD.main))
             && z >= ROAD.main.z1 - pad && z <= ROAD.main.z2 + pad) return true;
 
         // Cross Boulevard E-W
-        if (Math.abs(z - ROAD.cross.z) < corridor(ROAD.cross.w)
+        if (Math.abs(z - ROAD.cross.z) < row(ROAD.cross.w, roadSw(ROAD.cross))
             && x >= ROAD.cross.x1 - pad && x <= ROAD.cross.x2 + pad) return true;
 
         // North / South quiet lanes
-        if (Math.abs(z - ROAD.north.z) < corridor(ROAD.north.w)
+        if (Math.abs(z - ROAD.north.z) < row(ROAD.north.w, roadSw(ROAD.north))
             && x >= ROAD.north.x1 - pad && x <= ROAD.north.x2 + pad) return true;
-        if (Math.abs(z - ROAD.south.z) < corridor(ROAD.south.w)
+        if (Math.abs(z - ROAD.south.z) < row(ROAD.south.w, roadSw(ROAD.south))
             && x >= ROAD.south.x1 - pad && x <= ROAD.south.x2 + pad) return true;
 
         // River (west of city)
@@ -198,6 +221,17 @@ export class WorldBuilder {
         if (x < riverX + (WORLD.riverWidth ?? 28) / 2 + 4) return true;
 
         return false;
+    }
+
+    /** True if point is inside Main Avenue commercial building zone (not public walk) */
+    _inMainBuildingZone(x, z) {
+        const front = mainFacadeLine();
+        const rear = front + ROAD.mainBldgDepth;
+        const ax = Math.abs(x);
+        if (ax < front - 0.2 || ax > rear + 0.5) return false;
+        if (z < ROAD.main.z1 + 4 || z > ROAD.main.z2 - 4) return false;
+        if (Math.abs(z) < 18) return false;
+        return true;
     }
 
     _getAssignedBuilding(x, z) {
@@ -225,11 +259,10 @@ export class WorldBuilder {
         };
 
         /** N–S road: Fahrbahn + two Bordsteine + two Gehwege */
-        const nsRoad = (cx, z1, z2, w) => {
+        const nsRoad = (cx, z1, z2, w, sw = ROAD.sw) => {
             const len = z2 - z1;
             const midZ = (z1 + z2) / 2;
             const half = w / 2;
-            const sw = ROAD.sw;
             const cw = ROAD.curb;
 
             // Fahrbahn (asphalt carriageway)
@@ -247,23 +280,20 @@ export class WorldBuilder {
                 this.scene.add(curb.group);
             });
 
-            // Gehweg — narrow tiled sidewalks outside curb only (not under road)
+            // Gehweg — sidewalks only outside curb (never under asphalt / buildings)
             [-1, 1].forEach(side => {
                 const walkX = cx + side * (half + cw + sw / 2);
-                // sizeX = sidewalk width, sizeZ = length along road
                 this._buildGehwegStrip(walkX, midZ, sw, len, 'ns', gehwegA, gehwegB);
             });
 
-            // German road markings: dashed Mittellinie + solid edge Leitlinien
             this._germanLaneMarkings(cx, midZ, w, len, 'ns', lineMat);
         };
 
         /** E–W road */
-        const ewRoad = (cz, x1, x2, w) => {
+        const ewRoad = (cz, x1, x2, w, sw = ROAD.sw) => {
             const len = x2 - x1;
             const midX = (x1 + x2) / 2;
             const half = w / 2;
-            const sw = ROAD.sw;
             const cw = ROAD.curb;
 
             plane(midX, cz, len, w, asphalt, 0.048);
@@ -280,17 +310,16 @@ export class WorldBuilder {
 
             [-1, 1].forEach(side => {
                 const walkZ = cz + side * (half + cw + sw / 2);
-                // sizeX = length along road, sizeZ = sidewalk width
                 this._buildGehwegStrip(midX, walkZ, len, sw, 'ew', gehwegA, gehwegB);
             });
 
             this._germanLaneMarkings(midX, cz, w, len, 'ew', lineMat);
         };
 
-        nsRoad(ROAD.main.x, ROAD.main.z1, ROAD.main.z2, ROAD.main.w);
-        ewRoad(ROAD.cross.z, ROAD.cross.x1, ROAD.cross.x2, ROAD.cross.w);
-        ewRoad(ROAD.north.z, ROAD.north.x1, ROAD.north.x2, ROAD.north.w);
-        ewRoad(ROAD.south.z, ROAD.south.x1, ROAD.south.x2, ROAD.south.w);
+        nsRoad(ROAD.main.x, ROAD.main.z1, ROAD.main.z2, ROAD.main.w, roadSw(ROAD.main));
+        ewRoad(ROAD.cross.z, ROAD.cross.x1, ROAD.cross.x2, ROAD.cross.w, roadSw(ROAD.cross));
+        ewRoad(ROAD.north.z, ROAD.north.x1, ROAD.north.x2, ROAD.north.w, roadSw(ROAD.north));
+        ewRoad(ROAD.south.z, ROAD.south.x1, ROAD.south.x2, ROAD.south.w, roadSw(ROAD.south));
 
         this._buildCentralPlaza();
     }
@@ -453,100 +482,63 @@ export class WorldBuilder {
         this.scene.add(water.group);
     }
 
-    // ─── Tree-tunnel avenues (photo look) ───────────────────────────────────
+    // ─── Tree-lined side streets (never inside building footprints) ─────────
     _avenueTrees() {
         let seed = 500;
+        // Main commercial canyon: skip entirely (buildings + sparse trees handled separately)
+        const mainSkip = mainCorridorClear();
 
-        // Helper: place dual tree rows along a N-S road at given x
-        // Trees sit on/near Gehweg (German Allee), hedges on outer sidewalk edge
-        const nsAvenue = (roadX, z1, z2, halfW, spacing = 7.2) => {
-            const edge = halfW / 2 + ROAD.curb;           // outer curb face
-            const treeX = edge + ROAD.sw * 0.55;          // mid Gehweg
-            const hedgeX = edge + ROAD.sw + 0.15;         // outer walk edge
-            const wallX = edge + ROAD.sw + 2.4;           // property line
-            for (let z = z1; z <= z2; z += spacing) {
-                if (Math.hypot(roadX, z) < 18) continue; // clear plaza
-                // Left row — lean toward road (+X if trees are on west, i.e. negative x offset)
-                const tL = createAvenueTree(seed++, +1);
-                tL.position.set(roadX - treeX, 0, z + ((seed % 5) - 2) * 0.15);
-                this.scene.add(tL);
-                // Right row — lean toward road
-                const tR = createAvenueTree(seed++, -1);
-                tR.position.set(roadX + treeX, 0, z + 3.4 + ((seed % 5) - 2) * 0.12);
-                this.scene.add(tR);
-
-                // Hedges along curb
-                const hL = createHedge(spacing * 0.85, seed);
-                hL.position.set(roadX - hedgeX, 0, z + spacing * 0.35);
-                this.scene.add(hL);
-                const hR = createHedge(spacing * 0.85, seed + 1);
-                hR.position.set(roadX + hedgeX, 0, z + spacing * 0.35);
-                this.scene.add(hR);
-
-                // Low property walls behind trees (buildings sit further back)
-                if (seed % 2 === 0) {
-                    const wL = createLowWall(spacing * 0.9, seed);
-                    wL.position.set(roadX - wallX, 0, z + spacing * 0.4);
-                    this.scene.add(wL);
-                    const wR = createLowWall(spacing * 0.9, seed + 3);
-                    wR.position.set(roadX + wallX, 0, z + spacing * 0.4);
-                    this.scene.add(wR);
-                }
-            }
-        };
-
-        // Helper: dual tree rows along an E-W road at given z
-        const ewAvenue = (roadZ, x1, x2, halfW, spacing = 7.5) => {
-            const edge = halfW / 2 + ROAD.curb;
-            const treeZ = edge + ROAD.sw * 0.55;
-            const hedgeZ = edge + ROAD.sw + 0.15;
-            const wallZ = edge + ROAD.sw + 2.4;
+        // E–W avenue: trees/hedges strictly on Gehweg; walls outside façade gap
+        // roadW = full carriageway width
+        const ewAvenue = (roadZ, x1, x2, roadW, sw, spacing = 7.5) => {
+            const half = roadW / 2;
+            const curbOuter = half + ROAD.curb;
+            const treeOff = curbOuter + sw * 0.5;          // mid-Gehweg only
+            const hedgeOff = curbOuter + sw * 0.85;        // outer walk edge
+            const wallOff = curbOuter + sw + ROAD.facadeGap + 2.0; // past building front
             for (let x = x1; x <= x2; x += spacing) {
                 if (Math.hypot(x, roadZ) < 18) continue;
-                // Skip dense double-up on main avenue corridor
-                if (Math.abs(x) < ROAD.main.w / 2 + 6) continue;
+                // Never plant into Main Avenue building canyon
+                if (Math.abs(x) < mainSkip) continue;
 
                 const tN = createAvenueTree(seed++, +1);
                 tN.rotation.y = Math.PI / 2;
-                tN.position.set(x + ((seed % 5) - 2) * 0.12, 0, roadZ - treeZ);
+                tN.scale.setScalar(0.72);
+                tN.position.set(x, 0, roadZ - treeOff);
                 this.scene.add(tN);
 
                 const tS = createAvenueTree(seed++, -1);
                 tS.rotation.y = Math.PI / 2;
-                tS.position.set(x + 3.5 + ((seed % 5) - 2) * 0.1, 0, roadZ + treeZ);
+                tS.scale.setScalar(0.72);
+                // Offset along road so trunks don't stack; stay on Gehweg
+                tS.position.set(x + spacing * 0.45, 0, roadZ + treeOff);
                 this.scene.add(tS);
 
-                const hN = createHedge(spacing * 0.85, seed);
+                const hN = createHedge(spacing * 0.65, seed);
                 hN.rotation.y = Math.PI / 2;
-                hN.position.set(x + spacing * 0.35, 0, roadZ - hedgeZ);
+                hN.position.set(x + spacing * 0.2, 0, roadZ - hedgeOff);
                 this.scene.add(hN);
-                const hS = createHedge(spacing * 0.85, seed + 2);
+                const hS = createHedge(spacing * 0.65, seed + 2);
                 hS.rotation.y = Math.PI / 2;
-                hS.position.set(x + spacing * 0.35, 0, roadZ + hedgeZ);
+                hS.position.set(x + spacing * 0.2, 0, roadZ + hedgeOff);
                 this.scene.add(hS);
 
                 if (seed % 2 === 0) {
-                    const wN = createLowWall(spacing * 0.9, seed);
+                    const wN = createLowWall(spacing * 0.7, seed);
                     wN.rotation.y = Math.PI / 2;
-                    wN.position.set(x + spacing * 0.4, 0, roadZ - wallZ);
+                    wN.position.set(x + spacing * 0.25, 0, roadZ - wallOff);
                     this.scene.add(wN);
-                    const wS = createLowWall(spacing * 0.9, seed + 1);
+                    const wS = createLowWall(spacing * 0.7, seed + 1);
                     wS.rotation.y = Math.PI / 2;
-                    wS.position.set(x + spacing * 0.4, 0, roadZ + wallZ);
+                    wS.position.set(x + spacing * 0.25, 0, roadZ + wallOff);
                     this.scene.add(wS);
                 }
             }
         };
 
-        // Main Avenue is Shinjuku commercial canyon — no dense tree tunnel.
-        // Sparse decorative trees only near plaza edges (planted in _mainAvenueShinjuku).
-
-        // Cross boulevard trees (slightly wider spacing)
-        ewAvenue(ROAD.cross.z, ROAD.cross.x1 + 8, ROAD.cross.x2 - 8, ROAD.cross.w, 7.4);
-
-        // Quiet residential lanes — still tree-lined, a bit airier
-        ewAvenue(ROAD.north.z, ROAD.north.x1 + 10, ROAD.north.x2 - 10, ROAD.north.w, 8.2);
-        ewAvenue(ROAD.south.z, ROAD.south.x1 + 10, ROAD.south.x2 - 10, ROAD.south.w, 8.2);
+        ewAvenue(ROAD.cross.z, ROAD.cross.x1 + 10, ROAD.cross.x2 - 10, ROAD.cross.w, roadSw(ROAD.cross), 8.0);
+        ewAvenue(ROAD.north.z, ROAD.north.x1 + 12, ROAD.north.x2 - 12, ROAD.north.w, roadSw(ROAD.north), 8.5);
+        ewAvenue(ROAD.south.z, ROAD.south.x1 + 12, ROAD.south.x2 - 12, ROAD.south.w, roadSw(ROAD.south), 8.5);
     }
 
     // ─── Zebrastreifen (German zebra crosswalks) ────────────────────────────
@@ -589,67 +581,72 @@ export class WorldBuilder {
 
     /**
      * Full Main Avenue — Shinjuku-style commercial canyon (pastel).
-     * Dense tall buildings, vertical signs, billboards, multi-lane road paint.
+     * Clear bands: asphalt | curb | Gehweg | air gap | building façade
+     * Trees / signs / lamps only on Gehweg — never inside buildings.
      */
     _mainAvenueShinjuku() {
         const halfRoad = ROAD.main.w / 2;
-        const walkOuter = halfRoad + ROAD.curb + ROAD.sw;
+        const sw = roadSw(ROAD.main);
+        const wOuter = walkOuter(halfRoad, sw);   // outer edge of Gehweg
+        const facade = mainFacadeLine();          // building front
+        const depth = ROAD.mainBldgDepth;
         let seed = 7000;
 
-        // Multi-lane markings (4-lane feel like the photo)
         this._mainAvenueLanePaint();
 
-        // Dense building rows both sides for full Main length
-        const spacing = 11.5;
-        for (let z = ROAD.main.z1 + 8; z <= ROAD.main.z2 - 8; z += spacing) {
-            // Clear central plaza
-            if (Math.abs(z) < 20) continue;
-            // Leave gaps at cross streets
-            if (Math.abs(z - ROAD.north.z) < 12) continue;
-            if (Math.abs(z - ROAD.south.z) < 12) continue;
+        // Building slots — fixed spacing, no jitter into the walk
+        const spacing = 12;
+        for (let z = ROAD.main.z1 + 10; z <= ROAD.main.z2 - 10; z += spacing) {
+            if (Math.abs(z) < 22) continue;
+            if (Math.abs(z - ROAD.north.z) < 14) continue;
+            if (Math.abs(z - ROAD.south.z) < 14) continue;
 
             for (const side of [-1, 1]) {
                 seed++;
-                const w = 9.5 + (seed % 4);           // façade width along street
-                const depth = 10 + (seed % 3);        // depth into block
-                const h = 18 + (seed % 12) + ((seed * 3) % 5); // tall canyon
+                const facadeW = 10 + (seed % 3); // width along street
+                const h = 18 + (seed % 12) + ((seed * 3) % 5);
 
-                // Front face sits just outside Gehweg
-                const bx = side * (walkOuter + depth / 2 + 0.15);
-                const bz = z + ((seed % 5) - 2) * 0.25;
+                // Center so FRONT face is exactly at facade line
+                const bx = side * (facade + depth / 2);
+                const bz = z;
 
-                const bld = buildShinjukuBuilding(w, h, depth, seed);
+                const bld = buildShinjukuBuilding(facadeW, h, depth, seed);
                 bld.position.set(bx, 0, bz);
-                // Face street: +Z local → toward road center
                 bld.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2;
                 this.scene.add(bld);
-                this.colliders.push({ x: bx, z: bz, w: depth, d: w, h, floorY: 0 });
+                // Collider in world axes (depth along X, façade width along Z)
+                this.colliders.push({ x: bx, z: bz, w: depth, d: facadeW, h, floorY: 0 });
 
-                // Freestanding tall kanban post on Gehweg (photo: signs at sidewalk)
+                // Kanban poles strictly mid-Gehweg (not in façade / asphalt)
                 if (seed % 2 === 0) {
-                    this._spawnVerticalKanban(
-                        side * (walkOuter - ROAD.sw * 0.35),
-                        bz + side * 0.5,
-                        seed
-                    );
+                    const kanbanX = side * (halfRoad + ROAD.curb + sw * 0.55);
+                    this._spawnVerticalKanban(kanbanX, bz + 2.5 * side, seed, side);
                 }
             }
         }
 
-        // Japanese direction / blue guide sign near plaza
-        this._spawnGuideSign(-halfRoad - 1.2, 14, 0);
-        this._spawnGuideSign(halfRoad + 1.2, -14, Math.PI);
+        // Guide signs on Gehweg near plaza — not on asphalt, not in buildings
+        const guideX = halfRoad + ROAD.curb + sw * 0.5;
+        this._spawnGuideSign(-guideX, 16, 0);
+        this._spawnGuideSign(guideX, -16, Math.PI);
 
-        // Sparse bare street trees (photo has a few thin winter trees, not a tunnel)
-        for (let z = -120; z <= 120; z += 36) {
-            if (Math.abs(z) < 22) continue;
+        // Sparse street trees ONLY in open gaps (plaza / junctions), on Gehweg
+        // Avoids canopy clipping into dense commercial façades
+        const treeZs = [
+            -110, -70, -50, -28, 28, 50, 70, 110,
+        ];
+        treeZs.forEach((tz, i) => {
+            if (Math.abs(tz - ROAD.north.z) < 10) return;
+            if (Math.abs(tz - ROAD.south.z) < 10) return;
             for (const side of [-1, 1]) {
-                const t = createAvenueTree(seed++, side > 0 ? -1 : 1);
-                t.scale.setScalar(0.55);
-                t.position.set(side * (walkOuter - 0.4), 0, z + side * 4);
+                const t = createAvenueTree(seed++ + i, side > 0 ? -0.3 : 0.3);
+                t.scale.setScalar(0.42); // small — fits sidewalk tree pit
+                // Mid-Gehweg; slight inward so canopy hangs over walk not into façade
+                const tx = side * (halfRoad + ROAD.curb + sw * 0.42);
+                t.position.set(tx, 0, tz + side * 1.5);
                 this.scene.add(t);
             }
-        }
+        });
     }
 
     _mainAvenueLanePaint() {
@@ -703,33 +700,34 @@ export class WorldBuilder {
         });
     }
 
-    _spawnVerticalKanban(x, z, seed) {
+    _spawnVerticalKanban(x, z, seed, side = 1) {
         const g = new THREE.Group();
         const neonCols = [0xff6b9d, 0x5ec8ff, 0xffd966, 0xff5c7a, 0x48d2c9, 0xc49bff];
         const col = neonCols[Math.abs(seed) % neonCols.length];
-        const h = 4.5 + (seed % 4) * 0.6;
+        const h = 4.2 + (seed % 4) * 0.5;
 
         const pole = toonMesh(new THREE.BoxGeometry(0.12, h, 0.12), 0x4a5058, { outline: false });
         pole.mesh.position.y = h / 2;
         g.add(pole.group);
 
+        // Sign face points toward road (inward), stays on sidewalk band
+        const faceOff = -side * 0.22;
         const faceMat = toonMat(col, { emissive: col, emissiveIntensity: 0.4 });
-        const face = new THREE.Mesh(new THREE.BoxGeometry(0.55, h * 0.85, 0.08), faceMat);
-        face.position.set(0.2, h * 0.55, 0);
+        const face = new THREE.Mesh(new THREE.BoxGeometry(0.5, h * 0.82, 0.08), faceMat);
+        face.position.set(faceOff, h * 0.55, 0);
         face.userData.cityLight = 'sign';
         face.userData.litAtNight = true;
         faceMat.userData.cityLight = 'sign';
         g.add(face);
 
-        // Segment bars
-        const segs = Math.floor(h * 0.85 / 0.65);
+        const segs = Math.floor(h * 0.82 / 0.65);
         for (let i = 0; i < segs; i++) {
             const bar = toonMesh(
-                new THREE.BoxGeometry(0.4, 0.07, 0.04),
+                new THREE.BoxGeometry(0.36, 0.07, 0.04),
                 0xf8f8f0,
                 { outline: false, transparent: true, opacity: 0.5 }
             );
-            bar.mesh.position.set(0.2, 0.9 + i * 0.65, 0.06);
+            bar.mesh.position.set(faceOff, 0.85 + i * 0.65, 0.05);
             g.add(bar.group);
         }
 
@@ -768,48 +766,61 @@ export class WorldBuilder {
     }
 
     _mainAvenueProps() {
-        const walk = ROAD.main.w / 2 + ROAD.curb + ROAD.sw * 0.55;
+        // All props mid-Gehweg — never past façade line, never in asphalt
+        const half = ROAD.main.w / 2;
+        const sw = roadSw(ROAD.main);
+        const midWalk = half + ROAD.curb + sw * 0.5;
+        const outerWalk = half + ROAD.curb + sw * 0.82; // still inside Gehweg
+        const facade = mainFacadeLine();
         let s = 900;
 
-        // Dense street lamps (urban corridor)
-        for (let z = ROAD.main.z1 + 10; z <= ROAD.main.z2 - 10; z += 16) {
-            if (Math.abs(z) < 18) continue;
+        for (let z = ROAD.main.z1 + 12; z <= ROAD.main.z2 - 12; z += 18) {
+            if (Math.abs(z) < 20) continue;
+            if (Math.abs(z - ROAD.north.z) < 12) continue;
+            if (Math.abs(z - ROAD.south.z) < 12) continue;
+
             for (const side of [-1, 1]) {
                 const lamp = createStreetLamp();
-                lamp.position.set(side * walk, 0, z + side * 3);
+                // Lamp on mid walk, clear of building face
+                const lx = side * midWalk;
+                if (Math.abs(lx) >= facade - 0.3) continue;
+                lamp.position.set(lx, 0, z + side * 2);
                 if (side > 0) lamp.rotation.y = Math.PI;
                 this.scene.add(lamp);
             }
-            // Vending machines on Gehweg
-            if (s % 2 === 0) {
-                const vm = createVendingMachine(s);
-                vm.position.set((s % 4 === 0 ? -1 : 1) * (walk + 0.5), 0, z + 5);
-                this.scene.add(vm);
-            }
-            // Parked bikes + post boxes for street clutter
-            if (s % 3 === 0) {
-                const bike = createBicycleParked();
-                bike.position.set(-walk - 0.3, 0, z + 7);
-                this.scene.add(bike);
-            }
-            if (s % 4 === 0) {
-                const pb = createPostBox();
-                pb.position.set(walk + 0.35, 0, z + 2);
-                this.scene.add(pb);
+
+            // Vending / bike / postbox along outer third of Gehweg (still < façade)
+            const propX = (s % 2 === 0 ? -1 : 1) * outerWalk;
+            if (Math.abs(propX) < facade - 0.5) {
+                if (s % 2 === 0) {
+                    const vm = createVendingMachine(s);
+                    vm.position.set(propX, 0, z + 4);
+                    this.scene.add(vm);
+                }
+                if (s % 3 === 0) {
+                    const bike = createBicycleParked();
+                    bike.position.set(-outerWalk, 0, z + 7);
+                    this.scene.add(bike);
+                }
+                if (s % 4 === 0) {
+                    const pb = createPostBox();
+                    pb.position.set(outerWalk, 0, z + 1);
+                    this.scene.add(pb);
+                }
             }
             s++;
         }
 
-        // Traffic cones / bollards near intersections
+        // Cones on asphalt edge (road, not sidewalk/building)
         const junctions = [ROAD.north.z, ROAD.south.z, 0];
         junctions.forEach((jz, i) => {
             for (const side of [-1, 1]) {
                 const cone = createTrafficCone();
-                cone.position.set(side * (ROAD.main.w / 2 - 0.8), 0, jz + side * 6);
+                cone.position.set(side * (half - 1.0), 0, jz + side * 7);
                 this.scene.add(cone);
             }
             const sign = createRoundSign(i);
-            sign.position.set(ROAD.main.w / 2 + ROAD.curb + 0.6, 0, jz + 8);
+            sign.position.set(midWalk, 0, jz + 9);
             this.scene.add(sign);
         });
     }
@@ -826,12 +837,12 @@ export class WorldBuilder {
                 // Keep roads + tree buffer clear
                 if (this._isRoadOrPark(x, z, 2)) continue;
 
-                // Main Avenue corridor filled by Shinjuku strip — keep clear for canyon
-                const mainClear = ROAD.main.w / 2 + ROAD.curb + ROAD.sw + 12;
-                const crossClear = ROAD.cross.w / 2 + ROAD.curb + ROAD.sw + 4;
-                const quietClear = ROAD.north.w / 2 + ROAD.curb + ROAD.sw + 3.5;
+                // Keep generic lots outside Main commercial canyon + side ROW
+                const mainClear = mainCorridorClear();
+                const crossClear = walkOuter(ROAD.cross.w / 2, roadSw(ROAD.cross)) + ROAD.facadeGap + 5;
+                const quietClear = walkOuter(ROAD.north.w / 2, roadSw(ROAD.north)) + ROAD.facadeGap + 4.5;
                 if (Math.abs(x) < mainClear) continue;
-                // Setback from E-W roads
+                // Setback from E-W roads (buildings behind Gehweg + gap)
                 if (Math.abs(z) < crossClear && Math.abs(x) > 16) continue;
                 if (Math.abs(z - ROAD.north.z) < quietClear) continue;
                 if (Math.abs(z - ROAD.south.z) < quietClear) continue;
@@ -1016,9 +1027,9 @@ export class WorldBuilder {
         let s = 200;
 
         // Main Avenue lamps/signs handled by _mainAvenueProps (Shinjuku strip).
-        // Side streets only here.
-        const crossWalk = ROAD.cross.w / 2 + ROAD.curb + ROAD.sw * 0.7;
-        const quietWalk = ROAD.south.w / 2 + ROAD.curb + ROAD.sw * 0.7;
+        // Side streets only here — props mid-Gehweg.
+        const crossWalk = ROAD.cross.w / 2 + ROAD.curb + roadSw(ROAD.cross) * 0.55;
+        const quietWalk = ROAD.south.w / 2 + ROAD.curb + roadSw(ROAD.south) * 0.55;
 
         // Cross boulevard lamps
         for (let x = -140; x <= 140; x += 30) {
@@ -1092,7 +1103,8 @@ export class WorldBuilder {
 
         // Light overhead wires along Main Avenue (one side)
         const poleH = 6.2;
-        const wx = ROAD.main.w / 2 + ROAD.curb + ROAD.sw + 0.6;
+        // Power poles just outside Gehweg (not in building façade)
+        const wx = walkOuter(ROAD.main.w / 2, roadSw(ROAD.main)) + 0.35;
         for (let z = -100; z <= 90; z += 18) {
             if (Math.abs(z) < 14) continue;
             wire(wx, poleH, z, wx, poleH, z + 18, 0.4);
