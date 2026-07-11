@@ -413,31 +413,30 @@ export function buildColonyBuilding(w, h, d, seed, style = 'thakur') {
         : _buildBoseBuilding(w, h, d, seed);
 }
 
-// ─── Sukumar Roy Colony (white Kolkata colonial — images-11 / heritage façade) ─
-// Buildings: fresh white/cream plaster + soft grey-green shutters.
-// Scene stays full color (people, sky, wood, plants); only walls are white.
+// ─── Sukumar Roy Colony — pure white colonial façades ─
+// Walls/trim/plinth pure white; soft grey shutters; black mural ink.
 const SUKUMAR = {
     walls: [
-        0xfaf8f4, // fresh white plaster
-        0xf5f2ec, // soft cream-white
-        0xf0ebe3, // warm aged plaster
-        0xf8f6f1, // clean white
-        0xeeeae2, // cool cream wall
-        0xe8e4db, // weathered cream-white
+        0xffffff, // pure white
+        0xffffff,
+        0xfefefe,
+        0xffffff,
+        0xfdfdfd,
+        0xffffff,
     ],
-    trim: 0xf2efe8,
-    shutter: [0xa8b0a4, 0x9aa392, 0xb5bca8, 0x8e9686], // soft grey-green louvers
-    wood: 0x8b5a3c, // natural wood open shutter
-    rail: 0xc8c4b8,
-    mold: 0xe8e4d8,
+    trim: 0xffffff,
+    shutter: [0xb8b8b8, 0xa8a8a8, 0xc0c0c0, 0x9a9a9a], // soft grey louvers on white
+    wood: 0x8b5a3c, // natural wood open shutter accent
+    rail: 0xf0f0f0,
+    mold: 0xffffff,
     mural: 0x1a1a1a, // black ink figures on white walls
-    door: 0xc8d0c4, // pale grey-green door
-    frame: 0x5a6058,
-    plinth: 0xd4c8b0, // cream stone base
-    step: 0xc8b8a0,
-    ac: 0xd8dce0,
+    door: 0xe8e8e8, // light grey door
+    frame: 0x555555,
+    plinth: 0xffffff, // pure white base
+    step: 0xf0f0f0,
+    ac: 0xe8e8e8,
     open: 0x2a2a2a,
-    louv: 0x6a7268,
+    louv: 0x6a6a6a,
 };
 
 /**
@@ -459,7 +458,7 @@ function _buildSukumarBuilding(w, h, d, seed) {
     body.mesh.receiveShadow = true;
     g.add(body.group);
 
-    // Cream rusticated base band (photo: soft plinth wash)
+    // Pure white rusticated base band
     const baseBand = toonMesh(
         new THREE.BoxGeometry(w + 0.12, Math.min(floorH * 0.42, 1.6), d + 0.12),
         SUKUMAR.plinth,
@@ -774,11 +773,11 @@ function getSukumarMuralTexture(kind = 0) {
     canvas.height = 512;
     const ctx = canvas.getContext('2d');
 
-    // Warm white colonial wall wash
-    ctx.fillStyle = '#f7f4ee';
+    // Pure white colonial wall wash
+    ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, 1024, 512);
-    // Soft cream plinth strip
-    ctx.fillStyle = '#e8dcc8';
+    // Lower white band
+    ctx.fillStyle = '#f8f8f8';
     ctx.fillRect(0, 430, 1024, 82);
 
     ctx.strokeStyle = '#1a1a1a';
@@ -953,16 +952,16 @@ function getSukumarMuralTexture(kind = 0) {
 function _sukumarMural(g, w, h, d, s, floorH, floors) {
     const wash = toonMesh(
         new THREE.BoxGeometry(w * 0.95, h * 0.72, 0.06),
-        0xfaf8f4,
+        0xffffff,
         { outline: false }
     );
     wash.mesh.position.set(0, h * 0.5, d / 2 + 0.04);
     g.add(wash.group);
 
-    // Cream lower wall band under murals
+    // Pure white lower wall band under murals
     const cream = toonMesh(
         new THREE.BoxGeometry(w * 0.95, h * 0.22, 0.08),
-        0xe8dcc8,
+        0xffffff,
         { outline: false }
     );
     cream.mesh.position.set(0, h * 0.18, d / 2 + 0.05);

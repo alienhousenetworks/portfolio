@@ -377,17 +377,14 @@ export class WorldBuilder {
         this._buildColonyRoad(ROAD.thakur);
         this._buildColonyRoad(ROAD.bose);
         this._buildColonyRoad(ROAD.sukumar);
-        // Blue–white curb stripes for Sukumar Roy Colony (photo)
-        this._sukumarCurbPaint(ROAD.sukumar);
 
         this._buildCentralPlaza();
     }
 
-    /** Narrow worn colony lane (no big highway markings) */
+    /** Narrow worn colony lane (no big highway markings) — same curb style for all colonies */
     _buildColonyRoad(def) {
-        const isSukumar = def.id === 'sukumar';
-        const asphalt = toonMat(isSukumar ? 0x3a3e44 : 0x4a4e54);
-        const edge = toonMat(isSukumar ? 0x2e3238 : 0x363a40);
+        const asphalt = toonMat(0x4a4e54);
+        const edge = toonMat(0x363a40);
         const sw = roadSw(def);
         const half = def.w / 2;
         const len = def.z2 - def.z1;
@@ -408,22 +405,20 @@ export class WorldBuilder {
         plane(def.x - half + 0.25, midZ, 0.4, len, edge, Y_ROAD + 0.005);
         plane(def.x + half - 0.25, midZ, 0.4, len, edge, Y_ROAD + 0.005);
 
-        if (!isSukumar) {
-            [-1, 1].forEach(side => {
-                const curb = toonMesh(
-                    new THREE.BoxGeometry(cw + 0.12, 0.22, len),
-                    0xe8e4dc,
-                    { outline: false }
-                );
-                curb.mesh.position.set(def.x + side * (half + (cw + 0.12) / 2), gy + 0.14, midZ);
-                curb.mesh.receiveShadow = true;
-                this.scene.add(curb.group);
-            });
-        }
+        // Normal stone curb (all colonies — no blue/white stripe border)
+        [-1, 1].forEach(side => {
+            const curb = toonMesh(
+                new THREE.BoxGeometry(cw + 0.12, 0.22, len),
+                0xe8e4dc,
+                { outline: false }
+            );
+            curb.mesh.position.set(def.x + side * (half + (cw + 0.12) / 2), gy + 0.14, midZ);
+            curb.mesh.receiveShadow = true;
+            this.scene.add(curb.group);
+        });
 
-        // Warm stone sidewalks (full color scene; white is for buildings only)
-        const gehwegA = toonMat(isSukumar ? 0xdcd6cc : 0xd8d4cc);
-        const gehwegB = toonMat(isSukumar ? 0xcfc8bc : 0xcac6be);
+        const gehwegA = toonMat(0xd8d4cc);
+        const gehwegB = toonMat(0xcac6be);
         [-1, 1].forEach(side => {
             const walkX = def.x + side * (half + cw + sw / 2);
             this._buildGehwegStrip(walkX, midZ, sw, len, 'ns', gehwegA, gehwegB);
@@ -827,7 +822,7 @@ export class WorldBuilder {
         this._buildColonyStrip(ROAD.sukumar, 'sukumar');
         this._colonyNameSigns(ROAD.thakur, 0xd46858);
         this._colonyNameSigns(ROAD.bose, 0xd49868);
-        this._colonyNameSigns(ROAD.sukumar, 0xe8e8e8);
+        this._colonyNameSigns(ROAD.sukumar, 0xffffff);
     }
 
     _buildColonyStrip(def, style) {
@@ -910,30 +905,6 @@ export class WorldBuilder {
         if (tall) this._thakurProps(def);
         else if (sukumar) this._sukumarProps(def);
         else this._boseProps(def);
-    }
-
-    /** Blue–white painted curb (Sukumar street edge from photo) */
-    _sukumarCurbPaint(def) {
-        const gy = WORLD.groundY ?? 0.15;
-        const half = def.w / 2;
-        const cw = ROAD.curb;
-        const curbW = cw + 0.12; // 0.40
-        const y = gy + 0.14; // Same height as road curb
-        const blue = toonMat(0x3a7ab8);
-        const white = toonMat(0xf5f5f0);
-        const seg = 2.0;
-        for (const side of [-1, 1]) {
-            for (let z = def.z1; z < def.z2; z += seg * 2) {
-                const b = new THREE.Mesh(new THREE.BoxGeometry(curbW, 0.22, seg), blue);
-                b.position.set(def.x + side * (half + curbW / 2), y, z + seg / 2);
-                b.receiveShadow = true;
-                this.scene.add(b);
-                const w = new THREE.Mesh(new THREE.BoxGeometry(curbW, 0.22, seg), white);
-                w.position.set(def.x + side * (half + curbW / 2), y, z + seg + seg / 2);
-                w.receiveShadow = true;
-                this.scene.add(w);
-            }
-        }
     }
 
     /** Sukumar Roy Colony street props — full-color heritage lane with life */
@@ -1027,12 +998,12 @@ export class WorldBuilder {
             pole.mesh.position.y = 1.4;
             g.add(pole.group);
             // Board — white colonial plaque for Sukumar
-            const boardColor = isSukumar ? 0xf5f2ec : color;
+            const boardColor = isSukumar ? 0xffffff : color;
             const board = toonMesh(new THREE.BoxGeometry(2.6, 1.0, 0.12), boardColor);
             board.mesh.position.set(0.2, 2.5, 0);
             g.add(board.group);
             // Accent bar
-            const barColor = isSukumar ? 0xc8d0c4 : 0xf8f0e0;
+            const barColor = isSukumar ? 0xffffff : 0xf8f0e0;
             const bar = toonMesh(new THREE.BoxGeometry(2.2, 0.12, 0.05), barColor, { outline: false });
             bar.mesh.position.set(0.2, 2.75, 0.08);
             g.add(bar.group);

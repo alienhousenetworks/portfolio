@@ -138,8 +138,8 @@ export const DISTRICT_DEFS = {
         x: 115,
         z: 0,
         radius: 55,
-        color: '#f5f2ec',
-        groundColor: 0xdcd6cc,
+        color: '#ffffff',
+        groundColor: 0xd8d4cc,
     },
 };
 
