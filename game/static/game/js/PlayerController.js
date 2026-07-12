@@ -218,7 +218,7 @@ export class PlayerController {
             this.velocity.set(dir.x * speed, 0, dir.z * speed);
             this.avatar.rotation.y = Math.atan2(dir.x, dir.z);
             const prevCycle = this.walkCycle;
-            this.walkCycle += dt * (this.isRunning ? 12 : 9);
+            this.walkCycle += dt * (this.isRunning ? 14 : 11);
             if (Math.floor(prevCycle / Math.PI) < Math.floor(this.walkCycle / Math.PI)) {
                 audio.playFootstep(this.isRunning);
             }
