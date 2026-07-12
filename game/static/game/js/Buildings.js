@@ -440,7 +440,7 @@ const SUKUMAR = {
 };
 
 /**
- * White colonial / Art-Deco Kolkata house — variants by seed.
+ * White colonial / Art-Deco Kolkata house — high-detail variants.
  * Variants: corner · pilaster · mural · arched · gallery
  */
 function _buildSukumarBuilding(w, h, d, seed) {
@@ -451,54 +451,64 @@ function _buildSukumarBuilding(w, h, d, seed) {
     const floors = Math.max(2, Math.min(3, Math.floor(h / 3.4)));
     const floorH = h / floors;
 
-    // Main body (only large volume casts a shadow — big FPS win)
     const body = toonMesh(new THREE.BoxGeometry(w, h, d), wallCol, { castShadow: true, receiveShadow: true });
     body.mesh.position.y = h / 2;
     g.add(body.group);
 
-    // Pure white base band
+    // Pure white base band with slight thickness for depth
     const baseBand = toonMesh(
-        new THREE.BoxGeometry(w + 0.12, Math.min(floorH * 0.42, 1.6), d + 0.12),
-        SUKUMAR.plinth,
-        { outline: false }
+        new THREE.BoxGeometry(w + 0.14, Math.min(floorH * 0.42, 1.65), d + 0.14),
+        SUKUMAR.plinth
     );
-    baseBand.mesh.position.y = Math.min(floorH * 0.21, 0.8);
+    baseBand.mesh.position.y = Math.min(floorH * 0.21, 0.82);
     g.add(baseBand.group);
 
-    // Single cornice band per floor (no dentil spam)
+    // Floor cornices + light dentil row (capped for quality without mesh spam)
     for (let f = 1; f < floors; f++) {
         const band = toonMesh(
-            new THREE.BoxGeometry(w + 0.18, 0.18, d + 0.18),
-            SUKUMAR.mold,
-            { outline: false }
+            new THREE.BoxGeometry(w + 0.2, 0.2, d + 0.2),
+            SUKUMAR.mold
         );
         band.mesh.position.y = f * floorH;
         g.add(band.group);
+        const dents = Math.min(8, Math.max(4, Math.floor(w / 1.1)));
+        for (let i = 0; i < dents; i++) {
+            const dx = -w / 2 + (i + 0.5) * (w / dents);
+            const dent = toonMesh(
+                new THREE.BoxGeometry(0.18, 0.14, 0.1),
+                SUKUMAR.trim,
+                { outline: false }
+            );
+            dent.mesh.position.set(dx, f * floorH + 0.14, d / 2 + 0.09);
+            g.add(dent.group);
+        }
     }
 
-    // Roof parapet + sparse posts
-    const parapet = toonMesh(new THREE.BoxGeometry(w + 0.4, 0.55, d + 0.4), SUKUMAR.trim, { outline: false });
-    parapet.mesh.position.y = h + 0.28;
+    // Roof parapet + posts + finials
+    const parapet = toonMesh(new THREE.BoxGeometry(w + 0.42, 0.58, d + 0.42), SUKUMAR.trim);
+    parapet.mesh.position.y = h + 0.3;
     g.add(parapet.group);
-    const posts = Math.max(3, Math.floor(w / 2.2));
+    const posts = Math.max(4, Math.floor(w / 1.6));
     for (let i = 0; i <= posts; i++) {
         const px = -w / 2 + (i / posts) * w;
-        const p = toonMesh(new THREE.BoxGeometry(0.12, 0.48, 0.12), SUKUMAR.rail, { outline: false });
-        p.mesh.position.set(px, h + 0.74, d / 2 + 0.06);
+        const p = toonMesh(new THREE.BoxGeometry(0.12, 0.5, 0.12), SUKUMAR.rail, { outline: false });
+        p.mesh.position.set(px, h + 0.76, d / 2 + 0.06);
         g.add(p.group);
+        const ball = toonMesh(new THREE.SphereGeometry(0.07, 8, 8), SUKUMAR.trim, { outline: false });
+        ball.mesh.position.set(px, h + 1.05, d / 2 + 0.06);
+        g.add(ball.group);
     }
 
-    // Corner cupola only on corner variant
-    if (variant === 0) {
-        const cup = toonMesh(new THREE.CylinderGeometry(0.55, 0.7, 0.9, 6), SUKUMAR.walls[0], { outline: false });
-        cup.mesh.position.set(w * 0.28, h + 0.95, d * 0.15);
+    // Cupola on corner / tall houses
+    if (variant === 0 || (s % 5 === 0 && floors >= 3)) {
+        const cup = toonMesh(new THREE.CylinderGeometry(0.55, 0.72, 0.95, 10), SUKUMAR.walls[0]);
+        cup.mesh.position.set(w * 0.28, h + 0.98, d * 0.15);
         g.add(cup.group);
-        const cupTop = toonMesh(new THREE.ConeGeometry(0.65, 0.45, 6), SUKUMAR.mold, { outline: false });
-        cupTop.mesh.position.set(w * 0.28, h + 1.55, d * 0.15);
+        const cupTop = toonMesh(new THREE.ConeGeometry(0.68, 0.48, 10), SUKUMAR.mold);
+        cupTop.mesh.position.set(w * 0.28, h + 1.6, d * 0.15);
         g.add(cupTop.group);
     }
 
-    // ── Variant-specific façade ──────────────────────────────────────────
     if (variant === 0) {
         _sukumarCorner(g, w, h, d, s, floorH, floors);
     } else if (variant === 1) {
@@ -513,48 +523,80 @@ function _buildSukumarBuilding(w, h, d, seed) {
 
     _sukumarWindows(g, w, h, d, s, floorH, floors, variant);
 
-    // Raised entrance steps
-    const plinth = toonMesh(new THREE.BoxGeometry(w + 0.4, 0.45, 0.7), SUKUMAR.plinth, { outline: false });
-    plinth.mesh.position.set(0, 0.22, d / 2 + 0.3);
+    // Entrance plinth + steps
+    const plinth = toonMesh(new THREE.BoxGeometry(w + 0.42, 0.48, 0.75), SUKUMAR.plinth);
+    plinth.mesh.position.set(0, 0.24, d / 2 + 0.32);
     g.add(plinth.group);
     if (variant === 0 || s % 3 === 0) {
         for (let i = 0; i < 3; i++) {
             const step = toonMesh(
-                new THREE.BoxGeometry(1.5 - i * 0.15, 0.14, 0.42),
+                new THREE.BoxGeometry(1.55 - i * 0.16, 0.15, 0.44),
                 SUKUMAR.step,
                 { outline: false }
             );
-            step.mesh.position.set(0, 0.08 + i * 0.14, d / 2 + 0.55 + i * 0.15);
+            step.mesh.position.set(0, 0.09 + i * 0.15, d / 2 + 0.58 + i * 0.16);
             g.add(step.group);
         }
     }
 
-    // AC unit clutter
     if (s % 2 === 0) {
-        const ac = toonMesh(new THREE.BoxGeometry(0.7, 0.4, 0.35), SUKUMAR.ac, { outline: false });
-        ac.mesh.position.set(w / 2 - 0.5, floorH + 1.2, d / 2 + 0.2);
+        const ac = toonMesh(new THREE.BoxGeometry(0.72, 0.42, 0.36), SUKUMAR.ac, { outline: false });
+        ac.mesh.position.set(w / 2 - 0.5, floorH + 1.2, d / 2 + 0.22);
         g.add(ac.group);
     }
 
-    // Sparse wall lamp (night)
-    if (s % 4 === 0) {
+    // Wall lamp + hanging rope + balcony pots
+    if (s % 3 !== 2) {
+        const lampBody = toonMesh(new THREE.BoxGeometry(0.16, 0.26, 0.16), 0x5a5048, { outline: false });
+        lampBody.mesh.position.set(-w * 0.35, floorH * 0.88, d / 2 + 0.2);
+        g.add(lampBody.group);
         const glow = toonMesh(
-            new THREE.SphereGeometry(0.12, 6, 6),
+            new THREE.SphereGeometry(0.13, 10, 10),
             0xffe0a0,
-            { emissive: 0xffc870, emissiveIntensity: 0.15, outline: false }
+            { emissive: 0xffc870, emissiveIntensity: 0.22, outline: false }
         );
-        glow.mesh.position.set(-w * 0.35, floorH * 0.85, d / 2 + 0.2);
+        glow.mesh.position.set(-w * 0.35, floorH * 0.88 - 0.22, d / 2 + 0.22);
         glow.mesh.userData.cityLight = 'lampGlow';
         if (glow.mesh.material) glow.mesh.material.userData = { cityLight: 'lampGlow' };
         g.add(glow.group);
+    }
+
+    if (s % 2 === 0) {
+        const rope = toonMesh(
+            new THREE.CylinderGeometry(0.028, 0.028, w * 0.88, 6),
+            0x9a8a78,
+            { outline: false }
+        );
+        rope.mesh.rotation.z = Math.PI / 2;
+        rope.mesh.rotation.x = 0.06;
+        rope.mesh.position.set(0, h * 0.74, d / 2 + 0.36);
+        g.add(rope.group);
+    }
+
+    if (variant === 0 || variant === 4 || s % 3 === 0) {
+        for (let i = 0; i < 2; i++) {
+            const pot = toonMesh(
+                new THREE.CylinderGeometry(0.13, 0.11, 0.2, 8),
+                0xb07050,
+                { outline: false }
+            );
+            pot.mesh.position.set(-w * 0.28 + i * w * 0.56, floorH + 0.28, d / 2 + 0.58);
+            g.add(pot.group);
+            const leaf = toonMesh(
+                new THREE.SphereGeometry(0.17, 8, 6),
+                0x3d8a40,
+                { outline: false }
+            );
+            leaf.mesh.position.set(-w * 0.28 + i * w * 0.56, floorH + 0.46, d / 2 + 0.58);
+            g.add(leaf.group);
+        }
     }
 
     return g;
 }
 
 function _sukumarWindows(g, w, h, d, s, floorH, floors, variant) {
-    // Fewer columns + no per-louver meshes (merged shutter look)
-    const cols = Math.max(2, Math.min(3, Math.floor(w / 2.8)));
+    const cols = Math.max(2, Math.min(4, Math.floor(w / 2.35)));
     for (let r = 0; r < floors; r++) {
         const wy = r * floorH + floorH * (r === 0 ? 0.55 : 0.45);
         if (wy >= h - 0.5) continue;
@@ -563,25 +605,33 @@ function _sukumarWindows(g, w, h, d, s, floorH, floors, variant) {
             const wx = -w / 2 + (c + 0.5) * (w / cols);
             const shut = pick(SUKUMAR.shutter, s + r + c);
 
-            // Simple arch bar (no cylinder)
+            // Arched heritage window head
             const arch = toonMesh(
-                new THREE.BoxGeometry(1.05, 0.22, 0.08),
+                new THREE.BoxGeometry(1.1, 0.26, 0.09),
                 SUKUMAR.mold,
                 { outline: false }
             );
-            arch.mesh.position.set(wx, wy + 0.72, d / 2 + 0.04);
+            arch.mesh.position.set(wx, wy + 0.74, d / 2 + 0.04);
             g.add(arch.group);
+            const archRound = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.5, 0.5, 0.09, 12, 1, false, 0, Math.PI),
+                toonMat(SUKUMAR.mold)
+            );
+            archRound.rotation.z = Math.PI / 2;
+            archRound.rotation.y = Math.PI / 2;
+            archRound.position.set(wx, wy + 0.88, d / 2 + 0.04);
+            archRound.castShadow = false;
+            g.add(archRound);
 
-            const frame = toonMesh(new THREE.BoxGeometry(1.0, 1.3, 0.07), SUKUMAR.frame, { outline: false });
+            const frame = toonMesh(new THREE.BoxGeometry(1.05, 1.35, 0.08), SUKUMAR.frame, { outline: false });
             frame.mesh.position.set(wx, wy, d / 2 + 0.03);
             g.add(frame.group);
 
-            // Occasional lit pane
-            if ((s + c + r) % 4 === 0) {
+            if ((s + c + r) % 3 === 0) {
                 const pane = toonMesh(
-                    new THREE.BoxGeometry(0.7, 0.9, 0.04),
+                    new THREE.BoxGeometry(0.72, 0.95, 0.04),
                     0xffe8b0,
-                    { emissive: 0xffc870, emissiveIntensity: 0.08, outline: false }
+                    { emissive: 0xffc870, emissiveIntensity: 0.12, outline: false }
                 );
                 pane.mesh.position.set(wx, wy, d / 2 + 0.01);
                 pane.mesh.userData.cityLight = 'window';
@@ -589,30 +639,63 @@ function _sukumarWindows(g, w, h, d, s, floorH, floors, variant) {
                 g.add(pane.group);
             }
 
-            // Two shutter plates only (no 10 louver strips each)
-            const shL = toonMesh(new THREE.BoxGeometry(0.42, 1.15, 0.06), shut, { outline: false });
+            const shL = toonMesh(new THREE.BoxGeometry(0.43, 1.2, 0.06), shut, { outline: false });
             shL.mesh.position.set(wx - 0.22, wy, d / 2 + 0.08);
             g.add(shL.group);
-            const shR = toonMesh(new THREE.BoxGeometry(0.42, 1.15, 0.06), shut, { outline: false });
+            const shR = toonMesh(new THREE.BoxGeometry(0.43, 1.2, 0.06), shut, { outline: false });
             shR.mesh.position.set(wx + 0.22, wy, d / 2 + 0.08);
             g.add(shR.group);
 
-            if ((s + c + r) % 9 === 0) {
-                const wood = toonMesh(new THREE.BoxGeometry(0.48, 1.1, 0.07), SUKUMAR.wood, { outline: false });
-                wood.mesh.position.set(wx + 0.55, wy, d / 2 + 0.14);
-                wood.mesh.rotation.y = 0.5;
+            // 3 louver lines per shutter (readable detail, not 10)
+            for (let L = 0; L < 3; L++) {
+                const ly = wy - 0.4 + L * 0.35;
+                const louvL = toonMesh(
+                    new THREE.BoxGeometry(0.38, 0.05, 0.03),
+                    SUKUMAR.louv,
+                    { outline: false }
+                );
+                louvL.mesh.position.set(wx - 0.22, ly, d / 2 + 0.12);
+                g.add(louvL.group);
+                const louvR = toonMesh(
+                    new THREE.BoxGeometry(0.38, 0.05, 0.03),
+                    SUKUMAR.louv,
+                    { outline: false }
+                );
+                louvR.mesh.position.set(wx + 0.22, ly, d / 2 + 0.12);
+                g.add(louvR.group);
+            }
+
+            if ((s + c + r) % 7 === 0) {
+                const wood = toonMesh(new THREE.BoxGeometry(0.5, 1.15, 0.08), SUKUMAR.wood, { outline: false });
+                wood.mesh.position.set(wx + 0.56, wy, d / 2 + 0.15);
+                wood.mesh.rotation.y = 0.52;
                 g.add(wood.group);
             }
         }
     }
 
+    // Double door with panels
     if (variant !== 2) {
-        const df = toonMesh(new THREE.BoxGeometry(1.35, 2.4, 0.07), SUKUMAR.mold, { outline: false });
-        df.mesh.position.set(0, 1.28, d / 2 + 0.02);
+        const df = toonMesh(new THREE.BoxGeometry(1.42, 2.48, 0.08), SUKUMAR.mold);
+        df.mesh.position.set(0, 1.3, d / 2 + 0.02);
         g.add(df.group);
-        const door = toonMesh(new THREE.BoxGeometry(1.0, 2.1, 0.1), SUKUMAR.door, { outline: false });
-        door.mesh.position.set(0, 1.18, d / 2 + 0.08);
-        g.add(door.group);
+        const doorL = toonMesh(new THREE.BoxGeometry(0.5, 2.18, 0.1), SUKUMAR.door, { outline: false });
+        doorL.mesh.position.set(-0.28, 1.2, d / 2 + 0.08);
+        g.add(doorL.group);
+        const doorR = toonMesh(new THREE.BoxGeometry(0.5, 2.18, 0.1), SUKUMAR.door, { outline: false });
+        doorR.mesh.position.set(0.28, 1.2, d / 2 + 0.08);
+        g.add(doorR.group);
+        for (const sx of [-0.28, 0.28]) {
+            for (const py of [0.58, 1.48]) {
+                const panel = toonMesh(
+                    new THREE.BoxGeometry(0.34, 0.55, 0.04),
+                    SUKUMAR.mold,
+                    { outline: false }
+                );
+                panel.mesh.position.set(sx, py, d / 2 + 0.14);
+                g.add(panel.group);
+            }
+        }
     }
 }
 

@@ -48,8 +48,8 @@ export function addInkOutline(mesh, scale = 1.04) {
     size.z *= Math.abs(mesh.scale.z);
 
     const maxDim = Math.max(size.x, size.y, size.z);
-    // Skip tiny detail pieces (louvers, dentils) and huge terrain slabs — both waste GPU
-    if (maxDim < 1.2 || size.x > 25 || size.y > 25 || size.z > 25) {
+    // Skip only micro-details and huge terrain slabs — keep crisp anime outlines on most props
+    if (maxDim < 0.45 || size.x > 28 || size.y > 28 || size.z > 28) {
         return null;
     }
 
@@ -69,21 +69,32 @@ export function addInkOutline(mesh, scale = 1.04) {
 }
 
 /**
- * Toon mesh helper. Performance defaults:
- * - castShadow off unless opts.castShadow === true (shadow casters are expensive)
- * - ink outline only for mid-size meshes, or when opts.outline === true
+ * Toon mesh helper — high visual quality defaults with smart skips for micro-geo.
+ * - castShadow: on for larger pieces (or opts.castShadow === true)
+ * - ink outline: on unless outline:false or geometry is tiny
  */
 export function toonMesh(geometry, color, opts = {}) {
     const g = new THREE.Group();
     const mesh = new THREE.Mesh(geometry, toonMat(color, opts));
-    mesh.castShadow = opts.castShadow === true;
-    mesh.receiveShadow = opts.receiveShadow === true;
+
+    // Estimate size for shadow casting without full world matrix
+    if (!geometry.boundingBox) geometry.computeBoundingBox?.();
+    let maxDim = 2;
+    if (geometry.boundingBox) {
+        const s = new THREE.Vector3();
+        geometry.boundingBox.getSize(s);
+        maxDim = Math.max(s.x, s.y, s.z);
+    }
+
+    if (opts.castShadow === true) mesh.castShadow = true;
+    else if (opts.castShadow === false) mesh.castShadow = false;
+    else mesh.castShadow = maxDim >= 1.4; // auto for windows/doors/bodies
+
+    mesh.receiveShadow = opts.receiveShadow !== false && maxDim >= 0.8;
     g.add(mesh);
-    if (opts.outline === true) {
-        addInkOutline(mesh, opts.outlineScale ?? 1.04);
-    } else if (opts.outline !== false) {
-        // Auto: only mid-size structural meshes get outlines (skips window/louver spam)
-        addInkOutline(mesh, opts.outlineScale ?? 1.04);
+
+    if (opts.outline !== false) {
+        addInkOutline(mesh, opts.outlineScale ?? 1.035);
     }
     return { group: g, mesh };
 }
@@ -109,13 +120,14 @@ export function setupCityLighting(scene) {
     const sun = new THREE.DirectionalLight(0xfff0c8, 1.8);
     sun.position.set(-80, 160, 70);
     sun.castShadow = true;
-    // Smaller shadow map + tighter frustum = much smoother FPS
-    sun.shadow.mapSize.set(512, 512);
-    sun.shadow.camera.near = 2;
-    sun.shadow.camera.far = 220;
-    sun.shadow.bias = -0.0015;
-    sun.shadow.radius = 1;
-    const s = 90;
+    // Soft quality shadows (1024 + wider frustum) without going full 2048 cost
+    sun.shadow.mapSize.set(1024, 1024);
+    sun.shadow.camera.near = 1;
+    sun.shadow.camera.far = 340;
+    sun.shadow.bias = -0.001;
+    sun.shadow.normalBias = 0.02;
+    sun.shadow.radius = 2;
+    const s = 140;
     sun.shadow.camera.left = -s;
     sun.shadow.camera.right = s;
     sun.shadow.camera.top = s;

@@ -31,11 +31,11 @@ class Game {
         this._renderer();
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(PALETTE.fog);
-        this.chunks = new ChunkManager(80, 2);
+        this.chunks = new ChunkManager(70, 3);
         this.terrain = new TerrainSystem();
         this.terrain.build(this.scene);
         const built = new WorldBuilder(this.scene, data, this.terrain, this.chunks).build();
-        this.chunks.preloadAround(0, 0, 2);
+        this.chunks.preloadAround(0, 0, 3);
         this.world = built;
         this.pois = built.pois;
         this.colliders = built.colliders;
@@ -164,25 +164,24 @@ class Game {
 
     _renderer() {
         const el = document.getElementById('game-canvas');
-        // antialias off + lower DPR: biggest fill-rate win on retina laptops
         this.renderer = new THREE.WebGLRenderer({
-            antialias: false,
+            antialias: true,
             powerPreference: 'high-performance',
             stencil: false,
             depth: true,
         });
         this.renderer.setSize(innerWidth, innerHeight);
-        this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.25));
+        // Sharp on retina, still capped so low-end GPUs stay smooth
+        this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.75));
         this.renderer.shadowMap.enabled = true;
-        this.renderer.shadowMap.type = THREE.BasicShadowMap;
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         this.renderer.outputColorSpace = THREE.SRGBColorSpace;
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        this.renderer.toneMappingExposure = 1.05;
-        // Skip sorting translucent props every frame when possible
+        this.renderer.toneMappingExposure = 1.08;
         this.renderer.sortObjects = true;
         el.appendChild(this.renderer.domElement);
 
-        this.camera = new THREE.PerspectiveCamera(58, innerWidth / innerHeight, 0.5, 520);
+        this.camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.4, 720);
         this.camera.position.set(0, 8, 60);
         this._frame = 0;
 
@@ -190,7 +189,7 @@ class Game {
             this.camera.aspect = innerWidth / innerHeight;
             this.camera.updateProjectionMatrix();
             this.renderer.setSize(innerWidth, innerHeight);
-            this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.25));
+            this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.75));
         });
     }
 

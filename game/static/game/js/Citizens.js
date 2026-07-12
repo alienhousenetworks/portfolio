@@ -360,9 +360,9 @@ export class CitizenManager {
                 const dx = c.mesh.position.x - fx;
                 const dz = c.mesh.position.z - fz;
                 const d2 = dx * dx + dz * dz;
-                veryFar = d2 > 140 * 140;
-                far = d2 > 70 * 70;
-                // Hide very far NPCs (still keep team hosts if already shown)
+                veryFar = d2 > 180 * 180;
+                far = d2 > 90 * 90;
+                // Hide only extremely far NPCs (keep more life on screen)
                 if (!c.isTeam && !c.isHost) {
                     c.mesh.visible = !veryFar;
                     if (veryFar) return;

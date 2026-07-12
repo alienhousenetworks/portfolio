@@ -161,7 +161,7 @@ export class WorldBuilder {
 
     // ─── Sky ────────────────────────────────────────────────────────────────
     _skyDome() {
-        const geo = new THREE.SphereGeometry(620, 32, 14, 0, Math.PI * 2, 0, Math.PI / 2);
+        const geo = new THREE.SphereGeometry(620, 48, 20, 0, Math.PI * 2, 0, Math.PI / 2);
         geo.computeBoundingSphere();
         const cols = [];
         const pos = geo.attributes.position;
@@ -179,7 +179,7 @@ export class WorldBuilder {
         this._skyMesh.name = 'skyDome';
         this._skyMesh.userData.isSkyDome = true;
         this.scene.add(this._skyMesh);
-        this.scene.fog = new THREE.Fog(0x7adede, 80, 280);
+        this.scene.fog = new THREE.Fog(0x7adede, 100, 340);
     }
 
     _clouds() {
@@ -898,8 +898,9 @@ export class WorldBuilder {
             }
             // Dedicated mural façades (seed % 997 % 5 === 2 → mural variant)
             for (const [side, z, seed] of [
-                [1, 28, 999],   // 999 % 997 = 2
-                [-1, -32, 1996], // 1996 % 997 = 2
+                [1, 28, 999],    // mural
+                [-1, -32, 1996], // mural
+                [1, -55, 2993],  // mural
             ]) {
                 const mural = buildColonyBuilding(10, 9.5, depth, seed, 'sukumar');
                 const fl = facadeLine + depth / 2;
@@ -920,14 +921,14 @@ export class WorldBuilder {
         else this._boseProps(def);
     }
 
-    /** Sukumar Roy Colony street props — lighter density for smooth FPS */
+    /** Sukumar Roy Colony street props — rich heritage lane */
     _sukumarProps(def) {
         const half = def.w / 2;
         const walk = half + ROAD.curb + roadSw(def) * 0.55;
         let s = 700;
 
-        for (let z = def.z1 + 16; z < def.z2 - 16; z += 22) {
-            if (Math.abs(z) < 14) continue;
+        for (let z = def.z1 + 12; z < def.z2 - 12; z += 15) {
+            if (Math.abs(z) < 12) continue;
             s++;
 
             const lamp = createStreetLamp(false);
@@ -936,12 +937,28 @@ export class WorldBuilder {
 
             if (s % 2 === 0) {
                 const side = s % 4 === 0 ? 1 : -1;
-                const pot = toonMesh(new THREE.CylinderGeometry(0.28, 0.22, 0.4, 6), 0xa07850, { outline: false });
-                pot.mesh.position.set(def.x + side * (walk + 0.2), 0.2, z + 3);
+                const pot = toonMesh(new THREE.CylinderGeometry(0.3, 0.24, 0.42, 10), 0xa07850);
+                pot.mesh.position.set(def.x + side * (walk + 0.2), 0.22, z + 3);
                 this._place(pot.group, def.x, z + 3);
-                const bush = toonMesh(new THREE.SphereGeometry(0.32, 6, 5), 0x4a8a48, { outline: false });
-                bush.mesh.position.set(def.x + side * (walk + 0.2), 0.55, z + 3);
+                const bush = toonMesh(new THREE.SphereGeometry(0.34, 10, 8), 0x4a8a48);
+                bush.mesh.position.set(def.x + side * (walk + 0.2), 0.58, z + 3);
                 this._place(bush.group, def.x, z + 3);
+                if (s % 4 === 0) {
+                    const flowerCols = [0xff6b8a, 0xffd966, 0xc49bff];
+                    for (let f = 0; f < 3; f++) {
+                        const fl = toonMesh(
+                            new THREE.SphereGeometry(0.08, 6, 5),
+                            flowerCols[f % 3],
+                            { outline: false }
+                        );
+                        fl.mesh.position.set(
+                            def.x + side * (walk + 0.2) + (f - 1) * 0.1,
+                            0.78,
+                            z + 3
+                        );
+                        this._place(fl.group, def.x, z + 3);
+                    }
+                }
             }
 
             if (s % 3 === 0) {
@@ -956,6 +973,25 @@ export class WorldBuilder {
                 bench.position.set(def.x + walk * 0.7, 0, z + 2);
                 bench.rotation.y = -Math.PI / 2;
                 this._place(bench, def.x, z + 2);
+            }
+
+            if (s % 5 === 0) {
+                const trash = createTrashCan(s, false);
+                trash.position.set(def.x + walk * 0.9, 0, z + 7);
+                this._place(trash, def.x, z + 7);
+            }
+
+            // Crossing clothesline
+            if (s % 3 === 0) {
+                const span = walk * 2 + 1.2;
+                const rope = toonMesh(
+                    new THREE.CylinderGeometry(0.03, 0.03, span, 6),
+                    0xb0a090,
+                    { outline: false }
+                );
+                rope.mesh.rotation.z = Math.PI / 2;
+                rope.mesh.position.set(def.x, 5.3 + (s % 2) * 0.35, z + 1);
+                this._place(rope.group, def.x, z + 1);
             }
         }
     }
