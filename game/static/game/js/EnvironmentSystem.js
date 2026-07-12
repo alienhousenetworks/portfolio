@@ -108,7 +108,7 @@ const TOD_LOOK = {
         horizon: new THREE.Color(0x2a2848),
         zenith: new THREE.Color(0x0c1028),
         fog: new THREE.Color(0x1a1e38),
-        fogNear: 90, fogFar: 320,
+        fogNear: 70, fogFar: 260,
         ambient: { color: 0x3a4868, intensity: 0.55 },
         hemi: { sky: 0x3a5078, ground: 0x403020, intensity: 0.42 },
         sun: { color: 0xb0c8ff, intensity: 0.22 },
@@ -475,20 +475,14 @@ export class EnvironmentSystem {
         if (this._streetPointLights) return;
         this._streetPointLights = [];
         // Few wide warm pools only (many PointLights kill FPS)
+        // Keep point-light count low (each is expensive)
         const spots = [
             [0, 8, 0],
-            [0, 7, 50],
-            [0, 7, -50],
-            [0, 7, 100],
-            [0, 7, -100],
+            [0, 7, 55],
+            [0, 7, -55],
             [55, 7, 0],
             [-55, 7, 0],
-            [100, 7, 0],
-            [-100, 7, 0],
-            [0, 6.5, 90],
-            [0, 6.5, -90],
-            [40, 6.5, 40],
-            [-40, 6.5, -40],
+            [115, 7, 0], // Sukumar lane
         ];
 
         spots.forEach(([x, y, z], i) => {

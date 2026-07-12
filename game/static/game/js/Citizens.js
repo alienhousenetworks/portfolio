@@ -352,18 +352,26 @@ export class CitizenManager {
         this._frame = (this._frame || 0) + 1;
 
         this.citizens.filter(c => !c.isTeam || c.mesh.visible).forEach((c, idx) => {
-            // Stagger far NPCs: only update every other frame when far from player
+            // Distance culling + staggered updates for smooth FPS
             let far = false;
+            let veryFar = false;
             let stepDt = dt;
             if (hasFocus && c.mesh) {
                 const dx = c.mesh.position.x - fx;
                 const dz = c.mesh.position.z - fz;
-                far = (dx * dx + dz * dz) > 100 * 100;
+                const d2 = dx * dx + dz * dz;
+                veryFar = d2 > 140 * 140;
+                far = d2 > 70 * 70;
+                // Hide very far NPCs (still keep team hosts if already shown)
+                if (!c.isTeam && !c.isHost) {
+                    c.mesh.visible = !veryFar;
+                    if (veryFar) return;
+                }
                 if (far && ((this._frame + idx) & 1) === 0) return;
-                if (far) stepDt = dt * 2; // compensate for skipped frames
+                if (far) stepDt = dt * 2;
             }
 
-            // Skip expensive animator for very far NPCs
+            // Skip expensive animator for far NPCs
             if (!far) tickAnimator(c.mesh, stepDt);
             this._snapToGround(c.mesh, stepDt);
 

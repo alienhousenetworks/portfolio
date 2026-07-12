@@ -37,30 +37,29 @@ export function toonMat(color, opts = {}) {
 
 export function addInkOutline(mesh, scale = 1.04) {
     if (!mesh.geometry) return null;
-    
-    // Auto-calculate bounding box size to prevent outlining large terrain / water objects
+
     if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox();
     const box = mesh.geometry.boundingBox;
     const size = new THREE.Vector3();
     box.getSize(size);
-    
-    // Multiply by local scale to check actual world size of the mesh
+
     size.x *= Math.abs(mesh.scale.x);
     size.y *= Math.abs(mesh.scale.y);
     size.z *= Math.abs(mesh.scale.z);
-    
-    // If the mesh is large (e.g. landscape grass, water, sand, mountains), skip outlines
-    if (size.x > 25 || size.y > 25 || size.z > 25) {
+
+    const maxDim = Math.max(size.x, size.y, size.z);
+    // Skip tiny detail pieces (louvers, dentils) and huge terrain slabs — both waste GPU
+    if (maxDim < 1.2 || size.x > 25 || size.y > 25 || size.z > 25) {
         return null;
     }
 
     const outline = mesh.clone();
-    // Use simple, fast BasicMaterial for backface rendering of outlines
     outline.material = new THREE.MeshBasicMaterial({ color: INK, side: THREE.BackSide });
     outline.scale.multiplyScalar(scale);
     outline.name = 'inkOutline';
-    
-    // Clear children on the cloned outline to prevent bloated double outlines on sub-parts
+    outline.castShadow = false;
+    outline.receiveShadow = false;
+
     while (outline.children.length > 0) {
         outline.remove(outline.children[0]);
     }
@@ -69,13 +68,23 @@ export function addInkOutline(mesh, scale = 1.04) {
     return outline;
 }
 
+/**
+ * Toon mesh helper. Performance defaults:
+ * - castShadow off unless opts.castShadow === true (shadow casters are expensive)
+ * - ink outline only for mid-size meshes, or when opts.outline === true
+ */
 export function toonMesh(geometry, color, opts = {}) {
     const g = new THREE.Group();
     const mesh = new THREE.Mesh(geometry, toonMat(color, opts));
-    if (opts.castShadow !== false) mesh.castShadow = true;
-    if (opts.receiveShadow) mesh.receiveShadow = true;
+    mesh.castShadow = opts.castShadow === true;
+    mesh.receiveShadow = opts.receiveShadow === true;
     g.add(mesh);
-    if (opts.outline !== false) addInkOutline(mesh, opts.outlineScale ?? 1.04);
+    if (opts.outline === true) {
+        addInkOutline(mesh, opts.outlineScale ?? 1.04);
+    } else if (opts.outline !== false) {
+        // Auto: only mid-size structural meshes get outlines (skips window/louver spam)
+        addInkOutline(mesh, opts.outlineScale ?? 1.04);
+    }
     return { group: g, mesh };
 }
 
@@ -100,16 +109,18 @@ export function setupCityLighting(scene) {
     const sun = new THREE.DirectionalLight(0xfff0c8, 1.8);
     sun.position.set(-80, 160, 70);
     sun.castShadow = true;
-    sun.shadow.mapSize.set(1024, 1024);
-    sun.shadow.camera.near = 1;
-    sun.shadow.camera.far = 420;
-    sun.shadow.bias = -0.001;
-    sun.shadow.radius = 1.5;
-    const s = 180;
+    // Smaller shadow map + tighter frustum = much smoother FPS
+    sun.shadow.mapSize.set(512, 512);
+    sun.shadow.camera.near = 2;
+    sun.shadow.camera.far = 220;
+    sun.shadow.bias = -0.0015;
+    sun.shadow.radius = 1;
+    const s = 90;
     sun.shadow.camera.left = -s;
     sun.shadow.camera.right = s;
     sun.shadow.camera.top = s;
     sun.shadow.camera.bottom = -s;
+    sun.shadow.autoUpdate = true;
     scene.add(sun);
 
     const fill = new THREE.DirectionalLight(0xc8e8ff, 0.45);

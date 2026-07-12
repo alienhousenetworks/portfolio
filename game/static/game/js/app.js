@@ -30,11 +30,11 @@ class Game {
         this._renderer();
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(PALETTE.fog);
-        this.chunks = new ChunkManager(70, 3);
+        this.chunks = new ChunkManager(80, 2);
         this.terrain = new TerrainSystem();
         this.terrain.build(this.scene);
         const built = new WorldBuilder(this.scene, data, this.terrain, this.chunks).build();
-        this.chunks.preloadAround(0, 0, 3);
+        this.chunks.preloadAround(0, 0, 2);
         this.world = built;
         this.pois = built.pois;
         this.colliders = built.colliders;
@@ -154,17 +154,23 @@ class Game {
 
     _renderer() {
         const el = document.getElementById('game-canvas');
-        this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+        this.renderer = new THREE.WebGLRenderer({
+            antialias: false,
+            powerPreference: 'high-performance',
+            stencil: false,
+            depth: true,
+        });
         this.renderer.setSize(innerWidth, innerHeight);
-        this.renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+        this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.25));
         this.renderer.shadowMap.enabled = true;
-        this.renderer.shadowMap.type = THREE.PCFShadowMap;
+        this.renderer.shadowMap.type = THREE.BasicShadowMap;
         this.renderer.outputColorSpace = THREE.SRGBColorSpace;
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
         this.renderer.toneMappingExposure = 1.05;
         el.appendChild(this.renderer.domElement);
 
-        this.camera = new THREE.PerspectiveCamera(58, innerWidth / innerHeight, 0.5, 900);
+        this.camera = new THREE.PerspectiveCamera(58, innerWidth / innerHeight, 0.5, 520);
+        this._frame = 0;
         this.camera.position.set(0, 8, 60);
 
         addEventListener('resize', () => {
@@ -400,6 +406,7 @@ class Game {
     _loop() {
         requestAnimationFrame(() => this._loop());
         const dt = Math.min(this.clock.getDelta(), 0.05);
+        this._frame = (this._frame || 0) + 1;
 
         if (this._ready) {
             if (this.cinematic?.isActive()) {
@@ -407,7 +414,7 @@ class Game {
             } else if (this.ride?.isActive()) {
                 this.ride.update(dt);
                 this.transit.update(dt);
-                this.citizens.update(dt);
+                if ((this._frame & 1) === 0) this.citizens.update(dt * 2);
                 this.chunks?.update(this.player.position.x, this.player.position.z);
             } else if (this.state === 'playing' && this.playerCtrl) {
                 this.playerCtrl.update(dt);
@@ -417,9 +424,9 @@ class Game {
                 this.chunks?.update(this.player.position.x, this.player.position.z);
             }
 
-            this._proximity();
-            this._hud();
-            this._minimap();
+            if ((this._frame % 2) === 0) this._proximity();
+            if ((this._frame % 3) === 0) this._hud();
+            if ((this._frame % 4) === 0) this._minimap();
         }
 
         if (this.terrain?.update) {
