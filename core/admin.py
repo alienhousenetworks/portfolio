@@ -344,12 +344,12 @@ class ProjectAdmin(admin.ModelAdmin):
 
 @admin.register(LabExperiment)
 class LabExperimentAdmin(admin.ModelAdmin):
-    list_display = ('title', 'progress_percent', 'color_class')
+    list_display = ('title', 'progress_percent', 'website_url', 'color_class')
     list_filter = ('color_class',)
     
     fieldsets = (
         (None, {
-            'fields': ('title', 'description', 'progress_percent'),
+            'fields': ('title', 'description', 'progress_percent', 'website_url'),
             'description': "<strong>Impacts:</strong> The 'Alien Labs' / R&D section on the Home Page."
         }),
         ("Styling", {

@@ -202,6 +202,7 @@ class LabExperiment(models.Model):
     icon_name = models.CharField(max_length=50, default="flask-conical", help_text="Lucide icon name.")
     progress_percent = models.IntegerField(default=50, help_text="Completion percentage (0-100).")
     color_class = models.CharField(max_length=50, default="text-purple-500", help_text="Tailwind color class.")
+    website_url = models.URLField(blank=True, null=True, help_text="Optional link to live experiment/project website")
 
     def __str__(self):
         return self.title
