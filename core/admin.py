@@ -328,12 +328,12 @@ class ServiceModuleAdmin(admin.ModelAdmin):
 
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
-    list_display = ('title', 'tech_stack', 'color_class')
+    list_display = ('title', 'tech_stack', 'website_url', 'color_class')
     search_fields = ('title', 'tech_stack')
     
     fieldsets = (
         (None, {
-            'fields': ('title', 'image', 'description'),
+            'fields': ('title', 'image', 'description', 'website_url'),
             'description': "<strong>Impacts:</strong> The 'Selected Works' or 'Projects' section on the Home Page."
         }),
         ("Tech Details", {

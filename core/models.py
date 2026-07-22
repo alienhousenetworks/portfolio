@@ -400,6 +400,7 @@ class Project(models.Model):
     description = models.TextField()
     image = models.ImageField(upload_to='projects/')
     color_class = models.CharField(max_length=50, default="text-alien")
+    website_url = models.URLField(blank=True, null=True, help_text="Optional link to live project/website")
     
     def save(self, *args, **kwargs):
         if self.image:

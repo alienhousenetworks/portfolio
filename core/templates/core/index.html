@@ -385,6 +385,170 @@
             </div>
         </section>
 
+        <!-- ========================= FEATURED PROJECTS (ADVANCED HORIZONTAL CYCLIC CAROUSEL) ======================== -->
+        <section id="projects" class="py-20 md:py-32 bg-black relative overflow-hidden border-b border-alien/20">
+            <!-- Ambient Motion Background -->
+            <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(#00ff41 1px, transparent 1px); background-size: 32px 32px;"></div>
+            <div class="absolute -top-32 left-1/4 w-[500px] h-[500px] bg-alien/10 rounded-full blur-[140px] animate-pulse pointer-events-none"></div>
+
+            <div class="w-full mx-auto px-6 relative z-10">
+                <!-- Section Header with HUD accents -->
+                <div class="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+                    <div>
+                        <div class="inline-flex items-center gap-2 px-3 py-1 border border-alien/40 bg-alien/10 text-alien text-xs font-mono tracking-[0.25em] mb-4">
+                            <span class="w-2 h-2 rounded-full bg-alien animate-ping"></span>
+                            // DEPLOYED_WORK_REGISTRY
+                        </div>
+                        <h2 class="text-3xl md:text-6xl font-orbitron font-bold text-white tracking-tight">
+                            SELECTED <span class="text-transparent bg-clip-text bg-gradient-to-r from-alien via-emerald-300 to-cyan-400">PROJECTS</span>
+                        </h2>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button id="project-prev" class="w-12 h-12 rounded-lg border border-alien/30 bg-gray-900/60 hover:bg-alien hover:text-black text-alien flex items-center justify-center transition-all duration-300 backdrop-blur-md group">
+                            <i data-lucide="chevron-left" class="w-6 h-6 group-hover:-translate-x-0.5 transition-transform"></i>
+                        </button>
+                        <button id="project-next" class="w-12 h-12 rounded-lg border border-alien/30 bg-gray-900/60 hover:bg-alien hover:text-black text-alien flex items-center justify-center transition-all duration-300 backdrop-blur-md group">
+                            <i data-lucide="chevron-right" class="w-6 h-6 group-hover:translate-x-0.5 transition-transform"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Cyclic Moving Infinite Orbiting Project Cards Container -->
+                <div class="project-carousel-wrapper relative overflow-hidden py-6">
+                    <div id="project-track" class="flex gap-8 transition-transform duration-700 ease-out">
+                        {% for project in projects %}
+                        <div class="project-card flex-none w-[320px] sm:w-[380px] md:w-[450px] group relative bg-gray-900/40 border border-gray-800 hover:border-alien/80 rounded-2xl overflow-hidden backdrop-blur-xl transition-all duration-500 hover:shadow-[0_0_40px_rgba(0,255,65,0.25)] hover:-translate-y-2 flex flex-col justify-between">
+                            
+                            <!-- Card HUD Corners -->
+                            <div class="hud-corner hud-tl"></div>
+                            <div class="hud-corner hud-tr"></div>
+                            <div class="hud-corner hud-bl"></div>
+                            <div class="hud-corner hud-br"></div>
+
+                            <div>
+                                <!-- Image Frame with Scanning Effect -->
+                                <div class="relative h-56 sm:h-64 overflow-hidden bg-black/60">
+                                    {% if project.image %}
+                                    <img src="{{ project.image.url }}" alt="{{ project.title }}" class="w-full h-full object-cover grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700">
+                                    {% else %}
+                                    <div class="w-full h-full bg-gradient-to-br from-gray-900 to-black flex items-center justify-center text-gray-700 font-mono text-sm">NO_MEDIA_STREAM</div>
+                                    {% endif %}
+                                    
+                                    <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent opacity-90"></div>
+                                    
+                                    <!-- Animated Scan Laser line on hover -->
+                                    <div class="absolute top-0 left-0 w-full h-[2px] bg-alien shadow-[0_0_15px_#00ff41] -translate-y-full group-hover:translate-y-[260px] transition-transform duration-1000 ease-linear opacity-70"></div>
+                                    
+                                    <!-- Tech Stack Pill -->
+                                    <div class="absolute top-4 left-4 px-3 py-1 bg-black/80 border border-alien/40 backdrop-blur-md rounded-md text-[10px] font-mono text-alien uppercase tracking-wider">
+                                        {{ project.tech_stack }}
+                                    </div>
+                                </div>
+
+                                <!-- Body Info -->
+                                <div class="p-6">
+                                    <h3 class="text-2xl font-orbitron font-bold text-white mb-3 group-hover:text-alien transition-colors duration-300">
+                                        {{ project.title }}
+                                    </h3>
+                                    <p class="text-gray-400 text-sm leading-relaxed line-clamp-3 mb-6">
+                                        {{ project.description }}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Link Redirection Footer -->
+                            <div class="p-6 pt-0 mt-auto border-t border-white/5 pt-4 flex items-center justify-between">
+                                {% if project.website_url %}
+                                <a href="{{ project.website_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-xs font-orbitron font-bold text-alien hover:text-white transition-colors duration-300 group/link">
+                                    <span>LAUNCH PROJECT</span>
+                                    <i data-lucide="external-link" class="w-4 h-4 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-transform"></i>
+                                </a>
+                                {% else %}
+                                <span class="text-[11px] font-mono text-gray-500 uppercase tracking-widest flex items-center gap-1.5">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-gray-600"></span> INTERNAL SYSTEM
+                                </span>
+                                {% endif %}
+
+                                <span class="font-mono text-[10px] text-gray-600">AH_PRJ_{{ forloop.counter|stringformat:"02d" }}</span>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="w-full py-12 text-center border border-dashed border-gray-800 rounded-xl text-gray-500 font-mono">
+                            // NO DEPLOYED PROJECTS CURRENTLY REGISTERED
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const track = document.getElementById('project-track');
+                const prevBtn = document.getElementById('project-prev');
+                const nextBtn = document.getElementById('project-next');
+                
+                if (!track) return;
+
+                let currentIndex = 0;
+                const cards = track.querySelectorAll('.project-card');
+                const totalCards = cards.length;
+
+                function getCardWidth() {
+                    if (cards.length === 0) return 0;
+                    const cardWidth = cards[0].offsetWidth;
+                    const gap = 32; // gap-8 = 32px
+                    return cardWidth + gap;
+                }
+
+                function updateCarousel() {
+                    if (totalCards === 0) return;
+                    const amountToMove = getCardWidth() * currentIndex;
+                    track.style.transform = `translateX(-${amountToMove}px)`;
+                }
+
+                if (nextBtn) {
+                    nextBtn.addEventListener('click', () => {
+                        if (totalCards === 0) return;
+                        currentIndex = (currentIndex + 1) % totalCards;
+                        updateCarousel();
+                    });
+                }
+
+                if (prevBtn) {
+                    prevBtn.addEventListener('click', () => {
+                        if (totalCards === 0) return;
+                        currentIndex = (currentIndex - 1 + totalCards) % totalCards;
+                        updateCarousel();
+                    });
+                }
+
+                // Auto cyclic movement timer
+                let autoPlayInterval = setInterval(() => {
+                    if (totalCards > 0) {
+                        currentIndex = (currentIndex + 1) % totalCards;
+                        updateCarousel();
+                    }
+                }, 4000);
+
+                // Pause autoplay on mouse hover
+                const carouselContainer = document.querySelector('.project-carousel-wrapper');
+                if (carouselContainer) {
+                    carouselContainer.addEventListener('mouseenter', () => clearInterval(autoPlayInterval));
+                    carouselContainer.addEventListener('mouseleave', () => {
+                        autoPlayInterval = setInterval(() => {
+                            if (totalCards > 0) {
+                                currentIndex = (currentIndex + 1) % totalCards;
+                                updateCarousel();
+                            }
+                        }, 4000);
+                    });
+                }
+
+                window.addEventListener('resize', updateCarousel);
+            });
+        </script>
+
         <!-- ========================= OUR PROCESS ======================== -->
         <section class="py-12 md:py-24 bg-black/80 relative border-b border-alien/10">
             <div class="w-full mx-auto px-6 relative z-10">
