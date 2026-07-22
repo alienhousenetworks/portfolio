@@ -755,7 +755,7 @@
                 <div class="flex gap-4">
                     <button onclick="acceptCookies()"
                         class="px-6 py-2 bg-alien text-black font-bold uppercase hover:bg-white transition-colors">Accept</button>
-                    <button onclick="hideCookieBanner()"
+                    <button onclick="declineCookies()"
                         class="px-6 py-2 border border-gray-600 text-gray-400 hover:text-white hover:border-white transition-colors">Decline</button>
                 </div>
             </div>
@@ -790,15 +790,26 @@
         {% endif %}
 
         <script>
-            // Trigger cookie banner
-            setTimeout(() => { document.getElementById('cookie-banner').style.transform = 'translateY(0)'; }, 2000);
+            // Check if user has already accepted or declined cookies
+            if (!localStorage.getItem('cookieConsent')) {
+                setTimeout(() => { 
+                    const banner = document.getElementById('cookie-banner');
+                    if (banner) banner.style.transform = 'translateY(0)'; 
+                }, 2000);
+            }
 
             function hideCookieBanner() {
-                document.getElementById('cookie-banner').style.transform = 'translateY(100%)';
+                const banner = document.getElementById('cookie-banner');
+                if (banner) banner.style.transform = 'translateY(100%)';
             }
 
             function acceptCookies() {
-                // Logic to set cookie/local storage could go here
+                localStorage.setItem('cookieConsent', 'accepted');
+                hideCookieBanner();
+            }
+
+            function declineCookies() {
+                localStorage.setItem('cookieConsent', 'declined');
                 hideCookieBanner();
             }
         </script>
