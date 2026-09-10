@@ -101,6 +101,13 @@ def about_us(request):
     return render(request, "core/about_us.html", context)
 
 
+def privacy_policy(request):
+    """Public privacy policy page."""
+    return render(request, "core/privacy.html", {
+        "config": SiteConfiguration.objects.first(),
+    })
+
+
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import CompanyPage, AboutUsPage
 

@@ -560,6 +560,9 @@
                         <li class="hover:text-alien cursor-pointer transition-colors">
                             <a href="#rnd">Labs / R&D</a>
                         </li>
+                        <li class="hover:text-alien cursor-pointer transition-colors">
+                            <a href="{% url 'privacy_policy' %}">Privacy Policy</a>
+                        </li>
                     </ul>
                 </div>
 
@@ -592,8 +595,9 @@
                 </div>
             </div>
 
-            <div class="border-t border-gray-900 pt-8 flex justify-between items-center text-xs text-gray-600">
+            <div class="border-t border-gray-900 pt-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-xs text-gray-600">
                 <p>Copyright © 2025 {{ config.site_name }}. All Systems Nominal.</p>
+                <a href="{% url 'privacy_policy' %}" class="hover:text-alien transition-colors font-mono">Privacy Policy</a>
             </div>
         </div>
     </footer>

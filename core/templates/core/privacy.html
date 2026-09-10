@@ -1,0 +1,272 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Privacy Policy | {{ config.site_name|default:"AlienHouse Networks" }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .privacy-prose h2 {
+        scroll-margin-top: 7rem;
+    }
+    .privacy-prose a[data-custom-class="link"],
+    .privacy-prose a {
+        color: #00ff41;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+    }
+    .privacy-prose a:hover {
+        color: #ffffff;
+    }
+    [data-custom-class="body_text"] {
+        color: #9ca3af;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="relative min-h-screen text-white pt-28 pb-24">
+    <div class="absolute inset-0 pointer-events-none overflow-hidden">
+        <div class="absolute top-24 left-1/2 -translate-x-1/2 w-[700px] h-[700px] bg-alien/5 rounded-full blur-[120px]"></div>
+    </div>
+
+    <div class="relative z-10 max-w-6xl mx-auto px-6 md:px-8">
+        <header class="mb-16 max-w-3xl">
+            <div class="mb-6 inline-flex items-center gap-2 px-4 py-1 border border-alien/50 rounded-full bg-alien/10 text-alien text-xs font-mono">
+                <span class="w-2 h-2 bg-alien rounded-full animate-ping"></span>
+                LEGAL // PRIVACY NOTICE
+            </div>
+            <h1 class="text-5xl md:text-7xl font-orbitron font-black tracking-tighter mb-6">
+                Privacy <span class="text-alien">Policy</span>
+            </h1>
+            <p class="text-gray-400 text-lg leading-relaxed">
+                This privacy notice for {{ config.site_name|default:"AlienHouse Networks" }}
+                ("Company," "we," "us," or "our") describes how and why we might collect, store, use,
+                and/or share ("process") your information when you use our website and services.
+            </p>
+            <p class="mt-4 text-xs font-mono text-gray-500 tracking-widest uppercase">
+                Last updated: September 9, 2026
+            </p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+            <aside class="lg:col-span-4 xl:col-span-3">
+                <nav class="lg:sticky lg:top-28 border border-alien/20 bg-black/40 backdrop-blur-xl p-6">
+                    <p class="text-alien font-mono text-[10px] tracking-[0.25em] uppercase mb-4">Table of Contents</p>
+                    <ol class="space-y-3 text-sm font-mono text-gray-400">
+                        <li><a href="#summary" class="hover:text-alien transition-colors">1. Summary of key points</a></li>
+                        <li><a href="#collect" class="hover:text-alien transition-colors">2. What information we collect</a></li>
+                        <li><a href="#process" class="hover:text-alien transition-colors">3. How we process your information</a></li>
+                        <li><a href="#share" class="hover:text-alien transition-colors">4. When and with whom we share</a></li>
+                        <li><a href="#cookies" class="hover:text-alien transition-colors">5. Cookies and tracking</a></li>
+                        <li><a href="#retention" class="hover:text-alien transition-colors">6. How long we keep information</a></li>
+                        <li><a href="#security" class="hover:text-alien transition-colors">7. How we keep information safe</a></li>
+                        <li><a href="#minors" class="hover:text-alien transition-colors">8. Information from minors</a></li>
+                        <li><a href="#rights" class="hover:text-alien transition-colors">9. Your privacy rights</a></li>
+                        <li><a href="#updates" class="hover:text-alien transition-colors">10. Updates to this notice</a></li>
+                        <li><a href="#contact" class="hover:text-alien transition-colors">11. How to contact us</a></li>
+                    </ol>
+                </nav>
+            </aside>
+
+            <article class="lg:col-span-8 xl:col-span-9 privacy-prose space-y-12 text-gray-400 leading-relaxed">
+                <section id="summary" class="border border-alien/20 bg-gray-900/40 backdrop-blur-xl p-8">
+                    <h2 class="font-orbitron text-2xl text-white mb-4">1. Summary of key points</h2>
+                    <p class="mb-4">
+                        This summary highlights the most important parts of our privacy notice.
+                        Use the table of contents to jump to a full section.
+                    </p>
+                    <ul class="list-disc pl-5 space-y-3">
+                        <li><strong class="text-white">What personal information do we process?</strong> We process information you submit through contact, careers, and training enrollment forms, plus limited technical data collected automatically when you visit the site.</li>
+                        <li><strong class="text-white">Do we process sensitive information?</strong> Training enrollment may include date of birth and academic details. Job applications may include a resume and cover letter. We do not seek to collect government ID numbers, financial account numbers, or health data.</li>
+                        <li><strong class="text-white">Do we collect information from third parties?</strong> Payment status for training enrollments is confirmed through Razorpay. Analytics providers (Google Analytics and Microsoft Clarity) collect usage data on our behalf.</li>
+                        <li><strong class="text-white">How do we process your information?</strong> To respond to inquiries, review job applications, administer training enrollments and payments, operate and secure the website, and understand how the site is used.</li>
+                        <li><strong class="text-white">How do we keep your information safe?</strong> We use administrative and technical measures, but no internet transmission can be guaranteed 100% secure.</li>
+                        <li><strong class="text-white">What are your rights?</strong> Depending on where you live, you may have rights to access, correct, or delete your personal information, and to withdraw consent.</li>
+                    </ul>
+                </section>
+
+                <section id="collect">
+                    <h2 class="font-orbitron text-2xl text-white mb-4">2. What information do we collect?</h2>
+                    <h3 class="text-white font-semibold text-lg mb-2">Personal information you disclose to us</h3>
+                    <p class="mb-4">
+                        We collect personal information that you voluntarily provide when you contact us,
+                        apply for a role, enroll in industry training, or otherwise interact with the Services.
+                    </p>
+                    <p class="mb-2 text-white">Contact form</p>
+                    <ul class="list-disc pl-5 mb-4 space-y-1">
+                        <li>Name</li>
+                        <li>Email address</li>
+                        <li>Phone number</li>
+                        <li>Company name (optional)</li>
+                        <li>Message content</li>
+                    </ul>
+                    <p class="mb-2 text-white">Career applications</p>
+                    <ul class="list-disc pl-5 mb-4 space-y-1">
+                        <li>Full name</li>
+                        <li>Email address</li>
+                        <li>Phone number</li>
+                        <li>Resume / CV file</li>
+                        <li>Cover letter</li>
+                    </ul>
+                    <p class="mb-2 text-white">Training enrollment and payment</p>
+                    <ul class="list-disc pl-5 mb-4 space-y-1">
+                        <li>Full name, email, and phone number</li>
+                        <li>Date of birth</li>
+                        <li>College, degree, branch, and year of study</li>
+                        <li>Skills, LinkedIn URL, and GitHub URL (if provided)</li>
+                        <li>Selected training field, sub-field, and package</li>
+                        <li>Referral code</li>
+                        <li>Payment identifiers generated by Razorpay (order ID, payment ID, and signature)</li>
+                    </ul>
+
+                    <h3 class="text-white font-semibold text-lg mb-2">Information automatically collected</h3>
+                    <p class="mb-4">
+                        When you visit the website, we automatically collect certain information.
+                        This information does not reveal your specific identity (such as your name or contact details)
+                        unless combined with information you submit, but it may include:
+                    </p>
+                    <ul class="list-disc pl-5 space-y-1">
+                        <li>Device and browser type</li>
+                        <li>Approximate location derived from IP address</li>
+                        <li>Pages viewed, referring URLs, and timestamps</li>
+                        <li>Session activity, heatmaps, and recordings via Microsoft Clarity</li>
+                        <li>Usage metrics via Google Analytics (GA4)</li>
+                    </ul>
+                </section>
+
+                <section id="process">
+                    <h2 class="font-orbitron text-2xl text-white mb-4">3. How do we process your information?</h2>
+                    <p class="mb-4">We process your information to:</p>
+                    <ul class="list-disc pl-5 space-y-2">
+                        <li>Respond to contact requests and business inquiries</li>
+                        <li>Evaluate job applications and communicate with candidates</li>
+                        <li>Register students for training, calculate pricing, and process payments</li>
+                        <li>Operate, maintain, and improve the website</li>
+                        <li>Monitor security, prevent abuse, and debug technical issues</li>
+                        <li>Understand site usage through analytics and session insights</li>
+                        <li>Comply with legal obligations and enforce our terms</li>
+                    </ul>
+                    <p class="mt-4">
+                        We process this information only when we have a valid legal reason to do so,
+                        such as your consent, performance of a contract (for example, a training enrollment),
+                        a legitimate interest in running and securing the site, or a legal obligation.
+                    </p>
+                </section>
+
+                <section id="share">
+                    <h2 class="font-orbitron text-2xl text-white mb-4">4. When and with whom do we share your personal information?</h2>
+                    <p class="mb-4">
+                        We may share information in the following situations:
+                    </p>
+                    <ul class="list-disc pl-5 space-y-3">
+                        <li><strong class="text-white">Payment processors.</strong> Training payments are processed by Razorpay. Razorpay receives the information needed to complete and verify the transaction.</li>
+                        <li><strong class="text-white">Analytics and diagnostics.</strong> Google Analytics and Microsoft Clarity receive usage data so we can understand how the site is used.</li>
+                        <li><strong class="text-white">Infrastructure and content delivery.</strong> The site loads fonts, scripts, and maps from providers such as Google (Fonts, Maps, Tag Manager) and public CDNs. Those providers may process technical data such as IP address as part of delivering those resources.</li>
+                        <li><strong class="text-white">Legal and safety.</strong> We may disclose information if required by law, regulation, legal process, or to protect the rights, safety, and security of the Company, our users, or others.</li>
+                        <li><strong class="text-white">Business transfers.</strong> We may share or transfer information in connection with a merger, sale of assets, financing, or acquisition of all or a portion of our business.</li>
+                    </ul>
+                    <p class="mt-4">We do not sell your personal information.</p>
+                </section>
+
+                <section id="cookies">
+                    <h2 class="font-orbitron text-2xl text-white mb-4">5. Do we use cookies and other tracking technologies?</h2>
+                    <p class="mb-4">
+                        Yes. We may use cookies, pixels, and similar technologies to operate the site,
+                        remember preferences, and collect analytics.
+                    </p>
+                    <p class="mb-2 text-white">Technologies currently in use include:</p>
+                    <ul class="list-disc pl-5 space-y-2">
+                        <li><strong class="text-white">Google Analytics (GA4)</strong> — measurement ID G-9SE6VZ9XFH, used to understand traffic and page usage.</li>
+                        <li><strong class="text-white">Microsoft Clarity</strong> — project ID vswqcb2qfg, used for heatmaps and session recordings.</li>
+                        <li><strong class="text-white">Google Maps</strong> — used to display office location on certain pages.</li>
+                    </ul>
+                    <p class="mt-4">
+                        Most browsers let you refuse or delete cookies. Blocking cookies may affect some site features.
+                        You can also use Google's analytics opt-out tools and Microsoft's Clarity opt-out options
+                        where available.
+                    </p>
+                </section>
+
+                <section id="retention">
+                    <h2 class="font-orbitron text-2xl text-white mb-4">6. How long do we keep your information?</h2>
+                    <p>
+                        We keep personal information only as long as necessary for the purposes described in this notice,
+                        unless a longer retention period is required or permitted by law
+                        (such as tax, accounting, or dispute-resolution requirements).
+                        Contact messages, job applications, and training enrollment records are retained
+                        while they remain relevant to those purposes, then deleted or anonymized.
+                    </p>
+                </section>
+
+                <section id="security">
+                    <h2 class="font-orbitron text-2xl text-white mb-4">7. How do we keep your information safe?</h2>
+                    <p>
+                        We have implemented appropriate technical and organizational security measures designed
+                        to protect personal information. However, despite our safeguards, no electronic transmission
+                        over the Internet or information storage technology can be guaranteed to be 100% secure.
+                        You should access the Services only within a secure environment.
+                    </p>
+                </section>
+
+                <section id="minors">
+                    <h2 class="font-orbitron text-2xl text-white mb-4">8. Do we collect information from minors?</h2>
+                    <p>
+                        We do not knowingly collect personal information from children under 18,
+                        or market to them. Training programs are intended for students and professionals
+                        who can lawfully provide the requested information.
+                        If we learn that we have collected personal information from a minor,
+                        we will take steps to delete it. Contact us using the details below if you believe
+                        we may have collected such information.
+                    </p>
+                </section>
+
+                <section id="rights">
+                    <h2 class="font-orbitron text-2xl text-white mb-4">9. What are your privacy rights?</h2>
+                    <p class="mb-4">
+                        Depending on your location — including India under the Digital Personal Data Protection Act, 2023,
+                        and applicable laws in other regions — you may have the right to:
+                    </p>
+                    <ul class="list-disc pl-5 space-y-2 mb-4">
+                        <li>Request access to the personal information we hold about you</li>
+                        <li>Request correction of inaccurate or incomplete information</li>
+                        <li>Request deletion of your personal information</li>
+                        <li>Withdraw consent where processing is based on consent</li>
+                        <li>Object to or restrict certain processing</li>
+                    </ul>
+                    <p>
+                        To exercise these rights, email us at
+                        <a href="mailto:{{ config.email|default:'signal@alienhouse.net' }}">{{ config.email|default:"signal@alienhouse.net" }}</a>.
+                        We may need to verify your identity before fulfilling a request.
+                    </p>
+                </section>
+
+                <section id="updates">
+                    <h2 class="font-orbitron text-2xl text-white mb-4">10. Do we make updates to this notice?</h2>
+                    <p>
+                        Yes. We may update this privacy notice from time to time. The updated version will be indicated
+                        by an updated "Last updated" date and will be effective as soon as it is accessible.
+                        If we make material changes, we may notify you by posting a notice on the site
+                        or by sending you a notice directly, where required.
+                    </p>
+                </section>
+
+                <section id="contact" class="border border-alien/20 bg-gray-900/40 backdrop-blur-xl p-8">
+                    <h2 class="font-orbitron text-2xl text-white mb-4">11. How can you contact us about this notice?</h2>
+                    <p class="mb-4">
+                        If you have questions or comments about this notice, you may contact us at:
+                    </p>
+                    <p class="text-white font-orbitron mb-2">{{ config.site_name|default:"AlienHouse Networks" }}</p>
+                    {% if config.address %}<p>{{ config.address }}</p>{% else %}<p>Rajkot, Gujarat, India</p>{% endif %}
+                    <p>
+                        Email:
+                        <a href="mailto:{{ config.email|default:'signal@alienhouse.net' }}">{{ config.email|default:"signal@alienhouse.net" }}</a>
+                    </p>
+                    {% if config.phone %}<p>Phone: {{ config.phone }}</p>{% endif %}
+                </section>
+
+                <br><div><span data-custom-class='body_text'>This Privacy Policy was created using Termly's </span><a href="https://termly.io/products/privacy-policy-generator/" target="_blank" rel="noopener external" data-custom-class='link'>Privacy Policy Generator</a></div>
+            </article>
+        </div>
+    </div>
+</div>
+{% endblock %}

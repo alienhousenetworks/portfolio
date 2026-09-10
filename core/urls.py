@@ -6,6 +6,7 @@ urlpatterns = [
     # The dynamic path:
     path('services/<slug:slug>/', views.service_detail, name='service_detail'),
     path("about-us/", views.about_us, name="about_us"),
+    path("privacy/", views.privacy_policy, name="privacy_policy"),
     path('careers/', views.career_list, name='career_list'),
     path('careers/<slug:slug>/', views.job_detail, name='job_detail'),
     path('company/<slug:slug>/', views.company_page_detail, name='company_page_detail'),
