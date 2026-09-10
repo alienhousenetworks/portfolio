@@ -94,7 +94,19 @@
             background-color: #020202;
             color: #e0ffe0;
             overflow-x: hidden;
-            cursor: none !important;
+        }
+
+        /* Enable custom cursor only on desktop devices with mouse/pointer */
+        @media (hover: hover) and (pointer: fine) {
+            body, html {
+                cursor: none !important;
+            }
+            a, button, input, select, textarea, [role="button"], .cursor-pointer, .alien-card {
+                cursor: none !important;
+            }
+            input[type="text"], input[type="email"], input[type="password"], textarea {
+                cursor: text !important;
+            }
         }
 
         ::-webkit-scrollbar {
@@ -178,14 +190,30 @@
             position: fixed;
             top: 0;
             left: 0;
-            width: 48px;
-            height: 48px;
+            width: 32px;
+            height: 32px;
             pointer-events: none;
-            z-index: 9999;
-            transform: translate(-50%, -50%);
-            transition: transform 0.08s ease-out;
-            mix-blend-mode: exclusion;
-            filter: drop-shadow(0 0 8px rgba(0, 255, 65, 0.6));
+            z-index: 10001;
+            transform: translate3d(-50%, -50%, 0);
+            transition: opacity 0.2s ease, transform 0.1s ease-out;
+            opacity: 0;
+            will-change: transform, left, top;
+        }
+
+        #cursor-ship.cursor-visible {
+            opacity: 1;
+        }
+
+        #cursor-ship.cursor-hover {
+            transform: translate3d(-50%, -50%, 0) scale(1.4);
+        }
+
+        #cursor-ship.cursor-click {
+            transform: translate3d(-50%, -50%, 0) scale(0.8);
+        }
+
+        #cursor-ship.cursor-hidden {
+            opacity: 0 !important;
         }
 
         #trail-canvas {
@@ -195,7 +223,13 @@
             width: 100%;
             height: 100%;
             pointer-events: none;
-            z-index: 9998;
+            z-index: 10000;
+        }
+
+        @media (hover: none) or (pointer: coarse) {
+            #cursor-ship, #trail-canvas {
+                display: none !important;
+            }
         }
 
         .decrypt-effect {
@@ -305,16 +339,19 @@
 
 <body class="font-rajdhani selection:bg-alien selection:text-black">
 
-    <div id="cursor-ship">
-        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M10 13C10 9 13 6 16 6C19 6 22 9 22 13" fill="#00ff41" fill-opacity="0.3" stroke="#00ff41"
-                stroke-width="1" />
-            <ellipse cx="16" cy="16" rx="15" ry="5" fill="#020202" stroke="#00ff41" stroke-width="1.5" />
-            <path d="M4 17Q16 23 28 17" stroke="#00ff41" stroke-width="1" stroke-linecap="round" />
-            <circle cx="7" cy="18" r="1" fill="#fff" class="animate-pulse" />
-            <circle cx="16" cy="20" r="1.5" fill="#fff" />
-            <circle cx="25" cy="18" r="1" fill="#fff" class="animate-pulse" />
-            <ellipse cx="16" cy="21" rx="4" ry="1.5" fill="#00ff41" fill-opacity="0.8" />
+    <div id="cursor-ship" class="hidden md:block">
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-full filter drop-shadow-[0_0_5px_#00ff41]">
+            <!-- Precision Target Center -->
+            <circle cx="16" cy="16" r="2.5" fill="#00ff41" />
+            <!-- Cyber HUD Ring -->
+            <circle cx="16" cy="16" r="10" stroke="#00ff41" stroke-width="0.8" stroke-dasharray="2 3" opacity="0.7" />
+            <!-- HUD Reticle Brackets -->
+            <path d="M 10 7 A 10 10 0 0 0 7 10" stroke="#00ff41" stroke-width="1.5" stroke-linecap="round" />
+            <path d="M 22 7 A 10 10 0 0 1 25 10" stroke="#00ff41" stroke-width="1.5" stroke-linecap="round" />
+            <path d="M 7 22 A 10 10 0 0 0 10 25" stroke="#00ff41" stroke-width="1.5" stroke-linecap="round" />
+            <path d="M 25 22 A 10 10 0 0 1 22 25" stroke="#00ff41" stroke-width="1.5" stroke-linecap="round" />
+            <!-- Micro Ship Wings -->
+            <path d="M 16 9 L 19 14 L 16 12.5 L 13 14 Z" fill="#00ff41" fill-opacity="0.5" stroke="#00ff41" stroke-width="0.7" />
         </svg>
     </div>
 
@@ -870,37 +907,114 @@
             });
         };
 
-        // --- CURSOR SYSTEM ---
+        // --- PRECISION CYBER CURSOR SYSTEM ---
         const initCursorSystem = () => {
             const cursor = document.getElementById('cursor-ship');
             const trailCanvas = document.getElementById('trail-canvas');
+            if (!cursor || !trailCanvas) return;
+
+            // Only enable on desktop pointer devices
+            const isFinePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+            if (!isFinePointer) {
+                cursor.style.display = 'none';
+                trailCanvas.style.display = 'none';
+                return;
+            }
+
             const ctx = trailCanvas.getContext('2d');
             let trail = [];
-            let mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
-            const resizeTrail = () => { trailCanvas.width = window.innerWidth; trailCanvas.height = window.innerHeight; };
-            window.addEventListener('resize', resizeTrail); resizeTrail();
+            let mouseX = window.innerWidth / 2;
+            let mouseY = window.innerHeight / 2;
+            let currentX = mouseX;
+            let currentY = mouseY;
+            let isHovered = false;
+            let isVisible = false;
+
+            const resizeTrail = () => {
+                trailCanvas.width = window.innerWidth;
+                trailCanvas.height = window.innerHeight;
+            };
+            window.addEventListener('resize', resizeTrail);
+            resizeTrail();
+
             document.addEventListener('mousemove', (e) => {
-                mouse.x = e.clientX; mouse.y = e.clientY;
-                cursor.style.left = `${mouse.x}px`;
-                cursor.style.top = `${mouse.y}px`;
-                cursor.style.transform = `translate(-50%, -50%) rotate(${e.movementX * 2}deg) rotateX(${e.movementY}deg)`;
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+                if (!isVisible) {
+                    isVisible = true;
+                    cursor.classList.add('cursor-visible');
+                    cursor.classList.remove('cursor-hidden');
+                }
             });
-            const animateTrail = () => {
-                trail.push({ x: mouse.x, y: mouse.y });
-                if (trail.length > 30) trail.shift();
+
+            document.addEventListener('mouseleave', () => {
+                isVisible = false;
+                cursor.classList.remove('cursor-visible');
+                cursor.classList.add('cursor-hidden');
+            });
+
+            document.addEventListener('mouseenter', () => {
+                isVisible = true;
+                cursor.classList.add('cursor-visible');
+                cursor.classList.remove('cursor-hidden');
+            });
+
+            document.addEventListener('mousedown', () => {
+                cursor.classList.add('cursor-click');
+            });
+
+            document.addEventListener('mouseup', () => {
+                cursor.classList.remove('cursor-click');
+            });
+
+            // React to interactive hover targets
+            document.addEventListener('mouseover', (e) => {
+                const target = e.target;
+                if (target && target.closest('a, button, [role="button"], input, select, textarea, .cursor-pointer, .alien-card, label, summary')) {
+                    if (!isHovered) {
+                        isHovered = true;
+                        cursor.classList.add('cursor-hover');
+                    }
+                } else {
+                    if (isHovered) {
+                        isHovered = false;
+                        cursor.classList.remove('cursor-hover');
+                    }
+                }
+            });
+
+            // Physics Render Loop
+            const renderCursor = () => {
+                // Smooth interpolation towards mouse
+                currentX += (mouseX - currentX) * 0.4;
+                currentY += (mouseY - currentY) * 0.4;
+
+                cursor.style.left = `${currentX}px`;
+                cursor.style.top = `${currentY}px`;
+
+                if (isVisible) {
+                    trail.push({ x: currentX, y: currentY });
+                }
+                if (trail.length > 16) trail.shift();
+
                 ctx.clearRect(0, 0, trailCanvas.width, trailCanvas.height);
-                if (trail.length > 1) {
+                if (trail.length > 2 && isVisible) {
                     ctx.beginPath();
                     ctx.moveTo(trail[0].x, trail[0].y);
-                    for (let i = 1; i < trail.length; i++) ctx.lineTo(trail[i].x, trail[i].y);
+                    for (let i = 1; i < trail.length; i++) {
+                        ctx.lineTo(trail[i].x, trail[i].y);
+                    }
                     const gradient = ctx.createLinearGradient(trail[0].x, trail[0].y, trail[trail.length - 1].x, trail[trail.length - 1].y);
                     gradient.addColorStop(0, 'rgba(0, 255, 65, 0)');
-                    gradient.addColorStop(1, 'rgba(0, 255, 65, 0.5)');
-                    ctx.lineWidth = 4; ctx.strokeStyle = gradient; ctx.lineCap = 'round'; ctx.stroke();
+                    gradient.addColorStop(1, isHovered ? 'rgba(0, 255, 65, 0.6)' : 'rgba(0, 255, 65, 0.35)');
+                    ctx.lineWidth = isHovered ? 4 : 2;
+                    ctx.strokeStyle = gradient;
+                    ctx.lineCap = 'round';
+                    ctx.stroke();
                 }
-                requestAnimationFrame(animateTrail);
+                requestAnimationFrame(renderCursor);
             };
-            animateTrail();
+            requestAnimationFrame(renderCursor);
         };
 
 
@@ -1094,29 +1208,41 @@
         });
     </script>
 
-    <!-- ==================== PRIVACY & COOKIE CONSENT BANNER ==================== -->
+    <!-- ==================== CYBER PRIVACY & COOKIE CONSENT HUD ==================== -->
     <div id="cookie-banner"
-        class="fixed bottom-0 left-0 w-full bg-black/95 backdrop-blur-xl border-t border-alien/40 p-4 md:p-6 z-[9999] transform translate-y-full transition-transform duration-500 shadow-[0_-10px_30px_rgba(0,0,0,0.8)]">
-        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6">
-            <div class="flex items-center gap-4 text-center md:text-left">
-                <div class="w-10 h-10 rounded-lg bg-alien/10 border border-alien/30 flex items-center justify-center shrink-0 text-alien hidden sm:flex">
-                    <i data-lucide="shield-check" class="w-5 h-5"></i>
+        class="fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:max-w-md bg-[#040805]/95 backdrop-blur-2xl border border-alien/40 p-5 rounded-xl z-[10000] transform translate-y-32 opacity-0 pointer-events-none transition-all duration-500 ease-out shadow-[0_10px_40px_rgba(0,0,0,0.9),0_0_20px_rgba(0,255,65,0.15)]">
+        
+        <!-- Corner HUD Accents -->
+        <div class="hud-corner hud-tl !w-2.5 !h-2.5 !border-[1.5px]"></div>
+        <div class="hud-corner hud-tr !w-2.5 !h-2.5 !border-[1.5px]"></div>
+        <div class="hud-corner hud-bl !w-2.5 !h-2.5 !border-[1.5px]"></div>
+        <div class="hud-corner hud-br !w-2.5 !h-2.5 !border-[1.5px]"></div>
+
+        <div class="flex items-start gap-3 mb-4">
+            <div class="w-8 h-8 rounded-lg bg-alien/10 border border-alien/40 flex items-center justify-center shrink-0 text-alien shadow-[0_0_10px_rgba(0,255,65,0.2)]">
+                <i data-lucide="shield-check" class="w-4 h-4"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 rounded-full bg-alien animate-ping"></span>
+                    <h5 class="text-xs font-orbitron font-bold text-white tracking-widest uppercase">Privacy & Telemetry Protocol</h5>
                 </div>
-                <p class="text-gray-300 text-sm leading-relaxed">
-                    We use cookies and telemetry to improve your navigation experience. By clicking <span class="text-alien font-semibold">"Accept"</span>, you consent to our practices described in our 
-                    <a href="{% url 'privacy_policy' %}" class="text-alien underline hover:text-white transition-colors font-mono ml-1">Privacy Policy</a>.
+                <p class="text-gray-400 text-xs mt-1.5 leading-relaxed font-rajdhani text-[13px]">
+                    We utilize telemetry and essential cookies to calibrate network diagnostics and optimize system performance. Review our 
+                    <a href="{% url 'privacy_policy' %}" class="text-alien underline hover:text-white font-mono transition-colors">Privacy Policy</a>.
                 </p>
             </div>
-            <div class="flex items-center gap-3 shrink-0 w-full md:w-auto justify-end">
-                <button onclick="declineCookies()"
-                    class="flex-1 md:flex-initial px-5 py-2.5 rounded text-xs font-mono tracking-wider uppercase border border-gray-700 text-gray-400 hover:text-white hover:border-gray-500 hover:bg-gray-900/60 transition-all">
-                    Decline
-                </button>
-                <button onclick="acceptCookies()"
-                    class="flex-1 md:flex-initial px-6 py-2.5 rounded text-xs font-mono font-bold tracking-wider uppercase bg-alien text-black hover:bg-white hover:shadow-[0_0_15px_rgba(57,255,20,0.6)] transition-all">
-                    Accept
-                </button>
-            </div>
+        </div>
+
+        <div class="flex items-center gap-2 pt-2 border-t border-gray-800/80">
+            <button onclick="declineCookies()"
+                class="flex-1 py-2 px-3 rounded text-[11px] font-mono tracking-wider uppercase border border-gray-700 bg-black/60 text-gray-400 hover:text-white hover:border-gray-500 hover:bg-gray-900 transition-all cursor-pointer">
+                Decline
+            </button>
+            <button onclick="acceptCookies()"
+                class="flex-1 py-2 px-3 rounded text-[11px] font-orbitron font-bold tracking-wider uppercase bg-alien text-black hover:bg-white hover:shadow-[0_0_15px_#00ff41] transition-all cursor-pointer">
+                Accept Protocol
+            </button>
         </div>
     </div>
 
@@ -1125,11 +1251,17 @@
         (function() {
             function showBanner() {
                 const banner = document.getElementById('cookie-banner');
-                if (banner) banner.style.transform = 'translateY(0)';
+                if (banner) {
+                    banner.classList.remove('translate-y-32', 'opacity-0', 'pointer-events-none');
+                    banner.classList.add('translate-y-0', 'opacity-100', 'pointer-events-auto');
+                }
             }
             function hideBanner() {
                 const banner = document.getElementById('cookie-banner');
-                if (banner) banner.style.transform = 'translateY(100%)';
+                if (banner) {
+                    banner.classList.add('translate-y-32', 'opacity-0', 'pointer-events-none');
+                    banner.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
+                }
             }
             window.acceptCookies = function() {
                 localStorage.setItem('cookieConsent', 'accepted');
@@ -1140,7 +1272,7 @@
                 hideBanner();
             };
             if (!localStorage.getItem('cookieConsent')) {
-                setTimeout(showBanner, 800);
+                setTimeout(showBanner, 900);
             }
         })();
     </script>
