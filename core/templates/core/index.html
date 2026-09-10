@@ -725,23 +725,6 @@
             }
         </script>
 
-        <div id="cookie-banner"
-            class="fixed bottom-0 left-0 w-full bg-black/95 backdrop-blur-lg border-t border-alien/30 p-6 z-[100] transform translate-y-full transition-transform duration-500">
-            <div class="w-full mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-                <div class="flex items-center gap-4">
-                    <i data-lucide="cookie" class="text-alien w-8 h-8"></i>
-                    <p class="text-gray-300 text-sm">We use cookies to enhance your experience. By continuing to visit
-                        this site you agree to our use of cookies.</p>
-                </div>
-                <div class="flex gap-4">
-                    <button onclick="acceptCookies()"
-                        class="px-6 py-2 bg-alien text-black font-bold uppercase hover:bg-white transition-colors">Accept</button>
-                    <button onclick="declineCookies()"
-                        class="px-6 py-2 border border-gray-600 text-gray-400 hover:text-white hover:border-white transition-colors">Decline</button>
-                </div>
-            </div>
-        </div>
-
         <!-- ========================= MAP SECTION ======================== -->
         {% if location %}
         <section class="h-[400px] w-full relative border-t border-alien/20 group overflow-hidden">
@@ -776,31 +759,6 @@
             </a>
         </section>
         {% endif %}
-
-        <script>
-            // Check if user has already accepted or declined cookies
-            if (!localStorage.getItem('cookieConsent')) {
-                setTimeout(() => {
-                    const banner = document.getElementById('cookie-banner');
-                    if (banner) banner.style.transform = 'translateY(0)';
-                }, 2000);
-            }
-
-            function hideCookieBanner() {
-                const banner = document.getElementById('cookie-banner');
-                if (banner) banner.style.transform = 'translateY(100%)';
-            }
-
-            function acceptCookies() {
-                localStorage.setItem('cookieConsent', 'accepted');
-                hideCookieBanner();
-            }
-
-            function declineCookies() {
-                localStorage.setItem('cookieConsent', 'declined');
-                hideCookieBanner();
-            }
-        </script>
         {% endblock %}
 
         {% block extra_head %}
