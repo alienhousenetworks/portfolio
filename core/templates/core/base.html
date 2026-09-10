@@ -1206,6 +1206,52 @@
         });
     </script>
 
+    <!-- ==================== ACCESS RESTRICTED / BLOCKED OVERLAY ==================== -->
+    <div id="access-blocked-screen"
+        class="fixed inset-0 z-[99999] bg-[#020202]/98 backdrop-blur-3xl hidden flex items-center justify-center p-4 sm:p-6 select-none">
+        
+        <!-- Cyber Background Grid -->
+        <div class="absolute inset-0 bg-grid-pattern opacity-30 pointer-events-none"></div>
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,30,60,0.12)_0%,transparent_70%)] pointer-events-none"></div>
+
+        <div class="relative max-w-lg w-full bg-[#070d08]/95 border border-red-500/40 p-8 sm:p-10 rounded-2xl shadow-[0_0_80px_rgba(255,0,50,0.25)] text-center">
+            <!-- Corner HUD Accents -->
+            <div class="hud-corner hud-tl !border-red-500 !w-4 !h-4"></div>
+            <div class="hud-corner hud-tr !border-red-500 !w-4 !h-4"></div>
+            <div class="hud-corner hud-bl !border-red-500 !w-4 !h-4"></div>
+            <div class="hud-corner hud-br !border-red-500 !w-4 !h-4"></div>
+
+            <!-- Warning Icon -->
+            <div class="w-20 h-20 mx-auto mb-6 rounded-2xl bg-red-500/10 border border-red-500/50 flex items-center justify-center text-red-500 shadow-[0_0_30px_rgba(255,0,50,0.3)] animate-pulse">
+                <i data-lucide="shield-alert" class="w-10 h-10"></i>
+            </div>
+
+            <!-- Header -->
+            <span class="text-red-400 text-xs font-mono tracking-[0.3em] uppercase block mb-2">/// Protocol Rejected</span>
+            <h2 class="text-2xl sm:text-3xl font-orbitron font-extrabold text-white tracking-wider uppercase mb-4">
+                Access <span class="text-red-500">Restricted</span>
+            </h2>
+
+            <!-- Message -->
+            <p class="text-gray-300 font-rajdhani text-base sm:text-lg leading-relaxed mb-8">
+                You cannot use this website without accepting the required privacy and system telemetry protocol. All digital services, interactive simulations, and interfaces remain locked.
+            </p>
+
+            <!-- Actions -->
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <button onclick="acceptCookies()"
+                    class="w-full sm:w-auto flex-1 py-3.5 px-6 bg-alien text-black font-orbitron font-bold text-xs sm:text-sm tracking-widest uppercase hover:bg-white hover:shadow-[0_0_25px_#00ff41] transition-all flex items-center justify-center gap-2 cursor-pointer">
+                    <i data-lucide="shield-check" class="w-4 h-4"></i>
+                    <span>Accept Protocol & Enter</span>
+                </button>
+                <a href="https://www.google.com"
+                    class="w-full sm:w-auto py-3.5 px-6 border border-gray-700 bg-black/60 text-gray-400 font-mono text-xs uppercase tracking-wider hover:text-white hover:border-red-500/60 hover:bg-red-950/30 transition-all cursor-pointer">
+                    Exit Site
+                </a>
+            </div>
+        </div>
+    </div>
+
     <!-- ==================== CYBER PRIVACY & COOKIE CONSENT HUD ==================== -->
     <div id="cookie-banner"
         class="fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:max-w-md bg-[#040805]/95 backdrop-blur-2xl border border-alien/40 p-5 rounded-xl z-[10000] transform translate-y-32 opacity-0 pointer-events-none transition-all duration-500 ease-out shadow-[0_10px_40px_rgba(0,0,0,0.9),0_0_20px_rgba(0,255,65,0.15)]">
@@ -1249,11 +1295,12 @@
         (function() {
             function showBanner() {
                 const banner = document.getElementById('cookie-banner');
-                if (banner) {
+                if (banner && localStorage.getItem('cookieConsent') !== 'declined') {
                     banner.classList.remove('translate-y-32', 'opacity-0', 'pointer-events-none');
                     banner.classList.add('translate-y-0', 'opacity-100', 'pointer-events-auto');
                 }
             }
+
             function hideBanner() {
                 const banner = document.getElementById('cookie-banner');
                 if (banner) {
@@ -1261,17 +1308,55 @@
                     banner.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
                 }
             }
+
+            function lockWebsite() {
+                const blocked = document.getElementById('access-blocked-screen');
+                if (blocked) {
+                    blocked.classList.remove('hidden');
+                    document.body.style.overflow = 'hidden';
+                    document.documentElement.style.overflow = 'hidden';
+                    if (window.lenis) {
+                        window.lenis.stop();
+                    }
+                    if (window.lucide) {
+                        lucide.createIcons();
+                    }
+                }
+            }
+
+            function unlockWebsite() {
+                const blocked = document.getElementById('access-blocked-screen');
+                if (blocked) {
+                    blocked.classList.add('hidden');
+                    document.body.style.overflow = '';
+                    document.documentElement.style.overflow = '';
+                    if (window.lenis) {
+                        window.lenis.start();
+                    }
+                }
+            }
+
             window.acceptCookies = function() {
                 localStorage.setItem('cookieConsent', 'accepted');
                 hideBanner();
+                unlockWebsite();
             };
+
             window.declineCookies = function() {
                 localStorage.setItem('cookieConsent', 'declined');
                 hideBanner();
+                lockWebsite();
             };
-            if (!localStorage.getItem('cookieConsent')) {
-                setTimeout(showBanner, 900);
-            }
+
+            // Check initial consent status
+            document.addEventListener('DOMContentLoaded', () => {
+                const status = localStorage.getItem('cookieConsent');
+                if (status === 'declined') {
+                    lockWebsite();
+                } else if (status !== 'accepted') {
+                    setTimeout(showBanner, 900);
+                }
+            });
         })();
     </script>
 </body>
