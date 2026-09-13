@@ -319,6 +319,11 @@
     {% block extra_head %}{% endblock %}
 
     <!-- Google Analytics (GA4) -->
+    <script>
+        if (localStorage.getItem('cookieConsent') === 'declined') {
+            window['ga-disable-G-9SE6VZ9XFH'] = true;
+        }
+    </script>
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-9SE6VZ9XFH"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
@@ -598,6 +603,9 @@
                         <li class="hover:text-alien cursor-pointer transition-colors">
                             <a href="{% url 'privacy_policy' %}">Privacy Policy</a>
                         </li>
+                        <li class="hover:text-alien cursor-pointer transition-colors">
+                            <button type="button" onclick="openCookieBanner()" class="hover:text-alien transition-colors cursor-pointer text-left">Cookie Preferences</button>
+                        </li>
                     </ul>
                 </div>
 
@@ -632,7 +640,11 @@
 
             <div class="border-t border-gray-900 pt-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-xs text-gray-600">
                 <p>Copyright © 2025 {{ config.site_name }}. All Systems Nominal.</p>
-                <a href="{% url 'privacy_policy' %}" class="hover:text-alien transition-colors font-mono">Privacy Policy</a>
+                <div class="flex items-center gap-4 font-mono">
+                    <a href="{% url 'privacy_policy' %}" class="hover:text-alien transition-colors">Privacy Policy</a>
+                    <span class="text-gray-700">•</span>
+                    <button type="button" onclick="openCookieBanner()" class="hover:text-alien transition-colors cursor-pointer">Cookie Preferences</button>
+                </div>
             </div>
         </div>
     </footer>
@@ -1206,53 +1218,7 @@
         });
     </script>
 
-    <!-- ==================== ACCESS RESTRICTED / BLOCKED OVERLAY ==================== -->
-    <div id="access-blocked-screen"
-        class="fixed inset-0 z-[99999] bg-[#020202]/98 backdrop-blur-3xl hidden flex items-center justify-center p-4 sm:p-6 select-none">
-        
-        <!-- Cyber Background Grid -->
-        <div class="absolute inset-0 bg-grid-pattern opacity-30 pointer-events-none"></div>
-        <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,30,60,0.12)_0%,transparent_70%)] pointer-events-none"></div>
-
-        <div class="relative max-w-lg w-full bg-[#070d08]/95 border border-red-500/40 p-8 sm:p-10 rounded-2xl shadow-[0_0_80px_rgba(255,0,50,0.25)] text-center">
-            <!-- Corner HUD Accents -->
-            <div class="hud-corner hud-tl !border-red-500 !w-4 !h-4"></div>
-            <div class="hud-corner hud-tr !border-red-500 !w-4 !h-4"></div>
-            <div class="hud-corner hud-bl !border-red-500 !w-4 !h-4"></div>
-            <div class="hud-corner hud-br !border-red-500 !w-4 !h-4"></div>
-
-            <!-- Warning Icon -->
-            <div class="w-20 h-20 mx-auto mb-6 rounded-2xl bg-red-500/10 border border-red-500/50 flex items-center justify-center text-red-500 shadow-[0_0_30px_rgba(255,0,50,0.3)] animate-pulse">
-                <i data-lucide="shield-alert" class="w-10 h-10"></i>
-            </div>
-
-            <!-- Header -->
-            <span class="text-red-400 text-xs font-mono tracking-[0.3em] uppercase block mb-2">/// Protocol Rejected</span>
-            <h2 class="text-2xl sm:text-3xl font-orbitron font-extrabold text-white tracking-wider uppercase mb-4">
-                Access <span class="text-red-500">Restricted</span>
-            </h2>
-
-            <!-- Message -->
-            <p class="text-gray-300 font-rajdhani text-base sm:text-lg leading-relaxed mb-8">
-                You cannot use this website without accepting the required privacy and system telemetry protocol. All digital services, interactive simulations, and interfaces remain locked.
-            </p>
-
-            <!-- Actions -->
-            <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <button onclick="acceptCookies()"
-                    class="w-full sm:w-auto flex-1 py-3.5 px-6 bg-alien text-black font-orbitron font-bold text-xs sm:text-sm tracking-widest uppercase hover:bg-white hover:shadow-[0_0_25px_#00ff41] transition-all flex items-center justify-center gap-2 cursor-pointer">
-                    <i data-lucide="shield-check" class="w-4 h-4"></i>
-                    <span>Accept Protocol & Enter</span>
-                </button>
-                <a href="https://www.google.com"
-                    class="w-full sm:w-auto py-3.5 px-6 border border-gray-700 bg-black/60 text-gray-400 font-mono text-xs uppercase tracking-wider hover:text-white hover:border-red-500/60 hover:bg-red-950/30 transition-all cursor-pointer">
-                    Exit Site
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <!-- ==================== CYBER PRIVACY & COOKIE CONSENT HUD ==================== -->
+    <!-- ==================== CYBER COOKIE CONSENT HUD ==================== -->
     <div id="cookie-banner"
         class="fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:max-w-md bg-[#040805]/95 backdrop-blur-2xl border border-alien/40 p-5 rounded-xl z-[10000] transform translate-y-32 opacity-0 pointer-events-none transition-all duration-500 ease-out shadow-[0_10px_40px_rgba(0,0,0,0.9),0_0_20px_rgba(0,255,65,0.15)]">
         
@@ -1264,40 +1230,56 @@
 
         <div class="flex items-start gap-3 mb-4">
             <div class="w-8 h-8 rounded-lg bg-alien/10 border border-alien/40 flex items-center justify-center shrink-0 text-alien shadow-[0_0_10px_rgba(0,255,65,0.2)]">
-                <i data-lucide="shield-check" class="w-4 h-4"></i>
+                <i data-lucide="cookie" class="w-4 h-4"></i>
             </div>
             <div>
                 <div class="flex items-center gap-2">
                     <span class="w-1.5 h-1.5 rounded-full bg-alien animate-ping"></span>
-                    <h5 class="text-xs font-orbitron font-bold text-white tracking-widest uppercase">Privacy & Telemetry Protocol</h5>
+                    <h5 class="text-xs font-orbitron font-bold text-white tracking-widest uppercase">Cookie Preferences</h5>
                 </div>
                 <p class="text-gray-400 text-xs mt-1.5 leading-relaxed font-rajdhani text-[13px]">
-                    We utilize telemetry and essential cookies to calibrate network diagnostics and optimize system performance. Review our 
-                    <a href="{% url 'privacy_policy' %}" class="text-alien underline hover:text-white font-mono transition-colors">Privacy Policy</a>.
+                    We use cookies and telemetry diagnostics to optimize performance, analyze traffic, and ensure seamless system operation. You can accept all or decline optional cookies. Read our 
+                    <a href="{% url 'privacy_policy' %}#cookies" class="text-alien underline hover:text-white font-mono transition-colors">Cookie Policy</a>.
                 </p>
             </div>
         </div>
 
         <div class="flex items-center gap-2 pt-2 border-t border-gray-800/80">
-            <button onclick="declineCookies()"
+            <button type="button" onclick="declineCookies()"
                 class="flex-1 py-2 px-3 rounded text-[11px] font-mono tracking-wider uppercase border border-gray-700 bg-black/60 text-gray-400 hover:text-white hover:border-gray-500 hover:bg-gray-900 transition-all cursor-pointer">
-                Decline
+                Decline Optional
             </button>
-            <button onclick="acceptCookies()"
+            <button type="button" onclick="acceptCookies()"
                 class="flex-1 py-2 px-3 rounded text-[11px] font-orbitron font-bold tracking-wider uppercase bg-alien text-black hover:bg-white hover:shadow-[0_0_15px_#00ff41] transition-all cursor-pointer">
-                Accept Protocol
+                Accept Cookies
             </button>
         </div>
     </div>
 
     <script>
-        // Cookie & Privacy Acceptance Controller
+        // Standard Cookie & Telemetry Consent Controller
         (function() {
+            function applyConsent(status) {
+                if (status === 'declined') {
+                    // Disable non-essential tracking (GA4 & Microsoft Clarity)
+                    window['ga-disable-G-9SE6VZ9XFH'] = true;
+                    if (window.clarity) {
+                        try { window.clarity("consent", false); } catch(e) {}
+                    }
+                } else if (status === 'accepted') {
+                    window['ga-disable-G-9SE6VZ9XFH'] = false;
+                    if (window.clarity) {
+                        try { window.clarity("consent", true); } catch(e) {}
+                    }
+                }
+            }
+
             function showBanner() {
                 const banner = document.getElementById('cookie-banner');
-                if (banner && localStorage.getItem('cookieConsent') !== 'declined') {
+                if (banner) {
                     banner.classList.remove('translate-y-32', 'opacity-0', 'pointer-events-none');
                     banner.classList.add('translate-y-0', 'opacity-100', 'pointer-events-auto');
+                    if (window.lucide) lucide.createIcons();
                 }
             }
 
@@ -1309,51 +1291,30 @@
                 }
             }
 
-            function lockWebsite() {
-                const blocked = document.getElementById('access-blocked-screen');
-                if (blocked) {
-                    blocked.classList.remove('hidden');
-                    document.body.style.overflow = 'hidden';
-                    document.documentElement.style.overflow = 'hidden';
-                    if (window.lenis) {
-                        window.lenis.stop();
-                    }
-                    if (window.lucide) {
-                        lucide.createIcons();
-                    }
-                }
-            }
-
-            function unlockWebsite() {
-                const blocked = document.getElementById('access-blocked-screen');
-                if (blocked) {
-                    blocked.classList.add('hidden');
-                    document.body.style.overflow = '';
-                    document.documentElement.style.overflow = '';
-                    if (window.lenis) {
-                        window.lenis.start();
-                    }
-                }
-            }
-
             window.acceptCookies = function() {
                 localStorage.setItem('cookieConsent', 'accepted');
+                applyConsent('accepted');
                 hideBanner();
-                unlockWebsite();
             };
 
             window.declineCookies = function() {
                 localStorage.setItem('cookieConsent', 'declined');
+                applyConsent('declined');
                 hideBanner();
-                lockWebsite();
+                // Standard cookie behavior: No lockout, no screen freeze, full scroll and browsing access retained!
             };
 
-            // Check initial consent status
+            window.openCookieBanner = function() {
+                showBanner();
+            };
+
+            // Check initial consent status on page load
             document.addEventListener('DOMContentLoaded', () => {
                 const status = localStorage.getItem('cookieConsent');
-                if (status === 'declined') {
-                    lockWebsite();
-                } else if (status !== 'accepted') {
+                if (status) {
+                    applyConsent(status);
+                } else {
+                    // Standard experience: display banner to prompt user for choice
                     setTimeout(showBanner, 900);
                 }
             });
