@@ -1,0 +1,1665 @@
+[
+  {
+    "model": "core.siteconfiguration",
+    "pk": 10,
+    "fields": {
+      "site_name": "ALIENHOUSE",
+      "logo_highlight_text": "HOUSE",
+      "address": "Rajkot, Gujarat, India",
+      "email": "contact@alienhouse.com",
+      "phone": "+91 98765 43210",
+      "footer_text": "© 2025 ALIENHOUSE. All Rights Reserved."
+    }
+  },
+  {
+    "model": "core.companyprofile",
+    "pk": 7,
+    "fields": {
+      "site_name": "AlienHouse Enterprise",
+      "tagline": "Engineering Intelligent Futures",
+      "about": "We deliver world-class AI and automation solutions.",
+      "logo": "company/logo/default.png",
+      "favicon": "company/favicon/default.ico",
+      "email": "company@alienhouse.com",
+      "phone": "+91 9012345678",
+      "whatsapp": "+91 9090909090",
+      "facebook": "https://fb.com/alienhouse",
+      "instagram": "https://instagram.com/alienhouse",
+      "linkedin": "https://linkedin.com/company/alienhouse",
+      "twitter": "https://twitter.com/alienhouse",
+      "youtube": "https://youtube.com/alienhouse"
+    }
+  },
+  {
+    "model": "core.herosection",
+    "pk": 11,
+    "fields": {
+      "status_text": "SYSTEM ONLINE // 2025",
+      "main_heading_line_1": "BEYOND",
+      "main_heading_gradient_text": "HUMANITY",
+      "sub_text": "We build next-gen intelligent systems for enterprise automation.",
+      "btn_primary_text": "Start Project",
+      "btn_secondary_text": "View Services",
+      "coord_text": "COORD: 23.0200° N, 72.5700° E",
+      "mem_text": "MEM: 256TB / 512TB"
+    }
+  },
+  {
+    "model": "core.aboutus",
+    "pk": 1,
+    "fields": {
+      "heading": "Who We Are",
+      "subheading": "We are a team of passionate engineers, designers, and innovators focused on building intelligent, scalable, and future-ready digital products. Our goal is to combine technology with creativity to solve real-world problems and deliver meaningful impact.",
+      "image": "",
+      "order": 0
+    }
+  },
+  {
+    "model": "core.aboutus",
+    "pk": 2,
+    "fields": {
+      "heading": "Our Mission",
+      "subheading": "Our mission is to empower businesses with advanced digital solutions—ranging from AI systems to cloud-native applications—while ensuring unmatched performance, reliability, and security.",
+      "image": "",
+      "order": 0
+    }
+  },
+  {
+    "model": "core.service",
+    "pk": 13,
+    "fields": {
+      "name": "Software Development",
+      "slug": "software-development",
+      "is_active": true,
+      "created_at": "2025-12-04 16:26:02.510596",
+      "updated_at": "2025-12-04 16:26:02.510611",
+      "icon": null,
+      "short_description": "",
+      "description": "Service category for Software Development.",
+      "advantage_1": "",
+      "advantage_2": "",
+      "advantage_3": "",
+      "hero_image": "",
+      "technical_specs": "",
+      "service_image": ""
+    }
+  },
+  {
+    "model": "core.service",
+    "pk": 14,
+    "fields": {
+      "name": "Cloud Solutions",
+      "slug": "cloud-solutions",
+      "is_active": true,
+      "created_at": "2025-12-04 16:26:02.511538",
+      "updated_at": "2025-12-04 16:26:02.511545",
+      "icon": null,
+      "short_description": "",
+      "description": "Service category for Cloud Solutions.",
+      "advantage_1": "",
+      "advantage_2": "",
+      "advantage_3": "",
+      "hero_image": "",
+      "technical_specs": "",
+      "service_image": ""
+    }
+  },
+  {
+    "model": "core.service",
+    "pk": 15,
+    "fields": {
+      "name": "Cybersecurity",
+      "slug": "cybersecurity",
+      "is_active": true,
+      "created_at": "2025-12-04 16:26:02.512261",
+      "updated_at": "2025-12-04 16:26:02.512271",
+      "icon": null,
+      "short_description": "",
+      "description": "Service category for Cybersecurity.",
+      "advantage_1": "",
+      "advantage_2": "",
+      "advantage_3": "",
+      "hero_image": "",
+      "technical_specs": "",
+      "service_image": ""
+    }
+  },
+  {
+    "model": "core.service",
+    "pk": 16,
+    "fields": {
+      "name": "Digital Marketing",
+      "slug": "digital-marketing",
+      "is_active": true,
+      "created_at": "2025-12-04 16:26:02.513140",
+      "updated_at": "2025-12-04 16:26:02.513150",
+      "icon": null,
+      "short_description": "",
+      "description": "Service category for Digital Marketing.",
+      "advantage_1": "",
+      "advantage_2": "",
+      "advantage_3": "",
+      "hero_image": "",
+      "technical_specs": "",
+      "service_image": ""
+    }
+  },
+  {
+    "model": "core.service",
+    "pk": 17,
+    "fields": {
+      "name": "Data Science & AI",
+      "slug": "data-science-ai",
+      "is_active": true,
+      "created_at": "2025-12-04 16:26:02.513992",
+      "updated_at": "2025-12-04 16:26:02.514003",
+      "icon": null,
+      "short_description": "",
+      "description": "Service category for Data Science & AI.",
+      "advantage_1": "",
+      "advantage_2": "",
+      "advantage_3": "",
+      "hero_image": "",
+      "technical_specs": "",
+      "service_image": ""
+    }
+  },
+  {
+    "model": "core.subservice",
+    "pk": 37,
+    "fields": {
+      "name": "Web Development",
+      "slug": "web-development",
+      "is_active": true,
+      "created_at": "2025-12-04 16:26:02.514960",
+      "updated_at": "2025-12-04 16:26:02.514968",
+      "service": 13,
+      "delivery_time": "",
+      "description": "Sub-service under Software Development.",
+      "image": "",
+      "is_popular": false,
+      "price_range": ""
+    }
+  },
+  {
+    "model": "core.subservice",
+    "pk": 38,
+    "fields": {
+      "name": "Mobile App Development",
+      "slug": "mobile-app-development",
+      "is_active": true,
+      "created_at": "2025-12-04 16:26:02.515905",
+      "updated_at": "2025-12-04 16:26:02.515912",
+      "service": 13,
+      "delivery_time": "",
+      "description": "Sub-service under Software Development.",
+      "image": "",
+      "is_popular": false,
+      "price_range": ""
+    }
+  },
+  {
+    "model": "core.subservice",
+    "pk": 39,
+    "fields": {
+      "name": "API Development",
+      "slug": "api-development",
+      "is_active": true,
+      "created_at": "2025-12-04 16:26:02.516772",
+      "updated_at": "2025-12-04 16:26:02.516781",
+      "service": 13,
+      "delivery_time": "",
+      "description": "Sub-service under Software Development.",
+      "image": "",
+      "is_popular": false,
+      "price_range": ""
+    }
+  },
+  {
+    "model": "core.subservice",
+    "pk": 40,
+    "fields": {
+      "name": "DevOps & Cloud Engineering",
+      "slug": "devops-cloud-engineering",
+      "is_active": true,
+      "created_at": "2025-12-04 16:26:02.517574",
+      "updated_at": "2025-12-04 16:26:02.517597",
+      "service": 13,
+      "delivery_time": "",
+      "description": "Sub-service under Software Development.",
+      "image": "",
+      "is_popular": false,
+      "price_range": ""
+    }
+  },
+  {
+    "model": "core.subservice",
+    "pk": 41,
+    "fields": {
+      "name": "QA & Testing",
+      "slug": "qa-testing",
+      "is_active": true,
+      "created_at": "2025-12-04 16:26:02.520017",
+      "updated_at": "2025-12-04 16:26:02.520034",
+      "service": 13,
+      "delivery_time": "",
+      "description": "Sub-service under Software Development.",
+      "image": "",
+      "is_popular": false,
+      "price_range": ""
+    }
+  },
+  {
+    "model": "core.subservice",
+    "pk": 42,
+    "fields": {
+      "name": "Cloud Migration",
+      "slug": "cloud-migration",
+      "is_active": true,
+      "created_at": "2025-12-04 16:26:02.521219",
+      "updated_at": "2025-12-04 16:26:02.521245",
+      "service": 14,
+      "delivery_time": "",
+      "description": "Sub-service under Cloud Solutions.",
+      "image": "",
+      "is_popular": false,
+      "price_range": ""
+    }
+  },
+  {
+    "model": "core.subservice",
+    "pk": 43,
+    "fields": {
+      "name": "Cloud Optimization",
+      "slug": "cloud-optimization",
+      "is_active": true,
+      "created_at": "2025-12-04 16:26:02.522624",
+      "updated_at": "2025-12-04 16:26:02.522632",
+      "service": 14,
+      "delivery_time": "",
+      "description": "Sub-service under Cloud Solutions.",
+      "image": "",
+      "is_popular": false,
+      "price_range": ""
+    }
+  },
+  {
+    "model": "core.subservice",
+    "pk": 44,
+    "fields": {
+      "name": "Cloud Security",
+      "slug": "cloud-security",
+      "is_active": true,
+      "created_at": "2025-12-04 16:26:02.527363",
+      "updated_at": "2025-12-04 16:26:02.527372",
+      "service": 14,
+      "delivery_time": "",
+      "description": "Sub-service under Cloud Solutions.",
+      "image": "",
+      "is_popular": false,
+      "price_range": ""
+    }
+  },
+  {
+    "model": "core.subservice",
+    "pk": 45,
+    "fields": {
+      "name": "Serverless Development",
+      "slug": "serverless-development",
+      "is_active": true,
+      "created_at": "2025-12-04 16:26:02.528124",
+      "updated_at": "2025-12-04 16:26:02.528132",
+      "service": 14,
+      "delivery_time": "",
+      "description": "Sub-service under Cloud Solutions.",
+      "image": "",
+      "is_popular": false,
+      "price_range": ""
+    }
+  },
+  {
+    "model": "core.subservice",
+    "pk": 46,
+    "fields": {
+      "name": "Vulnerability Assessment",
+      "slug": "vulnerability-assessment",
+      "is_active": true,
+      "created_at": "2025-12-04 16:26:02.528811",
+      "updated_at": "2025-12-04 16:26:02.528818",
+      "service": 15,
+      "delivery_time": "",
+      "description": "Sub-service under Cybersecurity.",
+      "image": "",
+      "is_popular": false,
+      "price_range": ""
+    }
+  },
+  {
+    "model": "core.subservice",
+    "pk": 47,
+    "fields": {
+      "name": "Penetration Testing",
+      "slug": "penetration-testing",
+      "is_active": true,
+      "created_at": "2025-12-04 16:26:02.529547",
+      "updated_at": "2025-12-04 16:26:02.529553",
+      "service": 15,
+      "delivery_time": "",
+      "description": "Sub-service under Cybersecurity.",
+      "image": "",
+      "is_popular": false,
+      "price_range": ""
+    }
+  },
+  {
+    "model": "core.subservice",
+    "pk": 48,
+    "fields": {
+      "name": "Security Automation",
+      "slug": "security-automation",
+      "is_active": true,
+      "created_at": "2025-12-04 16:26:02.530214",
+      "updated_at": "2025-12-04 16:26:02.530220",
+      "service": 15,
+      "delivery_time": "",
+      "description": "Sub-service under Cybersecurity.",
+      "image": "",
+      "is_popular": false,
+      "price_range": ""
+    }
+  },
+  {
+    "model": "core.subservice",
+    "pk": 49,
+    "fields": {
+      "name": "Network Security",
+      "slug": "network-security",
+      "is_active": true,
+      "created_at": "2025-12-04 16:26:02.530895",
+      "updated_at": "2025-12-04 16:26:02.530901",
+      "service": 15,
+      "delivery_time": "",
+      "description": "Sub-service under Cybersecurity.",
+      "image": "",
+      "is_popular": false,
+      "price_range": ""
+    }
+  },
+  {
+    "model": "core.subservice",
+    "pk": 50,
+    "fields": {
+      "name": "SEO Optimization",
+      "slug": "seo-optimization",
+      "is_active": true,
+      "created_at": "2025-12-04 16:26:02.531552",
+      "updated_at": "2025-12-04 16:26:02.531558",
+      "service": 16,
+      "delivery_time": "",
+      "description": "Sub-service under Digital Marketing.",
+      "image": "",
+      "is_popular": false,
+      "price_range": ""
+    }
+  },
+  {
+    "model": "core.subservice",
+    "pk": 51,
+    "fields": {
+      "name": "Social Media Marketing",
+      "slug": "social-media-marketing",
+      "is_active": true,
+      "created_at": "2025-12-04 16:26:02.532233",
+      "updated_at": "2025-12-04 16:26:02.532240",
+      "service": 16,
+      "delivery_time": "",
+      "description": "Sub-service under Digital Marketing.",
+      "image": "",
+      "is_popular": false,
+      "price_range": ""
+    }
+  },
+  {
+    "model": "core.subservice",
+    "pk": 52,
+    "fields": {
+      "name": "Content Strategy",
+      "slug": "content-strategy",
+      "is_active": true,
+      "created_at": "2025-12-04 16:26:02.532965",
+      "updated_at": "2025-12-04 16:26:02.532971",
+      "service": 16,
+      "delivery_time": "",
+      "description": "Sub-service under Digital Marketing.",
+      "image": "",
+      "is_popular": false,
+      "price_range": ""
+    }
+  },
+  {
+    "model": "core.subservice",
+    "pk": 53,
+    "fields": {
+      "name": "Marketing Automation",
+      "slug": "marketing-automation",
+      "is_active": true,
+      "created_at": "2025-12-04 16:26:02.533638",
+      "updated_at": "2025-12-04 16:26:02.533643",
+      "service": 16,
+      "delivery_time": "",
+      "description": "Sub-service under Digital Marketing.",
+      "image": "",
+      "is_popular": false,
+      "price_range": ""
+    }
+  },
+  {
+    "model": "core.subservice",
+    "pk": 54,
+    "fields": {
+      "name": "Machine Learning",
+      "slug": "machine-learning",
+      "is_active": true,
+      "created_at": "2025-12-04 16:26:02.534284",
+      "updated_at": "2025-12-04 16:26:02.534290",
+      "service": 17,
+      "delivery_time": "",
+      "description": "Sub-service under Data Science & AI.",
+      "image": "",
+      "is_popular": false,
+      "price_range": ""
+    }
+  },
+  {
+    "model": "core.subservice",
+    "pk": 55,
+    "fields": {
+      "name": "Data Engineering",
+      "slug": "data-engineering",
+      "is_active": true,
+      "created_at": "2025-12-04 16:26:02.534896",
+      "updated_at": "2025-12-04 16:26:02.534901",
+      "service": 17,
+      "delivery_time": "",
+      "description": "Sub-service under Data Science & AI.",
+      "image": "",
+      "is_popular": false,
+      "price_range": ""
+    }
+  },
+  {
+    "model": "core.subservice",
+    "pk": 56,
+    "fields": {
+      "name": "Business Intelligence",
+      "slug": "business-intelligence",
+      "is_active": true,
+      "created_at": "2025-12-04 16:26:02.535530",
+      "updated_at": "2025-12-04 16:26:02.535535",
+      "service": 17,
+      "delivery_time": "",
+      "description": "Sub-service under Data Science & AI.",
+      "image": "",
+      "is_popular": false,
+      "price_range": ""
+    }
+  },
+  {
+    "model": "core.subservice",
+    "pk": 57,
+    "fields": {
+      "name": "AI Automation",
+      "slug": "ai-automation",
+      "is_active": true,
+      "created_at": "2025-12-04 16:26:02.536169",
+      "updated_at": "2025-12-04 16:26:02.536174",
+      "service": 17,
+      "delivery_time": "",
+      "description": "Sub-service under Data Science & AI.",
+      "image": "",
+      "is_popular": false,
+      "price_range": ""
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 44,
+    "fields": {
+      "icon_name": "Software Development",
+      "module": "MOD_01",
+      "title": "Software Development",
+      "description": "We build secure, scalable, and high-performance software systems engineered for real-world impact.\r\nOur development process blends modern architecture, clean code principles, and rapid iteration to deliver solutions that grow with your business.\r\nFrom cloud-native applications to enterprise automation, we create digital products that are fast, reliable, and future-ready.",
+      "features_list": "Custom web & mobile application development\r\nScalable backend systems & APIs\r\nCloud-native architecture (AWS / GCP / Azure)\r\nAI-driven automation & intelligent workflows\r\nEnterprise-level security & encryption protocols\r\nAgile development & rapid prototyping\r\nPerformance optimization & load-testing\r\nUI/UX design with user-centric workflow\r\nContinuous integration & deployment (CI/CD)\r\nLong-term maintenance & version upgrades",
+      "order": 0,
+      "sub_service": null
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 45,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_001",
+      "title": "Frontend Engineering",
+      "description": "Module for Web Development: Frontend Engineering",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 1,
+      "sub_service": 37
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 46,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_002",
+      "title": "Backend Engineering",
+      "description": "Module for Web Development: Backend Engineering",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 2,
+      "sub_service": 37
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 47,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_003",
+      "title": "Full Stack Development",
+      "description": "Module for Web Development: Full Stack Development",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 3,
+      "sub_service": 37
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 48,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_004",
+      "title": "CMS Development",
+      "description": "Module for Web Development: CMS Development",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 4,
+      "sub_service": 37
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 49,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_005",
+      "title": "Performance Optimization",
+      "description": "Module for Web Development: Performance Optimization",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 5,
+      "sub_service": 37
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 50,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_006",
+      "title": "Android Apps",
+      "description": "Module for Mobile App Development: Android Apps",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 6,
+      "sub_service": 38
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 51,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_007",
+      "title": "iOS Apps",
+      "description": "Module for Mobile App Development: iOS Apps",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 7,
+      "sub_service": 38
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 52,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_008",
+      "title": "Flutter Cross Platform",
+      "description": "Module for Mobile App Development: Flutter Cross Platform",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 8,
+      "sub_service": 38
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 53,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_009",
+      "title": "Mobile API Integration",
+      "description": "Module for Mobile App Development: Mobile API Integration",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 9,
+      "sub_service": 38
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 54,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_010",
+      "title": "App UI/UX Design",
+      "description": "Module for Mobile App Development: App UI/UX Design",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 10,
+      "sub_service": 38
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 55,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_011",
+      "title": "REST API Development",
+      "description": "Module for API Development: REST API Development",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 11,
+      "sub_service": 39
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 56,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_012",
+      "title": "GraphQL APIs",
+      "description": "Module for API Development: GraphQL APIs",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 12,
+      "sub_service": 39
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 57,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_013",
+      "title": "API Security",
+      "description": "Module for API Development: API Security",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 13,
+      "sub_service": 39
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 58,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_014",
+      "title": "Third-Party API Integration",
+      "description": "Module for API Development: Third-Party API Integration",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 14,
+      "sub_service": 39
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 59,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_015",
+      "title": "Microservices Architecture",
+      "description": "Module for API Development: Microservices Architecture",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 15,
+      "sub_service": 39
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 60,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_016",
+      "title": "CI/CD Pipeline Setup",
+      "description": "Module for DevOps & Cloud Engineering: CI/CD Pipeline Setup",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 16,
+      "sub_service": 40
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 61,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_017",
+      "title": "Docker & Kubernetes",
+      "description": "Module for DevOps & Cloud Engineering: Docker & Kubernetes",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 17,
+      "sub_service": 40
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 62,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_018",
+      "title": "Infrastructure as Code",
+      "description": "Module for DevOps & Cloud Engineering: Infrastructure as Code",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 18,
+      "sub_service": 40
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 63,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_019",
+      "title": "Monitoring & Logging",
+      "description": "Module for DevOps & Cloud Engineering: Monitoring & Logging",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 19,
+      "sub_service": 40
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 64,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_020",
+      "title": "Cloud Deployment Automation",
+      "description": "Module for DevOps & Cloud Engineering: Cloud Deployment Automation",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 20,
+      "sub_service": 40
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 65,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_021",
+      "title": "Manual Testing",
+      "description": "Module for QA & Testing: Manual Testing",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 21,
+      "sub_service": 41
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 66,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_022",
+      "title": "Automation Testing",
+      "description": "Module for QA & Testing: Automation Testing",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 22,
+      "sub_service": 41
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 67,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_023",
+      "title": "API Testing",
+      "description": "Module for QA & Testing: API Testing",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 23,
+      "sub_service": 41
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 68,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_024",
+      "title": "Load Testing",
+      "description": "Module for QA & Testing: Load Testing",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 24,
+      "sub_service": 41
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 69,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_025",
+      "title": "Security Testing",
+      "description": "Module for QA & Testing: Security Testing",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 25,
+      "sub_service": 41
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 70,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_026",
+      "title": "Server Migration",
+      "description": "Module for Cloud Migration: Server Migration",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 26,
+      "sub_service": 42
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 71,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_027",
+      "title": "Database Migration",
+      "description": "Module for Cloud Migration: Database Migration",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 27,
+      "sub_service": 42
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 72,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_028",
+      "title": "Legacy System Modernization",
+      "description": "Module for Cloud Migration: Legacy System Modernization",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 28,
+      "sub_service": 42
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 73,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_029",
+      "title": "Cloud Compatibility Analysis",
+      "description": "Module for Cloud Migration: Cloud Compatibility Analysis",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 29,
+      "sub_service": 42
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 74,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_030",
+      "title": "Cost Optimization",
+      "description": "Module for Cloud Optimization: Cost Optimization",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 30,
+      "sub_service": 43
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 75,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_031",
+      "title": "Performance Tuning",
+      "description": "Module for Cloud Optimization: Performance Tuning",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 31,
+      "sub_service": 43
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 76,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_032",
+      "title": "Auto Scaling Setup",
+      "description": "Module for Cloud Optimization: Auto Scaling Setup",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 32,
+      "sub_service": 43
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 77,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_033",
+      "title": "Resource Monitoring",
+      "description": "Module for Cloud Optimization: Resource Monitoring",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 33,
+      "sub_service": 43
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 78,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_034",
+      "title": "Network Scanning",
+      "description": "Module for Vulnerability Assessment: Network Scanning",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 34,
+      "sub_service": 46
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 79,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_035",
+      "title": "Application Scanning",
+      "description": "Module for Vulnerability Assessment: Application Scanning",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 35,
+      "sub_service": 46
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 80,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_036",
+      "title": "Code Vulnerability Review",
+      "description": "Module for Vulnerability Assessment: Code Vulnerability Review",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 36,
+      "sub_service": 46
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 81,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_037",
+      "title": "Web App PenTest",
+      "description": "Module for Penetration Testing: Web App PenTest",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 37,
+      "sub_service": 47
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 82,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_038",
+      "title": "Network PenTest",
+      "description": "Module for Penetration Testing: Network PenTest",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 38,
+      "sub_service": 47
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 83,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_039",
+      "title": "API PenTest",
+      "description": "Module for Penetration Testing: API PenTest",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 39,
+      "sub_service": 47
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 84,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_040",
+      "title": "On Page SEO",
+      "description": "Module for SEO Optimization: On Page SEO",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 40,
+      "sub_service": 50
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 85,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_041",
+      "title": "Off Page SEO",
+      "description": "Module for SEO Optimization: Off Page SEO",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 41,
+      "sub_service": 50
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 86,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_042",
+      "title": "Technical SEO",
+      "description": "Module for SEO Optimization: Technical SEO",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 42,
+      "sub_service": 50
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 87,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_043",
+      "title": "Keyword Research",
+      "description": "Module for SEO Optimization: Keyword Research",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 43,
+      "sub_service": 50
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 88,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_044",
+      "title": "Model Development",
+      "description": "Module for Machine Learning: Model Development",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 44,
+      "sub_service": 54
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 89,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_045",
+      "title": "Model Training",
+      "description": "Module for Machine Learning: Model Training",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 45,
+      "sub_service": 54
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 90,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_046",
+      "title": "Model Optimization",
+      "description": "Module for Machine Learning: Model Optimization",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 46,
+      "sub_service": 54
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 91,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_047",
+      "title": "AI Pipeline Automation",
+      "description": "Module for Machine Learning: AI Pipeline Automation",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 47,
+      "sub_service": 54
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 92,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_048",
+      "title": "Data Pipeline Setup",
+      "description": "Module for Data Engineering: Data Pipeline Setup",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 48,
+      "sub_service": 55
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 93,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_049",
+      "title": "ETL Development",
+      "description": "Module for Data Engineering: ETL Development",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 49,
+      "sub_service": 55
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 94,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_050",
+      "title": "Database Modeling",
+      "description": "Module for Data Engineering: Database Modeling",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 50,
+      "sub_service": 55
+    }
+  },
+  {
+    "model": "core.servicemodule",
+    "pk": 95,
+    "fields": {
+      "icon_name": "settings",
+      "module": "MOD_051",
+      "title": "Data Quality Validation",
+      "description": "Module for Data Engineering: Data Quality Validation",
+      "features_list": "Feature 1\nFeature 2\nFeature 3",
+      "order": 51,
+      "sub_service": 55
+    }
+  },
+  {
+    "model": "core.project",
+    "pk": 36,
+    "fields": {
+      "title": "Project 1",
+      "tech_stack": "Django, React, TensorFlow",
+      "description": "High-end enterprise system.",
+      "image": "projects/sample.jpg",
+      "color_class": "text-alien"
+    }
+  },
+  {
+    "model": "core.project",
+    "pk": 37,
+    "fields": {
+      "title": "Project 2",
+      "tech_stack": "Django, React, TensorFlow",
+      "description": "High-end enterprise system.",
+      "image": "projects/sample.jpg",
+      "color_class": "text-alien"
+    }
+  },
+  {
+    "model": "core.project",
+    "pk": 38,
+    "fields": {
+      "title": "Project 3",
+      "tech_stack": "Django, React, TensorFlow",
+      "description": "High-end enterprise system.",
+      "image": "projects/sample.jpg",
+      "color_class": "text-alien"
+    }
+  },
+  {
+    "model": "core.project",
+    "pk": 39,
+    "fields": {
+      "title": "Project 4",
+      "tech_stack": "Django, React, TensorFlow",
+      "description": "High-end enterprise system.",
+      "image": "projects/sample.jpg",
+      "color_class": "text-alien"
+    }
+  },
+  {
+    "model": "core.project",
+    "pk": 40,
+    "fields": {
+      "title": "Project 5",
+      "tech_stack": "Django, React, TensorFlow",
+      "description": "High-end enterprise system.",
+      "image": "projects/sample.jpg",
+      "color_class": "text-alien"
+    }
+  },
+  {
+    "model": "core.tacticaladvantage",
+    "pk": 34,
+    "fields": {
+      "icon_name": "zap",
+      "title": "Advantage 1",
+      "description": "Provides unmatched performance and security."
+    }
+  },
+  {
+    "model": "core.tacticaladvantage",
+    "pk": 35,
+    "fields": {
+      "icon_name": "zap",
+      "title": "Advantage 2",
+      "description": "Provides unmatched performance and security."
+    }
+  },
+  {
+    "model": "core.tacticaladvantage",
+    "pk": 36,
+    "fields": {
+      "icon_name": "zap",
+      "title": "Advantage 3",
+      "description": "Provides unmatched performance and security."
+    }
+  },
+  {
+    "model": "core.tacticaladvantage",
+    "pk": 37,
+    "fields": {
+      "icon_name": "zap",
+      "title": "Advantage 4",
+      "description": "Provides unmatched performance and security."
+    }
+  },
+  {
+    "model": "core.tacticaladvantage",
+    "pk": 38,
+    "fields": {
+      "icon_name": "zap",
+      "title": "Advantage 5",
+      "description": "Provides unmatched performance and security."
+    }
+  },
+  {
+    "model": "core.labexperiment",
+    "pk": 36,
+    "fields": {
+      "title": "Experiment 1",
+      "description": "R&D on neural augmentation.",
+      "icon_name": "flask-conical",
+      "progress_percent": 54,
+      "color_class": "text-purple-500"
+    }
+  },
+  {
+    "model": "core.labexperiment",
+    "pk": 37,
+    "fields": {
+      "title": "Experiment 2",
+      "description": "R&D on neural augmentation.",
+      "icon_name": "flask-conical",
+      "progress_percent": 86,
+      "color_class": "text-purple-500"
+    }
+  },
+  {
+    "model": "core.labexperiment",
+    "pk": 38,
+    "fields": {
+      "title": "Experiment 3",
+      "description": "R&D on neural augmentation.",
+      "icon_name": "flask-conical",
+      "progress_percent": 40,
+      "color_class": "text-purple-500"
+    }
+  },
+  {
+    "model": "core.labexperiment",
+    "pk": 39,
+    "fields": {
+      "title": "Experiment 4",
+      "description": "R&D on neural augmentation.",
+      "icon_name": "flask-conical",
+      "progress_percent": 92,
+      "color_class": "text-purple-500"
+    }
+  },
+  {
+    "model": "core.labexperiment",
+    "pk": 40,
+    "fields": {
+      "title": "Experiment 5",
+      "description": "R&D on neural augmentation.",
+      "icon_name": "flask-conical",
+      "progress_percent": 67,
+      "color_class": "text-purple-500"
+    }
+  },
+  {
+    "model": "core.testimonial",
+    "pk": 16,
+    "fields": {
+      "name": "Client 1",
+      "content": "Amazing service and quality!",
+      "rating": 4,
+      "company": "TechCorp"
+    }
+  },
+  {
+    "model": "core.testimonial",
+    "pk": 17,
+    "fields": {
+      "name": "Client 2",
+      "content": "Amazing service and quality!",
+      "rating": 5,
+      "company": "TechCorp"
+    }
+  },
+  {
+    "model": "core.testimonial",
+    "pk": 18,
+    "fields": {
+      "name": "Client 3",
+      "content": "Amazing service and quality!",
+      "rating": 5,
+      "company": "TechCorp"
+    }
+  },
+  {
+    "model": "core.testimonial",
+    "pk": 19,
+    "fields": {
+      "name": "Client 4",
+      "content": "Amazing service and quality!",
+      "rating": 5,
+      "company": "TechCorp"
+    }
+  },
+  {
+    "model": "core.testimonial",
+    "pk": 20,
+    "fields": {
+      "name": "Client 5",
+      "content": "Amazing service and quality!",
+      "rating": 4,
+      "company": "TechCorp"
+    }
+  },
+  {
+    "model": "core.businessteammember",
+    "pk": 13,
+    "fields": {
+      "name": "Founder Member",
+      "role": "Founder",
+      "image": "team/default.jpg",
+      "linkedin": "https://linkedin.com",
+      "instagram": "https://instagram.com",
+      "order": 1
+    }
+  },
+  {
+    "model": "core.businessteammember",
+    "pk": 14,
+    "fields": {
+      "name": "CEO Member",
+      "role": "CEO",
+      "image": "team/default.jpg",
+      "linkedin": "https://linkedin.com",
+      "instagram": "https://instagram.com",
+      "order": 7
+    }
+  },
+  {
+    "model": "core.businessteammember",
+    "pk": 15,
+    "fields": {
+      "name": "CTO Member",
+      "role": "CTO",
+      "image": "team/default.jpg",
+      "linkedin": "https://linkedin.com",
+      "instagram": "https://instagram.com",
+      "order": 2
+    }
+  },
+  {
+    "model": "core.businessteammember",
+    "pk": 16,
+    "fields": {
+      "name": "AI Researcher Member",
+      "role": "AI Researcher",
+      "image": "team/default.jpg",
+      "linkedin": "https://linkedin.com",
+      "instagram": "https://instagram.com",
+      "order": 5
+    }
+  },
+  {
+    "model": "core.teammemberportfolio",
+    "pk": 29,
+    "fields": {
+      "name": "Member 1",
+      "role": "AI Engineer",
+      "job_title": "Lead Developer",
+      "image": "team/default.jpg",
+      "color_class": "text-alien",
+      "border_color_class": "border-alien",
+      "skill_name": "Machine Learning",
+      "skill_percent": 90,
+      "order": 1
+    }
+  },
+  {
+    "model": "core.teammemberportfolio",
+    "pk": 30,
+    "fields": {
+      "name": "Member 2",
+      "role": "AI Engineer",
+      "job_title": "Lead Developer",
+      "image": "team/default.jpg",
+      "color_class": "text-alien",
+      "border_color_class": "border-alien",
+      "skill_name": "Machine Learning",
+      "skill_percent": 90,
+      "order": 2
+    }
+  },
+  {
+    "model": "core.teammemberportfolio",
+    "pk": 31,
+    "fields": {
+      "name": "Member 3",
+      "role": "AI Engineer",
+      "job_title": "Lead Developer",
+      "image": "team/default.jpg",
+      "color_class": "text-alien",
+      "border_color_class": "border-alien",
+      "skill_name": "Machine Learning",
+      "skill_percent": 90,
+      "order": 3
+    }
+  },
+  {
+    "model": "core.teammemberportfolio",
+    "pk": 32,
+    "fields": {
+      "name": "Member 4",
+      "role": "AI Engineer",
+      "job_title": "Lead Developer",
+      "image": "team/default.jpg",
+      "color_class": "text-alien",
+      "border_color_class": "border-alien",
+      "skill_name": "Machine Learning",
+      "skill_percent": 90,
+      "order": 4
+    }
+  },
+  {
+    "model": "core.location",
+    "pk": 9,
+    "fields": {
+      "name": "AlienHouse HQ",
+      "slug": "alienhouse-hq",
+      "is_active": true,
+      "created_at": "2025-12-04 10:20:33.239167",
+      "updated_at": "2025-12-04 10:20:33.239184",
+      "address": "Rajkot, Gujarat, India",
+      "latitude": 23.0225,
+      "longitude": 72.5714
+    }
+  },
+  {
+    "model": "core.location",
+    "pk": 10,
+    "fields": {
+      "name": "Mumbai Office",
+      "slug": "mumbai-office",
+      "is_active": true,
+      "created_at": "2025-12-04 10:20:33.239977",
+      "updated_at": "2025-12-04 10:20:33.239984",
+      "address": "Mumbai, Maharashtra, India",
+      "latitude": 19.076,
+      "longitude": 72.8777
+    }
+  },
+  {
+    "model": "core.location",
+    "pk": 11,
+    "fields": {
+      "name": "Delhi Office",
+      "slug": "delhi-office",
+      "is_active": true,
+      "created_at": "2025-12-04 10:20:33.240627",
+      "updated_at": "2025-12-04 10:20:33.240633",
+      "address": "Delhi, India",
+      "latitude": 28.6139,
+      "longitude": 77.209
+    }
+  },
+  {
+    "model": "core.clientticker",
+    "pk": 41,
+    "fields": {
+      "name": "Google"
+    }
+  },
+  {
+    "model": "core.clientticker",
+    "pk": 42,
+    "fields": {
+      "name": "Microsoft"
+    }
+  },
+  {
+    "model": "core.clientticker",
+    "pk": 43,
+    "fields": {
+      "name": "Amazon"
+    }
+  },
+  {
+    "model": "core.clientticker",
+    "pk": 44,
+    "fields": {
+      "name": "Tesla"
+    }
+  },
+  {
+    "model": "core.clientticker",
+    "pk": 45,
+    "fields": {
+      "name": "SpaceX"
+    }
+  },
+  {
+    "model": "core.contactmessage",
+    "pk": 6,
+    "fields": {
+      "name": "User 1",
+      "email": "user1@mail.com",
+      "phone": "9999999999",
+      "message": "I want to enquire about services.",
+      "created_at": "2025-12-04 10:20:33.250048",
+      "user_lat": 23.0225,
+      "user_lon": 72.5714,
+      "distance_km": 438.11,
+      "location": 10
+    }
+  },
+  {
+    "model": "core.contactmessage",
+    "pk": 7,
+    "fields": {
+      "name": "User 2",
+      "email": "user2@mail.com",
+      "phone": "9999999999",
+      "message": "I want to enquire about services.",
+      "created_at": "2025-12-04 10:20:33.250517",
+      "user_lat": 23.0225,
+      "user_lon": 72.5714,
+      "distance_km": 0.0,
+      "location": 9
+    }
+  },
+  {
+    "model": "core.contactmessage",
+    "pk": 8,
+    "fields": {
+      "name": "User 3",
+      "email": "user3@mail.com",
+      "phone": "9999999999",
+      "message": "I want to enquire about services.",
+      "created_at": "2025-12-04 10:20:33.250965",
+      "user_lat": 23.0225,
+      "user_lon": 72.5714,
+      "distance_km": 0.0,
+      "location": 9
+    }
+  },
+  {
+    "model": "core.contactmessage",
+    "pk": 9,
+    "fields": {
+      "name": "User 4",
+      "email": "user4@mail.com",
+      "phone": "9999999999",
+      "message": "I want to enquire about services.",
+      "created_at": "2025-12-04 10:20:33.251506",
+      "user_lat": 23.0225,
+      "user_lon": 72.5714,
+      "distance_km": 0.0,
+      "location": 9
+    }
+  },
+  {
+    "model": "core.contactmessage",
+    "pk": 10,
+    "fields": {
+      "name": "User 5",
+      "email": "user5@mail.com",
+      "phone": "9999999999",
+      "message": "I want to enquire about services.",
+      "created_at": "2025-12-04 10:20:33.252062",
+      "user_lat": 23.0225,
+      "user_lon": 72.5714,
+      "distance_km": 774.37,
+      "location": 11
+    }
+  }
+]
