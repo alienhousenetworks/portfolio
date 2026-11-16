@@ -386,13 +386,17 @@
                             <div
                                 class="mega-menu absolute top-20 w-[400px] bg-alien-dark border border-alien/30 p-8 shadow-[0_20px_50px_rgba(0,255,65,0.1)]">
                                 <ul class="space-y-2 text-sm text-gray-400 font-mono">
+                                    <li class="hover:text-white hover:translate-x-2 transition-transform cursor-pointer">
+                                        <a href="{% url 'about_us' %}" class="hover:text-alien transition-colors">About Us</a>
+                                    </li>
+                                    <li class="hover:text-white hover:translate-x-2 transition-transform cursor-pointer">
+                                        <a href="{% url 'career_list' %}" class="hover:text-alien transition-colors">Careers</a>
+                                    </li>
                                     {% for page in company_pages %}
                                     <li
                                         class="hover:text-white hover:translate-x-2 transition-transform cursor-pointer">
-                                        <a href="{{ page.get_absolute_url }}">{{ page.title }}</a>
+                                        <a href="{{ page.get_absolute_url }}" class="hover:text-alien transition-colors">{{ page.title }}</a>
                                     </li>
-                                    {% empty %}
-                                    <li class="text-gray-500">No company pages found</li>
                                     {% endfor %}
                                 </ul>
                             </div>
@@ -432,9 +436,11 @@
                                             <ul class="space-y-1.5 ml-11 border-l border-white/5 pl-4">
                                                 {% for sub in svc.sub_services.all %}
                                                 {% if sub.is_active %}
-                                                <li
-                                                    class="flex items-center gap-2 text-xs font-mono text-gray-500 hover:text-white transition-colors cursor-crosshair">
-                                                    <span class="text-alien opacity-50">></span> {{ sub.name }}
+                                                <li>
+                                                    <a href="{% url 'service_detail' svc.slug %}{% if sub.slug %}#sub-{{ sub.slug }}{% endif %}"
+                                                        class="flex items-center gap-2 text-xs font-mono text-gray-400 hover:text-alien transition-colors cursor-pointer py-0.5">
+                                                        <span class="text-alien opacity-70">></span> {{ sub.name }}
+                                                    </a>
                                                 </li>
                                                 {% endif %}
                                                 {% endfor %}
@@ -498,11 +504,11 @@
                     COMPANY <i data-lucide="chevron-down" class="w-5 h-5 text-alien"></i>
                 </button>
                 <div id="mobile-company" class="mobile-submenu pl-4 space-y-3">
+                    <a href="{% url 'about_us' %}" class="block text-gray-400 font-mono text-sm hover:text-alien py-1">> About Us</a>
+                    <a href="{% url 'career_list' %}" class="block text-gray-400 font-mono text-sm hover:text-alien py-1">> Careers</a>
                     {% for page in company_pages %}
                     <a href="{{ page.get_absolute_url }}"
                         class="block text-gray-400 font-mono text-sm hover:text-alien py-1">> {{ page.title }}</a>
-                    {% empty %}
-                    <span class="text-gray-600 font-mono text-xs">// No Pages</span>
                     {% endfor %}
                 </div>
             </div>
@@ -523,7 +529,7 @@
                         <div class="pl-6 space-y-2 border-l border-white/10 ml-2">
                             {% for sub in svc.sub_services.all %}
                             {% if sub.is_active %}
-                            <div class="text-gray-500 text-xs font-mono">{{ sub.name }}</div>
+                            <a href="{% url 'service_detail' svc.slug %}{% if sub.slug %}#sub-{{ sub.slug }}{% endif %}" class="block text-gray-400 text-xs font-mono hover:text-alien">> {{ sub.name }}</a>
                             {% endif %}
                             {% endfor %}
                         </div>
